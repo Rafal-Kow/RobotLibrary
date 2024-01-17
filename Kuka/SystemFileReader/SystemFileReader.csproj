@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <RootNamespace>Robot.Kuka.$(MSBuildProjectName.Replace(" ","_"))</RootNamespace>
+    <PackageId>Robot.Kuka.$(MSBuildProjectName.Replace(" ","_"))</PackageId>
+    <Version>0.0.1</Version>
+    <Authors>Rafal-Kow</Authors>
+    <Company>Rafal-Kow</Company>
+    <PackageDescription>A Library to read Kuka Archive Files</PackageDescription>
+    <RepositoryUrl>https://github.com/Rafal-Kow/RobotLibrary</RepositoryUrl>
+    <Copyright>Rafal-Kow</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Title>Kuka Archive Reader</Title>
+    <Description>A Library to read Kuka Archive Files</Description>
+  </PropertyGroup>
+
+</Project>
