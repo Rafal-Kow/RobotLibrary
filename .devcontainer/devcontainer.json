@@ -9,7 +9,8 @@
 			"extensions": [
 				"ms-dotnettools.csdevkit",
 				"ms-dotnettools.vscodeintellicode-csharp",
-				"amodio.toggle-excluded-files"
+				"amodio.toggle-excluded-files",
+				"github.vscode-github-actions"
 			]
 		}
 	}
