@@ -1,0 +1,182 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Vision/SMA
+&PARAM TPVW_VERSION = 8.3.8
+&PARAM EDITMASK = vw_cgx_user
+&REL 70
+DEFDAT  vw_Sto_cs_user PUBLIC
+; 
+;FOLD STO_CS
+; 
+;*---------------------------------------------*
+;* Steinbichler CS GmbH                        *
+;*                                             *
+;* Bearbeitet am:                              *
+;* 20130208 JZ                                 *
+;*     vw_sto_cs_user  erstellt                *    
+;* 20151219 MBA                                *
+;*     b_zustimm entfernt                      *
+;*---------------------------------------------*
+; 
+GLOBAL BOOL B_MIT_STO_CS=TRUE
+
+INT I1=10717152
+INT I2=3311112
+INT I3=10721412
+INT I4=88
+
+;Allgemeine Variablen
+BOOL bReadComplete=FALSE ;Merker 1 Zyklus komplett gelesen
+;BOOL bErrGetSpeed=FALSE ;Fehler in Geschwindigkeitsparameter
+BOOL bKommAktiv=FALSE ;Kommunikation mit Visio7 aktiv
+BOOL bMoveToPos=FALSE ;Auf Position von Visio fahren
+INT nProgStatusAck=0 ;Quittierung Programmstatus von Visio
+INT nProgStatus=0 ;aktueller Programmstatus
+;INT nRobTimer=0 ;Timestamp 1Inc=2ms
+;in Config.dat ;BOOL bZustimm=TRUE ;Zustimmtaste
+BOOL bMovePTP=FALSE ;Bewegung als PTP(TRUE) oder LIN(FALSE) ausfuehren
+BOOL bTeachMode=FALSE ;Teachmode aktiv
+BOOL bLifeBit=FALSE ;Lifebit zu Visio7
+BOOL bLifeBitOld=TRUE ;Lifebit zu Visio7
+GLOBAL BOOL bShowUserMsg=TRUE ;Meldungen am KCP anzeigen
+
+;Allgemeine E/A
+DECL E6AXIS APOS1={A1 8.13010216,A2 -82.4998856,A3 76.0127487,A4 269.075317,A5 98.0777,A6 83.4475708,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0} ;Achspos pPosVonVosio nach Inverse
+;DECL E6AXIS APOS1={A1 0.969305158,A2 -145.691193,A3 140.448578,A4 -0.00214473042,A5 -106.031944,A6 -0.756430626,E1 0.000104831379,E2 0.000104831379,E3 0.0,E4 0.0,E5 0.0,E6 0.0} ;Achspos pPosVonVosio nach Inverse
+INT ret=0 ;Returnwert aus Inverse-Funktion zur kontrolle ob pPosVonVisio gueltige Position ist
+BOOL bRobGst=TRUE ;Roboter in Grundstellung wegen Teachmode beenden
+REAL TolTrans=10.0000 ;Translatorische Kartesiche Toleranz bei Gst-Pruefung in mm
+REAL TolRot=2.00000 ;Rotatorische Kartesiche Tolleranz bei Gst-Pruefung  in Grad
+
+BOOL bErrGetSpeed=FALSE ;Fehler in Geschwindigkeitsparameter
+BOOL bStopOnError=FALSE ;im Fehlerfall anhalten (IBN)
+
+;Timereinstellungen
+GLOBAL INT nLifeBitTimerNr=4 ;Nummer des verwendeten Timers LifeBitueberwachung
+GLOBAL INT nLifeBitTime=-1000 ;Lifebit max. Zeit fuer Wechsel
+
+;Positionsdaten
+DECL GLOBAL E6AXIS AxisRobGst={A1 8.13010216,A2 -82.4998856,A3 76.0127487,A4 269.075317,A5 98.0777,A6 83.4475708,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+;GLOBAL DECL E6POS PosRobGst={X 732.678284,Y -12.4045916,Z 1751.1825,A -0.158198372,B -21.2726555,C -0.292230427,S 'B0110',T 'B00111010',E1 0.000104831379,E2 0.000104831379,E3 0.0,E4 0.0,E5 0.0,E6 0.0} ;Positionsdaten an Visio
+
+GLOBAL INT OldZyklusCounterIn=0 ; 
+BOOL ErrorFlag=FALSE ; Fehler festgestellt
+INT ErrorCounter=5 ; Fehlerzaehler
+
+;INT ZyklusCounterIn=0 ; jetzt Signalvereinbarung (Eingaenge)
+INT MultiplexFaktor=5 ;Antahl der gemuxten Seiten
+INT nFloatFaktor=10 ;(Umrechnungsfaktor = wert *10)
+;INT ZyklusCounterOut=1 ; ; jetzt Signalvereinbarung (Ausgaenge)
+
+;Geschwindigkeitsdaten
+STRUC SpeedVar REAL ApoCdis,VelOri,INT VelPtp,AccPtp,REAL VelCp,AccCp,INT VelExtAx1,VelExtAx2
+DECL SpeedVar TeachSpeed={ApoCdis 0.0,VelOri 0.0,VelPtp 0,AccPtp 0,VelCp 0.0,AccCp 0.300000,VelExtAx1 0,VelExtAx2 0} ;Speedvar bei Teachmode
+DECL SpeedVar SdwTeachSpeed={ApoCdis 0.0,VelOri 0.0,VelPtp 0,AccPtp 0,VelCp 0.0,AccCp 0.0,VelExtAx1 0,VelExtAx2 0} ;Speedvar bei Teachmode
+DECL SpeedVar SpeedLimit={ApoCdis 100.000,VelOri 30.0000,VelPtp 10,AccPtp 50,VelCp 0.300000,AccCp 0.300000,VelExtAx1 20,VelExtAx2 20} ;Speedvar bei Teachmode
+
+;Schattendaten von Visio
+DECL E6POS pShadowPosVonVisio={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0,S 0,T 0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0} ;Positiondaten von Visio
+BOOL bSdwDiKommAktiv=FALSE ; 
+BOOL bSdwDiTeachMode=FALSE ; 
+BOOL bSdwDiMovePTP=FALSE ; 
+BOOL bSdwDiMoveToPos=FALSE ; 
+BOOL bSdwDiLifeBit=FALSE ; 
+INT nSdwGiProgStatusAck=0 ; 
+INT nSdwGiFloatFaktor=1 ; 
+
+DECL E6POS pPosVonVisio={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0,S 0,T 0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0} ;Positiondaten von Visio
+
+;Schattendaten an Visio
+DECL E6POS pShadowPosAnVisio={X 1680.00,Y 4.71258772E-06,Z 1910.00,A 0.0,B 90.0000,C -90.0000,S 'B0010',T 'B0010',E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0} ;Positiondaten von Visio
+BOOL bSdwDoLifeBit=TRUE ;Schatten-Lifebit
+BOOL bSdwDoStopMess=FALSE ; 
+INT nSdwGoProgStatus=0 ; 
+INT nSdwGoRobTimer=10721411 ; 
+INT nSdwGoFloatFaktor=100 ; 
+
+;Datenbereich declarieren
+;Fester Datenbereich Eingaenge
+SIGNAL giZyklusCounterIn $IN[1953]  TO $IN[1960] ; Multiplexzyklus (aktuelle MUX-Seite von VISIO) 8Bit
+SIGNAL giZyklusCounterOutAck $IN[1961]  TO $IN[1968] ;ACK (aktuelle MUX-Seite von VISIO als Handshake) 8Bit
+;Global in Config.dat angelegt wegen Usr_S;SIGNAL diZustimm $IN[1969] ; Zustimmtaste von VISIO
+SIGNAL diContinue $IN[1970] ;Messung beendet => weiterfahrt
+
+;Fester Datenbereich Ausgaenge
+SIGNAL goZyklusCounterOut $OUT[1953]  TO $OUT[1960] ; Multiplexzyklus (aktuelle MUX-Seite an VISIO) 8Bit
+SIGNAL goZyklusCounterInAck $OUT[1961]  TO $OUT[1968] ;ACK (aktuelle MUX-Seite an VISIO als Handshake) 8Bit
+;wird als BinOut konfiguriert;SIGNAL goProgChecksum $OUT[1969]  TO $OUT[1984] ;Programmchecksumme 16Bit
+SIGNAL doPosReached $OUT[1985] ;Roboter ist in Messposition
+
+;Multiplexter Datenbereich Eingaenge (von VISIO)
+;Seite 1
+SIGNAL diKommAtiv $IN[2017] ;Kommunikation aktiv 
+SIGNAL diTeachMode $IN[2018] ;Teachmode aktiv
+SIGNAL diMovePTP $IN[2019] ; ;Bewegung als PTP(TRUE) oder LIN(FALSE) ausfuehren
+SIGNAL diMoveToPos $IN[2020] ;Position anfahren start
+SIGNAL diLifeBit $IN[2021] ;Lebensbit
+SIGNAL giProgStatusAck $IN[2033]  TO $IN[2048] ;Programmstatus Quittierung 16Bit
+SIGNAL giFloatFaktor $IN[2049]  TO $IN[2056] ;Floatfaktor Positionsdaten (Umrechnungsfaktor = wert *10) 8Bit
+;Seite 2
+SIGNAL giPosX $IN[2017]  TO $IN[2048] ;32Bit ProfiNet (Multiplex)
+SIGNAL giPosY $IN[2049]  TO $IN[2080] ;32Bit ProfiNet (Multiplex)
+SIGNAL giPosZ $IN[2081]  TO $IN[2112] ;32Bit ProfiNet (Multiplex)
+;Seite 3
+SIGNAL giPosA $IN[2017]  TO $IN[2048] ;32Bit ProfiNet (Multiplex)
+SIGNAL giPosB $IN[2049]  TO $IN[2080] ;32Bit ProfiNet (Multiplex)
+SIGNAL giPosC $IN[2081]  TO $IN[2112] ;32Bit ProfiNet (Multiplex)
+;Seite 4
+SIGNAL giPosE1 $IN[2017]  TO $IN[2048] ;32Bit ProfiNet (Multiplex)
+SIGNAL giPosE2 $IN[2049]  TO $IN[2080] ;32Bit ProfiNet (Multiplex)
+SIGNAL giPosS $IN[2081]  TO $IN[2088] ;8Bit ProfiNet (Multiplex)
+SIGNAL giPosT $IN[2089]  TO $IN[2096] ;8Bit ProfiNet (Multiplex)
+SIGNAL giPosT2 $IN[2097]  TO $IN[2104] ;8Bit ProfiNet (Multiplex) ReserveTurn
+SIGNAL giPosT3 $IN[2105]  TO $IN[2112] ;8Bit ProfiNet (Multiplex) ReserveTurn
+;Seite 5
+SIGNAL giApoCdis $IN[2017]  TO $IN[2032] ;16Bit ProfiNet (Multiplex)
+SIGNAL giVelCp $IN[2033]  TO $IN[2048] ;16Bit ProfiNet (Multiplex)
+SIGNAL giAccCp $IN[2049]  TO $IN[2064] ;16Bit ProfiNet (Multiplex)
+SIGNAL giVelOri $IN[2065]  TO $IN[2080] ;16Bit ProfiNet (Multiplex)
+SIGNAL giVelPtp $IN[2081]  TO $IN[2088] ;8Bit ProfiNet (Multiplex)
+SIGNAL giAccPtp $IN[2089]  TO $IN[2096] ;8Bit ProfiNet (Multiplex)
+SIGNAL giVelExtAx1 $IN[2097]  TO $IN[2104] ;8Bit ProfiNet (Multiplex)
+SIGNAL giVelExtAx2 $IN[2105]  TO $IN[2112] ;8Bit ProfiNet (Multiplex)
+
+;Multiplexter Datenbereich Ausgaenge (an VISIO)
+;Seite 1
+SIGNAL doLifeBit $OUT[2017] ;Lebensbit
+SIGNAL doStopMess $OUT[2018] ;Fehler
+SIGNAL goProgStatus $OUT[2033]  TO $OUT[2048] ;Programmstatus 16Bit
+SIGNAL goRobTimer $OUT[2049]  TO $OUT[2080] ;Robotertimer 32Bit
+SIGNAL goFloatFaktor $OUT[2081]  TO $OUT[2088] ;;Floatfaktor Positionsdaten (Umrechnungsfaktor = wert *10) 8Bit
+;Seite 2
+SIGNAL goPosX $OUT[2017]  TO $OUT[2048] ;32Bit ProfiNet (Multiplex)
+SIGNAL goPosY $OUT[2049]  TO $OUT[2080] ;32Bit ProfiNet (Multiplex)
+SIGNAL goPosZ $OUT[2081]  TO $OUT[2112] ;32Bit ProfiNet (Multiplex)
+;Seite 3
+SIGNAL goPosA $OUT[2017]  TO $OUT[2048] ;32Bit ProfiNet (Multiplex)
+SIGNAL goPosB $OUT[2049]  TO $OUT[2080] ;32Bit ProfiNet (Multiplex)
+SIGNAL goPosC $OUT[2081]  TO $OUT[2112] ;32Bit ProfiNet (Multiplex)
+;Seite 4
+SIGNAL goPosE1 $OUT[2017]  TO $OUT[2048] ;32Bit ProfiNet (Multiplex)
+SIGNAL goPosE2 $OUT[2049]  TO $OUT[2080] ;32Bit ProfiNet (Multiplex)
+SIGNAL goPosS $OUT[2081]  TO $OUT[2088] ;8Bit ProfiNet (Multiplex)
+SIGNAL goPosT $OUT[2089]  TO $OUT[2096] ;8Bit ProfiNet (Multiplex)
+SIGNAL goPosT2 $OUT[2097]  TO $OUT[2104] ;8Bit ProfiNet (Multiplex) ReserveTurn
+SIGNAL goPosT3 $OUT[2105]  TO $OUT[2112] ;8Bit ProfiNet (Multiplex) ReserveTurn
+;Seite 5
+;RESERVE
+
+;Kontrollvariablen zur IBN
+INT nGoPosX='B01000000100100000000001000000000'
+INT nGoPosY='B0000'
+INT nGoPosZ='B00011000111010100000001000000000'
+INT nGoPosA='B0000'
+INT nGoPosB='B00101000001000110000000000000000'
+INT nGoPosC='B11011000110111001111111111111111'
+INT nGoPosE1='B0000'
+INT nGoPosE2='B0000'
+INT nGoPosS='B0010'
+INT nGoPosT='B0010'
+
+; 
+;ENDFOLD
+ENDDAT

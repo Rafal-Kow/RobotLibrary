@@ -1,0 +1,20 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/R_Zange
+&PARAM TPVW_VERSION = 8.3.8
+&REL 223
+DEFDAT  vw_rz_usr_r PUBLIC
+; FOLD ;%{H}%MKUKATPVW
+; ENDFOLD
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket R_Zange                             *
+;*                                                     *
+;*Konzernstandard                                      *
+;*-----------------------------------------------------*
+; 
+;FOLD RZ
+; 
+;ENDFOLD
+; 
+; 
+ENDDAT

@@ -1,0 +1,32 @@
+&ACCESS RVO
+&REL 221
+&PARAM DISKPATH = VW_User/Applikation/Docking
+&PARAM TPVW_VERSION = 8.1.8
+DEFDAT  vw_dk_usr_r PUBLIC
+; FOLD ;%{H}%MKUKATPVW
+; ENDFOLD
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Docking                             *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: Chr. Eisenknappl I/PG-C61                *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2014.09.11 CE                                       *
+;*                                                     *
+;* Aenderungsjournal                                   *
+;*                                                     *
+;*-----------------------------------------------------*
+; 
+;FOLD DK
+; 
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM DKR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

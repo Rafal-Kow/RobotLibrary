@@ -1,0 +1,41 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Clinchen
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEFDAT  vw_cz_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Clinchen                            *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.09 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD Clinchen
+;Punktnummer an SPS
+SIGNAL CZ_PktNr_SPS $OUT[97]  TO $OUT[112]
+;Servo
+SIGNAL SCZ1_P_Nr $OUT[1361]  TO $OUT[1376]
+SIGNAL SCZ2_P_Nr $OUT[1441]  TO $OUT[1456]
+;pneumohydraulisch
+SIGNAL PCZ1_P_Nr $OUT[1361]  TO $OUT[1368]
+SIGNAL PCZ2_P_Nr $OUT[1441]  TO $OUT[1448]
+; 
+;TCP-Korrektur
+INT Weg=0
+INT Offset=0
+FRAME MyCorr
+FRAME MyCorrWeg
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM CZR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

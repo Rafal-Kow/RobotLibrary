@@ -1,0 +1,48 @@
+&ACCESS  RV
+&COMMENT KS24.01.004
+&PARAM DISKPATH = VW_User/Applikation/SafeRobot
+&PARAM TPVW_VERSION = 8.1.8
+&REL 201
+DEFDAT  vw_srob_usr_s PUBLIC
+; 
+;*---------------------------------------------*
+;*Technologiepaket PFO_AUDI                    *
+;*                                             *
+;*Konzernstandard                              *
+;*Bearbeiter: W. Lehmeier  I/PG-C61            *
+;*                                             *
+;* Erstellt am:                                *
+;* 2015.01.08 LE                               *
+;*                                             *
+;*---------------------------------------------*
+; 
+;FOLD USER_Version
+STRUC _Tech_SRob CHAR Name[20],INT Datum
+DECL _Tech_SRob Tech_SRob
+;ENDFOLD
+; 
+; 
+;FOLD SafeRobot
+GLOBAL INT F_m_Safe_Rob=693
+; 
+GLOBAL BOOL Mit_Safe_Rob=FALSE
+; 
+GLOBAL INT O_Safe_BrTes=249
+GLOBAL INT O_Safe_JuTes=250
+GLOBAL INT O_Safe_Anf=251
+GLOBAL INT O_Safe_VW_Br=252
+GLOBAL INT O_Safe_B_nio=253
+GLOBAL INT O_Safe_R_nio=254
+GLOBAL INT O_Safe_P_Pos=255
+GLOBAL INT O_Safe_Samm=256
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM SRobS_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgHandle[100]
+BOOL bMsgIsSet=FALSE
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

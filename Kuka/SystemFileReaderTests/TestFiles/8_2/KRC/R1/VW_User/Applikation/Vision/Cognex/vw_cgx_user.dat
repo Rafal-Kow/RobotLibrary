@@ -1,0 +1,167 @@
+&ACCESS  RV
+&COMMENT RS_1.10
+&PARAM DISKPATH = VW_User/Applikation/Vision/Cognex
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM EDITMASK = vw_cgx_user
+&REL 38
+DEFDAT  vw_cgx_user PUBLIC
+;FOLD EKI
+;*---------------------------------------------*
+;* Kamera Systemschnittstelle   EKI            *
+;*      Version V1.10                          *
+;* Bearbeitet am:                              *
+;* 25.08.2010 HF / MG                          *
+;*     Namens Anpassungen                      *
+;* 26.10.2010 HF / MG / MM                     *
+;*     VF-Module ?berarbeitet                  *
+;* 25.04.2012 Niehues Variablen umgenannt      *
+;* 15.11.2012 Ueberwachungswerte als REALwerte *
+;* 07.12.2012 Grenzwert arrays eingefuehrt NI  *
+;* 10.01.2013 Checkrange nur bei IO Werte      *
+;* 19.01.2015 Verlagerung der Grenzwertarrays  *
+;*---------------------------------------------*
+; 
+;ENDFOLD
+;FOLD USER_Version
+GLOBAL INT Ver_Tech_EKI=20150119
+;ENDFOLD
+;FOLD Glob Daten
+GLOBAL BOOL B_MIT_CGX=FALSE
+GLOBAL CONST INT F_m_CGX=231
+GLOBAL FRAME realign_val
+GLOBAL FRAME eki_frame ; Debug
+
+;ENDFOLD
+
+;------Change only here!!-----
+
+DECL CONST INT EKI_TimerIns=60000 ; [ms] TimeOut Install
+DECL CONST INT EKI_TimerClc=30000 ; [ms] TimeOut Calc
+
+; 
+;FOLD EKI-Schnittstelle
+; 
+
+DECL CONST INT F_EKI_Mes1OK=892
+DECL CONST INT F_EKI_noErr=886
+DECL CONST INT F_EKI_Err=887
+DECL CONST INT F_EKI_RANGE=888 ; FLAG "out of range"
+DECL CONST INT F_EKI_REALI=889 ; FLAG "realign" out of range
+DECL CONST INT F_EKI_NOWAIT=890 ; Config FLAG fuer "no quit_MSG"
+DECL CONST INT F_EKI_PING_S=891 ; FLAG = TRUE, is ping successfull
+DECL CONST INT F_EKI_NREPOS=893 ; Config FLAG = FALSE, Reposition after Realign
+
+DECL CONST INT F_EKI_Dat1OK=871 ; siehe XML_Kuka_Conex_2.xml
+DECL CONST INT F_EKI_SP1Act=872 ; siehe XML_Kuka_Conex_1.xml
+DECL CONST INT F_EKI_Rp1Act=873 ; siehe XML_Kuka_Conex_2.xml
+
+DECL CONST INT F_EKI_Dat2OK=874 ; siehe XML_Kuka_Conex_4.xml 
+DECL CONST INT F_EKI_SP2Act=875 ; siehe XML_Kuka_Conex_3.xml
+DECL CONST INT F_EKI_Rp2Act=876 ; siehe XML_Kuka_Conex_4.xml
+
+DECL CONST INT F_EKI_Dat3OK=877 ; siehe XML_Kuka_Conex_6.xml
+DECL CONST INT F_EKI_SP3Act=878 ; siehe XML_Kuka_Conex_5.xml
+DECL CONST INT F_EKI_Rp3Act=879 ; siehe XML_Kuka_Conex_6.xml
+
+DECL CONST INT F_EKI_Dat4OK=880 ; siehe XML_Kuka_Conex_8.xml
+DECL CONST INT F_EKI_SP4Act=881 ; siehe XML_Kuka_Conex_7.xml
+DECL CONST INT F_EKI_Rp4Act=882 ; siehe XML_Kuka_Conex_8.xml
+
+DECL CONST INT F_EKI_Dat5OK=883 ; siehe XML_Kuka_Conex_10.xml
+DECL CONST INT F_EKI_SP5Act=884 ; siehe XML_Kuka_Conex_9.xml
+DECL CONST INT F_EKI_Rp5Act=885 ; siehe XML_Kuka_Conex_10.xml
+; 
+; DEFINE CONTANTS
+; 
+DECL CONST INT EKI_LIFE_BIT=2
+DECL CONST INT EKI_CANCEL=10
+DECL CONST INT EKI_CALIBRAT=20
+DECL CONST INT EKI_CALI_END=21
+DECL CONST INT EKI_VALIDAT=22
+DECL CONST INT EKI_VALI_END=23
+DECL CONST INT EKI_VERIFIFY=24
+DECL CONST INT EKI_VERI_END=25
+DECL CONST INT EKI_REFERECE=26
+DECL CONST INT EKI_REFE_END=27
+DECL CONST INT EKI_PRODUCT=28
+DECL CONST INT EKI_PROD_END=29
+
+DECL CONST INT KAM0_PRG_NR=0
+DECL CONST INT KAM1_PRG_NR=100
+DECL CONST INT KAM2_PRG_NR=200
+DECL CONST INT KAM3_PRG_NR=300
+DECL CONST INT KAM4_PRG_NR=400
+DECL CONST INT KAM5_PRG_NR=500
+
+DECL CONST INT KAM00_PRG_NR=1000
+DECL CONST INT KAM11_PRG_NR=2000
+DECL CONST INT KAM22_PRG_NR=3000
+DECL CONST INT KAM33_PRG_NR=4000
+DECL CONST INT KAM44_PRG_NR=5000
+DECL CONST INT KAM55_PRG_NR=6000
+
+DECL CONST INT EKI_STAT_ERR=0
+DECL CONST INT EKI_STAT_IO=1
+DECL CONST INT EKI_STAT_LBB=2
+DECL CONST INT EKI_STAT_REA=3
+
+DECL CONST INT EKI_CHK_KORR=1
+DECL CONST INT EKI_CHK_FRAM=2
+
+DECL CONST INT MAX_TEL_ID=99
+DECL CONST INT MAX_KORR_ARR=17
+; 
+GLOBAL BOOL B_READY=FALSE
+GLOBAL BOOL B_bDataValid
+GLOBAL BOOL B_bStatus_ID
+GLOBAL BOOL B_bTimeOut
+GLOBAL BOOL B_bVerify_OK
+GLOBAL BOOL B_bRepeat
+GLOBAL BOOL B_bAbort
+GLOBAL BOOL B_Result
+GLOBAL BOOL B_bWaitMsg
+; 
+; 
+GLOBAL INT n_EKI_Handle
+GLOBAL INT n_KeyNumber
+GLOBAL INT i_RobTimer
+GLOBAL INT counter_Cali=0
+GLOBAL INT counter_Vali=0
+GLOBAL INT i_EKI_Timer=30000
+GLOBAL INT get_Telgr_ID=85 ;from Vision
+GLOBAL INT get_Stat_ID=1 ;from Vision
+GLOBAL INT get_Error_ID=5 ;from Vision
+GLOBAL INT send_Tel_ID=85 ;to Vision
+GLOBAL INT send_Mode_ID=28 ;to Vision
+GLOBAL INT send_Job_ID=1 ;to Vision
+GLOBAL INT i_base_eki=0
+
+
+ENUM EKI_MsgType StateMsg,QuitMsg,NotifyMsg,DialogMsg
+DECL EKI_MsgType MsgTyp=#DialogMsg
+; 
+CHAR Get_Err_Text[32] ;Message from Vision
+Get_Err_Text[]="Fehlertext'H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00'"
+CHAR Get_Parametr[32] ;optional from Vision
+Get_Parametr[]=" example 1'H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00''H00'"
+CHAR Get_Terminat[1] ; from Vision
+Get_Terminat[]="#"
+CHAR Send_Param[32] ;optional to Vision
+Send_Param[]="Send_optional12Parameter'H00''H00''H00''H00''H00''H00''H00'"
+CHAR Send_Termina[1] ; to Vision
+Send_Termina[]="#"
+CHAR korrwert_msg[12]
+korrwert_msg[]="Korr.Wert "
+CHAR realign_msg[12]
+realign_msg[]="RealignWert "
+CHAR gwrt_min_msg[12]
+gwrt_min_msg[]="min. Grenze "
+CHAR gwrt_max_msg[12]
+gwrt_max_msg[]="max. Grenze "
+; 
+;neu fuer KUKA_Cognex
+DECL FRAME Send_Val_Pos ;Value to Vision
+DECL FRAME Get_Val_Pos={X -1.0,Y -2.00200009,Z -3.00029993,A -4.00004005,B 0.0,C 2.0} ;Value from InSight
+; 
+;ENDFOLD
+ENDDAT

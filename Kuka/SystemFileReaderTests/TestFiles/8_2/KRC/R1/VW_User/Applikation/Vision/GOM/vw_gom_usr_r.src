@@ -1,0 +1,519 @@
+&ACCESS  R
+&COMMENT KS_1.1
+&PARAM DISKPATH = VW_User/Applikation/Vision/GOM
+&PARAM TPVW_VERSION = 8.1.8
+&REL 97
+DEF vw_gom_usr_r( )
+;
+;*--------------------------------------------*
+;* GOM mbH                                    *
+;* 02.12.2014 Frank Sowinski, Volker Masemann *
+;*     Version 7.9                            *
+;*--------------------------------------------*
+;
+END
+;
+;FOLD GOM
+;
+;FOLD GOM_ResetSignals
+GLOBAL DEF GOM_ResetSignals()
+; Source Code GOM
+END
+;ENDFOLD GOM_ResetSignals
+;
+;FOLD GOM Interface
+GLOBAL DEF GOM_Interface(USER_CMD:IN,CMD_SEL:IN,FUNKTION:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+DECL INT         CMD_SEL      ; Modus
+DECL INT         FUNKTION     ; Funktion
+DECL INT         PAR2
+DECL INT         PAR3
+DECL INT         PAR4
+DECL INT         PAR5
+DECL INT         PAR6
+DECL INT         nFlagCounter
+IF USER_CMD <> #USR_INIT THEN
+SWITCH CMD_SEL
+CASE 809   ; IMT  Hauptgruppe7 (8. Gruppe), Untergruppe 9
+N_GOM_Fkt = CMD_SEL
+SWITCH FUNKTION
+CASE 501,510,511,520,530,531
+; OK
+ENDSWITCH
+CASE 810   ; IMT  Hauptgruppe7 (8. Gruppe), Untergruppe 10
+N_GOM_Fkt = CMD_SEL
+SWITCH FUNKTION
+CASE 1,2,3,4,10,11,12,13,14,20,500
+; OK
+ENDSWITCH
+ENDSWITCH
+ENDIF
+SWITCH USER_CMD
+CASE #USR_INIT
+;
+;
+CASE #USR_ADV
+;
+;
+CASE #USR_TRIG
+;
+;
+CASE #USR_MAIN
+;
+;FOLD Main
+;
+SWITCH N_GOM_Fkt
+CASE 809  ; Hauptgruppe7 (8. Gruppe), Untergruppe 9
+   GOM_IMTInterface(#USR_MAIN,FUNKTION,PAR2,PAR3,PAR4,PAR5,PAR6)
+CASE 810 ; Hauptgruppe7 (8. Gruppe) , Untergruppe 10
+   ; kein LOOP
+   gom_prog_fb(FUNKTION,PAR2,PAR3,PAR4,PAR5,PAR6)
+ENDSWITCH
+ENDSWITCH
+;
+;ENDFOLD (Main)
+;
+END
+;ENDFOLD GOM Interface
+;
+;FOLD IMT
+;
+DEF GOM_IMTInterface(USER_CMD:IN,FUNKTION:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+DECL INT         FUNKTION
+DECL INT         PAR2
+DECL INT         PAR3
+DECL INT         PAR4
+DECL INT         PAR5
+DECL INT         PAR6
+
+SWITCH USER_CMD
+CASE #USR_ADV
+;
+;
+CASE #USR_TRIG
+;
+;
+CASE #USR_MAIN
+;
+;FOLD Main
+;
+GOM_MainPrg(FUNKTION,PAR2,PAR3,PAR4,PAR5,PAR6)
+;
+;ENDFOLD (Main)
+;
+ENDSWITCH
+END
+;
+;ENDFOLD (IMT)
+;
+;FOLD Main Program GOM_MainPrg
+;
+DEF GOM_MainPrg(FUNKTION:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+INT FUNKTION
+INT PAR2
+INT PAR3
+INT PAR4
+INT PAR5
+INT PAR6
+SWITCH FUNKTION
+CASE 510 ; Messung durch SPS Starten
+	TEACH_ACT = FALSE
+	IF (PAR5 == 2 ) THEN
+		O_GOM_NOEVAL=TRUE
+	ELSE
+		O_GOM_NOEVAL=FALSE
+	ENDIF
+	IF (PAR6 == 2) THEN
+		O_GOM_NRESUL=TRUE
+		O_GOM_AMRES=FALSE
+	ENDIF
+	IF (PAR6 == 3) THEN
+		O_GOM_AMRES=TRUE
+		O_GOM_NRESUL=FALSE	
+	ENDIF
+	WAIT FOR I_GOM_MOK OR NOT I_GOM_OK
+;
+;
+;
+CASE 511 ;Roboter Start Messdurchlauf
+; IMT  ; Hauptgruppe7 (8. Gruppe), Untergruppe 9
+	TEACH_ACT = FALSE
+	IF (PAR5 == 2 ) THEN
+		O_GOM_NOEVAL=TRUE
+	ELSE
+		O_GOM_NOEVAL=FALSE
+	ENDIF
+	IF (PAR6 == 2) THEN
+		O_GOM_NRESUL=TRUE
+		O_GOM_AMRES=FALSE
+	ENDIF
+	IF (PAR6 == 3) THEN
+		O_GOM_AMRES=TRUE
+		O_GOM_NRESUL=FALSE	
+	ENDIF
+	O_GOM_MEST=False
+	IF I_GOM_OK THEN
+		O_GOM_MEST=TRUE
+		O_GOM_SCANID=PAR4
+		WAIT FOR I_GOM_MESTOK OR NOT I_GOM_OK
+		O_GOM_MEST=FALSE
+	ENDIF
+	WAIT FOR I_GOM_MOK OR NOT I_GOM_OK
+;
+;
+;
+CASE 520 ;Punktmessung starten
+;IMT  ; Hauptgruppe7 (8. Gruppe), Untergruppe 9
+	IF I_GOM_OK THEN
+		WAIT FOR NOT I_GOM_ScanA OR NOT I_GOM_OK or NOT I_GOM_MOK
+		O_GOM_SCANID=PAR4
+		O_GOM_N_SCAN=TRUE
+		WAIT FOR I_GOM_ScanA OR NOT I_GOM_OK or NOT I_GOM_MOK
+		O_GOM_N_SCAN=FALSE
+		O_GOM_SCANID = 0
+		WAIT FOR NOT I_GOM_ScanA OR NOT I_GOM_Ok or NOT I_GOM_MOK
+	ENDIF
+;
+;
+;
+CASE 530 ; Messreihe beenden 531: Messung beenden
+;IMT ; Hauptgruppe7 (8. Gruppe), Untergruppe 9
+	IF I_GOM_OK THEN
+		O_GOM_SEND=TRUE
+		WAIT FOR I_GOM_SEND OR NOT I_GOM_OK or NOT I_GOM_MOK
+		O_GOM_SEND=FALSE
+		WAIT FOR NOT I_GOM_SEND OR NOT I_GOM_OK or NOT I_GOM_MOK
+	ENDIF
+;
+;
+;
+CASE 531 ;  Messdurchlauf beenden
+;IMT ; Hauptgruppe7 (8. Gruppe), Untergruppe 9
+   IF I_GOM_OK AND I_GOM_MOK THEN
+		O_GOM_FINISH=TRUE
+		WAIT FOR I_GOM_FIN OR NOT I_GOM_OK
+		O_GOM_FINISH=FALSE
+		WAIT FOR NOT I_GOM_FIN OR NOT I_GOM_OK
+		O_GOM_NOEVAL=FALSE
+		O_GOM_NRESUL=FALSE
+	ENDIF
+	IF NOT I_GOM_OK AND I_GOM_ME THEN
+		O_GOM_FINISH=TRUE
+      WAIT SEC 1
+      WAIT FOR I_GOM_FIN OR NOT I_GOM_OK
+		O_GOM_FINISH=FALSE
+        WAIT FOR NOT I_GOM_FIN OR NOT I_GOM_OK
+		O_GOM_NOEVAL=FALSE
+		O_GOM_NRESUL=FALSE
+	ENDIF
+ENDSWITCH
+END
+;
+;ENDFOLD (Main Program GOM_MainPrg)
+;
+;
+;FOLD sel_inl_pos
+DEF sel_inl_pos()
+SWITCH INL_TT_POS
+	CASE 1
+		R_G_INL_TT_V=INL_TT_V_16
+	CASE 2
+		R_G_INL_TT_V=INL_TT_V_15
+	CASE 4
+		R_G_INL_TT_V=INL_TT_V_14		
+	CASE 8
+		R_G_INL_TT_V=INL_TT_V_13
+	CASE 16
+		R_G_INL_TT_V=INL_TT_V_12
+	CASE 32
+		R_G_INL_TT_V=INL_TT_V_11
+	CASE 64
+		R_G_INL_TT_V=INL_TT_V_10
+	CASE 128
+		R_G_INL_TT_V=INL_TT_V_9
+	CASE 256
+		R_G_INL_TT_V=INL_TT_V_8
+	CASE 512
+		R_G_INL_TT_V=INL_TT_V_7
+	CASE 1024
+		R_G_INL_TT_V=INL_TT_V_6
+	CASE 2048
+		R_G_INL_TT_V=INL_TT_V_5
+	CASE 4096
+		R_G_INL_TT_V=INL_TT_V_4
+	CASE 8192
+		R_G_INL_TT_V=INL_TT_V_3
+	CASE 16384
+		R_G_INL_TT_V=INL_TT_V_2		
+	CASE 32768
+		R_G_INL_TT_V=INL_TT_V_1			
+ENDSWITCH
+END
+;ENDFOLD (sel_inl_pos)
+;
+;
+;FOLD Main Program gom_prog_fb
+;
+;
+DEF gom_prog_fb(FUNKTION:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+INT FUNKTION
+INT PAR2
+INT PAR3
+INT PAR4
+INT PAR5
+INT PAR6
+INT counter
+SWITCH FUNKTION
+;
+;
+;
+CASE 1 ; Achsfactoren 1-5
+GOM_FACTORS[1]=PAR2
+GOM_FACTORS[2]=PAR3
+GOM_FACTORS[3]=PAR4
+GOM_FACTORS[4]=PAR5
+GOM_FACTORS[5]=PAR6
+;
+;
+;
+CASE 2 ; Achsfactoren 6-10
+GOM_FACTORS[6]=PAR2
+GOM_FACTORS[7]=PAR3
+GOM_FACTORS[8]=PAR4
+GOM_FACTORS[9]=PAR5
+GOM_FACTORS[10]=PAR6
+;
+;
+;
+CASE 3 ; Anzahl der Achsen zum Uebertragen
+GOM_AX_TRANS=PAR2
+;
+;
+;
+CASE 4 ; Achsfactoren 11-12
+GOM_FACTORS[11]=PAR2
+GOM_FACTORS[12]=PAR3
+;
+;
+;
+;
+CASE 10 ;VW Drehtisch
+; IMT  ; Hauptgruppe7 (8. Gruppe), Untergruppe 10
+IF (PAR2 == 1) THEN
+	TT_ENABLED=FALSE
+	IL_TT_ENABLE=FALSE ; nicht VW_Inline_ROT --> Robachse
+ENDIF
+IF (PAR2 == 2) THEN
+	TT_ENABLED=TRUE ; VW-ROT Offline-SPS
+    IL_TT_ENABLE=FALSE ; nicht VW_Inline_ROT --> Robachse
+ENDIF
+IF (PAR2 == 3) THEN
+	IL_TT_ENABLE=TRUE ; VW-ROT Inline-SPS
+    TT_ENABLED=FALSE
+ENDIF
+IF (PAR4 == 1 ) THEN
+	IN_FR_TT_P_H=TRUE
+ENDIF
+IF (PAR4 == 2 ) THEN
+	IN_FR_TT_P_H=FALSE
+ENDIF
+;
+;
+;
+CASE 11 ; VW Freigabe Drehtisch Achswerte Roboterachse 1 , Min-Max Grenzen Drehtisch
+; IMT  ; Hauptgruppe7 (8. Gruppe), Untergruppe 10
+ROB_A_TT_MIN=PAR2
+ROB_A_TT_MAX=PAR3
+TT_MIN_UE=PAR5
+TT_MAX_UE=PAR6
+IF (PAR4 == 1) THEN
+	ROB_PF_TT=TRUE ; Achse 1 Wert Sicherer Bereich
+ENDIF
+IF (PAR4 == 2) THEN
+	ROB_PF_TT=False ; Achse 1 Wert Unsicherer Bereich
+ENDIF
+;
+;
+;
+CASE 12 ; VW Freigabe Schutztuer Achswerte Roboterachse 1
+; IMT  ; Hauptgruppe7 (8. Gruppe), Untergruppe 10
+ROB_PF_D_MIN=PAR2
+ROB_PF_D_MAX=PAR3
+IF (PAR4 == 1) THEN
+	PF_ROB_IN_D=TRUE ; Achse 1 Wert Sicherer Bereich
+ENDIF
+IF (PAR4 == 2) THEN
+	PF_ROB_IN_D=False ; Achse 1 Wert Unsicherer Bereich
+ENDIF
+;
+;
+;
+CASE 13 ; VW Freigabe Safe Schutztuer Achswerte Roboterachse 1
+; IMT  ; Hauptgruppe7 (8. Gruppe), Untergruppe 10
+D_AX_LIM_MIN=PAR2
+D_AX_LIM_MAX=PAR3
+IF (PAR4 == 1) THEN
+	PF_D_AX_LIM=TRUE ; Achse 1 Wert Unsicherer Bereich
+ENDIF
+IF (PAR4 == 2) THEN
+	PF_D_AX_LIM=False ; Achse 1 Wert Sicherer Bereich
+ENDIF
+;
+;
+;
+CASE 14 ; VW Workspace geschlossene Tuer
+; IMT  ; Hauptgruppe7 (8. Gruppe), Untergruppe 10
+VW_WS=PAR2
+IF (PAR4 == 1) THEN
+   DOOR_ENABLED=TRUE
+ENDIF
+IF (PAR4 == 2) THEN
+   DOOR_ENABLED=FALSE
+ENDIF
+;
+;
+;
+CASE 20 ; KuKa Safe Operation
+; IMT  ; Hauptgruppe7 (8. Gruppe), Untergruppe 10
+IF (PAR4 == 1) THEN
+   SAFE_OPS=TRUE
+ENDIF
+IF (PAR4 == 2) THEN
+   SAFE_OPS=FALSE
+ENDIF
+;
+;
+;
+CASE 500 ;LOOP Teachbetrieb
+; IMT  ; Hauptgruppe7 (8. Gruppe), Untergruppe 10
+R_S_INL_TT_V=0
+IF (PAR4 == 1) THEN
+	TEACH_ANG_H=TRUE ; Signal Teachmodus angewaehlt True
+ENDIF
+IF (PAR4 == 2) THEN
+	TEACH_ANG_H=False ; Signal Teachmodus angewaehlt False
+ENDIF
+
+;----------------------------------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------------------------------
+; Attention: set the priority GOM_PRIO in gom_prog_fb.dat
+;----------------------------------------------------------------------------------------------------------
+
+; suppresses a movement after reset
+INTERRUPT DECL GOM_PRIO WHEN NOT $USER_SAF OR NOT $ALARM_STOP DO gom_motion_brake()
+;----------------------------------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------------------------------
+
+PTP $AXIS_ACT   ;SAK Fahrt auf die aktuelle Position
+
+
+;----------------------------------------------------------------------------------------------------------
+;FOLD Teach LOOP ( An- Abwahl ueber SPS )
+while (TEACH_ANG == Teach_ANG_H) or (gom_enabled==true)
+   TEACH_ACT = TRUE
+   while ($IN_HOME==False) or (teach_ang == TEACH_ANG_H) or (gom_enabled==true)
+		;--------------------------------------------------------------------------------------------------------
+		;--------------------------------------------------------------------------------------------------------
+		; Attention: if needed set TT_ENABLED=TRUE in gom_sps_fb.dat!
+		; Attention: all parameter are in gom_sps_fb.dat
+		; Attention: all signals are in gom_prog_fb.dat
+		;--------------------------------------------------------------------------------------------------------
+  
+		; sps controlled VW turntable exists
+		if (TT_ENABLED == true) then
+			; set by gom_sps_fb.src
+			if (TT_IS_TURING == true) then
+				ROB_TT_PF = true ; Profilfrei turntable set
+				; turntable in required position
+				WAIT FOR ((TT_IN_REQ == true) AND (TT_POS_ACT == TT_POS_REQ))
+
+				; set by gom_sps_fb.src
+				if (TT_IS_TURING == true) then ; no error
+					GOM_SET_OPOS = true
+				endif
+
+				ROB_TT_PF = false ; Profilfrei turntable reset
+				TT_IS_TURING = false ; no turntable move
+			endif
+		endif
+		;--------------------------------------------------------------------------------------------------------
+		;--------------------------------------------------------------------------------------------------------
+		;--------------------------------------------------------------------------------------------------------
+		; Attention: if needed set IL_TT_ENABLE=TRUE in gom_sps_fb.dat!
+		; Attention: all parameter are in gom_sps_fb.dat
+		; Attention: all signals are in gom_prog_fb.dat
+		;--------------------------------------------------------------------------------------------------------
+  
+		; sps controlled VW turntable exists
+		if (IL_TT_ENABLE == true) then
+
+			; set by gom_sps_fb.src
+			if (TT_IS_TURING == true) then
+				ROB_TT_PF = true ; Profilfrei turntable set
+            while ((TT_INL_IN_RQ == FALSE ) OR (NOT(R_G_INL_TT_V == R_S_INL_TT_V))) and (($IN_HOME==FALSE) or (TEACH_ANG==TEACH_ANG_H)) ; Abfrage Home noch entfernen 
+					; sets the value of R_G_INL_TT_V
+               sel_inl_pos()
+					; turntable in required position
+				endwhile
+				; set by gom_sps_fb.src
+				if (TT_IS_TURING == true) then ; no error
+					GOM_SET_OPOS = true
+				endif
+
+				ROB_TT_PF = false ; Profilfrei turntable reset
+				TT_IS_TURING = false ; no turntable move
+			endif
+		endif
+		;--------------------------------------------------------------------------------------------------------
+		;--------------------------------------------------------------------------------------------------------
+
+  
+
+		; set by gom_sps_fb.src
+		if (GOM_IS_MING == true) then
+			;fold new_speed_and_acceleration
+			for counter = 1 to 6
+			$VEL_AXIS[counter]=gom_vel_fb
+			$VEL_EXTAX[counter]=gom_vel_fb
+			$ACC_AXIS[counter]=gom_acc_fb
+			$ACC_EXTAX[counter]=gom_acc_fb
+			endfor
+			;endfold (new_speed_and_acceleration)
+
+			gom_motion_start()
+
+			; set by gom_sps_fb.src
+			if (GOM_IS_MING == true) then
+				GOM_SET_OPOS = true
+			endif
+
+			GOM_IS_MING = false
+		endif
+	endwhile
+endwhile
+;ENDFOLD Teach LOOP
+;
+TEACH_ACT = FALSE
+;
+ENDSWITCH
+END
+;ENDFOLD Main Program gom_prog_fb
+;
+
+DEF gom_motion_start()
+  INTERRUPT ON GOM_PRIO
+  ; point to point movement
+  PTP GOM_P_AX_FB
+  WAIT SEC 0
+  INTERRUPT OFF GOM_PRIO
+END
+
+
+DEF gom_motion_brake()
+  INTERRUPT OFF GOM_PRIO
+  BRAKE
+  RESUME
+END
+
+;ENDFOLD (GOM)

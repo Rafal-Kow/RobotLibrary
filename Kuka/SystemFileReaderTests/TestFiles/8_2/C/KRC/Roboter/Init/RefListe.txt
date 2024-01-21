@@ -1,0 +1,1217 @@
+                      Referenzliste Roboter K1TUHR115425R01
+                      =====================================
+
+617076                              18.9.2023
+--------------------------------------------------------------------------------
+
+Eingang:
+--------
+E 9        [Folgestart]                                        Makro SPS
+E 12       [Anlage ist in Automatik (K26)]                     Makro SPS
+E 13       [Schutzkreis ist geschlossen]                       Folge 123, UP 6, 206, 207, 208, 209, Makro Step
+E 14       [Maschinelle Sicherheiten]                          Makro 50
+E 15       [Funktionstest ohne Bauteil]                        Folge 74, UP 3, 23, Makro 50, 51, 52, 53, 180, 181, 182, 183, 184, SPS, Step
+E 16       [Halt zum Korrigieren]                              UP 21, 84, 86
+E 17       [Quittierung Wartungsstellung]                      Folge 4, 74, 123, UP 111, 112, 113, 115, 120, 201, 202, 203, 204, 206, 207, 208, 209
+E 18       [Halt in Wartungsbereich]                           Folge 4, 74, UP 24
+E 19       [Wartung in Arbeitsfolge]                           Folge 4, 74, UP 24
+E 23       [Keine Zutrittsanforderung]                         Folge 4, 74, 124, UP 1, 2, 3, 4, 6, 21, 22, 23, 24, 26, 52, 72, 84, 86, 111, 112, 113, 115, 120, 201, 202, 203, 204, 206, 207, 208, 209, Makro 180
+E 24       [Medien vorhanden]                                  Makro 50
+E 26       [Quitt mit Wiederholung]                            Makro SPS, Step
+E 27       [Quitt Weiter]                                      Makro 181, SPS, Step
+E 33       [Quitt Arbeitsfertigmeldung W1]                     Makro 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+E 34       [Quitt Arbeitsfertigmeldung W2]                     Makro 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+E 35       [Quitt Arbeitsfertigmeldung W4]                     Makro 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+E 36       [Quitt Arbeitsfertigmeldung W8]                     Makro 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+E 41       [Roboterfreigabe 1 Rob < Rob]                       Makro 20
+E 42       [Roboterfreigabe 2 von Rob.115400R01]               UP 1, 21, Makro 20, 51, 53
+E 43       [Roboterfreigabe 3 von Rob.115440R01]               UP 4, 24, Makro 20, 51, 53
+E 44       [Roboterfreigabe 4 von Rob.115420R01]               UP 1, 21, Makro 20, 51, 53
+E 45       [Roboterfreigabe 5 von Rob.115430R01]               UP 24, Makro 20, 51, 53
+E 46       [Roboterfreigabe 6 Rob < Rob]                       Makro 20
+E 47       [Roboterfreigabe 7 von Rob.115410R01]               UP 1, 21, Makro 20, 51, 53
+E 48       [Roboterfreigabe 8 Rob < Rob]                       UP 2, 3, Makro 20
+E 49       [Roboterfreigabe 9 von Rob.115410R02]               UP 1, 21, Makro 20, 51, 53
+E 50       [Roboterfreigabe 10 Rob.115410R02]                  UP 21, Makro 20
+E 51       [Roboterfreigabe 11 Rob < Rob]                      Makro 20
+E 52       [Roboterfreigabe 12 von Rob.115440R02]              Makro 20, 51
+E 53       [Roboterfreigabe 13 Rob < Rob]                      Makro 20
+E 54       [Roboterfreigabe 14 von Rob.215450R01]              UP 4, 24, Makro 20, 51, 53
+E 55       [Roboterfreigabe 15 Rob < Rob]                      Makro 20
+E 56       [Roboterfreigabe 16 Rob < Rob]                      Makro 20
+E 57       [Stellungsfreigabe 24 BTK ST5411-13 belegt]         Folge 4, 74, UP 1, 21
+E 58       [Stellungsfreigabe 23 BTK ST5411-13 Frei]           Folge 4, 74, UP 1, 21
+E 59       [Stellungsfreigabe 22 BTK ST5441-43 belegt]         Folge 4, 74, UP 4, 24
+E 60       [Stellungsfreigabe 21 BTK ST5441-43 Frei]           Folge 4, 74, UP 4, 24
+E 74       [Stellungsfreigabe 7 Ausfahrt Ablegen ST5441-43]    UP 4, 24
+E 75       [Stellungsfreigabe 6 Einfahrt Ablegen ST5441-43]    UP 4, 24
+E 76       [Stellungsfreigabe 5 Einfahrt 5440DT1]              UP 4, 24
+E 78       [Stellungsfreigabe 3 Ausfahrt Entnahme ST5411-13]   UP 1, 21
+E 79       [Stellungsfreigabe 2 Einfahrt Entnahme ST5411-13]   Folge 4, UP 1, 21
+E 80       [Stellungsfreigabe 1 Einfahrt 5410DT1]              Folge 4, 74, UP 1, 21
+E 81       [Quitt. Verriegelung 1 Rob < Rob]                   Makro 20
+E 82       [Quitt. Verriegelung 2 von Rob.115400R01]           Makro 20
+E 83       [Quitt. Verriegelung 3 von Rob.115440R01]           Makro 20
+E 84       [Quitt. Verriegelung 4 von Rob.115420R01]           Makro 20
+E 85       [Quitt. Verriegelung 5 von Rob.115430R01]           Makro 20
+E 86       [Quitt. Verriegelung 6 Rob < Rob]                   Makro 20
+E 87       [Quitt. Verriegelung 7 von Rob.115410R01]           Makro 20
+E 88       [Quitt. Verriegelung 8 Rob < Rob]                   Makro 20
+E 89       [Quitt. Verriegelung 9 von Rob.115410R02]           Makro 20
+E 90       [Quitt. Verriegelung 10 Rob < Rob]                  Makro 20
+E 91       [Quitt. Verriegelung 11 Rob < Rob]                  Makro 20
+E 92       [Quitt. Verriegelung 12 von Rob.115440R02]          Makro 20
+E 93       [Quitt. Verriegelung 13 Rob < Rob]                  Makro 20
+E 94       [Quitt. Verriegelung 14 von Rob.215450R01]          Makro 20
+E 95       [Quitt. Verriegelung 15 Rob < Rob]                  Makro 20
+E 96       [Quitt. Verriegelung 16 Rob < Rob]                  Makro 20
+E 121      [Anwahl Multi-Greifer 1 in Wartung]                 Folge 124
+E 122      [Anwahl Multi-Greifer 2 in Wartung]                 Folge 124
+E 128      [Online Freigabe 2 von Roboter XY]                  Makro SPS
+E 130      [EZ1 Anwahl Fraesen]                                Makro SPS
+E 145      [SK1 Anwahl ohne Schweissen]                        Makro SPS
+E 161      [KL1 Anwahl ohne Kleben]                            Makro 180
+E 162      [KL1 Anwahl zeigen]                                 Makro SPS
+E 163      [KL1 Anwahl Spuelen]                                UP 120, Makro 180, 182, 183
+E 168      [KL1 Heizung / Fasspumpe nachtriggern]              Makro SPS
+E 169      [KL1 Bauteil i.O.]                                  Makro 184
+E 170      [KL1 Bauteil Nacharbeiten]                          Makro 184
+E 171      [KL1 Bauteil Ausschleusen]                          Makro 184
+E 172      [KL1 Anwahl 1K Freispuelen]                         Makro 180
+E 174      [KL1 Reserviert]                                    Makro 180
+E 177      [SK2 Anwahl ohne Schweissen]                        Makro SPS
+E 184      [SK2 Reserviert]                                    Makro SPS
+E 194      [EZ3 Anwahl Fraesen]                                Makro SPS
+E 200      [EZ3 Anwahl Umschaltung Zange 5-8]                  Makro SPS
+E 203      [EZ3 Reserviert]                                    Makro SPS
+E 209      [KW1 Anwahl ohne Kappenwechsler]                    Makro SPS
+E 211      [KW1 Kappen Magazin ist leer]                       Makro SPS
+E 514      [K1 Kuehlwasser Durchfluss Min. i.O.]               Makro SPS
+E 515      [K1 Kuehlwasser Durchfluss Max. i.O.]               Makro SPS
+E 516      [K1 Kontrolle Niederdruck]                          Makro 50
+E 517      [K1 Kuehlwasser Durchfluss 2 Min. i.O.]             Makro SPS
+E 518      [K1 Kuehlwasser Durchfluss 2 Max. i.O.]             Makro SPS
+E 522      [K2 Kuehlwasser Durchfluss Min. i.O.]               Makro SPS
+E 523      [K2 Kuehlwasser Durchfluss Max. i.O.]               Makro SPS
+E 530      [K3 Kuehlwasser Durchfluss Min. i.O.]               Makro SPS
+E 531      [K3 Kuehlwasser Durchfluss Max. i.O.]               Makro SPS
+E 537      [DS1BE1 Dockingsystem angedockt]                    Makro 50, 420, 421
+E 538      [DS1BE1R Dockingsystem verriegelt]                  UP 84, 86, Makro 50, 420, 421
+E 539      [DS1BE1V Dockingsystem entriegelt]                  UP 84, 86, Makro 50, 420, 421
+E 540      [DS1RM1 Dockingsystem i.O.]                         UP 84, 86, Makro 422
+E 541      [DS1BE10/1 Werkzeugkodierung W1]                    Makro 50
+E 542      [DS1BE10/2 Werkzeugkodierung W2]                    Makro 50
+E 543      [DS1BE10/3 Werkzeugkodierung W4]                    Makro 50
+E 547      [DB1BE1V Abdeckklappe 1 ist auf]                    UP 23, 26, 72, 84, 86, 112, 115, 202, 204, 208
+E 548      [DB1BE1R Abdeckklappe 1 ist zu]                     UP 23, 26, 72, 84, 86, 112, 115, 202, 204, 208
+E 549      [DB2BE1V Abdeckklappe 2 ist auf]                    UP 23, 26, 72, 84, 86, 112, 115, 202, 204, 208
+E 550      [DB2BE1R Abdeckklappe 2 ist zu]                     UP 23, 26, 72, 84, 86, 112, 115, 202, 204, 208
+E 551      [DB1BT1 Bahnhof 1 ist belegt]                       UP 84, 86, Makro 50
+E 552      [DB2BT1 Bahnhof 2 ist belegt]                       UP 84, 86, Makro 50
+E 559      [DB3BT1 Bahnhof 3 ist belegt]                       Makro 50
+E 560      [DB4BT1 Bahnhof 4 ist belegt]                       Makro 50
+E 567      [DB5BT1 Bahnhof 5 ist belegt]                       Makro 50
+E 568      [DB6BT1 Bahnhof 6 ist belegt]                       Makro 50
+E 575      [DB7BT1 Bahnhof 7 ist belegt]                       Makro 50
+E 576      [DB8BT1 Bahnhof 8 ist belegt]                       Makro 50
+E 577      [GBE01E Steuerluft vorhanden]                       Makro 342, 343
+E 578      [GBE01E Steuerluft nicht vorhanden]                 Makro 342, 343
+E 579      [BE11aR Spanner rueck]                              UP 84, 86, Makro 50, 51, 52, 53
+E 580      [BE11aV Spanner vorn]                               UP 84, 86, Makro 50, 51, 52, 53
+E 581      [BE11bR Spanner rueck]                              UP 84, 86, Makro 50, 51, 52, 53
+E 582      [BE11bV Spanner vorn]                               UP 84, 86, Makro 50, 51, 52, 53
+E 583      [BE11cR Spanner rueck]                              Makro 51, 52, 53
+E 584      [BE11cV Spanner vorn]                               Makro 51, 52, 53
+E 585      [BE11dR Spanner rueck]                              Makro 51, 52, 53
+E 586      [BE11dV Spanner vorn]                               Makro 51, 52, 53
+E 587      [BE12aV Stift vorn]                                 Makro 51, 52, 53
+E 588      [BE12aR Stift rueck]                                Makro 51, 52, 53
+E 589      [BE12bV Stift vorn]                                 Makro 51, 52, 53
+E 590      [BE12bR Stift rueck]                                Makro 51, 52, 53
+E 605      [BT11/2 Teilkontrolle]                              Makro 51, 52, 53
+E 607      [BT11/1 Teilkontrolle]                              Makro 51, 52, 53
+E 701      [G1BD03E Steuerluft vorhanden]                      Makro 342, 343
+E 702      [G1BD03E Steuerluft nicht vorhanden]                Makro 342, 343
+E 703      [G1BD02E Steuerluft vorhanden]                      Makro 342, 343
+E 704      [G1BD02E Steuerluft nicht vorhanden]                Makro 342, 343
+E 705      ["EZ/SP1	Betriebsbereit"]                           Makro Step
+E 717      [EZ/SP1 Zange geoeffnet]                            Makro Step
+E 718      [EZ/SP1 Kraft erreicht]                             Makro Step
+E 719      [EZ/SP1 Ausgleich ist zurueck]                      Makro SPS, Step
+E 721      [EZ/SP1 Istwert EK-Kraft W1]                        Makro Step
+E 722      [EZ/SP1 Istwert EK-Kraft W2]                        Makro Step
+E 723      [EZ/SP1 Istwert EK-Kraft W4]                        Makro Step
+E 724      [EZ/SP1 Istwert EK-Kraft W8]                        Makro Step
+E 725      [EZ/SP1 Istwert EK-Kraft W16]                       Makro Step
+E 726      [EZ/SP1 Istwert EK-Kraft W32]                       Makro Step
+E 757      [EZ/SP1 Messen Ende]                                Makro Step
+E 775      [EZ/SP1 Zange geht schwer]                          Makro SPS
+E 776      [EZ/SP1 Fraesen n.i.O.]                             Makro Step
+E 777      [EZ/SP1 Fehler Kappenverschleiss]                   Makro Step
+E 778      [EZ/SP1 Fehler Kappen / Geometrie]                  Makro Step
+E 785      [SK1 Fortschaltkontakt]                             Makro SPS, Step
+E 786      [SK1 Fraesanfrage]                                  Makro Step
+E 787      [SK1 Fraeszaehler zurueckgesetzt]                   Makro SPS, Step
+E 788      [SK1 Startfraesanfrage]                             Makro Step
+E 789      [SK1 Fraesen erforderlich]                          Makro SPS, Step
+E 802      [SK1 Betriebsbereit]                                Makro Step
+E 804      [SK1 Schweissung i.O]                               Makro SPS, Step
+E 805      [SK1 Schweissung n.i.O]                             Makro Step
+E 806      [SK1 Warngrenze verletzt in Folge]                  Makro SPS, Step
+E 835      [KF1 KS1BE3V Versetzeinheit ist vorn]               Makro Step
+E 840      [KF1 (1)Sammelstoerung DC3 / (2)Motorschutz i.O.]   Makro SPS
+E 842      [KS1BE2R Kappenfraeser in Ruhestellung]             Makro Step
+E 843      [KS1BE2V Kappenfraeser in Arbeitsstellung]          Makro Step
+E 844      [KS1SE1R S-Endstellung Ruhestellung]                Makro Step
+E 845      [KS1SE1V S-Endstellung Arbeitsstellung]             Makro Step
+E 848      [KS1 (1)Sammelstoerung DC3 / (2)Motorschutz i.O.]   Makro SPS
+E 856      [ZS1 (1)Sammelstoerung DC3 / (2)Motorschutz i.O.]   Makro SPS
+E 858      [KW1 Fraeser dreht]                                 Makro Step
+E 863      [KW1 Motorschutz i.O.]                              Makro Step
+E 865      [EZ2/SP2 Betriebsbereit]                            Makro Step
+E 877      [EZ2/SP2 Zange geoeffnet]                           Makro Step
+E 878      [EZ2/SP2 Kraft erreicht]                            Makro Step
+E 879      [EZ2/SP2 Ausgleich ist zurueck]                     Makro SPS, Step
+E 881      [EZ2/SP2 Istwert EK-Kraft W1]                       Makro Step
+E 882      [EZ2/SP2 Istwert EK-Kraft W2]                       Makro Step
+E 883      [EZ2/SP2 Istwert EK-Kraft W4]                       Makro Step
+E 884      [EZ2/SP2 Istwert EK-Kraft W8]                       Makro Step
+E 885      [EZ2/SP2 Istwert EK-Kraft W16]                      Makro Step
+E 917      [EZ2/SP2 Messen Ende]                               Makro Step
+E 935      [EZ2/SP2 Zange geht schwer]                         Makro SPS
+E 936      [EZ2/SP2 Fraesen n.i.O.]                            Makro Step
+E 937      [EZ2/SP2 Fehler Kappenverschleiss]                  Makro Step
+E 938      [EZ2/SP2 Fehler Kappen / Geometrie]                 Makro Step
+E 945      [SK2 Fortschaltkontakt]                             Makro SPS, Step
+E 946      [SK2 Fraesanfrage]                                  Makro Step
+E 947      [SK2 Fraeszaehler zurueckgesetzt]                   Makro SPS, Step
+E 948      [SK2 Startfraesanfrage]                             Makro Step
+E 949      [SK2 Fraesen erforderlich]                          Makro SPS
+E 962      [SK2 Betriebsbereit]                                Makro Step
+E 964      [SK2 Schweissung i.O]                               Makro SPS, Step
+E 965      [SK2 Schweissung n.i.O]                             Makro Step
+E 966      [SK2 Warngrenze verletzt in Folge]                  Makro SPS
+E 995      [KS2 KS1BE3V Versetzeinheit ist vorn]               Makro Step
+E 1000     [KS2 (1)Sammelstoerung DC3 / (2)Motorschutz i.O.]   Makro SPS
+E 1002     [KS2BE2R Kappenfraeser in Ruhestellung]             Makro Step
+E 1003     [KS2BE2V Kappenfraeser in Arbeitsstellung]          Makro Step
+E 1004     [KS2SE1R S-Endstellung Ruhestellung]                Makro Step
+E 1005     [KS2SE1V S-Endstellung Arbeitsstellung]             Makro Step
+E 1008     [KS2 Sammelstoerung (DC3)]                          Makro SPS
+E 1016     [ZS2 Sammelstoerung (DC3)]                          Makro SPS
+E 1025     [EZ3/SP3 Betriebsbereit]                            Makro Step
+E 1037     [EZ3/SP3 Zange geoeffnet]                           Makro Step
+E 1038     [EZ3/SP3 Kraft erreicht]                            Makro Step
+E 1039     [EZ3/SP3 Ausgleich ist zurueck]                     Makro SPS, Step
+E 1042     [EZ3/SP3 Istwert EK-Kraft W2]                       Makro Step
+E 1043     [EZ3/SP3 Istwert EK-Kraft W4]                       Makro Step
+E 1045     [EZ3/SP3 Istwert EK-Kraft W16]                      Makro Step
+E 1077     [EZ3/SP3 Messen Ende]                               Makro Step
+E 1095     [EZ3/SP3 Zange geht schwer]                         Makro SPS
+E 1096     [EZ3/SP3 Fraesen n.i.O.]                            Makro Step
+E 1097     [EZ3/SP3 Fehler Kappenverschleiss]                  Makro Step
+E 1098     [EZ3/SP3 Fehler Kappen / Geometrie]                 Makro Step
+E 1105     [SK3 Fortschaltkontakt]                             Makro SPS, Step
+E 1106     [SK3 Fraesanfrage]                                  Makro Step
+E 1107     [SK3 Fraeszaehler zurueckgesetzt]                   Makro SPS, Step
+E 1108     [SK3 Startfraesanfrage]                             Makro Step
+E 1109     [SK3 Fraesen erforderlich]                          Makro SPS, Step
+E 1122     [SK3 Betriebsbereit]                                Makro Step
+E 1124     [SK3 Schweissung i.O]                               Makro SPS, Step
+E 1125     [SK3 Schweissung n.i.O]                             Makro Step
+E 1126     [SK3 Warngrenze verletzt in Folge]                  Makro SPS, Step
+E 1155     [KS3 KS1BE3V Versetzeinheit ist vorn]               Makro Step
+E 1160     [KS3 (1)Sammelstoerung DC3 / (2)Motorschutz i.O.]   Makro SPS
+E 1162     [KS3BE2R Kappenfraeser in Ruhestellung]             Makro Step
+E 1163     [KS3BE2V Kappenfraeser in Arbeitsstellung]          Makro Step
+E 1164     [KS3SE1R S-Endstellung Ruhestellung]                Makro Step
+E 1165     [KS3SE1V S-Endstellung Arbeitsstellung]             Makro Step
+E 1168     [KS3 Sammelstoerung (DC3)]                          Makro SPS
+E 1176     [ZS3 Sammelstoerung (DC3)]                          Makro SPS
+E 1216     [Sammelstoerung]                                    Makro SPS
+E 1248     [NZ1 Geraetecode W4]                                Makro SPS
+E 1264     [NZ1 Sammelstoerung]                                Makro SPS
+E 1296     [NZ2 Fehlercode]                                    Makro SPS
+E 1328     [NZ2 Geraetecode W4]                                Makro SPS
+E 1344     [NZ2 Sammelstoerung]                                Makro SPS
+E 1368     [CZ1 Fehlercode]                                    Makro SPS
+E 1424     [CZ1 Sammelstoerung]                                Makro SPS
+E 1448     [CZ2 Fehlercode]                                    Makro SPS
+E 1504     [CZ2 Sammelstoerung]                                Makro SPS
+E 1505     [KL1 Quitt. Programm W1]                            Makro 180, 182, 183
+E 1506     [KL1 Quitt. Programm W2]                            Makro 180, 182, 183
+E 1507     [KL1 Quitt. Programm W4]                            Makro 180, 182, 183
+E 1508     [KL1 Quitt. Programm W8]                            Makro 180, 182, 183
+E 1509     [KL1 Quitt. Programm W16]                           Makro 180, 182, 183
+E 1510     [KL1 Quitt. Programm W32]                           Makro 180, 182, 183
+E 1511     [KL1 Quitt. Programm W64]                           Makro 180, 182, 183
+E 1512     [KL1 Quitt. Programm W128]                          Makro 180, 182, 183
+E 1513     [KL1 Quitt. Parameter W1]                           Makro 180
+E 1514     [KL1 Quitt. Parameter W2]                           Makro 180
+E 1515     [KL1 Quitt. Parameter W4]                           Makro 180
+E 1516     [KL1 Quitt. Parameter W8]                           Makro 180
+E 1517     [KL1 Quitt. Parameter W16]                          Makro 180
+E 1518     [KL1 Quitt. Parameter W32]                          Makro 180
+E 1519     [KL1 Quitt. Parameter W64]                          Makro 180
+E 1520     [KL1 Quitt. Parameter W128]                         Makro 180
+E 1521     [KL1 Quitt. Pistole W1]                             Folge 4, 74, UP 3, 23, 111, 120
+E 1522     [KL1 Quitt. Pistole W2]                             Folge 4, 74, UP 3, 23, 111, 120
+E 1523     [KL1 Quitt. Pistole W4]                             Folge 4, 74, UP 3, 23, 111, 120
+E 1524     [KL1 Keine Sammelstoerung]                          Makro 180, 181, 182, 183, 184
+E 1525     [KL1 Kein Fehler Dosiereinheit]                     Makro 180, 181, 184
+E 1526     [KL1 Kein Fehler Kleberauftrag]                     Makro 180, 181, 184
+E 1527     [KL1 Betriebsbereit]                                Makro 180, 182, 183
+E 1528     [KL1 In Automatik]                                  Makro 180, 182, 183
+E 1529     [KL1 Vordruck Kleben bereit]                        Makro 50, 180
+E 1530     [KL1 Rueckmeldung Simulationsbetrieb]               Makro 180
+E 1531     [KL1 Anforderung Fuellen]                           Makro 180, 181, 184
+E 1532     [KL1 Dosierer 1 gefuellt]                           Makro 180
+E 1534     [KL1 Anforderung Spuelen]                           UP 120, Makro 180, 182, 183
+E 1535     [KL1 Spuelen laeuft]                                Makro 180, 182
+E 1536     [KL1 Spuelen fertig]                                Makro 180, 183
+E 1537     [KL1 Prozesskontrolle betriebsbereit]               Makro 180
+E 1538     [KL1 Prozesskontrolle vorhanden]                    Makro 180
+E 1539     [KL1 Quitt. Bauteil i.O.]                           Makro 184
+E 1540     [KL1 Quitt. Bauteil Nacharbeit]                     Makro 184
+E 1541     [KL1 Quitt. Bauteil n.i.O.]                         Makro 184
+E 1542     [KL1 Abstand i.O.]                                  Makro 184
+E 1543     [KL1 Messen beendet]                                Makro 180, 181
+E 1545     [KL1 Systemkomponenten sind Ein]                    Makro 180
+E 1546     [KL1 Energiesparmodus aktiv]                        Makro 180, 182, 183
+E 1550     [KL1 Heizung ist an]                                Makro 180
+E 1551     [KL1 Heizung Temperatur i.O.]                       Makro 180, 182, 183, SPS
+E 1553     [KL1/2K 1K Freispuelen laeuft]                      Makro 180
+E 1555     [KL1/2K 2K im Mischer]                              Makro 180
+E 1557     [KL1/2K Anforderung Mischerwechsel]                 Makro 180
+E 1568     [KL1/2K 2K System]                                  Makro 180, SPS
+E 1615     [KL2 Heizung Temperatur i.O.]                       Makro SPS
+E 1632     [KL2/2K 2K System]                                  Makro SPS
+E 1679     [KL3 Heizung Temperatur i.O.]                       Makro SPS
+E 1696     [KL3/2K 2K System]                                  Makro SPS
+E 1798     [SM1 Steuerung in Automatik]                        Makro Step
+E 1802     [SM1 Fertigmeldung]                                 Makro Step
+E 1812     [SM1 Quitt. Programm W8]                            Makro Step
+E 1818     [SM1 Quitt. Programm W512]                          Makro Step
+E 1819     [SM1 Quitt. Programm W1024]                         Makro Step
+E 1820     [SM1 Quitt. Programm W2048]                         Makro Step
+E 1857     [MS1 Betriebsbereit]                                Makro SPS
+E 1858     [MS1 Keine Sammelstoerung]                          Makro SPS
+E 1859     [MS1 Lichtbogen steht]                              Makro SPS
+E 1864     [MS1 Reinigung beendet]                             Makro Step
+E 1874     [MS1 Brennerabschaltung i.O.]                       Makro SPS
+E 1889     [MS2 Betriebsbereit]                                Makro SPS
+E 1890     [MS2 Keine Sammelstoerung]                          Makro SPS
+E 1891     [MS2 Lichtbogen steht]                              Makro SPS
+E 1896     [MS2 Reinigung beendet]                             Makro Step
+E 1906     [MS2 Brennerabschaltung i.O.]                       Makro SPS
+E 1937     [PR Steuerluft vorhanden]                           UP 2, 22, 52
+E 1938     [PR Steuerluft nicht vorhanden]                     UP 2, 22, 52
+E 1939     [PR Praeger ist Rueck]                              UP 2, 22, 52
+E 1940     [PR Praeger ist Vorn]                               UP 2, 22, 52
+E 2113     [KL1bBD01E Steuerluft vorhanden]                    Makro 187, Step
+E 2114     [KL1bBD01E Steuerluft nicht vorhanden]              Makro 187, Step
+E 2115     [KL1bBE1R Schwenkeinheit in Ruhest.]                Makro Step
+E 2116     [KL1bBE1V Schwenkeinheit in Arbeitsst.]             Makro Step
+E 2117     [KL1bBD1 Freigabedruck vorhanden]                   Makro 187, Step
+E 2118     [KL1bBD1 Freigabedruck nicht vorhanden]             Makro 187, Step
+E 2121     [KL2bBD01E Steuerluft vorhanden]                    Makro Step
+E 2122     [KL2bBD01E Steuerluft nicht vorhanden]              Makro Step
+E 2123     [KL2bBE1R Schwenkeinheit in Ruhest.]                Makro Step
+E 2124     [KL2bBE1V Schwenkeinheit in Arbeitsst.]             Makro Step
+E 2125     [KL2bBD1 Freigabedruck vorhanden]                   Makro Step
+E 2126     [KL2bBD1 Freigabedruck nicht vorhanden]             Makro Step
+E 2129     [KL3bBD01E Steuerluft vorhanden]                    Makro Step
+E 2130     [KL3bBD01E Steuerluft nicht vorhanden]              Makro Step
+E 2131     [KL3bBE1R Schwenkeinheit in Ruhest.]                Makro Step
+E 2132     [KL3bBE1V Schwenkeinheit in Arbeitsst.]             Makro Step
+E 2133     [KL3bBD1 Freigabedruck vorhanden]                   Makro Step
+E 2134     [KL3bBD1 Freigabedruck nicht vorhanden]             Makro Step
+E 2161     [MS1bBD01E Steuerluft vorhanden]                    Makro Step
+E 2162     [MS1bBD01E Steuerluft nicht vorhanden]              Makro Step
+E 2163     [MS1bBE1R Schwenkeinheit in Ruhest.]                Makro Step
+E 2164     [MS1bBE1V Schwenkeinheit in Arbeitsst.]             Makro Step
+E 2165     [MS1bBD1 Freigabedruck vorhanden]                   Makro Step
+E 2166     [MS1bBD1 Freigabedruck nicht vorhanden]             Makro Step
+E 2167     [MS1bBE2R Versetzeinheit in Ruhest.]                Makro Step
+E 2168     [MS1bBE2V Versetzeinheit in Arbeitsst.]             Makro Step
+E 2169     [MS2bBD01E Steuerluft vorhanden]                    Makro Step
+E 2170     [MS2bBD01E Steuerluft nicht vorhanden]              Makro Step
+E 2171     [MS2bBE1R Schwenkeinheit in Ruhest.]                Makro Step
+E 2172     [MS2bBE1V Schwenkeinheit in Arbeitsst.]             Makro Step
+E 2173     [MS2bBD1 Freigabedruck vorhanden]                   Makro Step
+E 2174     [MS2bBD1 Freigabedruck nicht vorhanden]             Makro Step
+E 2175     [MS2bBE2R Versetzeinheit in Ruhest.]                Makro Step
+E 2176     [MS2bBE2V Versetzeinheit in Arbeitsst.]             Makro Step
+
+Ausgang:
+--------
+A 9        [Bereit]                                                  Makro SPS
+A 11       [Single Step/Hand]                                        Makro SPS
+A 12       [Automatik]                                               Makro 342, 343, SPS
+A 15       [Roboter ist im Punkt 0]                                  Folge 4*, 74*, 123*, 124*, 125*, Makro 0
+A 16       [Roboter ist auf der Bahn]                                Makro SPS
+A 17       [Roboter in Wartungsstellung]                             Folge 4*, 74*, UP 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*
+A 18       [Roboter in Wartungsbereich]                              Folge 4*, 74*, UP 21*, 24*
+A 23       [Schutzgitter gesperrt]                                   Folge 4*, 74*, 124*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 180*, 182*, 183*, 420*, 421*, 422*
+A 33       [Arbeitsfertigmeldung W1]                                 Makro 0*
+A 34       [Arbeitsfertigmeldung W2]                                 Makro 0*
+A 35       [Arbeitsfertigmeldung W4]                                 Makro 0*
+A 36       [Arbeitsfertigmeldung W8]                                 Makro 0*
+A 37       [Typinfo W1 von Roboter]                                  Makro 0*
+A 38       [Typinfo W2 von Roboter]                                  Makro 0*
+A 39       [Typinfo W4 von Roboter]                                  Makro 0*
+A 40       [Typinfo W8 von Roboter]                                  Makro 0*
+A 41       [Roboterverriegelung 1 Rob > Rob]                         Makro 20*, 0*
+A 42       [Roboterverriegelung 2 an Rob.115400R01]                  Folge 4*, 74*, 124*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 20*, 0*
+A 43       [Roboterverriegelung 3 an Rob.115440R01]                  Folge 4*, 74*, 124*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 20*, 0*
+A 44       [Roboterverriegelung 4 an Rob.115420R01]                  Folge 4*, 74*, 124*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 20*, 0*
+A 45       [Roboterverriegelung 5 an Rob.115430R01]                  Folge 4*, 74*, 124*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 20*, 0*
+A 46       [Roboterverriegelung 6 Rob > Rob]                         UP 1*, Makro 20*, 0*
+A 47       [Roboterverriegelung 7 an Rob.115410R01]                  Folge 4*, 74*, 124*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 20*, 0*
+A 48       [Roboterverriegelung 8 Rob > Rob]                         UP 2*, 3*, Makro 20*, 0*
+A 49       [Roboterverriegelung 9 an Rob.115410R02]                  Folge 4*, 74*, 124*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 20*, 0*
+A 50       [Roboterverriegelung 10 an Rob.115410R02]                 Folge 74*, UP 1*, 21*, 22*, 23*, 24*, 26*, 72*, Makro 20*, 0*
+A 51       [Roboterverriegelung 11 Rob > Rob]                        Makro 20*, 0*
+A 52       [Roboterverriegelung 12 an Rob.115440R02]                 Folge 4*, 74*, 124*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 20*, 0*
+A 53       [Roboterverriegelung 13 Rob > Rob]                        Makro 20*, 0*
+A 54       [Roboterverriegelung 14 an Rob.215450R01]                 Folge 4*, 74*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 20*, 0*
+A 55       [Roboterverriegelung 15 Rob > Rob]                        Makro 20*, 0*
+A 56       [Roboterverriegelung 16 Rob > Rob]                        Makro 20*, 0*
+A 57       [Werkzeugfreigabe 24 Rob > Anlage]                        Makro 0*
+A 58       [Werkzeugfreigabe 23 Rob > Anlage]                        Makro 0*
+A 59       [Werkzeugfreigabe 22 Rob > Anlage]                        Makro 0*
+A 60       [Werkzeugfreigabe 21 Rob > Anlage]                        Makro 0*
+A 61       [Werkzeugfreigabe 20 Rob > Anlage]                        Makro 0*
+A 62       [Werkzeugfreigabe 19 Rob > Anlage]                        Makro 0*
+A 63       [Werkzeugfreigabe 18 Rob > Anlage]                        Makro 0*
+A 64       [Werkzeugfreigabe 17 Rob > Anlage]                        Makro 0*
+A 65       [Werkzeugfreigabe 16 Rob > Anlage]                        Makro 0*
+A 66       [Werkzeugfreigabe 15 Rob > Anlage]                        Makro 0*
+A 67       [Werkzeugfreigabe 14 Rob > Anlage]                        Makro 0*
+A 68       [Werkzeugfreigabe 13 Rob > Anlage]                        Makro 0*
+A 69       [Werkzeugfreigabe 12 Rob > Anlage]                        Makro 0*
+A 70       [Werkzeugfreigabe 11 Rob > Anlage]                        Makro 0*
+A 71       [Werkzeugfreigabe 10 Rob > Anlage]                        Makro 0*
+A 72       [Werkzeugfreigabe 9 Rob > Anlage]                         Makro 0*
+A 73       [Werkzeugfreigabe 8 POS1V2 Profilfrei ST5441-43 Pos]      UP 4*, 24*, Makro 0*
+A 74       [Werkzeugfreigabe 7 PF3V2 Profilfrei ST5441-43 steuern]   UP 4*, 24*, Makro 0*
+A 75       [Werkzeugfreigabe 6 PF2V2 Profilfrei ST5441-43]           Folge 4*, 74*, 124*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 0*
+A 76       [Werkzeugfreigabe 5 PF1V2 Profilfrei 5440DT1]             Folge 4*, 74*, 124*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 0*
+A 77       [Werkzeugfreigabe 4 POS1V1 Profilfrei ST5411-13 Pos]      UP 1*, 21*, Makro 0*
+A 78       [Werkzeugfreigabe 3 PF3V1 Profilfrei ST5411-13 steuern]   UP 1*, 21*, Makro 0*
+A 79       [Werkzeugfreigabe 2 PF2V1 Profilfrei ST5411-13]           Folge 4*, 74*, 124*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 0*
+A 80       [Werkzeugfreigabe 1 PF1V1 Profilfrei 5410DT1]             Folge 4*, 74*, 124*, UP 1*, 2*, 3*, 4*, 6*, 21*, 22*, 23*, 24*, 26*, 52*, 72*, 84*, 86*, 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 0*
+A 81       [Anford. Verriegelung 1 Rob > Rob]                        Makro 20*, 0*
+A 82       [Anford. Verriegelung 2 an Rob.115400R01]                 UP 1*, 21*, Makro 20*, 0*
+A 83       [Anford. Verriegelung 3 an Rob.115440R01]                 UP 4*, 24*, Makro 20*, 0*
+A 84       [Anford. Verriegelung 4 an Rob.115420R01]                 UP 1*, 21*, Makro 20*, 0*
+A 85       [Anford. Verriegelung 5 an Rob.115430R01]                 UP 4*, 24*, Makro 20*, 0*
+A 86       [Anford. Verriegelung 6 Rob > Rob]                        Makro 20*, 0*
+A 87       [Anford. Verriegelung 7 an Rob.115410R01]                 UP 1*, 21*, Makro 20*, 0*
+A 88       [Anford. Verriegelung 8 Rob > Rob]                        UP 2*, 3*, Makro 20*, 0*
+A 89       [Anford. Verriegelung 9 an Rob.115410R02]                 UP 1*, 21*, Makro 20*, 0*
+A 90       [Anford. Verriegelung 10 an Rob.115410R02]                UP 21*, Makro 20*, 0*
+A 91       [Anford. Verriegelung 11 Rob > Rob]                       Makro 20*, 0*
+A 92       [Anford. Verriegelung 12 an Rob.115440R02]                Makro 20*, 0*
+A 93       [Anford. Verriegelung 13 Rob > Rob]                       Makro 20*, 0*
+A 94       [Anford. Verriegelung 14 an Rob.215450R01]                UP 4*, 24*, Makro 20*, 0*
+A 95       [Anford. Verriegelung 15 Rob > Rob]                       Makro 20*, 0*
+A 96       [Anford. Verriegelung 16 Rob > Rob]                       Makro 20*, 0*
+A 113      [Prozess aktiv Docken]                                    Makro 420*, 421*, 422*, 430*, 432*, 433*
+A 114      [Verklemmanzeige]                                         Makro 420*, 421*
+A 115      [Stoerung Dockingsystem]                                  Makro 421*, 422*
+A 116      [Prozess aktiv Kappenfraeser]                             Makro Step*
+A 120      [Sammelstoerung]                                          Makro 187*
+A 121      [Prozess aktiv Suchlauf]                                  Makro 342*, 343*
+A 122      [Verklemmanzeige]                                         Makro 342*, 343*
+A 125      [Sammelstoerung]                                          Makro 342*, 343*
+A 127      [Online Freigabe 1 fuer Roboter XY]                       Makro SPS*
+A 128      [Online Freigabe 2 fuer Roboter XY]                       Makro SPS*
+A 130      [EZ1 Beim Fraesen]                                        Makro Step*
+A 160      [SK1 Sammelstoerung]                                      Makro Step*
+A 161      [KL1 Prozess aktiv]                                       Makro 180*, 181*, 182*, 183*, 187*, Step*
+A 162      [KL1 Beim Zeigen]                                         Makro 184*, Step*
+A 163      [KL1 Beim Spuelen]                                        Makro 180*, 182*, 183*
+A 168      [KL1 Stoerung Heizung / Pumpe / Dosiereinheit]            Makro Step*
+A 171      [KL1 Reserviert]                                          Makro 180*
+A 174      [KL1 Reserviert]                                          Makro 180*
+A 177      [SK2 Prozess aktiv]                                       Makro Step*
+A 192      [SK2 Sammelstoerung]                                      Makro Step*
+A 193      [SR1 Prozess aktiv]                                       Makro Step*
+A 194      [SR1 Vorwarnung S-Zufuehrung]                             Makro Step*
+A 233      [Typinfo an SPS W1]                                       Makro 0*
+A 234      [Typinfo an SPS VW379]                                    Makro 0*
+A 235      [Typinfo an SPS VW380]                                    Folge 74, Makro 0*
+A 236      [Typinfo an SPS W8]                                       Makro 0*
+A 237      [Typinfo an SPS W16]                                      Makro 0*
+A 238      [Typinfo an SPS W32]                                      Makro 0*
+A 239      [Typinfo an SPS W64]                                      Makro 0*
+A 240      [Typinfo an SPS W128]                                     Makro 0*
+A 514      [K1 EZ/SP 2x Sensorleitung an SK]                         Makro Step
+A 520      [MS1 Brenner Einspruehen ein]                             Makro Step*
+A 528      [MS2 Brenner Einspruehen ein]                             Makro Step*
+A 539      [DS1KYP1V Dockingsystem entriegeln]                       UP 84*, 86*, Makro 420*, 421*, 422*
+A 540      [DS1QUIT Stoerung quittieren]                             Makro 422*
+A 545      [DB1KYP01E Freigabe Steuerluft]                           Makro 430*, 432*, 433*, 434*, 435*
+A 547      [DB1KYP1V Abdeckklappe 1 auf]                             Makro 430*, 434*
+A 548      [DB1KYP1R Abdeckklappe 1 zu]                              Makro 430*, 434*
+A 549      [DB2KYP1V Abdeckklappe 2 auf]                             Makro 430*, 435*
+A 550      [DB2KYP1R Abdeckklappe 2 zu]                              Makro 430*, 435*
+A 553      [DB3KYP01E Freigabe Steuerluft]                           Makro 430*, 432*, 433*
+A 555      [DB3KYP1V Abdeckklappe 3 auf]                             Makro 430*
+A 556      [DB3KYP1R Abdeckklappe 3 zu]                              Makro 430*
+A 557      [DB4KYP1V Abdeckklappe 4 auf]                             Makro 430*
+A 558      [DB4KYP1R Abdeckklappe 4 zu]                              Makro 430*
+A 561      [DB5KYP01E Freigabe Steuerluft]                           Makro 430*, 432*, 433*
+A 563      [DB5KYP1V Abdeckklappe 5 auf]                             Makro 430*
+A 564      [DB5KYP1R Abdeckklappe 5 zu]                              Makro 430*
+A 565      [DB6KYP1V Abdeckklappe 6 auf]                             Makro 430*
+A 566      [DB6KYP1R Abdeckklappe 6 zu]                              Makro 430*
+A 569      [DB7KYP01E Freigabe Steuerluft]                           Makro 430*, 432*, 433*
+A 571      [DB7KYP1V Abdeckklappe 7 auf]                             Makro 430*
+A 572      [DB7KYP1R Abdeckklappe 7 zu]                              Makro 430*
+A 573      [DB8KYP1V Abdeckklappe 8 auf]                             Makro 430*
+A 574      [DB8KYP1R Abdeckklappe 8 zu]                              Makro 430*
+A 577      [KYP01E Freigabe Steuerluft]                              Makro 342*, 343*, 359*, 0*
+A 579      [KYP11V Spannzylinder vor]                                Makro 343*, 344*
+A 580      [KYP11R Spannzylinder zurueck]                            Makro 342*, 344*
+A 581      [KYP12V Stiftziehzylinder zurueck]                        Makro 343*, 345*
+A 582      [KYP12R Stiftziehzylinder vor]                            Makro 342*, 345*
+A 583      [KYPRES Reserve]                                          Makro 343*, 346*
+A 584      [KYPRES Reserve]                                          Makro 342*, 346*
+A 585      [G Spanngruppe 4 ZU]                                      Makro 343*, 347*
+A 586      [G Spanngruppe 4 AUF]                                     Makro 342*, 347*
+A 587      [G Spanngruppe 5 ZU]                                      Makro 343*, 348*
+A 588      [G Spanngruppe 5 AUF]                                     Makro 342*, 348*
+A 589      [G Spanngruppe 6 ZU]                                      Makro 343*, 349*
+A 590      [G Spanngruppe 6 AUF]                                     Makro 342*, 349*
+A 591      [G Spanngruppe 7 ZU]                                      Makro 343*, 350*
+A 592      [G Spanngruppe 7 AUF]                                     Makro 342*, 350*
+A 593      [G Spanngruppe 8 ZU]                                      Makro 343*, 351*
+A 594      [G Spanngruppe 8 AUF]                                     Makro 342*, 351*
+A 595      [G Spanngruppe 9 ZU]                                      Makro 343*, 352*
+A 596      [G Spanngruppe 9 AUF]                                     Makro 342*, 352*
+A 597      [G Spanngruppe 10 ZU]                                     Makro 343*, 353*
+A 598      [G Spanngruppe 10 AUF]                                    Makro 342*, 353*
+A 599      [G Spanngruppe 11 ZU]                                     Makro 343*, 354*
+A 600      [G Spanngruppe 11 AUF]                                    Makro 342*, 354*
+A 601      [G Spanngruppe 12 ZU]                                     Makro 343*, 355*
+A 602      [G Spanngruppe 12 AUF]                                    Makro 342*, 355*
+A 603      [G Spanngruppe 13 ZU]                                     Makro 343*, 356*
+A 604      [G Spanngruppe 13 AUF]                                    Makro 342*, 356*
+A 605      [G Spanngruppe 14 ZU]                                     Makro 343*, 357*
+A 606      [G Spanngruppe 14 AUF]                                    Makro 342*, 357*
+A 607      [G Spanngruppe 15 ZU]                                     Makro 343*, 358*
+A 608      [G Spanngruppe 15 AUF]                                    Makro 342*, 358*
+A 609      [G Spanngruppe 16 ZU]                                     Makro 343*, 359*
+A 610      [G Spanngruppe 16 AUF]                                    Makro 342*, 359*
+A 617      [G Saugkreis 1 Saugen EIN]                                Makro 343*, 360*
+A 618      [G Saugkreis 1 Saugen AUS / Abblasen]                     Makro 342*, 360*
+A 619      [G Saugkreis 2 Saugen EIN]                                Makro 343*, 361*
+A 620      [G Saugkreis 2 Saugen AUS / Abblasen]                     Makro 342*, 361*
+A 621      [G Saugkreis 3 Saugen EIN]                                Makro 343*, 362*
+A 622      [G Saugkreis 3 Saugen AUS / Abblasen]                     Makro 342*, 362*
+A 623      [G Saugkreis 4 Saugen EIN]                                Makro 343*, 363*
+A 624      [G Saugkreis 4 Saugen AUS / Abblasen]                     Makro 342*, 363*
+A 625      [G Saugkreis 5 Saugen EIN]                                Makro 343*, 364*
+A 626      [G Saugkreis 5 Saugen AUS / Abblasen]                     Makro 342*, 364*
+A 627      [G Saugkreis 6 Saugen EIN]                                Makro 343*, 365*
+A 628      [G Saugkreis 6 Saugen AUS / Abblasen]                     Makro 342*, 365*
+A 701      [G1KYP03E Freigabe Steuerluft]                            Makro 342*, 343*, 0*
+A 703      [G1KYP02E Freigabe Steuerluft]                            Makro 342*, 343*, 0*
+A 717      [EZ1/SP1 Zange oeffnen]                                   Makro Step*
+A 718      [EZ1/SP1 Zange schliessen]                                Makro SPS, Step*
+A 719      [EZ1/SP1 Zange tastend auf]                               Makro Step*
+A 720      [EZ1/SP1 Zange tastend zu]                                Makro Step*
+A 722      [EZ1/SP1 Sollwert EK-Kraft W2]                            Makro Step*
+A 725      [EZ1/SP1 Sollwert EK-Kraft W16]                           Makro Step*
+A 757      [EZ1/SP1 Messen nach Fraesen]                             Makro Step*
+A 758      [EZ1/SP1 Startfraesen durchgefuehrt]                      Makro Step*
+A 759      [EZ1/SP1 Normalfraesen durchgefuehrt]                     Makro Step*
+A 785      [SK1 Start Schweissen]                                    Makro SPS, Step*
+A 786      [SK1 Quitt Elektrodenfraesen]                             Makro Step*
+A 833      [KF1 Fehler-Reset]                                        Makro SPS*
+A 834      [KF1 KF1M1 Drehrichtung 1 Ein]                            Makro Step*
+A 835      [KF1 KYP3V Versetzeinheit vor]                            Makro Step*
+A 841      [KS1 Fehler-Reset]                                        Makro SPS*
+A 842      [KS1M1 Drehrichtung 1 Ein]                                Makro Step*
+A 847      [KS1 Kappenfraeser ausblasen]                             Makro Step*
+A 849      [ZS1 Fehler-Reset]                                        Makro SPS*
+A 857      [KW1 Reserviert]                                          Makro 0*
+A 858      [KW1 Fraesen / Kappe loesen]                              Makro Step*
+A 859      [KW1 Spaene ausblasen]                                    Makro Step*
+A 863      [KW1 Reserviert]                                          Makro Step*
+A 864      [KW1 Reserviert]                                          Makro Step*
+A 877      [EZ2/SP2 Zange oeffnen]                                   Makro Step*
+A 878      [EZ2/SP2 Zange schliessen]                                Makro SPS, Step*
+A 879      [EZ2/SP2 Zange tastend auf]                               Makro Step*
+A 882      [EZ2/SP2 Sollwert EK-Kraft W2]                            Makro Step*
+A 885      [EZ2/SP2 Sollwert EK-Kraft W16]                           Makro Step*
+A 917      [EZ2/SP2 Messen nach Fraesen]                             Makro Step*
+A 918      [EZ2/SP2 Startfraesen durchgefuehrt]                      Makro Step*
+A 919      [EZ2/SP2 Normalfraesen durchgefuehrt]                     Makro Step*
+A 945      [SK2 Start Schweissen]                                    Makro SPS, Step*
+A 946      [SK2 Quitt Elektrodenfraesen]                             Makro Step*
+A 993      [KS2 Fehler-Reset]                                        Makro SPS*
+A 994      [KS2 KF2M1 Drehrichtung 1 Ein]                            Makro Step*
+A 995      [KS2 KYP3V Versetzeinheit vor]                            Makro Step*
+A 1001     [KS2 Fehler-Reset]                                        Makro SPS*
+A 1002     [KS2 Drehrichtung 1 Ein]                                  Makro Step*
+A 1007     [KS2 Kappenfraeser ausblasen]                             Makro Step*
+A 1009     [ZS2 Fehler-Reset]                                        Makro SPS*
+A 1018     [KW2 Fraesen / Kappe loesen]                              Makro Step*
+A 1019     [KW2 Spaene ausblasen]                                    Makro Step*
+A 1037     [EZ3/SP3 Zange oeffnen]                                   Makro Step*
+A 1038     [EZ3/SP3 Zange schliessen]                                Makro SPS, Step*
+A 1039     [EZ3/SP3 Zange tastend auf]                               Makro Step*
+A 1042     [EZ3/SP3 Sollwert EK-Kraft W2]                            Makro Step*
+A 1045     [EZ3/SP3 Sollwert EK-Kraft W16]                           Makro Step*
+A 1077     [EZ3/SP3 Messen nach Fraesen]                             Makro Step*
+A 1078     [EZ3/SP3 Startfraesen durchgefuehrt]                      Makro Step*
+A 1079     [EZ3/SP3 Normalfraesen durchgefuehrt]                     Makro Step*
+A 1105     [SK3 Start Schweissen]                                    Makro SPS, Step*
+A 1106     [SK3 Quitt Elektrodenfraesen]                             Makro Step*
+A 1153     [KS3 Fehler-Reset]                                        Makro SPS*
+A 1154     [KS3 KF3M1 Drehrichtung 1 Ein]                            Makro Step*
+A 1155     [KS3 KYP3V Versetzeinheit vor]                            Makro Step*
+A 1161     [KS3 Fehler-Reset]                                        Makro SPS*
+A 1162     [KS3 Drehrichtung 1 Ein]                                  Makro Step*
+A 1163     [KS3 Nennstrom-Code PB0]                                  Makro Step*
+A 1167     [KS3 Kappenfraeser ausblasen]                             Makro Step*
+A 1169     [ZS3 Fehler-Reset]                                        Makro SPS*
+A 1178     [KW3 Reserviert]                                          Makro Step*
+A 1179     [KW3 Reserviert]                                          Makro Step*
+A 1185     [NZ1 Fehler Reset]                                        Makro SPS*
+A 1265     [NZ2 Fehler Reset]                                        Makro SPS*
+A 1345     [CZ1 Fehler Reset]                                        Makro SPS*
+A 1425     [CZ2 Fehler Reset]                                        Makro SPS*
+A 1505     [KL1 Programmanwahl W1]                                   Makro 180, 182, 183
+A 1506     [KL1 Programmanwahl W2]                                   Makro 180, 182, 183
+A 1507     [KL1 Programmanwahl W4]                                   Makro 180, 182, 183
+A 1508     [KL1 Programmanwahl W8]                                   Makro 180, 182, 183
+A 1509     [KL1 Programmanwahl W16]                                  Makro 180, 182, 183
+A 1510     [KL1 Programmanwahl W32]                                  Makro 180, 182, 183
+A 1511     [KL1 Programmanwahl W64]                                  Makro 180, 182, 183
+A 1512     [KL1 Programmanwahl W128]                                 Makro 180, 182, 183
+A 1513     [KL1 Parameteranwahl W1]                                  Makro 180
+A 1514     [KL1 Parameteranwahl W2]                                  Makro 180
+A 1515     [KL1 Parameteranwahl W4]                                  Makro 180
+A 1516     [KL1 Parameteranwahl W8]                                  Makro 180
+A 1517     [KL1 Parameteranwahl W16]                                 Makro 180
+A 1518     [KL1 Parameteranwahl W32]                                 Makro 180
+A 1519     [KL1 Parameteranwahl W64]                                 Makro 180
+A 1520     [KL1 Parameteranwahl W128]                                Makro 180
+A 1521     [KL1 Pistolenanwahl W1]                                   Folge 4*, 74*, UP 3*, 23*, 111*, 120*
+A 1522     [KL1 Pistolenanwahl W2]                                   Folge 4*, 74*, UP 3*, 23*, 111*, 120*
+A 1523     [KL1 Pistolenanwahl W4]                                   Folge 4*, 74*, UP 3*, 23*, 111*, 120*
+A 1524     [KL1 Steppnaht aktiv]                                     Makro 180*, 181*, 182*
+A 1527     [KL1 Betriebsfreigabe]                                    Makro SPS*
+A 1528     [KL1 Roboter in Automatik]                                Makro SPS*
+A 1529     [KL1 Start Prozess]                                       Makro 180*, 181*, 182*, 183*, SPS
+A 1531     [KL1 Dosierer fuellen]                                    Makro 180*, 181*, 182*, 183*, 184*
+A 1533     [KL1 Vordrucktrigger]                                     UP 23*, Makro 180*
+A 1534     [KL1 Freigabe Spuelen]                                    Makro 180*, 182*, 183*
+A 1535     [KL1 Spuelen]                                             Makro 180*, 182*, 183*, SPS
+A 1537     [KL1 Start Prozesskontrolle]                              Makro 180*
+A 1539     [KL1 Quitt. Bauteil i.O.]                                 Makro 180*, 182*, 183*, 184*
+A 1540     [KL1 Bewertung BT Wiederholung]                           Makro 181*, 182*, 183*, 184*
+A 1541     [KL1 Bewertung BT Ausschleusen]                           Makro 180*, 182*, 183*, 184*
+A 1542     [KL1 Abstandsmessung Ein]                                 Makro 181*, 182*, 183*, 184*
+A 1543     [KL1 Messen Ende]                                         Makro 180*, 181*, 182*, 183*
+A 1544     [KL1 Pistole Auf]                                         UP 3*, 23*, Makro 180*
+A 1547     [KL1 Pumpenzeit Reset]                                    Makro SPS*
+A 1550     [KL1 Heizung Reset]                                       Makro SPS*
+A 1553     [KL1/2K 1K Freispuelen]                                   Makro 180*
+A 1556     [KL1/2K 2K Messen Kontrolle]                              Makro 180*
+A 1557     [KL1/2K 2K Mischerwechsel]                                Makro 180*
+A 1558     [KL1/2K 2K Mischer Ein]                                   Makro 180*
+A 1591     [KL2 Betriebsfreigabe]                                    Makro SPS*
+A 1592     [KL2 Roboter in Automatik]                                Makro SPS*
+A 1593     [KL2 Start Prozess]                                       Makro SPS
+A 1599     [KL2 Spuelen]                                             Makro SPS
+A 1611     [KL2 Pumpenzeit Reset]                                    Makro SPS*
+A 1614     [KL2 Heizung Reset]                                       Makro SPS*
+A 1655     [KL3 Betriebsfreigabe]                                    Makro SPS*
+A 1656     [KL3 Roboter in Automatik]                                Makro SPS*
+A 1657     [KL3 Start Prozess]                                       Makro SPS
+A 1663     [KL3 Spuelen]                                             Makro SPS
+A 1675     [KL3 Pumpenzeit Reset]                                    Makro SPS*
+A 1678     [KL3 Heizung Reset]                                       Makro SPS*
+A 1797     [SM1 Roboter Hand]                                        Makro Step*
+A 1798     [SM1 Roboter Automatik]                                   Makro Step*
+A 1802     [SM1 Bauteil Fertig]                                      Makro Step*
+A 1812     [SM1 Programmnummer W8]                                   Makro Step*
+A 1813     [SM1 Programmnummer W16]                                  Makro Step*
+A 1857     [MS1 Freigabe Prozess]                                    Makro SPS*
+A 1858     [MS1 Stoerung quittieren]                                 Makro SPS*
+A 1859     [MS1 Start Prozess]                                       Makro SPS*
+A 1864     [MS1 Start Brenner reinigen]                              Makro Step*
+A 1870     [MS1 Ausblasen Luft]                                      Makro Step*
+A 1871     [MS1 Spruehen Ein]                                        Makro Step*
+A 1889     [MS2 Freigabe Prozess]                                    Makro SPS*
+A 1890     [MS2 Stoerung quittieren]                                 Makro SPS*
+A 1891     [MS2 Start Prozess]                                       Makro SPS*
+A 1896     [MS2 Start Brenner reinigen]                              Makro Step*
+A 1902     [MS2 Ausblasen Luft]                                      Makro Step*
+A 1903     [MS2 Spruehen Ein]                                        Makro Step*
+A 1937     [PR Freigabe Steuerluft]                                  UP 2*, 22*, 52*
+A 1939     [PR Praeger Vor]                                          UP 2*, 22*, 52*
+A 1940     [PR Praeger Rueck]                                        UP 2*, 22*, 52*
+A 2113     [KL1bKYP01E Freigabe Steuerluft]                          Makro 187*, 0*, Step*
+A 2115     [KL1bKYP1R Schwenkeinheit in Ruhest. schwenken]           Makro 187*, Step*
+A 2116     [KL1bKYP1V Schwenkeinheit in Arbeitsst. Schwenken]        Makro 187*, Step*
+A 2117     [KL1bKYP1FBR Freigabe in Endlage halten]                  Makro 187*, Step*
+A 2118     [KL1bKYP1FBV Freigabe Bewegung]                           Makro 187*, Step*
+A 2121     [KL2bKYP01E Freigabe Steuerluft]                          Makro 0*, Step*
+A 2123     [KL2bKYP1R Schwenkeinheit in Ruhest. schwenken]           Makro Step*
+A 2124     [KL2bKYP1V Schwenkeinheit in Arbeitsst. Schwenken]        Makro Step*
+A 2125     [KL2bKYP1FBR Freigabe in Endlage halten]                  Makro Step*
+A 2126     [KL2bKYP1FBV Freigabe Bewegung]                           Makro Step*
+A 2129     [KL3bKYP01E Freigabe Steuerluft]                          Makro 0*, Step*
+A 2131     [KL3bKYP1R Schwenkeinheit in Ruhest. schwenken]           Makro Step*
+A 2132     [KL3bKYP1V Schwenkeinheit in Arbeitsst. Schwenken]        Makro Step*
+A 2133     [KL3bKYP1FBR Freigabe in Endlage halten]                  Makro Step*
+A 2134     [KL3bKYP1FBV Freigabe Bewegung]                           Makro Step*
+A 2137     [PR1KYP01E Freigabe Steuerluft]                           Makro 0*
+A 2145     [1KYP01E Freigabe Steuerluft]                             Makro 0*
+A 2153     [PR1KYP01E Freigabe Steuerluft]                           Makro 0*
+A 2161     [MS1bKYP01E Freigabe Steuerluft]                          Makro 0*, Step*
+A 2163     [MS1bKYP1R Schwenkeinheit in Ruhest. schwenken]           Makro Step*
+A 2164     [MS1bKYP1V Schwenkeinheit in Arbeitsst. Schwenken]        Makro Step*
+A 2165     [MS1bKYP1FBR Freigabe in Endlage halten]                  Makro Step*
+A 2166     [MS1bKYP1FBV Freigabe Bewegung]                           Makro Step*
+A 2167     [MS1bKYP2R Versetzeinheit in Ruhest. schw.]               Makro Step*
+A 2168     [MS1bKYP2V Versetzeinheit in Arbeitsst. Schw.]            Makro Step*
+A 2169     [MS2bKYP01E Freigabe Steuerluft]                          Makro 0*, Step*
+A 2171     [MS2bKYP1R Schwenkeinheit in Ruhest. schwenken]           Makro Step*
+A 2172     [MS2bKYP1V Schwenkeinheit in Arbeitsst. Schwenken]        Makro Step*
+A 2173     [MS2bKYP1FBR Freigabe in Endlage halten]                  Makro Step*
+A 2174     [MS2bKYP1FBV Freigabe Bewegung]                           Makro Step*
+A 2175     [MS2bKYP2R Versetzeinheit in Ruhest. schw.]               Makro Step*
+A 2176     [MS2bKYP2V Versetzeinheit in Arbeitsst. Schw.]            Makro Step*
+A 2177     [KYP01E Freigabe Steuerluft]                              Makro 0*
+A 2185     [KYP02E Freigabe Steuerluft]                              Makro 0*
+A 2193     [KYP01E Freigabe Steuerluft]                              Makro 0*
+A 2201     [Freigabe Steuerluft]                                     Makro 0*
+A 4039     [Prozess aktiv]                                           Makro SPS, Step
+A 4060     [PERI_RDY]                                                Makro SPS
+
+Merker:
+-------
+M 1        [Zusammenfassung Fahrbedingungen]        Folge 4, 74, UP 1, 2, 3, 4, 6, 21, 22, 23, 24, 26, 52, 72, Makro 51*, 52*, 53*
+M 2        [Zusammenfassung Fahrbedingungen]        Makro 52*
+M 13       [Zusammenfassung Fahrbedingungen]        Folge 4, 74, UP 1, 4, 6, 21, 24, 26, 84, 86, 111, 112, 113, 115, 201, 202, 203, 204, 206, 207, 208, 209, Makro 51*, 53*
+M 20       [Zusammenfassung Fahrbedingungen]        UP 1, Makro 51*
+M 21       [Zusammenfassung Fahrbedingungen]        UP 4, Makro 51*
+M 28       [Zusammenfassung Fahrbedingungen]        UP 24, Makro 53*
+M 29       [Zusammenfassung Fahrbedingungen]        UP 21, Makro 53*
+M 30       [Maschinelle Sicherheiten]               Folge 4, 74, 123, 124, UP 1, 2, 3, 4, 6, 21, 22, 23, 24, 26, 52, 72, 84, 86, 111, 112, 113, 115, 120, 201, 202, 203, 204, 206, 207, 208, 209, Makro 50*
+M 31       [Greifer Spanngruppe 1 AUF]              Folge 4, 74, UP 1, 4, 6, 21, 24, 26, 112, 113, 115, 201, 202, 203, 204, 206, 207, 208, 209, Makro 51*, 52*, 53*, 342, 343
+M 32       [Greifer Spanngruppe 1 ZU]               Folge 4, 74, UP 1, 2, 3, 4, 6, 21, 22, 23, 24, 26, 52, 72, 84, 86, Makro 51*, 52*, 53*, 342, 343
+M 33       [Greifer Spanngruppe 2 AUF]              Folge 4, 74, UP 1, 2, 3, 6, 21, 22, 23, 26, 52, 72, 84, 86, 112, 113, 115, 201, 202, 203, 204, Makro 51*, 52*, 53*, 342, 343
+M 34       [Greifer Spanngruppe 2 ZU]               Folge 4, 74, UP 1, 4, 24, 26, 86, 206, 207, 208, 209, Makro 51*, 52*, 53*, 342, 343
+M 35       [Greifer Spanngruppe 3 AUF]              Makro 342, 343
+M 36       [Greifer Spanngruppe 3 ZU]               Makro 342, 343
+M 37       [Greifer Spanngruppe 4 AUF]              Makro 342, 343
+M 38       [Greifer Spanngruppe 4 ZU]               Makro 342, 343
+M 39       [Greifer Spanngruppe 5 AUF]              Makro 342, 343
+M 40       [Greifer Spanngruppe 5 ZU]               Makro 342, 343
+M 41       [Greifer Spanngruppe 6 AUF]              Makro 342, 343
+M 42       [Greifer Spanngruppe 6 ZU]               Makro 342, 343
+M 43       [Greifer Spanngruppe 7 AUF]              Makro 342, 343
+M 44       [Greifer Spanngruppe 7 ZU]               Makro 342, 343
+M 45       [Greifer Spanngruppe 8 AUF]              Makro 342, 343
+M 46       [Greifer Spanngruppe 8 ZU]               Makro 342, 343
+M 47       [Greifer Spanngruppe 9 AUF]              Makro 342, 343
+M 48       [Greifer Spanngruppe 9 ZU]               Makro 342, 343
+M 49       [Greifer Spanngruppe 10 AUF]             Makro 342, 343
+M 50       [Greifer Spanngruppe 10 ZU]              Makro 342, 343
+M 51       [Greifer Spanngruppe 11 AUF]             Makro 342, 343
+M 52       [Greifer Spanngruppe 11 ZU]              Makro 342, 343
+M 53       [Greifer Spanngruppe 12 AUF]             Makro 342, 343
+M 54       [Greifer Spanngruppe 12 ZU]              Makro 342, 343
+M 55       [Greifer Spanngruppe 13 AUF]             Makro 342, 343
+M 56       [Greifer Spanngruppe 13 ZU]              Makro 342, 343
+M 57       [Greifer Spanngruppe 14 AUF]             Makro 342, 343
+M 58       [Greifer Spanngruppe 14 ZU]              Makro 342, 343
+M 59       [Greifer Spanngruppe 15 AUF]             Makro 342, 343
+M 60       [Greifer Spanngruppe 15 ZU]              Makro 342, 343
+M 61       [Greifer Spanngruppe 16 AUF]             Makro 342, 343
+M 62       [Greifer Spanngruppe 16 ZU]              Makro 342, 343
+M 63       [Sauger 1 EIN]                           Makro 342, 343
+M 64       [Sauger 2 EIN]                           Makro 342, 343
+M 65       [Sauger 3 EIN]                           Makro 342, 343
+M 66       [Sauger 4 EIN]                           Makro 342, 343
+M 67       [Sauger 5 EIN]                           Makro 342, 343
+M 68       [Sauger 6 EIN]                           Makro 342, 343
+M 76       [Hilfsmerker bei Greifer-Docking]        Makro 50*, 51, 52
+M 77       [Hilfsmerker bei Greifer-Docking]        Folge 4, 74, 124, UP 1, 2, 3, 4, 6, 52, 84, 86, 113, 201, 203, 207, 209, Makro 50*, 57
+M 78       [Hilfsmerker bei Greifer-Docking]        Folge 4, 74, 124, UP 21, 22, 23, 24, 26, 72, 84, 86, 112, 115, 202, 204, 206, 208, Makro 50*, 53, 57
+M 81       [Dockingkupplung angedockt]              Folge 4, UP 111, Makro 50*
+M 82       [Docking-Bahnhof 1 frei]                 UP 84, 86, Makro 50*
+M 83       [Docking-Bahnhof 2 frei]                 UP 84, 86, Makro 50*
+M 84       [Docking-Bahnhof 3 frei]                 Makro 50*
+M 97       [Flanke-Umdrehungen KF1]                 Makro Trigger
+M 98       [Flanke-Umdrehungen KF2]                 Makro Trigger
+M 99       [Flanke-Umdrehungen KF3]                 Makro Trigger
+M 100      [Flanke-Umdrehungen KW1]                 Makro Trigger
+M 104      [Flanke-Umdrehungen KF2]                 Makro Trigger
+M 111      [Flanke-Umdrehungen KF3 (PZ3)]           Makro Trigger
+M 128      [Online Freigabe Roboter 1]              Makro SPS
+M 129      [Online Freigabe Roboter 2]              Makro SPS
+M 146      [KL1 Bereit / Materialdruck erreicht]    UP 3, Makro 50*
+M 197      [Hilfsmerker #3 Typensteuerung an BMS]   Makro 53*
+M 198      [Hilfsmerker #2 Typensteuerung an BMS]   Makro 52*
+M 199      [Hilfsmerker #1 Typensteuerung an BMS]   Makro 51*
+
+Zähler:
+-------
+I 1        [IST-Umdrehungen beim Fraesen]                                Makro Trigger*, Step*
+I 2        [Umdr. Startfraesen Teil 1 EZ1/SP1 SZ1 (PZ1 SZ1)]             Makro Trigger
+I 3        [Umdr. Startfraesen Teil 2 EZ1/SP1 SZ1 (PZ1 SZ1)]             Makro Trigger
+I 4        [Umdr. Normalfraesen EZ1/SP1 SZ1 (PZ1 SZ1)]                   Makro Trigger, Step*
+I 5        [Umdr. Startfraesen Teil 1 EZ2/SP2 SZ1 (PZ1 SZ2)]             Makro Trigger
+I 6        [Umdr. Startfraesen Teil 2 EZ2/SP2 SZ1 (PZ1 SZ2)]             Makro Trigger
+I 7        [Umdr. Normalfraesen EZ2/SP2 SZ1 (PZ1 SZ2)]                   Makro Trigger, Step*
+I 8        [Umdr. Startfraesen Teil 1 EZ1/SP1 SZ2 (PZ1 SZ2) (Docking)]   Makro Trigger
+I 9        [Umdr. Startfraesen Teil 2 EZ1/SP1 SZ2 (PZ1 SZ2) (Docking)]   Makro Trigger
+I 10       [Umdr. Normalfraesen EZ1/SP1 SZ2 (PZ1 SZ2) (Docking)]         Makro Trigger, Step*
+I 11       [Umdr. Startfraesen Teil 1 EZ1/SP1 SZ3 (PZ1 SZ3) (Docking)]   Makro Trigger
+I 12       [Umdr. Startfraesen Teil 2 EZ1/SP1 SZ3 (PZ1 SZ3) (Docking)]   Makro Trigger
+I 13       [Umdr. Normalfraesen EZ1/SP1 SZ3 (PZ1 SZ3) (Docking)]         Makro Trigger, Step*
+I 14       [Umdr. Startfraesen Teil 1 EZ1/SP1 SZ4 (PZ1 SZ4) (Docking)]   Makro Trigger
+I 15       [Umdr. Startfraesen Teil 2 EZ1/SP1 SZ4 (PZ1 SZ4) (Docking)]   Makro Trigger
+I 16       [Umdr. Normalfraesen EZ1/SP1 SZ4 (PZ1 SZ4) (Docking)]         Makro Trigger, Step*
+I 17       [Umdr. Startfraesen Teil 1 EZ3/SP3 SZ1 (PZ3 SZ1)]             Makro Trigger
+I 18       [Umdr. Startfraesen Teil 2 EZ3/SP3 SZ1 (PZ3 SZ1)]             Makro Trigger
+I 19       [Umdr. Normalfraesen EZ3/SP3 SZ1 (PZ3 SZ1)]                   Makro Trigger, Step*
+I 23       [Funktionstest KL1 - KL3]                                     Makro Step
+I 24       [MS Verzoegerungszeit EZ/SP ZU (Versetzeinheit KF)]           Makro Step
+I 26       [MS Zeit fuer Reinigung]                                      Makro Step
+I 38       [Umdr. Normalfraesen Teil 2 EZ3/SP3 SZ1]                      Makro Step
+I 43       [Umdr. Normalfraesen Teil 2 EZ1/SP1 SZ1-4]                    Makro Step
+I 44       [Umdr. Normalfraesen Teil 2 EZ2/SP2 SZ1]                      Makro Step
+I 45       [Hilfszaehler KF Umdrehung]                                   Makro Step*
+
+Analoger Ausgang:
+-----------------
+ana 1      [KL1 Material Sollwert]   UP 3*, 23*
+
+Binärer Ausgang:
+----------------
+bin 1      [EZ1/SP1 Programm-Nr.]      Makro Step*
+bin 3      [SK1 Programm-Nr.]          Makro Step*
+bin 4      [EZ2/SP2 Programm-Nr.]      Makro Step*
+bin 6      [SK2 Programm-Nr.]          Makro Step*
+bin 7      [EZ3/SP3 Programm-Nr.]      Makro Step*
+bin 9      [SK3 Programm-Nr.]          Makro Step*
+bin 10     [KL1 Programm-Nr.]          Folge 4*, 74*, UP 3*, 23*
+bin 11     [KL1 Parameter]             Folge 4*, 74*, UP 3*, 23*, 120*, Makro 180*, 181*
+bin 18     [Arbeitsfertigmeldung]      Makro 1*, 2*, 3*, 4*, 5*, 6*, 7*, 8*, 9*, 10*, 11*, 12*, 13*, 14*, 15*
+bin 19     [Prozesspkt./geraete-Nr.]   UP 111*, 112*, 113*, 115*, 120*, 201*, 202*, 203*, 204*
+
+Timer:
+------
+t 1        Folge 4*, 74*
+t 2        Folge 4*, 74*
+t 3        UP 1*, 2*, 3*, 4*, 21*, 22*, 23*, 24*, 52*
+t 6        UP 84*, 86*
+t 7        Makro Step*
+t 8        Makro Step*
+t 9        Makro Step*
+t 10       Makro 180*, 181*, 182*, 183*, 187*, 342*, 343*, 420*, 421*, 422*
+t 11       Makro Step*
+t 12       Makro 180*, 181*, 182*, 183*
+t 20       Makro SPS*
+
+Flag:
+-----
+F 1        [Anwahl Spanngruppe 1]                                               Folge 4*, 74*, UP 1*, 2*, 4*, 6*, 21*, 24*, 26*, 52*, 84*, 86*, 112*, 113*, 115*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 340*, 342*, 343*
+F 2        [Anwahl Spanngruppe 2]                                               Folge 4*, 74*, UP 1*, 2*, 4*, 24*, 26*, 52*, 84*, 86*, 112*, 113*, 115*, 201*, 202*, 203*, 204*, 206*, 207*, 208*, 209*, Makro 340*, 342*, 343*
+F 3        [Anwahl Spanngruppe 3]                                               Makro 340*, 342*, 343*
+F 4        [Anwahl Spanngruppe 4]                                               Makro 340*, 342*, 343*
+F 5        [Anwahl Spanngruppe 5]                                               Makro 340*, 342*, 343*
+F 6        [Anwahl Spanngruppe 6]                                               Makro 340*, 342*, 343*
+F 7        [Anwahl Spanngruppe 7]                                               Makro 340*, 342*, 343*
+F 8        [Anwahl Spanngruppe 8]                                               Makro 340*, 342*, 343*
+F 9        [Anwahl Spanngruppe 9]                                               Makro 340*, 342*, 343*
+F 10       [Anwahl Spanngruppe 10]                                              Makro 340*, 342*, 343*
+F 11       [Anwahl Spanngruppe 11]                                              Makro 340*, 342*, 343*
+F 12       [Anwahl Spanngruppe 12]                                              Makro 340*, 342*, 343*
+F 13       [Anwahl Spanngruppe 13]                                              Makro 340*, 342*, 343*
+F 14       [Anwahl Spanngruppe 14]                                              Makro 340*, 342*, 343*
+F 15       [Anwahl Spanngruppe 15]                                              Makro 340*, 342*, 343*
+F 16       [Anwahl Spanngruppe 16]                                              Makro 340*, 342*, 343*
+F 17       [Anwahl Saugkreis 1]                                                 Makro 340*, 342*, 343*
+F 18       [Anwahl Saugkreis 2]                                                 Makro 340*, 342*, 343*
+F 19       [Anwahl Saugkreis 3]                                                 Makro 340*, 342*, 343*
+F 20       [Anwahl Saugkreis 4]                                                 Makro 340*, 342*, 343*
+F 21       [Anwahl Saugkreis 5]                                                 Makro 340*, 342*, 343*
+F 22       [Anwahl Saugkreis 6]                                                 Makro 340*, 342*, 343*
+F 23       [Anwahl Greifer/Sauger/DB/KL Eimer AUF]                              Makro 340*, 342*, 343*, 344*, 345*, 346*, 347*, 348*, 349*, 350*, 351*, 352*, 353*, 354*, 355*, 356*, 357*, 358*, 359*, 360*, 361*, 362*, 363*, 364*, 365*, 432*, 433*, 434*, 435*
+F 24       [Durchlaufmerker Makro 344]                                          Makro 342*, 343*, 344*
+F 25       [Durchlaufmerker Makro 345]                                          Makro 342*, 343*, 345*
+F 26       [Durchlaufmerker Makro 346]                                          Makro 342*, 343*, 346*
+F 27       [Durchlaufmerker Makro 347]                                          Makro 342*, 343*, 347*
+F 28       [Durchlaufmerker Makro 348]                                          Makro 342*, 343*, 348*
+F 29       [Durchlaufmerker Makro 349]                                          Makro 342*, 343*, 349*
+F 30       [Durchlaufmerker Makro 350]                                          Makro 342*, 343*, 350*
+F 31       [Durchlaufmerker Makro 351]                                          Makro 342*, 343*, 351*
+F 32       [Durchlaufmerker Makro 352]                                          Makro 342*, 343*, 352*
+F 33       [Durchlaufmerker Makro 353]                                          Makro 342*, 343*, 353*
+F 34       [Durchlaufmerker Makro 354]                                          Makro 342*, 343*, 354*
+F 35       [Durchlaufmerker Makro 355]                                          Makro 342*, 343*, 355*
+F 36       [Durchlaufmerker Makro 356]                                          Makro 342*, 343*, 356*
+F 37       [Durchlaufmerker Makro 357]                                          Makro 342*, 343*, 357*
+F 38       [Durchlaufmerker Makro 358]                                          Makro 342*, 343*, 358*
+F 39       [Durchlaufmerker Makro 359]                                          Makro 342*, 343*, 359*
+F 40       [Durchlaufmerker Makro 360]                                          Makro 342*, 343*, 360*
+F 41       [Durchlaufmerker Makro 361]                                          Makro 342*, 343*, 361*
+F 42       [Durchlaufmerker Makro 362]                                          Makro 342*, 343*, 362*
+F 43       [Durchlaufmerker Makro 363]                                          Makro 342*, 343*, 363*
+F 44       [Durchlaufmerker Makro 364]                                          Makro 342*, 343*, 364*
+F 45       [Durchlaufmerker Makro 365]                                          Makro 342*, 343*, 365*
+F 52       [E/A Spiegeln an BMS aktiv]                                          Makro 57*
+F 53       [Sprung wenn keine Anwahl kurzes Abblasen]                           Makro 342*
+F 54       [Anwahl ohne Abblasen bei Saugkreisen]                               Makro 57*, 342, 360, 361, 362, 363, 364, 365
+F 55       [Anwahl 3. Ventilinsel auf dem Robotergreifer]                       Makro 57*, 342, 343
+F 56       [Anwahl 2. Ventilinsel auf dem Robotergreifer]                       Makro 57*, 342, 343
+F 57       [Anwahl 1. Ventilinsel auf dem Robotergreifer]                       Makro 57*, 342, 343
+F 58       [Saugkreis 1 bis 6]                                                  Makro 340*, 342*, 343*
+F 59       [Luftpolster aufbauen]                                               Makro 342, 343*
+F 60       [Greifer Spanngruppe 9 bis 16]                                       Makro 340*, 342*, 343*
+F 61       [Greifer Spanngruppe 1 bis 8]                                        Makro 340*, 342*, 343*
+F 62       [Greifer – Docking]                                                  Makro 421
+F 63       [Greiferstatus an BMS spiegeln]                                      Makro 57*
+F 64       [SZ1 an EZ1/SP1 (fuer Kappenfraesen)]                                Makro Step
+F 65       [SZ2 an EZ1/SP1 (fuer Kappenfraesen)]                                Makro Step
+F 66       [SZ3 an EZ1/SP1 (fuer Kappenfraesen)]                                Makro Step
+F 67       [SZ4 an EZ1/SP1 (fuer Kappenfraesen)]                                Makro Step
+F 72       [Fraesen Roboter EZ1/SP1 an KF2]                                     Makro Step
+F 73       [Fraesen Roboter EZ1/SP1 an KF3]                                     Makro Step
+F 78       [EZ1/SP1 Vorwahl Startfraesen]                                       Makro Step*
+F 79       [EZ1/SP1 Vorwahl Normalfraesen]                                      Makro Step*
+F 80       [FK von SK1 abspeichern (PZ1)]                                       Makro SPS*
+F 90       [FRG RSK-Fraesen Roboter EZ1/SP1]                                    Makro Step
+F 91       [FK RSK-Fraesen Roboter EZ1/SP1]                                     Makro Step*
+F 92       [FRG RSK-Fraesen stat. EZ1/SP1 SZ1]                                  Makro Step
+F 93       [FK RSK-Fraesen stat. EZ1/SP1 SZ1]                                   Makro Step*
+F 94       [U. Startfraesen T1 EZ1/SP1 SZ1 i.O. (PZ1)]                          Makro Trigger*, Step*
+F 95       [Hilfsflag Startfraesen T1 EZ1/SP1 SZ1 (PZ1)]                        Makro Trigger*, Step*
+F 96       [U. Startfraesen T2 EZ1/SP1 SZ1 i.O. (PZ1)]                          Makro Trigger*, Step*
+F 97       [Hilfsflag Startfraesen T2 EZ1/SP1SZ1 (PZ1)]                         Makro Trigger*, Step*
+F 98       [U. Normalfraesen EZ1/SP1 SZ1 i.O. (PZ1)]                            Makro Trigger*, Step*
+F 99       [Hilfsflag Normalfraesen EZ1/SP1 SZ1 (PZ1)]                          Makro Trigger*, Step*
+F 100      [U. Startfraesen T1 EZ1/SP1 SZ2 i.O. (PZ1)]                          Makro Trigger*, Step*
+F 101      [Hilfsflag Startfraesen T1 EZ1/SP1 SZ2 (PZ1)]                        Makro Trigger*, Step*
+F 102      [U. Startfraesen T2 EZ1/SP1 SZ2 i.O. (PZ1)]                          Makro Trigger*, Step*
+F 103      [Hilfsflag Startfraesen T2 EZ1/SP1 SZ2 (PZ1)]                        Makro Trigger*, Step*
+F 104      [U. Normalfraesen EZ1/SP1 SZ2 i.O. (PZ1)]                            Makro Trigger*, Step*
+F 105      [Hilfsflag Normalfraesen EZ1/SP1 SZ2 (PZ1)]                          Makro Trigger*, Step*
+F 106      [U. Startfraesen T1 EZ1/SP1 SZ3 i.O. (PZ1)]                          Makro Trigger*, Step*
+F 107      [Hilfsflag Startfraesen T1 EZ1/SP1 SZ3 (PZ1)]                        Makro Trigger*, Step*
+F 108      [U. Startfraesen T2 EZ1/SP1 SZ3 i.O. (PZ1)]                          Makro Trigger*, Step*
+F 109      [Hilfsflag Startfraesen T2 EZ1/SP1 SZ3 (PZ1)]                        Makro Trigger*, Step*
+F 110      [U. Normalfraesen EZ1/SP1 SZ3 i.O. (PZ1)]                            Makro Trigger*, Step*
+F 111      [Hilfsflag Normalfraesen EZ1/SP1 SZ3 (PZ1)]                          Makro Trigger*, Step*
+F 112      [U. Startfraesen T1 EZ1/SP1 SZ4 i.O. (PZ1)]                          Makro Trigger*, Step*
+F 113      [Hilfsflag Startfraesen T1 EZ1/SP1 SZ4 (PZ1)]                        Makro Trigger*, Step*
+F 114      [U. Startfraesen T2 EZ1/SP1 SZ4 i.O. (PZ1)]                          Makro Trigger*, Step*
+F 115      [Hilfsflag Startfraesen T2 EZ1/SP1 SZ4 (PZ1)]                        Makro Trigger*, Step*
+F 116      [U. Normalfraesen EZ1/SP1 SZ4 i.O. (PZ1)]                            Makro Trigger*, Step*
+F 117      [Hilfsflag Normalfraesen EZ1/SP1 SZ4 (PZ1)]                          Makro Trigger*, Step*
+F 122      [EZ1/SP1 Fehler Kappenverschleiss SZ1]                               Makro Step*
+F 127      [Hilfsflags fuer Medien]                                             Makro SPS*
+F 130      [EZ1/SP1 Anwahl 2 Huebe Normal Fraesen]                              Makro Step
+F 138      [EZ2 Vorwahl Startfraesen]                                           Makro Step*
+F 139      [EZ2 Vorwahl Normalfraesen]                                          Makro Step*
+F 140      [FK von SK2 abspeichern (PZ2)]                                       Makro SPS*
+F 148      [FRG RSK-Fraesen stat. EZ2/SP2 SZ1]                                  Makro Step
+F 149      [FK RSK-Fraesen stat. EZ2/SP2 SZ1]                                   Makro Step*
+F 150      [U. Startfraesen T1 EZ2/SP2 SZ1 i.O. (PZ2)]                          Makro Trigger*, Step*
+F 151      [Hilfsflag Startfraesen T1 EZ2/SP2 SZ1 (PZ2)]                        Makro Trigger*, Step*
+F 152      [U. Startfraesen T2 EZ2/SP2 SZ1 i.O. (PZ2)]                          Makro Trigger*, Step*
+F 153      [Hilfsflag Startfraesen T2 EZ2/SP2 SZ1 (PZ2)]                        Makro Trigger*, Step*
+F 154      [U. Normalfraesen EZ2/SP2 SZ1 i.O. (PZ2)]                            Makro Trigger*, Step*
+F 155      [Hilfsflag Normalfraesen EZ2/SP2 SZ1]                                Makro Trigger*, Step*
+F 160      [EZ2/SP2 Fehler Kappenverschleiss]                                   Makro Step*
+F 162      [EZ2/SP2 Kuehlwasser Durchfluss i.O.]                                Makro SPS*
+F 164      [EZ2/SP2 Anwahl 2 Huebe Normal Fraesen]                              Makro Step
+F 174      [EZ3 Vorwahl Startfraesen]                                           Makro Step*
+F 175      [EZ3 Vorwahl Normalfraesen]                                          Makro Step*
+F 176      [FK von SK3 abspeichern (PZ3)]                                       Makro SPS*
+F 184      [FRG RSK-Fraesen stat. EZ3/SP3 SZ1]                                  Makro Step
+F 185      [FK RSK-Fraesen stat EZ3/SP3 SZ1]                                    Makro Step*
+F 186      [U. Startfraesen T1 EZ3/SP3 SZ1 i.O. (PZ3)]                          Makro Trigger*, Step*
+F 187      [Hilfsflag Startfraesen T1 EZ3/SP3 SZ1 (PZ3)]                        Makro Trigger*, Step*
+F 188      [U. Startfraesen T2 EZ3/SP3 SZ1 i.O. (PZ3)]                          Makro Trigger*, Step*
+F 189      [Hilfsflag Startfraesen T2 EZ3/SP3 SZ1 (PZ3)]                        Makro Trigger*, Step*
+F 190      [U. Normalfraesen EZ3/SP3 SZ1 i.O. (PZ3)]                            Makro Trigger*, Step*
+F 191      [Hilfsflag Normalfraesen EZ3/SP3 SZ1 (PZ3)]                          Makro Trigger*, Step*
+F 196      [EZ3/SP3 Fehler Kappenverschleiss]                                   Makro Step*
+F 198      [EZ3/SP3 Kuehlwasser Durchfluss i.O.]                                Makro SPS*
+F 200      [EZ3/SP3 Anwahl 2 Huebe Normal Fraesen]                              Makro Step
+F 209      [BM1 (ohne SPS) Mutter i.O.]                                         Makro Step
+F 210      [BM1 Fraesanfrage]                                                   Makro Step*
+F 270      [Hilfsflag Durchlaufmerker fuer MakroStep]                           Makro Step*
+F 271      [Hilfsflag Durchlaufmerker fuer Makros]                              Makro Step*
+F 283      [Medienueberwachung bei Docking Aus]                                 Makro 420*, 421*
+F 285      [2SZ an SK1]                                                         Makro Step
+F 287      [Durchlaufmerker Fraesen]                                            Makro Trigger, Step*
+F 289      [Vorw. mit Kappenwechsler]                                           Makro Step
+F 290      [SZ Arbeitshub-Kompensierung]                                        Makro Step*
+F 291      [Kuehlwasserabfrage min/max (NEU)]                                   Makro Step*
+F 307      [2SZ an SK1 Startfraesen]                                            Makro Step*
+F 308      [2SZ an SK1 Normalfraesen]                                           Makro Step*
+F 312      [Hilfsflag RSK Funktionstest KF Motor]                               Makro Trigger, Step*
+F 313      [Hilfsflag RSK Motor dreht]                                          Makro Step*
+F 321      [RSK in Grundstellung]                                               Makro 187, Step*
+F 322      [RSK Fehler KF Motor / Initiator]                                    Makro Step*
+F 323      [RSK Fehler KS Ruhestellung]                                         Makro Step*
+F 324      [RSK Fehler KS Arbeitsstellung]                                      Makro Step*
+F 325      [RSK Fehler EZ/SP Kraftaufbau]                                       Makro Step*
+F 326      [RSK Fehler EZ/SP Messen]                                            Makro Step*
+F 327      [RSK Fehler EZ/SP K-Schweissung]                                     Makro Step*
+F 328      [RSK Fehler KF Versetzeinheit]                                       Makro Step*
+F 329      [RSK Sammelstoerung / Zeitueberschreitung]                           Makro Step*
+F 330      [RSK Vorwahl KF Ausblasen Variante 1]                                Makro Step
+F 331      [RSK Vorwahl KF Ausblasen Variante 2]                                Makro Step
+F 332      [RSK Vorwahl KF Ausblasen Variante 3]                                Makro Step
+F 333      [RSK Fehler EZ/SP min. Oeffnungsmass]                                Makro Step*
+F 334      [RSK Hilfsflag SK Programmwechsel]                                   Makro Step*
+F 335      [RSK Anwahlflag fuer 2. Kappensetzen]                                Makro Step
+F 336      [KL1 ohne nachtriggern]                                              Makro 57*, SPS
+F 337      [KL1 Heizung und Pumpe nachtriggern]                                 Makro 180*, 182*, 183*, SPS*
+F 339      [KL1 Antriebe aus – nachtriggern]                                    Makro SPS*
+F 340      [KL1 Manuell Spuelen]                                                Makro 182*, 183*
+F 341      [KL1 2K-Mischerwechsel]                                              UP 3*, 23*, Makro 180
+F 342      [KL1 Fehler Dosierer]                                                UP 120, Makro 181*, 184*
+F 343      [KL1 Fehler Kleberauftrag]                                           Folge 4, 74, Makro 181*, 184*
+F 344      [KL1 Kleberauftrag i.O.]                                             Makro 184*
+F 345      [KL1 Ausschleusen bei Kleberauftragsfehler]                          UP 6*, 26*, Makro 184*
+F 346      [KL1 Spuelen in Grundstellung]                                       Makro 57*
+F 347      [KL1 Sammelstoerung]                                                 Makro 180*, 181*, 182*, 183*, 184*
+F 348      [KL1 mit Automatischer Nacharbeit]                                   Makro 57*, 184
+F 350      [KL1 Wiederbefuellen durch Roboter]                                  Makro 57*, 180, 181, 184
+F 351      [KL1 Hilfsflag Wiederbefuellen durch Roboter]                        Makro 181*, 184*
+F 352      [KL1 FRG Schwenken in Ruhestellung]                                  Makro 185*, 186*, 187*, Step*
+F 353      [KL1 FRG Schwenken in Arbeitsstellung]                               Makro 185*, 186*, 187*, Step*
+F 354      [KL1 Anwahl mit TCP-Offset]                                          Makro 57*
+F 355      [KL1 FK Schwenken in Schrittkette]                                   Makro 187*, Step*
+F 356      [KL1 stat. Klebeduese]                                               Makro 57*
+F 357      [KL2 ohne nachtriggern]                                              Makro SPS
+F 358      [KL2 Heizung und Pumpe nachtriggern]                                 Makro SPS
+F 360      [KL2 Antriebe aus – nachtriggern]                                    Makro SPS*
+F 373      [KL2 FRG Schwenken in Ruhestellung]                                  Makro Step*
+F 374      [KL2 FRG Schwenken in Arbeitsstellung]                               Makro Step*
+F 376      [KL2 FK Schwenken in Schrittkette]                                   Makro Step*
+F 378      [KL3 ohne nachtriggern]                                              Makro SPS
+F 379      [KL3 Heizung und Pumpe nachtriggern]                                 Makro SPS
+F 381      [KL3 Antriebe aus – nachtriggern]                                    Makro SPS*
+F 394      [KL3 FRG Schwenken in Ruhestellung]                                  Makro Step*
+F 395      [KL3 FRG Schwenken in Arbeitsstellung]                               Makro Step*
+F 397      [KL3 FK Schwenken in Schrittkette]                                   Makro Step*
+F 478      [Mit Reibelementschweissen 1]                                        Makro SPS
+F 479      [RW1 Sammelstoerung]                                                 Makro SPS
+F 483      [Mit Reibelementschweissen 2]                                        Makro SPS
+F 484      [RW2 Sammelstoerung]                                                 Makro SPS
+F 489      [Fehler „Reset“]                                                     Makro SPS
+F 512      [IBS/ProfiNet Alternative 1 nicht zuschalten]                        Makro 50*, 59
+F 513      [IBS/ProfiNet Alternative 2 nicht zuschalten]                        Makro 50*, 59
+F 514      [IBS/ProfiNet Alternative 3 nicht zuschalten]                        Makro 50*, 59
+F 515      [IBS/ProfiNet Alternative 4 nicht zuschalten]                        Makro 50*, 59
+F 516      [IBS/ProfiNet Alternative 5 nicht zuschalten]                        Makro 50*, 59
+F 517      [IBS/ProfiNet Alternative 6 nicht zuschalten]                        Makro 50*, 59
+F 518      [IBS/ProfiNet Alternative 7 nicht zuschalten]                        Makro 50*, 59
+F 519      [IBS/ProfiNet Alternative 8 nicht zuschalten]                        Makro 50*, 59
+F 522      [Mit Energiesparmodus]                                               Makro 57*
+F 523      [KYPxE mit Rueckm. Steuerluft vorh.]                                 Makro 51*, 57*, 187, 342, 343, Step*
+F 524      [KYPxE mit Rueckm. Steuerluft nicht vorh.]                           Makro 51*, 57*, 187, 342, 343, Step*
+F 525      [Ohne Prozess in Single Step]                                        Makro 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 180, SPS*
+F 528      [Mit MS Reinigung an KS Schwenkeinheit]                              Makro Step
+F 529      [Mit MS Reinigung an Pneum. Schwenkeinh.]                            Makro Step
+F 534      [Mit Nieten 1 elektr.]                                               Makro SPS
+F 535      [Mit Nieten 1 Hydr.]                                                 Makro SPS
+F 536      [Mit Nieten 2 elektr.]                                               Makro SPS
+F 537      [Mit Nieten 2 Hydr.]                                                 Makro SPS
+F 538      [Mit Durchsetzfuegen 1 elektr.]                                      Makro SPS
+F 539      [Mit Durchsetzfuegen 1 Pneum.]                                       Makro SPS
+F 540      [Mit Durchsetzfuegen 2 elektr.]                                      Makro SPS
+F 541      [Mit Durchsetzfuegen 2 Pneum.]                                       Makro SPS
+F 542      [Mit Kleben 1]                                                       Makro 57*, SPS*
+F 543      [Mit Kleben 2]                                                       Makro SPS
+F 544      [Mit Kleben 3]                                                       Makro SPS
+F 556      [Mit Profinet]                                                       Makro 57*
+F 559      [Mit Interbus Alternativen/P-Net]                                    Makro 57*
+F 564      [Mit Versetzeinheit an KF]                                           Makro Step
+F 565      [Mit Stosspunktzange]                                                Makro Step
+F 570      [MS1 Lichtbogen einschalten]                                         Makro SPS*
+F 571      [MS1 Hilfsflag Lichtbogen EIN]                                       Makro SPS
+F 574      [MS1 Einspruehen ueber Stromquelle]                                  Makro Step
+F 575      [MS1 Mit Einspruehen]                                                Makro Step
+F 576      [MS1 Mit Versetzeinheit]                                             Makro Step
+F 579      [MS2 Lichtbogen einschalten]                                         Makro SPS*
+F 580      [MS2 Hilfsflag Lichtbogen EIN]                                       Makro SPS
+F 583      [MS2 Einspruehen ueber Stromquelle]                                  Makro Step
+F 584      [MS2 Mit Einspruehen]                                                Makro Step
+F 585      [MS2 Mit Versetzeinheit]                                             Makro Step
+F 597      [MS Zuendung bei Fehler]                                             Makro SPS
+F 603      [MS1 Start Reinigung]                                                Makro Step*
+F 604      [MS1 Reinigung gestartet]                                            Makro Step*
+F 605      [MS1 FK Reinigung]                                                   Makro Step*
+F 607      [MS2 Start Reinigung]                                                Makro Step*
+F 608      [MS2 Reinigung gestartet]                                            Makro Step*
+F 609      [MS2 FK Reinigung]                                                   Makro Step*
+F 714      [Pruefung EZ/SP Oeffnungsmass aktiv]                                 Makro Step
+F 721      [KL1 PF0 FRG Spuelen robotergef.]                                    Makro 57*
+F 731      [Mit Wiederholfraesen bei Kurzschlussschweissen]                     Makro Step
+F 732      [2. Druck / Umdrehungen bei 2 Huebe Normal Fraesen]                  Makro Step
+F 733      [Mit flexiblen Docking]                                              Makro 57*
+F 734      [Mit Netzspannung 440V]                                              Makro SPS
+F 736      [KF Ausblasen rob SZ Ausschaltverzoegerung starten]                  Makro Step*
+F 737      [KF Ausblasen stat SZ1 Ausschaltverzoegerung starten]                Makro Step*
+F 738      [KF Ausblasen stat SZ2 Ausschaltverzoegerung starten]                Makro Step*
+F 739      [KF Ausblasen stat SZ3 Ausschaltverzoegerung starten]                Makro Step*
+F 745      [EZ1 Oeffnung i.O.]                                                  Makro Step
+F 746      [EZ2 Oeffnung i.O.]                                                  Makro Step
+F 747      [EZ3 Oeffnung i.O.]                                                  Makro Step
+F 748      [EZ Wiederholfraesen bereits durchgefuehrt]                          Makro Step*
+F 749      [EZ Wiederholfraesen aktiv]                                          Makro Step*
+F 803      [Mit Kappenwechsler 2]                                               Makro Step
+F 804      [Mit Kappenwechsler 3]                                               Makro Step
+F 805      [Mit Braeuer Kappenwechsler]                                         Makro Step
+F 820      [VW RIP ohne Wasserbeschaltung]                                      Makro 57*
+F 830      [Mit WPS Kombi-Steuerung 1]                                          Makro Step
+F 831      [Mit WPS Kombi-Steuerung 2]                                          Makro Step
+F 832      [Mit WPS Kombi-Steuerung 3]                                          Makro Step
+F 833      [FK von WPS Kombi-Steuerung 1 abspeichern]                           Makro SPS*
+F 834      [FK von WPS Kombi-Steuerung 2 abspeichern]                           Makro SPS*
+F 835      [FK von WPS Kombi-Steuerung 3 abspeichern]                           Makro SPS*
+F 836      [Hilfsflag Kombi-Steuerung Schrittkette]                             Makro Step*
+F 837      [Ohne „Freigabedruck nicht vorhanden“ bei pneum. Schwenkeinheiten]   Makro 57*, 187, Step*
+F 840      [Hilfsflag DS Vertikales Docking/0-Mass *]                           UP 86*, Makro 57*, 420
+F 841      [Anwahl Docking Bahnhof 1]                                           UP 23*, 26*, 72*, 84*, 86*, 112*, 115*, 202*, 204*, 208*, Makro 430*, 432*, 433*
+F 842      [Anwahl Docking Bahnhof 2]                                           UP 23*, 26*, 72*, 84*, 86*, 112*, 115*, 202*, 204*, 208*, Makro 430*, 432*, 433*
+F 843      [Anwahl Docking Bahnhof 3]                                           Makro 430*, 432*, 433*
+F 844      [Anwahl Docking Bahnhof 4]                                           Makro 430*, 432*, 433*
+F 845      [Anwahl Docking Bahnhof 5]                                           Makro 430*, 432*, 433*
+F 846      [Anwahl Docking Bahnhof 6]                                           Makro 430*, 432*, 433*
+F 847      [Anwahl Docking Bahnhof 7]                                           Makro 430*, 432*, 433*
+F 848      [Anwahl Docking Bahnhof 8]                                           Makro 430*, 432*, 433*
+F 930      [Anwender (ohne Trockenlauf)]                                        Folge 4*, 74*, 124*
+F 931      [Anwender (ohne Trockenlauf)]                                        Folge 4*, 74*, 124*
+F 939      [Anwender (ohne Trockenlauf)]                                        UP 86
+F 958      [Anwender (ohne Trockenlauf)]                                        UP 86*
+F 960      [Fahrbedingung erfuellt]                                             Makro SPS
+F 980      [Override ist auf 100%]                                              Makro 180
+F 985      [Roboter in Single Step]                                             Folge 123, UP 206, 207, 208, 209, Makro SPS*
+
+Timer Flag:
+-----------
+T 7        [Ueberwachungszeit RSK (KF)]           Makro Step
+T 8        [Ueberwachungszeit RSK (KS)]           Makro Step
+T 9        [Ueberwachungszeit RSK (SZ)]           Makro Step
+T 10       [Ueberwachungszeit Makros]             Makro 180, 181, 182, 183, 187, 342, 343, 420, 421, 422
+T 11       [Verweilzeit Makros]                   Makro Step
+T 12       [Prozesszeit POT]                      Makro 180, 181, 183
+T 20       [Ueberwachungszeit Freilaufende SPS]   Makro SPS
+
+Prozessparameter:
+-----------------
+p 15       [ ]   Makro 181
+p 16       [ ]   Makro 182, 183
+p 18       [ ]   Makro 180
+
+Makro:
+------
+Makro 0    [RUECKSETZEN_EA]                 Folge 4, 74, 123, 124, 125
+Makro 1    [TEIL_ARBEITSF_1]                UP 1, 21
+Makro 2    [TEIL_ARBEITSF_2]                Folge 4, 74, UP 2, 22, 52
+Makro 3    [TEIL_ARBEITSF_3]                UP 3, 23, 72
+Makro 4    [TEIL_ARBEITSF_4]                UP 4, 24
+Makro 5    [TEIL_ARBEITSF_5]                UP 72
+Makro 15   [GESAMT_ARBEITSF]                Folge 4, 74
+Makro 20   [ROBOTER VERRIEGELUNGEN]         UP 1, 2, 3, 4, 21, 24
+Makro 50   [INITIALISIERUNG MERKER]         Folge 4, 74, 123, 124, UP 1, 2, 3, 4, 6, 21, 22, 23, 24, 26, 52, 72, 84, 86, 111, 112, 113, 115, 120, 201, 202, 203, 204, 206, 207, 208, 209
+Makro 51   [INITIALISIERUNG MERKER VW370]   UP 111, 120
+Makro 52   [INITIALISIERUNG MERKER]         Folge 4, UP 1, 2, 3, 4, 6, 52, 84, 86, 113, 201, 203, 207, 209
+Makro 53   [INITIALISIERUNG MERKER VW380]   Folge 74, UP 21, 22, 23, 24, 26, 72, 84, 86, 112, 115, 202, 204, 206, 208
+Makro 57   [INITIALISIERUNG FLAGS]          Makro 50
+Makro 59   [PNet_Alternatieven]             Makro 50
+Makro 180  [KL1_KLEBEN_START]               UP 3, 23
+Makro 181  [KL1_KLEBEN_ENDE]                UP 3, 23
+Makro 182  [KL1_SPUELEN_START]              Folge 74, UP 120
+Makro 183  [KL1_SPUELEN_ENDE]               Folge 4, UP 3, 23, 120
+Makro 184  [KL1_BT_Zeigen]                  UP 72
+Makro 340  [GREIFER INIT]                   Folge 4, 74, UP 1, 2, 4, 6, 24, 52, 84, 86, 112, 113, 115, 201, 202, 203, 204, 206, 207, 208, 209
+Makro 342  [GREIFER AUF/SAUGKREIS AUS]      Folge 4, 74, UP 1, 2, 4, 6, 24, 26, 52, 84, 86, 112, 113, 115, 201, 202, 203, 204, 206, 207, 208, 209
+Makro 343  [GREIFER ZU/SAUGKREIS EIN]       Folge 4, UP 1, 2, 4, 6, 21, 24, 26, 52, 84, 86, 206, 207, 208, 209
+Makro 344  [SPANNGRUPPE 1 ZU/AUF]           Makro 342, 343
+Makro 345  [SPANNGRUPPE 2 ZU/AUF]           Makro 342, 343
+Makro 346  [SPANNGRUPPE 3 ZU/AUF]           Makro 342, 343
+Makro 347  [SPANNGRUPPE 4 ZU/AUF]           Makro 342, 343
+Makro 348  [SPANNGRUPPE 5 ZU/AUF]           Makro 342, 343
+Makro 349  [SPANNGRUPPE 6 ZU/AUF]           Makro 342, 343
+Makro 350  [SPANNGRUPPE 7 ZU/AUF]           Makro 342, 343
+Makro 351  [SPANNGRUPPE 8 ZU/AUF]           Makro 342, 343
+Makro 352  [SPANNGRUPPE 9 ZU/AUF]           Makro 342, 343
+Makro 353  [SPANNGRUPPE 10 ZU/AUF]          Makro 342, 343
+Makro 354  [SPANNGRUPPE 11 ZU/AUF]          Makro 342, 343
+Makro 355  [SPANNGRUPPE 12 ZU/AUF]          Makro 342, 343
+Makro 356  [SPANNGRUPPE 13 ZU/AUF]          Makro 342, 343
+Makro 357  [SPANNGRUPPE 14 ZU/AUF]          Makro 342, 343
+Makro 358  [SPANNGRUPPE 15 ZU/AUF]          Makro 342, 343
+Makro 359  [SPANNGRUPPE 16 ZU/AUF]          Makro 342, 343
+Makro 360  [SAUGKREIS 1 EIN/AUS]            Makro 342, 343
+Makro 361  [SAUGKREIS 2 EIN/AUS]            Makro 342, 343
+Makro 362  [SAUGKREIS 3 EIN/AUS]            Makro 342, 343
+Makro 363  [SAUGKREIS 4 EIN/AUS]            Makro 342, 343
+Makro 364  [SAUGKREIS 5 EIN/AUS]            Makro 342, 343
+Makro 365  [SAUGKREIS 6 EIN/AUS]            Makro 342, 343
+Makro 420  [DS_ABDOCKEN]                    UP 84, 86
+Makro 421  [DS_ANDOCKEN]                    UP 84, 86
+Makro 422  [DS Fehler Reset]                UP 84, 86
+Makro 430  [DB INIT]                        UP 84, 86
+Makro 432  [DB_AUF]                         UP 84, 86
+Makro 433  [DB_ZU]                          UP 23, 26, 72, 84, 86, 112, 115, 202, 204, 208
+Makro 434  [DB 1 ZU/AUF]                    Makro 432, 433
+Makro 435  [DB 2 ZU/AUF]                    Makro 432, 433
+Makro 436  [ ]                              Makro 432, 433
+Makro 437  [ ]                              Makro 432, 433
+Makro 438  [ ]                              Makro 432, 433
+Makro 439  [ ]                              Makro 432, 433
+Makro 440  [ ]                              Makro 432, 433
+Makro 441  [ ]                              Makro 432, 433
+
+UP:
+---
+UP 1       [VW310-6 BT ENT ST115410]             Folge 4
+UP 2       [Praegen VW310-6]                     Folge 4
+UP 3       [VW310-6 stat Kleben]                 Folge 4
+UP 4       [VW310-6 BT ABL ST115440]             Folge 4
+UP 6       [VW310-6 Kleber NIO]                  Folge 4
+UP 21      [VW380 Entnahme AFO 115410]           Folge 74
+UP 22      [VW380 Praegen]                       Folge 74
+UP 23      [VW380 Kleben]                        Folge 74
+UP 24      [VW380 Ablegen AFO 115440]            Folge 74
+UP 26      [VW380 Ausschleusen]                  Folge 74
+UP 71      [ ]                                   Folge 4
+UP 72      [VW380 Kleber zeigen]                 Folge 74
+UP 84      [Abdocken 379 Andocken 380]           Folge 74, 124
+UP 86      [Abdocken 380 Andocken 379]           Folge 4, 124
+UP 111     [Wartung KL]                          Folge 124
+UP 112     [Wartung Greifer 1 VW380]             Folge 124
+UP 113     [Wartung Greifer 2 VW310-6]           Folge 124
+UP 120     [KL1 Spuelen]                         Folge 124
+UP 201     [Werkzeugwechsel Greifer 2 VW310-6]   Folge 124
+UP 202     [Werkzeugwechsel Greifer 1 VW380]     Folge 124
+UP 203     [Werkzeugwechsel Greifer 2 VW379]     Folge 124
+UP 206     [TCP-Kontrolle G VW380]               Folge 124
+UP 207     [TCP-Kontrolle KL VW310-6]            Folge 124
+UP 208     [TCP-Kontrolle KL VW380]              Folge 124
+UP 209     [TCP-Kontrolle MS VW310-6]            Folge 124
+
+Cell:
+-----
+Folge 74, 124, 125
+

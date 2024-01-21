@@ -1,0 +1,308 @@
+&ACCESS RV
+&REL 202
+&PARAM DISKPATH = VW_User/Applikation/Bolzen
+&PARAM TPVW_VERSION = 8.3.0
+DEF vw_bz_usr_s( )
+; 
+;*------------------------------------------------------------*
+;*Technologiepaket Bolzenschweissen                           *
+;*                                                            *
+;*Konzernstandard                                             *
+;*Bearbeiter: W. Lehmeier I/PG-C61                            *
+;*                                                            *
+;* Erstellt am:                                               *
+;* 2015.02.09 LE                                              *
+;*                                                            *
+;* Änderung: VW-Spezifischer Teil                             *
+;* 2015.11.25 OL/LZ Bolzensteuerung mit Rotationskopf         *
+;*                                                            *
+;*-------------------------------------------------------------
+; 
+END
+;
+;FOLD INIT Bolzenschweissen 
+GLOBAL DEF BZ_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_Bolzen.Name[]="KS24.01.004_151125"
+;ENDFOLD
+;
+;FOLD Vorbesetzung Meldungsausgabe
+FOR i = 1 TO 100
+  n_BZS_Handle[i]=-1
+  n_BZR_Handle[i]=-1
+ENDFOR
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SAW Bolzenschweissen 
+GLOBAL DEF BZ_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RESET Bolzenschweissen 
+GLOBAL DEF BZ_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD CANCEL Bolzenschweissen 
+GLOBAL DEF BZ_CANCEL( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Bolzenschweissen 1 
+GLOBAL DEF BZ1_LOOP( )
+;
+;Vorwahl ohne Prozess
+$OUT[O_BZ1_o_Proz]=$IN[I_BZ1_o_Proz] OR $FLAG[F_o_Prozess]
+;
+;BZ 1 Anwahl Energiesparmodus
+$OUT[O_BZ1_E_Mode] = (($Brake_Sig==0) AND $timer_flag[TimerNr_E_Mo] AND e_Mode_Hilf2)    
+;
+;BA-Hand an BZ 1 setzen
+IF NOT $COULD_START_MOTION OR ($OUT[O_R_Hand] AND NOT $OUT[O_R_Proz_akt] AND $COULD_START_MOTION) THEN
+  $OUT[O_BZ1_Hand]=TRUE
+ELSE  
+  $OUT[O_BZ1_Hand]=FALSE
+ENDIF 
+;
+;Ausgabe Statusmeldungen an BMS
+;
+;Wartungswarnung
+$OUT[O_BZ1_W_Warn]=$OUT[O_R_Auto] AND $IN[I_BZ1_W_Warn]
+;Standzeit 98% erreicht
+$OUT[O_BZ1_Standz]=$OUT[O_R_Auto] AND $IN[I_BZ1_Standz]
+;Prozess ausserhalb Toleranz
+B_Hilfsmerk=$IN[I_BZ1_P_aTo1] OR $IN[I_BZ1_P_aTo2] OR $IN[I_BZ1_P_aTo3] OR $IN[I_BZ1_P_aTo4] OR $IN[I_BZ1_P_aTo5]
+$OUT[O_BZ1_P_aTol]=$OUT[O_R_Auto] AND B_Hilfsmerk
+;BAW fehlt
+BZ1_HM_BAW_1=$OUT[O_BZ1_Start1] AND NOT $IN[I_BZ1_Sammel] AND NOT $IN[I_BZ1_SK1_R] AND NOT $IN[I_BZ1_BAW1]
+BZ1_HM_BAW_2=$OUT[O_BZ1_Start2] AND NOT $IN[I_BZ1_Sammel] AND NOT $IN[I_BZ1_SK2_R] AND NOT $IN[I_BZ1_BAW2]
+BZ1_HM_BAW_3=$OUT[O_BZ1_Start3] AND NOT $IN[I_BZ1_Sammel] AND NOT $IN[I_BZ1_SK3_R] AND NOT $IN[I_BZ1_BAW3]
+BZ1_HM_BAW_4=$OUT[O_BZ1_Start4] AND NOT $IN[I_BZ1_Sammel] AND NOT $IN[I_BZ1_SK4_R] AND NOT $IN[I_BZ1_BAW4]
+BZ1_HM_BAW_5=$OUT[O_BZ1_Start5] AND NOT $IN[I_BZ1_Sammel] AND NOT $IN[I_BZ1_SK5_R] AND NOT $IN[I_BZ1_BAW5]
+$OUT[O_BZ1_BAW]=$OUT[O_R_Auto] AND (BZ1_HM_BAW_1 OR BZ1_HM_BAW_2 OR BZ1_HM_BAW_3 OR BZ1_HM_BAW_4 OR BZ1_HM_BAW_5)
+;Betriebsbereit fehlt
+$OUT[O_BZ1_Bereit]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_BZ1_Bereit] AND $timer_flag[TimerNr_Ein]
+;Sammelstoerung
+$OUT[O_BZ1_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $IN[I_BZ1_Sammel] OR $FLAG[F_BZ1_Sammel] OR BZ1_LBitFeh) AND $timer_flag[TimerNr_Ein]
+;	
+;Lebensbit_Ueberwachung
+L_Bit_BZ(1)
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Bolzenschweissen 2
+GLOBAL DEF BZ2_LOOP( )
+;
+;Vorwahl ohne Prozess
+$OUT[O_BZ2_o_Proz]=$IN[I_BZ2_o_Proz] OR $FLAG[F_o_Prozess]
+;
+;BZ 2 Anwahl Energiesparmodus
+$OUT[O_BZ2_E_Mode] = (($Brake_Sig==0) AND $timer_flag[TimerNr_E_Mo] AND e_Mode_Hilf2)   
+;
+;BA-Hand an BZ 2 setzen
+IF NOT $COULD_START_MOTION OR ($OUT[O_R_Hand] AND NOT $OUT[O_R_Proz_akt] AND $COULD_START_MOTION) THEN
+  $OUT[O_BZ2_Hand]=TRUE
+ELSE  
+  $OUT[O_BZ2_Hand]=FALSE
+ENDIF   
+;
+;Ausgabe Statusmeldungen an BMS
+;
+;Wartungswarnung
+$OUT[O_BZ2_W_Warn]=$OUT[O_R_Auto] AND $IN[I_BZ2_W_Warn]
+;Standzeit 98% erreicht
+$OUT[O_BZ2_Standz]=$OUT[O_R_Auto] AND $IN[I_BZ2_Standz]
+;Prozess ausserhalb Toleranz
+B_Hilfsmerk=$IN[I_BZ2_P_aTo1] OR $IN[I_BZ2_P_aTo2] OR $IN[I_BZ2_P_aTo3] OR $IN[I_BZ2_P_aTo4] OR $IN[I_BZ2_P_aTo5]
+$OUT[O_BZ2_P_aTol]=$OUT[O_R_Auto] AND B_Hilfsmerk
+;BAW fehlt
+BZ2_HM_BAW_1=$OUT[O_BZ2_Start1] AND NOT $IN[I_BZ2_Sammel] AND NOT $IN[I_BZ2_SK1_R] AND NOT $IN[I_BZ2_BAW1]
+BZ2_HM_BAW_2=$OUT[O_BZ2_Start2] AND NOT $IN[I_BZ2_Sammel] AND NOT $IN[I_BZ2_SK2_R] AND NOT $IN[I_BZ2_BAW2]
+BZ2_HM_BAW_3=$OUT[O_BZ2_Start3] AND NOT $IN[I_BZ2_Sammel] AND NOT $IN[I_BZ2_SK3_R] AND NOT $IN[I_BZ2_BAW3]
+BZ2_HM_BAW_4=$OUT[O_BZ2_Start4] AND NOT $IN[I_BZ2_Sammel] AND NOT $IN[I_BZ2_SK4_R] AND NOT $IN[I_BZ2_BAW4]
+BZ2_HM_BAW_5=$OUT[O_BZ2_Start5] AND NOT $IN[I_BZ2_Sammel] AND NOT $IN[I_BZ2_SK5_R] AND NOT $IN[I_BZ2_BAW5]
+$OUT[O_BZ2_BAW]=$OUT[O_R_Auto] AND (BZ2_HM_BAW_1 OR BZ2_HM_BAW_2 OR BZ2_HM_BAW_3 OR BZ2_HM_BAW_4 OR BZ2_HM_BAW_5)
+;Betriebsbereit fehlt
+$OUT[O_BZ2_Bereit]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_BZ2_Bereit] AND $timer_flag[TimerNr_Ein]
+;Sammelstoerung
+$OUT[O_BZ2_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $IN[I_BZ2_Sammel] OR $FLAG[F_BZ2_Sammel] OR BZ2_LBitFeh) AND $timer_flag[TimerNr_Ein]
+;	
+;Lebensbit_Ueberwachung
+L_Bit_BZ(2)	
+;
+END
+;ENDFOLD
+;
+;**** VW -spezifischer Teil Anfang ****
+;FOLD LOOP Bolzenschweissen mit Rotationskopf 
+GLOBAL DEF BZ3_LOOP( )
+;Vorwahl ohne Prozess
+$OUT[O_BZ3_o_Proz]=$IN[I_BZ3_o_Proz] OR $FLAG[F_o_Prozess]
+;
+;BZ TR Kopf Anwahl Energiesparmodus
+$OUT[O_BZ3_E_Mode] = (($Brake_Sig==0) AND $timer_flag[TimerNr_E_Mo] AND e_Mode_Hilf2)
+;
+;Ausgabe Fehlermeldungen
+;
+;Wartungswarnung
+$OUT[O_BZ3_W_Warn]=$OUT[O_R_Auto] AND $IN[I_BZ3_W_Warn]
+;Standzeit 98% erreicht
+$OUT[O_BZ3_Standz]=$OUT[O_R_Auto] AND $IN[I_BZ3_Standz]
+;Prozess ausserhalb Toleranz
+$OUT[O_BZ3_P_iTol]=$OUT[O_R_Auto] AND $IN[I_BZ3_P_iTol]
+;Slow Motion Mode Null - Aktiv
+$OUT[O_BZ3_SloMo]=(NOT($OUT[O_R_Auto]) AND ($OUT[O_R_HAND]))
+;Roboter in Hand/Automatik Betrieb
+$OUT[O_BZ3_R_Hand]=(NOT($OUT[O_R_Auto]) AND ($OUT[O_R_HAND]))
+;Fahrfreigabe
+IF $OUT[O_BZ3_R_HAND] THEN
+$OUT[O_BZ3_BewFRG]=$OUT[O_R_RK100]
+ENDIF
+;BAW fehlt
+BZ3_HM_BAW_1=$OUT[O_BZ3_Start1] AND NOT $IN[I_BZ3_Sammel] AND NOT $IN[I_BZ3_SK1_R] AND NOT $IN[I_BZ3_BAW1]
+$OUT[O_BZ3_BAW]=$OUT[O_R_Auto] AND BZ3_HM_BAW_1
+;Betriebsbereit fehlt
+$OUT[O_BZ3_Bereit]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_BZ3_Bereit] AND $timer_flag[TimerNr_Ein]
+;Sammelstoerung
+$OUT[O_BZ3_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $IN[I_BZ3_Sammel] OR $FLAG[F_BZ3_Sammel]) AND $timer_flag[TimerNr_Ein]
+;Programmnummer auf Bus schreiben
+BZ3_P_Nr_Bus=BZ3_P_Nr
+;
+;Winkel Vorgabe auf binaeren Ausgang setzen
+;Vorgabe in Grad -> Genauigkeit eine Nachkommastelle
+O_BZ3_WK_POS=BZ3_Winkel_Soll*10
+;Ist-Winkel von binaerem Eingang lesen
+BZ3_Winkel_Ist=I_BZ3_WK_POS*0.1
+;Flag 403 setzen, wenn Winkel SOLL=IST (+/- Toleranz)
+IF (BZ3_Winkel_Soll <= (BZ3_Winkel_Ist + 0.1)) AND (BZ3_Winkel_Soll >= (BZ3_Winkel_Ist - 0.1)) THEN
+$FLAG[F_BZ3_SOLL_IST]=TRUE
+ELSE
+$FLAG[F_BZ3_SOLL_IST]=FALSE
+ENDIF
+;
+; Feeder ID auf Ausgangsbits setzen
+BZ3_Feeder_ID_Bus=BZ3_Feeder_Vorgabe
+;
+;Lebensbit_Ueberwachung
+L_Bit_BZ(3)
+END
+;ENDFOLD
+;**** VW -spezifischer Teil Ende ****
+;
+;-----------------------------------------------------------
+;FOLD Lebensbit BZ
+DEF L_Bit_BZ(BZNr :IN)
+;Setzen / Rueksetzen Lebensbit Roboter
+INT BZNr
+BOOL LBitBZ, LBitFault
+INT RobTimer
+BOOL ErrLBit, bRet
+ErrLBit = FALSE
+LBitFault=FALSE
+;Setzen - Rucksetzen  des Lebensbit an Zangensteuerung
+$OUT[LBitToBZ[BZNr]] = NOT $IN[LBitFromBZ[BZNr]]
+RobTimer = $ROB_TIMER	
+IF $IN[LBitFromBZ[BZNr]] <> LBitState[BZNr] THEN
+  LBitTimeCnt[BZNr] = RobTimer
+ENDIF
+IF (RobTimer - LBitTimeCnt[BZNr]) > 5000 THEN
+  ErrLBit = TRUE
+  ErrBZNr = BZNr
+  BZ_LBitFeh[BZNr]=TRUE
+ENDIF
+LBitState[BZNr] = $IN[LBitFromBZ[BZNr]]
+IF ErrLBit THEN
+  Bolzen_Msg(1,#StateMsg, ErrBZNr)
+ELSE
+  IF n_BZS_Handle[1]>-1 THEN
+    bRet=Clear_KrlMsg(n_BZS_Handle[1])
+    n_BZS_Handle[1]=-1
+    ErrBZNr = -1
+  ENDIF
+  BZ_LBitFeh[BZNr]=FALSE
+ENDIF
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD BZ_Meldungen
+DEF Bolzen_Msg(msg_nr :IN, MsgTyp :IN, BZNr :IN)
+INT msg_nr, BZNr, Answer
+DECL BZS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+;
+USER_MSG = { Modul[] "BZ_S_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF Varstate("BZNr")==#initialized then
+  SWITCH BZNr
+    CASE 1
+      Par[1] = { Par_type #Value, Par_int 1 }
+    CASE 2
+      Par[1] = { Par_type #Value, Par_int 2 }
+    CASE 3
+      Par[1] = { Par_type #Value, Par_int 3 }
+    CASE 4
+      Par[1] = { Par_type #Value, Par_int 4 }
+    CASE 5
+      Par[1] = { Par_type #Value, Par_int 5 }
+    CASE 6
+      Par[1] = { Par_type #Value, Par_int 6 }
+    DEFAULT
+      Par[1] = { Par_type #Value, Par_txt[] " " }
+  ENDSWITCH
+ELSE
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+ENDIF
+;
+IF ((n_BZS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]="BZ%1 :keine Antwort auf Lebensbit"
+    CASE 2
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 3
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_BZS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_BZS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      n_BZS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_BZS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (BZ Meldungen)

@@ -1,0 +1,101 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/VW_MUTTERN
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vw_usr_rv
+&PARAM TPVW_VERSION = 8.3.8
+&REL 119
+DEFDAT  vw_muttern_r PUBLIC
+; FOLD ;%{H}%MKUKATPVW
+; ENDFOLD
+;Ausgang zur Meldung von Problemen an SPS
+INT OutputNumTolerance=66
+;Eingang zur Weiterfahrt nach Problemmeldung ohne Verschiebung der Toleranz
+BOOL BInputNumMoveOn
+;Eingang zur Weiterfahrt nach Problemmeldung mit Verschiebung der Toleranz
+BOOL BInputNumMoveNot
+;Einang zum Urteile vermessen
+INT InputBasicMeasure
+
+;Messtater fuer die Messung Pos_Flanke Lichtschranke 1 
+INT MEAS_PULSE_P=519
+;Messtater fuer die Messung Neg_Flanke Lichtschranke 2
+INT MEAS_PULSE_N=520
+;Temp Merker Für Masterteil Vermessen
+BOOL BasicMeasure=FALSE
+;Temp antwort für Dialogmeldung 
+INT antwort=0
+
+;aktuell genutzter Greifer
+INT GripperNum=2
+INT ToolNR=2
+
+;Messaufgabe strukturieren
+ENUM EnMeasureType X,Z1,Z2
+DECL EnMeasureType MeasureType
+
+;Messpunkte strukturieren
+GLOBAL STRUC strMeasurePoints REAL XX,ZZ1,ZZ2
+
+;Toleranz strukturieren
+GLOBAL STRUC strMinMaxValues REAL Min,Max
+GLOBAL STRUC strMeasurePointsLimits strMinMaxValues X,Z1,Z2
+
+;Aktuell gespeicherte IRQ-Werte
+DECL strMeasurePoints CurrentValue={XX -4.44249964,ZZ1 -6.34440947,ZZ2 -2.57104158}
+
+;Ursprungswerte fuer jeden Greifer
+DECL strMeasurePoints GripperBasicValue[8]
+GripperBasicValue[1]={XX -3.33239698,ZZ1 -3.49404097,ZZ2 -1.72392821}
+GripperBasicValue[2]={XX -3.70966649,ZZ1 -4.51958942,ZZ2 -2.43868756}
+GripperBasicValue[3]={XX 0.0,ZZ1 0.0,ZZ2 0.0}
+GripperBasicValue[4]={XX 0.0,ZZ1 0.0,ZZ2 0.0}
+GripperBasicValue[5]={XX 0.0,ZZ1 0.0,ZZ2 0.0}
+GripperBasicValue[6]={XX 0.0,ZZ1 0.0,ZZ2 0.0}
+GripperBasicValue[7]={XX 0.0,ZZ1 0.0,ZZ2 0.0}
+GripperBasicValue[8]={XX 0.0,ZZ1 0.0,ZZ2 0.0}
+
+;Startpositionen fuer Messfahrt
+STRUC strFrameXZ1Z2 FRAME X,Z1,Z2
+;Position der Suchfahrten x,z1 und z2
+DECL strFrameXZ1Z2 MeasureStartPos={X {X 2.50178456E-08,Y 3.71721391E-08,Z -3.57558072E-08,A -3.71793117E-11,B -1.73887363E-11,C -3.30145243E-12},Z1 {X -4.15930366E-08,Y 3.83222698E-09,Z -2.45864804E-08,A 7.06248081E-12,B -1.85060040E-12,C 8.23850536E-12},Z2 {X -2.52357468E-10,Y -4.14645E-11,Z -3.86776406E-08,A -2.77511168E-13,B 2.93778104E-13,C -2.34634344E-14}}
+;Differenzvektor zwischen den Werkzeugen
+FRAME DiffTCPtoFKS={X 1.41338170,Y 0.681738198,Z -0.530708373,A 89.5415573,B 0.762582,C 118.247803}
+
+;Verschiebetool
+FRAME MeasureTool={X 75.2180862,Y 94.9542542,Z 311.981567,A 151.746094,B -0.458400,C 90.7626}
+
+;Temporaer gespeicherter TCP
+FRAME TempTCP={X 0.732833147,Y 0.0,Z 1.82482,A 0.0,B 0.0,C 0.0}
+
+;Ausgabe der Messdaten im Meldungsfenster
+BOOL ShowMeasValues=TRUE
+
+;Messdaten vom der Suchfahrt
+GLOBAL STRUC strMeasValues REAL XXX,ZZZ1,ZZZ2,Diff_XXX,Diff_ZZZ1,Diff_ZZZ2
+DECL strMeasValues MeasValues={XXX -4.44249964,ZZZ1 -6.34440947,ZZZ2 -2.57104158,Diff_XXX 0.732833147,Diff_ZZZ1 1.82482,Diff_ZZZ2 0.132354021}
+
+;Erster Useraufruf
+BOOL FirstUserCall=TRUE
+
+;Interrupt wurde ausgeloest
+STRUC strBoolXZ1Z2 BOOL X,BOOL Z1,BOOL Z2
+DECL strBoolXZ1Z2 IRQTriggered
+
+;Messung war im Toleranzfenster
+DECL strBoolXZ1Z2 MeasureInTolerance ;Messung war im Toleranzfenster
+
+;Koords wurden vermessen
+DECL strBoolXZ1Z2 CoordsMeasured
+
+;Merker fuer alten OV_PRO
+INT Old_OV
+
+;mind. eine Messung nicht in Toleranz
+BOOL SomethingNotInTolerance=FALSE
+
+;Logwerte
+DECL DATE TimeStamp
+GLOBAL STRUC strLogEntry REAL X,Z1,Z2,INT ToolNR,Jahr,Mon,Tag,Std,Minu,Sek
+
+;****************Messdatenanalyse****** Ende *******
+ENDDAT

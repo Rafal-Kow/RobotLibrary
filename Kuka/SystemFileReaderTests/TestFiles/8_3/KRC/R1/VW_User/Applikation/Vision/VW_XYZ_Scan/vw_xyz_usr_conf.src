@@ -1,0 +1,21 @@
+&ACCESS  RV
+&COMMENT KS_1.0
+&PARAM DISKPATH = VW_User/Applikation/Vision/VW_XYZ_Scan
+&PARAM TPVW_VERSION = 8.3.8
+&REL 16
+DEF vw_xyz_usr_conf( )
+  ; 
+  ;*-------------------------------------------------*
+  ;* Technologiepaket vw_xyz_Scan                    *
+  ;*                                                 *
+  ;* Konzernstandard                                 *
+  ;* Bearbeiter: B.Mildenberger PEF-2/E0A            *
+  ;*                                                 *
+  ;* Erstellt am:                                    *
+  ;* 2016.07.18 BM                                   *
+  ;*                                                 *
+  ;* Projektspezifische Applikationsdaten            *
+  ;*                                                 *
+  ;*-------------------------------------------------*
+  ;  
+END

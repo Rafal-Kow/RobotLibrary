@@ -1,0 +1,10 @@
+<Properties xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Properties>
+		<Property>
+			<!-- Sets the verified by KUKA flag for braking before restricted areas. -->
+			<Uri>wov://machine/Root/Mada/Krc/RampStopApproved:boolean</Uri>
+			<Value>true</Value>
+		</Property>
+	</Properties>
+</Properties>
+

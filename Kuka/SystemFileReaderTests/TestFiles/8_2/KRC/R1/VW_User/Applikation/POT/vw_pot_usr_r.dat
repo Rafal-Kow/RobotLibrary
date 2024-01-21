@@ -1,0 +1,31 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/POT
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_pot_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Docking                             *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: Chr. Eisenknappl I/PG-C61                *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2014.09.11 CE                                       *
+;*                                                     *
+;* Aenderungsjournal                                   *
+;*                                                     *
+;*-----------------------------------------------------*
+; 
+;FOLD POT
+; 
+; 
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM POTR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

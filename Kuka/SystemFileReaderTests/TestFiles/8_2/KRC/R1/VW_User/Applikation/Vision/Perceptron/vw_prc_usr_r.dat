@@ -1,0 +1,860 @@
+&ACCESS  R
+&COMMENT KS_1.1
+&PARAM DISKPATH = VW_User/Applikation/Vision/Perceptron
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_prc_usr_r PUBLIC
+; FOLD ;%{H}%MKUKATPVW
+; ENDFOLD
+; 
+;FOLD Perceptron
+;*---------------------------------------------*
+;* Perceptron GmbH                             *
+;*                                             *
+;* Version 1.1.7  / VKRC 2                     *
+;*                                             *
+;*     ueberarbeitet auf Stand V1.0.0 / VKRC 4 *
+;*                                             *
+;* Bearbeitet am:                              *
+;* 25.08.2010 HF / MG                          *
+;*     Namens Anpassungen                      *
+;* 26.10.2010 HF / MG / MM                     *
+;*     VF-Module ueberarbeitet                 *
+;* 02.02.2011 HF / MM                          *
+;*     Ausgaenge /Flags angepasst              *
+;* 24.10.2013 MG                               *
+;*     Sensor/Robotertausch ueberarbeitet      *
+;* 05.02.2014 MG                               *
+;* 20.03.2014 MG                               *
+;*     E/A-Bereiche angepasst                  *
+;* 24.03.2015 RB                               *
+;*     Modell-Erweiterung                      *
+;*     Modell-Flags angepasst                  *
+;*     UP-Nr.-Zuweiung angepasst               *
+;*---------------------------------------------*;*---------------------------------------------*
+; 
+ENUM ParTypeVal Value,String,Empty
+ENUM MSG_T State,Quit,Notify,Waiting
+
+ENUM PRC_MsgType StatMsg,QuitMsg,NotifyMsg,WaitMsg,DlgMsg
+DECL PRC_MsgType MLD_TYP=#DlgMsg
+; 
+;FOLD IN-Signals
+;Kommando Byte0, Byte1
+;Achtung in der vw_usr_s.dat weitere Signale definiert
+SIGNAL I_PRC_Zyklus $IN[1953] ;0.0 Perceptron im Messzyklus
+SIGNAL I_PRC_PktAck $IN[1954] ;0.1 Punktmessung beenden
+SIGNAL I_PRC_PosInf $IN[1955] ;0.2 Positionsdaten sind angefordert
+SIGNAL I_PRC_Fehler $IN[1956] ;0.3 Fehler
+SIGNAL I_PRC_PVAck $IN[1957] ;0.4 Messpunkt verlassen Antwort
+SIGNAL I_PRC_MEACK $IN[1958] ;0.5 Modell beenden Antwort
+SIGNAL I_PRC_PgmMod $IN[1959] ;0.6 Perceptron im TeachMode
+SIGNAL I_PRC_Reset $IN[1960] ;0.7 Reset Antwort
+SIGNAL I_PRC_Ready $IN[1961] ;1.0 Perceptron bereit
+SIGNAL I_PRC_SScAck $IN[1962] ;1.1 Starte scannen Antwort
+SIGNAL I_PRC_EScAck $IN[1963] ;1.2 Beende scannen Antwort
+SIGNAL I_PRC_SReAck $IN[1964] ;1.3 Sensor reseten Antwort
+;Achtung in der vw_usr_s.dat definiert
+;SIGNAL I_PRC_Life $IN[1968]  ; 1.7 Life-Bit
+;Dateninfo Fehler Byte2,Byte3
+SIGNAL I_PRC_FehlNr $IN[1969]  TO $IN[1984]
+;Handshake Byte4, Byte5 
+SIGNAL I_PRC_DaSend $IN[1985] ;4.0 Daten Senden
+SIGNAL I_PRC_DaNew $IN[1986] ;4.1 Daten Neu
+SIGNAL I_PRC_DaAck $IN[1987] ;4.2 Daten Antwort
+SIGNAL I_PRC_DaComp $IN[1988] ;4.3 Daten Komplett
+SIGNAL I_PRC_Kenn $IN[2001]  TO $IN[2008] ;Byte6
+SIGNAL I_PRC_ID $IN[2009]  TO $IN[2016] ;Byte7
+SIGNAL I_PRC_Para1 $IN[2017]  TO $IN[2032] ;Byte8-Byte9
+SIGNAL I_PRC_Para2 $IN[2033]  TO $IN[2048] ;Byte10-Byte11
+SIGNAL I_PRC_Data1 $IN[2001]  TO $IN[2008] ;Byte6
+SIGNAL I_PRC_Data2 $IN[2009]  TO $IN[2016] ;Byte7
+SIGNAL I_PRC_Data3 $IN[2017]  TO $IN[2024] ;Byte8
+SIGNAL I_PRC_Data4 $IN[2025]  TO $IN[2032] ;Byte9
+SIGNAL I_PRC_Data5 $IN[2033]  TO $IN[2040] ;Byte10
+SIGNAL I_PRC_Data6 $IN[2041]  TO $IN[2048] ;Byte11
+;ENDFOLD (IN-Signals)
+; 
+;FOLD OUT-Signals
+;Kommando Byte0, Byte1
+;Achtung in der vw_usr_s.dat weitere Signale definiert
+SIGNAL O_PRC_Cmd $OUT[1953]  TO $OUT[1960] ;KOMMANDOBYTE1
+SIGNAL O_PRC_Pkt $OUT[1953] ;0.0 Punktmessung starten
+SIGNAL O_PRC_PV $OUT[1954] ;0.1 Messpunkt verlassen
+SIGNAL O_PRC_ME $OUT[1955] ;0.2 Modell beenden
+SIGNAL O_PRC_WrtInf $OUT[1956] ;0.3 Warte auf Start Informationen
+SIGNAL O_PRC_CmpStr $OUT[1957] ;0.4 Compound start
+SIGNAL O_PRC_Reset $OUT[1960] ;0.7 Reset
+SIGNAL O_PRC_SSc $OUT[1962] ;1.1 Starte scannen
+SIGNAL O_PRC_ESc $OUT[1963] ;1.2 Beende scannen
+SIGNAL O_PRC_SRe $OUT[1964] ;1.3 Sensor reseten
+SIGNAL O_PRC_RobBwg $OUT[1965] ;1.4 Roboter in Bewegung abh. von $OUT[1022] und $OUT[1023]
+; Achtung in der vw_usr_s.dat definiert
+;SIGNAL O_PRC_Life $OUT[1968]  ; 1.7 Life-Bit
+;Punktnummer Byte2, Byte3
+SIGNAL O_PRC_PktNr $OUT[1969]  TO $OUT[1984] ;Punktnummer
+;Handshake Byte4, Byte5
+SIGNAL O_PRC_DaSend $OUT[1985] ;4.0 Daten Senden
+SIGNAL O_PRC_DaNew $OUT[1986] ;4.1 Daten Neu
+SIGNAL O_PRC_DaAck $OUT[1987] ;4.2 Daten Antwort
+SIGNAL O_PRC_DaComp $OUT[1988] ;4.3 Daten Komplett
+;Datenkanal Byte6-Byte11
+SIGNAL O_PRC_Kenn $OUT[2001]  TO $OUT[2008] ;Byte6
+SIGNAL O_PRC_ID $OUT[2009]  TO $OUT[2016] ;Byte7
+SIGNAL O_PRC_Para1 $OUT[2017]  TO $OUT[2032] ;Byte8-Byte9
+SIGNAL O_PRC_Para2 $OUT[2033]  TO $OUT[2048] ;Byte10-Byte11
+SIGNAL O_PRC_Speed1 $OUT[2001]  TO $OUT[2008] ;Byte6 Bolzenmessung
+SIGNAL O_PRC_Speed2 $OUT[2009]  TO $OUT[2016] ;Byte7 Bolzenmessung
+SIGNAL O_PRC_Speed3 $OUT[2017]  TO $OUT[2024] ;Byte8 Bolzenmessung
+SIGNAL O_PRC_Speed4 $OUT[2025]  TO $OUT[2032] ;Byte9 Bolzenmessung
+SIGNAL O_PRC_ToolNr $OUT[2001]  TO $OUT[2008] ;Byte6
+SIGNAL O_PRC_Data1 $OUT[2001]  TO $OUT[2008] ;Byte6
+SIGNAL O_PRC_Data2 $OUT[2009]  TO $OUT[2016] ;Byte7
+SIGNAL O_PRC_Data3 $OUT[2017]  TO $OUT[2024] ;Byte8
+SIGNAL O_PRC_Data4 $OUT[2025]  TO $OUT[2032] ;Byte9
+SIGNAL O_PRC_Data5 $OUT[2033]  TO $OUT[2040] ;Byte10
+SIGNAL O_PRC_Data6 $OUT[2041]  TO $OUT[2048] ;Byte11
+;Start/End Verzoegerung Byte10 - Byte13
+SIGNAL O_PRC_StrVrz $OUT[2033]  TO $OUT[2048] ;Timer2
+SIGNAL O_PRC_EndVrz $OUT[2049]  TO $OUT[2064] ;Timer3
+;ENDFOLD (OUT-Signals)
+; 
+;FOLD Variable
+INT N_PRC_VerMaj=1 ;Version Major-Nr
+INT N_PRC_VerMin=1 ;Version Minor-Nr
+INT N_PRC_VerRev=7 ;Version Revisions-Nr
+INT N_PRC_IMT=1001 ; Hauptgruppe 9, Untergruppe 1
+INT N_PRC_RF=1002 ; Hauptgruppe 9, Untergruppe 2
+INT N_PRC_AG=1003 ; Hauptgruppe 9, Untergruppe 3
+INT N_PRC_LstPkt=65535 ; Alle Messpunkte gemessen
+INT N_PRC_SubSystem=0 ; 0: Absolutsystem 1: Temperaturkompensiert
+INT N_PRC_RobMv=1022
+INT N_PRC_RobNoMv=1023
+INT N_PRC_Int1=20 ;Interrupt fuer RobMove
+INT N_PRC_Int2=21 ;Interrupt fuer RobNoMove
+INT N_PRC_ID=1
+INT N_PRC_UpNr=0
+INT N_PRC_KennAck=0
+INT N_PRC_IDAck=7
+INT N_PRC_P1Ack=2
+INT N_PRC_P2Ack=0
+INT N_PRC_PktNr=22
+INT N_PRC_Ghost=1024 ;1967
+INT N_PRC_Modus=531
+INT N_PRC_Fkt=1001
+INT N_PRC_ModNr=41
+INT N_PRC_VFNr=3 ; VFNr fuer Robotertausch
+INT N_PRC_Frame=1
+INT N_PRC_Wdh=1
+INT N_PRC_CurMod=41
+INT N_PRC_Seq=0
+INT N_PRC_MsgOff=600
+INT N_PRC_Ret1=1
+INT N_PRC_Ret2=1
+INT N_PRC_Status=600
+INT N_PRC_StrOut=1953
+INT N_PRC_AnzWrt=6
+INT N_PRC_Tm1=10 ; [s]
+INT N_PRC_Tm1Nr=13 ; Timeout Kommunikation
+INT N_PRC_Tm2=0 ; [ms]
+INT N_PRC_Tm2Nr=14 ; StartScan, Laufzeit
+INT N_PRC_Tm3=0 ; [ms]
+INT N_PRC_Tm3Nr=15 ; EndScan, Laufzeit
+INT N_PRC_Tm4=0 ; [ms]
+INT N_PRC_Tm4Nr=16 ; aktuelle Laufzeit
+INT N_PRC_Tm5=0 ; [ms]
+INT N_PRC_Tm5Nr=17 ; letzte Laufzeit
+INT N_PRC_MsrErg=1152
+INT N_PRC_Err1=1152
+INT N_PRC_Err2=0
+INT N_PRC_Err3=0
+INT N_PRC_MaxSta=30
+INT N_PRC_MaxErr=6
+INT N_PRC_MaxAnz=6
+INT N_PRC_SenPrM=41 ; Sensor Pruef Modell
+INT N_PRC_SenPrU=90 ; Sensor Pruef UP
+INT N_PRC_SenTaM=41 ; Sensor Tausch Modell
+INT N_PRC_SenTaU=91 ; Sensor Tausch UP
+INT N_PRC_RobPrM=41 ; Roboter Pruef Modell
+INT N_PRC_RobPrU=92 ; Roboter Pruef UP
+INT N_PRC_RobTaM=41 ; Roboter Tausch Modell
+INT N_PRC_RobTaU=93 ; Roboter Tausch UP
+INT N_PRC_TmpCmpM=40 ; Sensor Tempcomp Modell
+INT N_PRC_TmpCmpU=80 ; Sensor Tempcomp UP
+INT N_PRC_RobGhM=0 ; Roboter Ghost Modell
+INT N_PRC_RobGhU=0 ; Roboter Ghost UP
+INT N_PRC_KorBas=31 ; KorrekturBase
+BOOL B_PRC_Debug=FALSE
+BOOL B_PRC_DebugH=FALSE
+BOOL B_PRC_StrSPS=FALSE
+BOOL B_PRC_Ghost=FALSE
+BOOL B_PRC_InDone=FALSE
+BOOL B_PRC_VFErr=FALSE
+BOOL B_PRC_RetVal=TRUE
+BOOL B_PRC_MsgFlg=FALSE
+BOOL B_PRC_MsgKri=FALSE ; Fehlermeldung in Automatik anzeigen
+BOOL B_PRC_ISTOOL=FALSE ; Im Toolfinder-Modus
+BOOL B_PRC_ISBASE=FALSE ; Im BaseFinder-Modus
+BOOL B_PRC_1Kalib=FALSE ; min 1mal kalibrieren flag
+BOOL B_SensIsKalib=FALSE ; Sensor ist kalibriert beim Robotertausch
+BOOL B_PRC_TmpKalib=FALSE ; Sensor ist Temperaturkompensiert
+BOOL B_PRC_ToolFinder_OK=FALSE ;Toolfinder erfolgreich ausgefuehrt
+BOOL B_PRC_CheckedNoBasekorr=FALSE ;Pruefprogramm ausgefuehrt nach nicht notwendiger Basekorrektur
+;ENDFOLD (Variable)
+; 
+;FOLD Fehler-Flags
+INT N_PRC_FiErr=495 ; Erstes Fehler Flag
+INT N_PRC_LgErr=11 ; Anzahl der Flags
+INT F_PRC_NoErr=495 ; Kein Fehler
+INT F_PRC_Err=496 ; Fehler
+INT F_PRC_GeStr=497 ; Sammel Stoerung
+INT F_PRC_TmOut=498 ; TimeOut
+INT F_PRC_NoVal=499 ; Kein Auftrag
+INT F_PRC_SyIna=500 ; System Inaktiv
+INT F_PRC_SyAkt=501 ; System Aktiv
+INT F_PRC_NoStr=502 ; Kein Messstart von SPS
+INT F_PRC_ModID=503 ; Falsche Modell ID
+INT F_PRC_VFMax=504 ; Maximale Korrekturwerte erreicht
+INT F_PRC_VFErr=505 ; Korrekturwerte nicht vorhanden
+;ENDFOLD (Fehler-Flags)
+; 
+;FOLD Kontroll-Flags
+;*---------------------------------------------*
+;*    Definiert im Makro 50                   *
+;*                                             *
+;*---------------------------------------------*
+INT N_PRC_FiMod=901 ; Erstes Modell Flag
+INT N_PRC_FiSon=940 ; Erstes Sonder Flag
+INT N_PRC_LgMod=39 ; Anzahl der Modell Flags
+INT N_PRC_LgSon=10 ; Anzahl der Sonder Flags
+INT N_PRC_OffMod=0 ; Offset Modellnummer
+INT N_PRC_OffSon=-39 ; Offset Sondermodellnummer
+;ENDFOLD (Kontroll-Flags)
+; 
+;FOLD Hilfsflags
+INT F_PRC_HiKa1=411 ; Kalibrierung
+INT F_PRC_HiKa2=412 ; Kalibrierung
+;ENDFOLD (Hilfsflags)
+; 
+;FOLD VF-Daten
+; Frame definitionen
+FRAME VF_PRC_Sen={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+FRAME AVF_PRC_Korr[20] ; Enthaelt VF Werte
+AVF_PRC_Korr[1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[3]={X 0.00815999974,Y 0.00517999986,Z -0.054779999,A -0.000119999997,B -0.000539999979,C -0.00126000005}
+AVF_PRC_Korr[4]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[5]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[6]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[7]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[8]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[9]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[10]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[11]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[12]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[13]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[14]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[15]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[16]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[17]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[18]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[19]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+AVF_PRC_Korr[20]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+; Frame Grenzwerte
+FRAME VF_PRC_Max={X 10.0,Y 10.0,Z 10.0,A 1.0,B 1.0,C 1.0}
+FRAME VF_PRC_Min={X -10.0,Y -10.0,Z -10.0,A -1.0,B -1.0,C -1.0}
+FRAME Rob_KORRFRAME={X -0.000224888703,Y -0.057900764,Z 0.0278507899,A -1.61666831E-05,B 0.000816530141,C 0.000923043583}
+;ENDFOLD (VF-Daten)
+; 
+;FOLD DATA-Struktur
+DECL INT NA_PRC_Data[17,6]
+; 
+NA_PRC_Data[1,1]=7
+NA_PRC_Data[1,2]=0
+NA_PRC_Data[1,3]=2
+NA_PRC_Data[1,4]=0
+NA_PRC_Data[1,5]=0
+NA_PRC_Data[1,6]=0
+; 
+NA_PRC_Data[2,1]=0
+NA_PRC_Data[2,2]=0
+NA_PRC_Data[2,3]=0
+NA_PRC_Data[2,4]=0
+NA_PRC_Data[2,5]=0
+NA_PRC_Data[2,6]=0
+; 
+NA_PRC_Data[3,1]=0
+NA_PRC_Data[3,2]=0
+NA_PRC_Data[3,3]=0
+NA_PRC_Data[3,4]=0
+NA_PRC_Data[3,5]=0
+NA_PRC_Data[3,6]=0
+; 
+NA_PRC_Data[4,1]=0
+NA_PRC_Data[4,2]=0
+NA_PRC_Data[4,3]=0
+NA_PRC_Data[4,4]=0
+NA_PRC_Data[4,5]=0
+NA_PRC_Data[4,6]=0
+; 
+NA_PRC_Data[5,1]=0
+NA_PRC_Data[5,2]=0
+NA_PRC_Data[5,3]=0
+NA_PRC_Data[5,4]=0
+NA_PRC_Data[5,5]=0
+NA_PRC_Data[5,6]=0
+; 
+NA_PRC_Data[6,1]=0
+NA_PRC_Data[6,2]=0
+NA_PRC_Data[6,3]=0
+NA_PRC_Data[6,4]=0
+NA_PRC_Data[6,5]=0
+NA_PRC_Data[6,6]=0
+; 
+NA_PRC_Data[7,1]=0
+NA_PRC_Data[7,2]=0
+NA_PRC_Data[7,3]=0
+NA_PRC_Data[7,4]=0
+NA_PRC_Data[7,5]=0
+NA_PRC_Data[7,6]=0
+; 
+NA_PRC_Data[8,1]=0
+NA_PRC_Data[8,2]=0
+NA_PRC_Data[8,3]=0
+NA_PRC_Data[8,4]=0
+NA_PRC_Data[8,5]=0
+NA_PRC_Data[8,6]=0
+; 
+NA_PRC_Data[9,1]=0
+NA_PRC_Data[9,2]=0
+NA_PRC_Data[9,3]=0
+NA_PRC_Data[9,4]=0
+NA_PRC_Data[9,5]=0
+NA_PRC_Data[9,6]=0
+; 
+NA_PRC_Data[10,1]=0
+NA_PRC_Data[10,2]=0
+NA_PRC_Data[10,3]=0
+NA_PRC_Data[10,4]=0
+NA_PRC_Data[10,5]=0
+NA_PRC_Data[10,6]=0
+; 
+NA_PRC_Data[11,1]=0
+NA_PRC_Data[11,2]=0
+NA_PRC_Data[11,3]=0
+NA_PRC_Data[11,4]=0
+NA_PRC_Data[11,5]=0
+NA_PRC_Data[11,6]=0
+; 
+NA_PRC_Data[12,1]=0
+NA_PRC_Data[12,2]=0
+NA_PRC_Data[12,3]=0
+NA_PRC_Data[12,4]=0
+NA_PRC_Data[12,5]=0
+NA_PRC_Data[12,6]=0
+; 
+NA_PRC_Data[13,1]=0
+NA_PRC_Data[13,2]=0
+NA_PRC_Data[13,3]=0
+NA_PRC_Data[13,4]=0
+NA_PRC_Data[13,5]=0
+NA_PRC_Data[13,6]=0
+; 
+NA_PRC_Data[14,1]=0
+NA_PRC_Data[14,2]=0
+NA_PRC_Data[14,3]=0
+NA_PRC_Data[14,4]=0
+NA_PRC_Data[14,5]=0
+NA_PRC_Data[14,6]=0
+; 
+NA_PRC_Data[15,1]=0
+NA_PRC_Data[15,2]=0
+NA_PRC_Data[15,3]=0
+NA_PRC_Data[15,4]=0
+NA_PRC_Data[15,5]=0
+NA_PRC_Data[15,6]=0
+; 
+NA_PRC_Data[16,1]=0
+NA_PRC_Data[16,2]=0
+NA_PRC_Data[16,3]=0
+NA_PRC_Data[16,4]=0
+NA_PRC_Data[16,5]=0
+NA_PRC_Data[16,6]=0
+; 
+NA_PRC_Data[17,1]=0
+NA_PRC_Data[17,2]=0
+NA_PRC_Data[17,3]=0
+NA_PRC_Data[17,4]=0
+NA_PRC_Data[17,5]=0
+NA_PRC_Data[17,6]=0
+;ENDFOLD (Data-Struktur)
+; 
+;FOLD UP-Nummerzuweisung
+DECL INT NA_PRC_UPNR[50,100] ; [Modellnr,Routinennr] = UP-Nummer
+; 
+;Modell 1-9 - Messpunkt-Messen
+;Modell 1
+NA_PRC_UPNR[1,1]=11
+NA_PRC_UPNR[1,2]=12
+NA_PRC_UPNR[1,3]=13
+NA_PRC_UPNR[1,4]=14
+NA_PRC_UPNR[1,5]=15
+NA_PRC_UPNR[1,6]=16
+NA_PRC_UPNR[1,7]=17
+NA_PRC_UPNR[1,8]=18
+NA_PRC_UPNR[1,9]=19
+NA_PRC_UPNR[1,10]=10
+; 
+;Modell 2
+NA_PRC_UPNR[2,1]=21
+NA_PRC_UPNR[2,2]=22
+NA_PRC_UPNR[2,3]=23
+NA_PRC_UPNR[2,4]=24
+NA_PRC_UPNR[2,5]=25
+NA_PRC_UPNR[2,6]=26
+NA_PRC_UPNR[2,7]=27
+NA_PRC_UPNR[2,8]=28
+NA_PRC_UPNR[2,9]=29
+NA_PRC_UPNR[2,10]=20
+; 
+;Modell 3
+NA_PRC_UPNR[3,1]=31
+NA_PRC_UPNR[3,2]=32
+NA_PRC_UPNR[3,3]=33
+NA_PRC_UPNR[3,4]=34
+NA_PRC_UPNR[3,5]=35
+NA_PRC_UPNR[3,6]=36
+NA_PRC_UPNR[3,7]=37
+NA_PRC_UPNR[3,8]=38
+NA_PRC_UPNR[3,9]=39
+NA_PRC_UPNR[3,10]=30
+; 
+;Modell 4
+NA_PRC_UPNR[4,1]=41
+NA_PRC_UPNR[4,2]=42
+NA_PRC_UPNR[4,3]=43
+NA_PRC_UPNR[4,4]=44
+NA_PRC_UPNR[4,5]=45
+NA_PRC_UPNR[4,6]=46
+NA_PRC_UPNR[4,7]=47
+NA_PRC_UPNR[4,8]=48
+NA_PRC_UPNR[4,9]=49
+NA_PRC_UPNR[4,10]=40
+; 
+;Modell 5
+NA_PRC_UPNR[5,1]=51
+NA_PRC_UPNR[5,2]=52
+NA_PRC_UPNR[5,3]=53
+NA_PRC_UPNR[5,4]=54
+NA_PRC_UPNR[5,5]=55
+NA_PRC_UPNR[5,6]=56
+NA_PRC_UPNR[5,7]=57
+NA_PRC_UPNR[5,8]=58
+NA_PRC_UPNR[5,9]=59
+NA_PRC_UPNR[5,10]=50
+; 
+;Modell 6
+NA_PRC_UPNR[6,1]=61
+NA_PRC_UPNR[6,2]=62
+NA_PRC_UPNR[6,3]=63
+NA_PRC_UPNR[6,4]=64
+NA_PRC_UPNR[6,5]=65
+NA_PRC_UPNR[6,6]=66
+NA_PRC_UPNR[6,7]=67
+NA_PRC_UPNR[6,8]=68
+NA_PRC_UPNR[6,9]=69
+NA_PRC_UPNR[6,10]=60
+; 
+;Modell 7
+NA_PRC_UPNR[7,1]=71
+NA_PRC_UPNR[7,2]=72
+NA_PRC_UPNR[7,3]=73
+NA_PRC_UPNR[7,4]=74
+NA_PRC_UPNR[7,5]=75
+NA_PRC_UPNR[7,6]=76
+NA_PRC_UPNR[7,7]=77
+NA_PRC_UPNR[7,8]=78
+NA_PRC_UPNR[7,9]=79
+NA_PRC_UPNR[7,10]=70
+; 
+;Modell 8
+NA_PRC_UPNR[8,1]=81
+NA_PRC_UPNR[8,2]=82
+NA_PRC_UPNR[8,3]=83
+NA_PRC_UPNR[8,4]=84
+NA_PRC_UPNR[8,5]=85
+NA_PRC_UPNR[8,6]=86
+NA_PRC_UPNR[8,7]=87
+NA_PRC_UPNR[8,8]=88
+NA_PRC_UPNR[8,9]=89
+NA_PRC_UPNR[8,10]=80
+; 
+;Modell 9
+NA_PRC_UPNR[9,1]=91
+NA_PRC_UPNR[9,2]=92
+NA_PRC_UPNR[9,3]=93
+NA_PRC_UPNR[9,4]=94
+NA_PRC_UPNR[9,5]=95
+NA_PRC_UPNR[9,6]=96
+NA_PRC_UPNR[9,7]=97
+NA_PRC_UPNR[9,8]=98
+NA_PRC_UPNR[9,9]=99
+NA_PRC_UPNR[9,10]=90
+; 
+;Modell 11-19 - Bolzen-Messen
+;Modell 11
+NA_PRC_UPNR[11,1]=411
+NA_PRC_UPNR[11,2]=412
+NA_PRC_UPNR[11,3]=413
+NA_PRC_UPNR[11,4]=414
+NA_PRC_UPNR[11,5]=415
+NA_PRC_UPNR[11,6]=416
+NA_PRC_UPNR[11,7]=417
+NA_PRC_UPNR[11,8]=418
+NA_PRC_UPNR[11,9]=419
+NA_PRC_UPNR[11,10]=410
+; 
+;Modell 12
+NA_PRC_UPNR[12,1]=421
+NA_PRC_UPNR[12,2]=422
+NA_PRC_UPNR[12,3]=423
+NA_PRC_UPNR[12,4]=424
+NA_PRC_UPNR[12,5]=425
+NA_PRC_UPNR[12,6]=426
+NA_PRC_UPNR[12,7]=427
+NA_PRC_UPNR[12,8]=428
+NA_PRC_UPNR[12,9]=429
+NA_PRC_UPNR[12,10]=420
+; 
+;Modell 13
+NA_PRC_UPNR[13,1]=431
+NA_PRC_UPNR[13,2]=432
+NA_PRC_UPNR[13,3]=433
+NA_PRC_UPNR[13,4]=434
+NA_PRC_UPNR[13,5]=435
+NA_PRC_UPNR[13,6]=436
+NA_PRC_UPNR[13,7]=437
+NA_PRC_UPNR[13,8]=438
+NA_PRC_UPNR[13,9]=439
+NA_PRC_UPNR[13,10]=430
+; 
+;Modell 14
+NA_PRC_UPNR[14,1]=441
+NA_PRC_UPNR[14,2]=442
+NA_PRC_UPNR[14,3]=443
+NA_PRC_UPNR[14,4]=444
+NA_PRC_UPNR[14,5]=445
+NA_PRC_UPNR[14,6]=446
+NA_PRC_UPNR[14,7]=447
+NA_PRC_UPNR[14,8]=448
+NA_PRC_UPNR[14,9]=449
+NA_PRC_UPNR[14,10]=440
+; 
+;Modell 15
+NA_PRC_UPNR[15,1]=451
+NA_PRC_UPNR[15,2]=452
+NA_PRC_UPNR[15,3]=453
+NA_PRC_UPNR[15,4]=454
+NA_PRC_UPNR[15,5]=455
+NA_PRC_UPNR[15,6]=456
+NA_PRC_UPNR[15,7]=457
+NA_PRC_UPNR[15,8]=458
+NA_PRC_UPNR[15,9]=459
+NA_PRC_UPNR[15,10]=450
+; 
+;Modell 16
+NA_PRC_UPNR[16,1]=461
+NA_PRC_UPNR[16,2]=462
+NA_PRC_UPNR[16,3]=463
+NA_PRC_UPNR[16,4]=464
+NA_PRC_UPNR[16,5]=465
+NA_PRC_UPNR[16,6]=466
+NA_PRC_UPNR[16,7]=467
+NA_PRC_UPNR[16,8]=468
+NA_PRC_UPNR[16,9]=469
+NA_PRC_UPNR[16,10]=460
+; 
+;Modell 17
+NA_PRC_UPNR[17,1]=471
+NA_PRC_UPNR[17,2]=472
+NA_PRC_UPNR[17,3]=473
+NA_PRC_UPNR[17,4]=474
+NA_PRC_UPNR[17,5]=475
+NA_PRC_UPNR[17,6]=476
+NA_PRC_UPNR[17,7]=477
+NA_PRC_UPNR[17,8]=478
+NA_PRC_UPNR[17,9]=479
+NA_PRC_UPNR[17,10]=470
+; 
+;Modell 18
+NA_PRC_UPNR[18,1]=481
+NA_PRC_UPNR[18,2]=482
+NA_PRC_UPNR[18,3]=483
+NA_PRC_UPNR[18,4]=484
+NA_PRC_UPNR[18,5]=485
+NA_PRC_UPNR[18,6]=486
+NA_PRC_UPNR[18,7]=487
+NA_PRC_UPNR[18,8]=488
+NA_PRC_UPNR[18,9]=489
+NA_PRC_UPNR[18,10]=480
+; 
+;Modell 19
+NA_PRC_UPNR[19,1]=491
+NA_PRC_UPNR[19,2]=492
+NA_PRC_UPNR[19,3]=493
+NA_PRC_UPNR[19,4]=494
+NA_PRC_UPNR[19,5]=495
+NA_PRC_UPNR[19,6]=496
+NA_PRC_UPNR[19,7]=497
+NA_PRC_UPNR[19,8]=498
+NA_PRC_UPNR[19,9]=499
+NA_PRC_UPNR[19,10]=490
+; 
+;Modell 21-29 - BTA-Vermessen
+;Modell 21
+NA_PRC_UPNR[21,1]=611
+NA_PRC_UPNR[21,2]=612
+NA_PRC_UPNR[21,3]=613
+NA_PRC_UPNR[21,4]=614
+NA_PRC_UPNR[21,5]=615
+NA_PRC_UPNR[21,6]=616
+NA_PRC_UPNR[21,7]=617
+NA_PRC_UPNR[21,8]=618
+NA_PRC_UPNR[21,9]=619
+NA_PRC_UPNR[21,10]=610
+; 
+;Modell 22
+NA_PRC_UPNR[22,1]=621
+NA_PRC_UPNR[22,2]=622
+NA_PRC_UPNR[22,3]=623
+NA_PRC_UPNR[22,4]=624
+NA_PRC_UPNR[22,5]=625
+NA_PRC_UPNR[22,6]=626
+NA_PRC_UPNR[22,7]=627
+NA_PRC_UPNR[22,8]=628
+NA_PRC_UPNR[22,9]=629
+NA_PRC_UPNR[22,10]=620
+; 
+;Modell 23
+NA_PRC_UPNR[23,1]=631
+NA_PRC_UPNR[23,2]=632
+NA_PRC_UPNR[23,3]=633
+NA_PRC_UPNR[23,4]=634
+NA_PRC_UPNR[23,5]=635
+NA_PRC_UPNR[23,6]=636
+NA_PRC_UPNR[23,7]=637
+NA_PRC_UPNR[23,8]=638
+NA_PRC_UPNR[23,9]=639
+NA_PRC_UPNR[23,10]=630
+; 
+;Modell 24
+NA_PRC_UPNR[24,1]=641
+NA_PRC_UPNR[24,2]=642
+NA_PRC_UPNR[24,3]=643
+NA_PRC_UPNR[24,4]=644
+NA_PRC_UPNR[24,5]=645
+NA_PRC_UPNR[24,6]=646
+NA_PRC_UPNR[24,7]=647
+NA_PRC_UPNR[24,8]=648
+NA_PRC_UPNR[24,9]=649
+NA_PRC_UPNR[24,10]=640
+; 
+;Modell 25
+NA_PRC_UPNR[25,1]=651
+NA_PRC_UPNR[25,2]=652
+NA_PRC_UPNR[25,3]=653
+NA_PRC_UPNR[25,4]=654
+NA_PRC_UPNR[25,5]=655
+NA_PRC_UPNR[25,6]=656
+NA_PRC_UPNR[25,7]=657
+NA_PRC_UPNR[25,8]=658
+NA_PRC_UPNR[25,9]=659
+NA_PRC_UPNR[25,10]=650
+; 
+;Modell 26
+NA_PRC_UPNR[26,1]=661
+NA_PRC_UPNR[26,2]=662
+NA_PRC_UPNR[26,3]=663
+NA_PRC_UPNR[26,4]=664
+NA_PRC_UPNR[26,5]=665
+NA_PRC_UPNR[26,6]=666
+NA_PRC_UPNR[26,7]=667
+NA_PRC_UPNR[26,8]=668
+NA_PRC_UPNR[26,9]=669
+NA_PRC_UPNR[26,10]=660
+; 
+;Modell 27
+NA_PRC_UPNR[27,1]=671
+NA_PRC_UPNR[27,2]=672
+NA_PRC_UPNR[27,3]=673
+NA_PRC_UPNR[27,4]=674
+NA_PRC_UPNR[27,5]=675
+NA_PRC_UPNR[27,6]=676
+NA_PRC_UPNR[27,7]=677
+NA_PRC_UPNR[27,8]=678
+NA_PRC_UPNR[27,9]=679
+NA_PRC_UPNR[27,10]=670
+; 
+;Modell 28
+NA_PRC_UPNR[28,1]=681
+NA_PRC_UPNR[28,2]=682
+NA_PRC_UPNR[28,3]=683
+NA_PRC_UPNR[28,4]=684
+NA_PRC_UPNR[28,5]=685
+NA_PRC_UPNR[28,6]=686
+NA_PRC_UPNR[28,7]=687
+NA_PRC_UPNR[28,8]=688
+NA_PRC_UPNR[28,9]=689
+NA_PRC_UPNR[28,10]=680
+; 
+;Modell 29
+NA_PRC_UPNR[29,1]=691
+NA_PRC_UPNR[29,2]=692
+NA_PRC_UPNR[29,3]=693
+NA_PRC_UPNR[29,4]=694
+NA_PRC_UPNR[29,5]=695
+NA_PRC_UPNR[29,6]=696
+NA_PRC_UPNR[29,7]=697
+NA_PRC_UPNR[29,8]=698
+NA_PRC_UPNR[29,9]=699
+NA_PRC_UPNR[29,10]=690
+; 
+;Modell 40 - Kalibrierumgebung
+NA_PRC_UPNR[40,80]=100 ; Voll-Kompensation
+NA_PRC_UPNR[40,81]=101 ; Teil-Kompensation 1
+NA_PRC_UPNR[40,82]=102 ; Teil-Kompensation 2
+NA_PRC_UPNR[40,83]=103 ; Teil-Kompensation 3
+NA_PRC_UPNR[40,84]=104 ; Teil-Kompensation 4
+NA_PRC_UPNR[40,85]=105 ; Teil-Kompensation 5
+NA_PRC_UPNR[40,86]=106 ; Teil-Kompensation 6
+NA_PRC_UPNR[40,87]=107 ; Teil-Kompensation 7
+NA_PRC_UPNR[40,88]=108 ; Teil-Kompensation 8
+NA_PRC_UPNR[40,89]=109 ; Teil-Kompensation 9
+NA_PRC_UPNR[40,90]=110 ; Teil-Kompensation 10
+NA_PRC_UPNR[40,91]=111 ; Teil-Kompensation 11
+NA_PRC_UPNR[40,92]=112 ; Teil-Kompensation 12
+NA_PRC_UPNR[40,93]=113 ; Teil-Kompensation 13
+NA_PRC_UPNR[40,94]=114 ; Teil-Kompensation 14
+NA_PRC_UPNR[40,95]=115 ; Teil-Kompensation 15
+NA_PRC_UPNR[40,96]=116 ; Teil-Kompensation 16
+NA_PRC_UPNR[40,97]=117 ; Teil-Kompensation 17
+NA_PRC_UPNR[40,98]=118 ; Teil-Kompensation 18
+NA_PRC_UPNR[40,99]=119 ; Teil-Kompensation 19
+; 
+;Modell 41
+NA_PRC_UPNR[41,90]=243 ; Sensortausch
+NA_PRC_UPNR[41,91]=244 ; Toolfinder
+NA_PRC_UPNR[41,92]=243 ; Roboterpruefen (Pruefpositionen)
+NA_PRC_UPNR[41,93]=243 ; Robotertausch (Pruefpositionen)
+; 
+;Modell 42
+NA_PRC_UPNR[42,10]=243 ; Roboter-Kalibrierung pruefen (Pruefpositionen)
+;ENDFOLD (UP-Nummerzuweisung)
+; 
+;FOLD Achswinkel
+DECL E6AXIS AxisPos[100]
+AxisPos[1]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[2]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[3]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[4]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[5]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[6]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[7]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[8]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[9]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[10]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[11]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[12]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[13]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[14]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[15]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[16]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[17]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[18]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[19]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[20]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[21]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[22]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[23]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[24]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[25]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[26]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[27]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[28]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[29]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[30]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[31]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[32]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[33]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[34]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[35]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[36]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[37]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[38]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[39]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[40]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[41]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[42]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[43]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[44]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[45]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[46]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[47]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[48]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[49]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[50]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[51]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[52]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[53]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[54]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[55]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[56]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[57]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[58]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[59]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[60]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[61]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[62]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[63]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[64]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[65]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[66]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[67]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[68]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[69]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[70]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[71]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[72]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[73]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[74]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[75]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[76]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[77]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[78]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[79]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[80]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[81]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[82]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[83]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[84]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[85]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[86]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[87]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[88]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[89]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[90]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[91]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[92]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[93]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[94]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[95]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[96]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[97]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[98]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[99]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+AxisPos[100]={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+;ENDFOLD Achswinkel
+; 
+;ENDFOLD (Perceptron)
+; 
+ENDDAT

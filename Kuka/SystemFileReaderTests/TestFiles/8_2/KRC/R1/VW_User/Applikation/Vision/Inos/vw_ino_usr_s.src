@@ -1,0 +1,150 @@
+&ACCESS  R
+&COMMENT KS_1.2
+&PARAM DISKPATH = VW_User/Applikation/Vision/Inos
+&PARAM TPVW_VERSION = 8.1.8
+&REL 1
+DEF vw_ino_usr_s( )
+;
+;*---------------------------------------------*
+;* INOS                                        *
+;* Version 1.0.0  / VKRC 4                     *
+;* Bearbeitet am:                              *
+;* 25.08.2010 HF / MG                          *
+;* 24.04.2012 MAT (inos)                       *
+;* 31.05.2012 MAT (inos)                       *
+;*            Korrektur SPS Fehlerflag         *
+;* 07.11.2012 MAT (inos)                       *
+;*            Timer Init Anpassung             *
+;*---------------------------------------------*
+;
+END
+;
+;FOLD INOS_INIT
+GLOBAL DEF INO_INIT()
+  ;USER Version
+  Version_Tech_INO=20120320
+  ;
+  ;Kommunikation INOS zuruecksetzen
+  INO_RstIO()
+  INO_RstVars()
+  INO_RstLBit()
+END
+;ENDFOLD
+;
+;FOLD INOS_LOOP
+GLOBAL DEF INO_LOOP()
+  ;Messung n.i.O.
+  $OUT[O_INO_Me_nio]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND $FLAG[F_INO_RFNOK]
+  ;Betriebsbereit fehlt
+  $OUT[O_INO_Betr_f]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $FLAG[F_INO_ER_LIF])
+  ;Sammelstoerung
+  $OUT[O_INO_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND $FLAG[F_INO_ER]
+END
+;ENDFOLD
+;
+;FOLD INOS Lifebit
+GLOBAL DEF ino_lifebit( )
+  ;FOLD Inos Lifebit Ueberpruefung
+  BOOL bRet
+  ;
+  IF N_INO_CLVFL == -1 THEN
+    INO_RstLBit()
+  ENDIF
+  ;
+  IF $timer_flag[N_INO_TN] THEN    
+    IF B_INO_LVBT == TRUE THEN
+      IF I_INO_LVB == TRUE THEN
+        N_INO_CLVFL = 0
+        B_INO_LVBT = FALSE
+      ELSE        
+        N_INO_CLVFL = N_INO_CLVFL + 1
+      ENDIF
+    ELSE
+      IF B_INO_LVBT == FALSE THEN
+        IF I_INO_LVB == FALSE THEN
+          N_INO_CLVFL = 0
+          B_INO_LVBT = TRUE
+        ELSE
+          N_INO_CLVFL = N_INO_CLVFL + 1
+        ENDIF
+      ENDIF
+    ENDIF
+    IF N_INO_CLVFL>5 THEN
+      N_INO_CLVFL = 6
+      IF B_INO_MSGLV == FALSE THEN
+        N_INO_USERFB = INO_MsgMld(#NotifyMsg,1)
+        B_INO_MSGLV = TRUE
+        $FLAG[F_INO_ER_LIF] = FALSE
+      ENDIF
+    ELSE 
+      IF (B_INO_MSGLV == TRUE) THEN
+         B_INO_MSGLV = FALSE
+         N_INO_USERFB = INO_MsgMld(#NotifyMsg,2)
+      ENDIF
+      $FLAG[F_INO_ER_LIF] = TRUE
+    ENDIF
+    $timer[N_INO_TN] = N_INO_TL
+    $timer_stop[N_INO_TN] = FALSE
+  ENDIF
+  ;ENDFOLD (Inos Lifebit Ueberpruefung)  
+END
+;ENDFOLD
+;
+;FOLD INOS IO Signale zuruecksetzen
+GLOBAL DEF INO_RstIO()  
+  O_INO_CTRL = 0
+END
+;ENDFOLD (INOS IO Signale zuruecksetzen)
+;
+;FOLD INOS Variablen zuruecksetzen
+GLOBAL DEF INO_RstVars()  
+  ;Base zuruecksetzen
+  BASE_DATA[N_INO_BSNR] = FR_INO_NLLPS
+END
+;ENDFOLD (INOS Variablen zuruecksetzen)
+;
+;FOLD INOS Lifebit Variablen und Signale zuruecksetzen
+GLOBAL DEF INO_RstLBit()
+  ;Lifebit reset Signale
+  N_INO_CLVFL = 0
+  $timer[N_INO_TN]      = N_INO_TL
+  $timer_stop[N_INO_TN] = FALSE
+  $FLAG[F_INO_ER_LIF] = FALSE
+END
+;ENDFOLD(INOS Lifebit Variablen und Signale zuruecksetzen)
+;
+;FOLD INOS Meldungen
+GLOBAL DEFFCT INT INO_MsgMld (MSG_TYP:IN, MSG_NR:IN)
+  DECL INT           MSG_NR
+  DECL INO_MsgTyp    MSG_TYP
+  DECL KRLMSG_T      USER_MSG
+  DECL KRLMSGPAR_T   PAR[3]
+  DECL KRLMSGOPT_T   OPT
+  DECL KrlMsgDlgSK_T SK[7]
+  INT                nDlgHandle
+  INT                nDlgAnswer
+  USER_MSG    = { Modul[] "INOS_MsgMld", Nr -1, Msg_txt[] " "}
+  Par[1]      = { Par_type #Value, Par_txt[] " " }
+  Opt         = { VL_Stop FALSE, Clear_P_Reset FALSE, Log_To_DB TRUE }
+  SK[1]       = {Sk_Type #Value,Sk_Txt[] "OK"}
+  USER_MSG.Nr = MSG_NR
+  nDlgAnswer  = 1
+  SWITCH MSG_NR
+    CASE 1
+      USER_MSG.MSG_TXT[] = "inosHPFit: Keine Antwort auf Lebensbit"
+    CASE 2
+      USER_MSG.MSG_TXT[] = "inosHPFit: Lebensbit wieder verfuegbar"
+   DEFAULT
+      USER_MSG.MSG_TXT[] = "inosHPFit: Unbekannte Meldung" 
+   ENDSWITCH
+  SWITCH MSG_TYP
+    CASE #NotifyMsg
+      nDlgHandle = Set_KrlMsg(#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      nDlgHandle = Set_KrlMsg(#Quit, USER_MSG, Par[], Opt)   ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+  RETURN(nDlgAnswer)
+ENDFCT
+;
+;ENDFOLD (INOS Meldungen)
+

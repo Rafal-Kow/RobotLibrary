@@ -1,0 +1,448 @@
+&ACCESS  RV
+&COMMENT KS24.24.000_VW
+&PARAM DISKPATH = VW_User/Applikation/VW_GREI_FEHL
+&PARAM TPVW_VERSION = 8.3.8
+&REL 6
+DEF vw_hlf_usr_s( )
+   ; 
+   ;*-----------------------------------------------------*
+   ;* Erstellt am:                                        *
+   ;* 2017.11.03                                          *
+   ;*------------------------------------------------------
+   ; 
+END
+;
+;FOLD INIT Handl_Fehl
+GLOBAL DEF HLF_INIT( )
+INT i
+;;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SAW Handl_Fehl
+GLOBAL DEF HLF_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RESET Handl_Fehl
+GLOBAL DEF HLF_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD CANCEL Handl_Fehl
+GLOBAL DEF HLF_CANCEL( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Handl_Fehl 
+GLOBAL DEF HLF_LOOP( )
+INT i, j, k
+BOOL R_POS_ABFRA
+BOOL V_POS_ABFRA
+
+
+FOR i = 1 TO 22
+;Schleifentest
+    CONTINUE
+	IF ($OUT[15]==TRUE) OR ($IN[15]==TRUE) THEN  ; Bei Grundstellung alle Greifer deaktivieren
+	;Fehlermedungen OFF
+	  HLF_SPGR_AKT[i]=FALSE 
+	  HLF_F_SPANNZ=0
+	  HLF_A_BIS_H=0
+      FEHLER_SPG=0
+      FEHLER_GRU=0
+	  FEHLER_TKO=0
+	  HLF_KLEIN_A_B=0
+	  CONTINUE
+	  $OUT[HLF_BGE_V_R]=FALSE
+	  CONTINUE
+      $OUT[HLF_BGE_SP_A]=FALSE	
+		IF i <=15 THEN
+	       HLF_BGEKONT[i]=FALSE
+		ENDIF
+	ENDIF
+	;------------------------------------------------------------------
+	k=1
+	CONTINUE
+    IF (HLF_SPGR_AKT[i]==TRUE) AND ($IN[15]==FALSE)  AND (HLF_OPT_SPS>=127) AND (HLF_OPT_SPS<=257) THEN  ;Spanngruppe aktiv
+        ;-----Spanngruppe ist geschlossen--------------
+    	IF (HLF_SPGR_AUF[I]==FALSE) THEN ; Spanngruppe ist geschlossen
+	     FOR j = 1 TO (HLF_ANZ_SGRUP[i])  ; 2
+		 ;----------Wechsel zwischen Abfrageposition
+			IF (J==1) THEN
+				R_POS_ABFRA=TRUE
+				IF (HLF_ERSBIT_R[i]==TRUE) THEN  ; Erstes Bit ist R Pos
+					R_POS_ABFRA=FALSE
+				ENDIF
+			ELSE
+				IF (R_POS_ABFRA==FALSE) THEN
+					R_POS_ABFRA=TRUE
+				ELSE	
+					R_POS_ABFRA=FALSE
+				ENDIF
+			ENDIF
+            ;-------ENDE---Wechsel zwischen Abfrageposition
+          ;-----Kontrolle Spanngruppe--------------		   
+			CONTINUE
+         IF ( (HLF_ST_ADR_SG[i]+(j-1))<1) OR  ((HLF_ST_ADR_SG[i]+(j-1))> 4096) THEN
+				HLF_ST_ADR_SG[i]=4070
+			ENDIF
+		    IF ($IN[(HLF_ST_ADR_SG[i]+(j-1))]<>R_POS_ABFRA) THEN ;; Kontrolle Position NIO
+                IF (FEHLER_SPG<1) THEN
+					;; FEHLERAUSGABE
+					HLF_F_SPANNZ=i
+					HLF_A_BIS_H=(j+1)/2
+					HLF_KLEIN_A_B=0
+					FEHLER_SPG=i
+					FEHLER_GRU=j
+					CONTINUE
+					$OUT[HLF_BGE_V_R]= TRUE
+					IF (i<17) THEN   ; Ausgabe Bit 11 Spanngruppe = True
+						CONTINUE
+					   $OUT[HLF_BGE_SP_A]=TRUE
+					ELSE  ; Ausgabe Bit 11 Sauger = False
+						CONTINUE
+					   $OUT[HLF_BGE_SP_A]=FALSE
+					   HLF_A_BIS_H=0
+					ENDIF
+				ENDIF
+			ELSE  
+				IF (FEHLER_SPG>0) THEN  ; Fehler loeschen
+					IF (FEHLER_SPG==i) AND (FEHLER_GRU==j) THEN
+						HLF_F_SPANNZ=0
+						HLF_A_BIS_H=0
+						FEHLER_SPG=0
+						FEHLER_GRU=0
+						CONTINUE
+						$OUT[HLF_BGE_V_R]=FALSE
+						CONTINUE
+						$OUT[HLF_BGE_SP_A]=FALSE					
+					ENDIF
+				ENDIF
+			ENDIF
+		   
+		 ENDFOR  
+		 ;---ENDE--Spanngruppe ist geschlossen--------------
+	   ELSE 
+	        ;---Start--Spanngruppe ist offen--------------
+		FOR j = 1 TO (HLF_ANZ_SGRUP[i])	
+		    ;----------Wechsel zwischen Abfrageposition
+			IF (J==1) THEN
+				V_POS_ABFRA=FALSE
+				IF (HLF_ERSBIT_R[i]==TRUE) THEN  ; Erstes Bit ist R Pos
+					V_POS_ABFRA=TRUE
+				ENDIF
+			ELSE
+				IF (V_POS_ABFRA==FALSE) THEN
+					V_POS_ABFRA=TRUE
+				ELSE	
+					V_POS_ABFRA=FALSE
+				ENDIF
+			ENDIF
+            ;-------ENDE---Wechsel zwischen Abfrageposition
+          ;-----Kontrolle Spanngruppe--------------		   
+
+			CONTINUE
+		    IF ($IN[(HLF_ST_ADR_SG[i]+(j-1))]<>V_POS_ABFRA) THEN ;; Kontrolle Position NIO
+                IF (FEHLER_SPG<1) THEN
+					;; FEHLERAUSGABE
+					HLF_F_SPANNZ=i
+					HLF_A_BIS_H=(j+1)/2
+					HLF_KLEIN_A_B=0
+					FEHLER_SPG=i
+					FEHLER_GRU=j
+					CONTINUE
+					$OUT[HLF_BGE_V_R]= FALSE
+					IF (i<17) THEN   ; Ausgabe Bit 11 Spanngruppe = True
+						CONTINUE
+					   $OUT[HLF_BGE_SP_A]=TRUE
+					ELSE  ; Ausgabe Bit 11 Sauger = False
+					   CONTINUE
+					   $OUT[HLF_BGE_SP_A]=FALSE
+					   HLF_A_BIS_H=0
+					ENDIF
+				ENDIF
+			ELSE  
+				IF (FEHLER_SPG>0) THEN  ; Fehler loeschen
+					IF (FEHLER_SPG==i) AND (FEHLER_GRU==j) THEN
+						HLF_F_SPANNZ=0
+						HLF_A_BIS_H=0
+						FEHLER_SPG=0
+						FEHLER_GRU=0
+						CONTINUE
+						$OUT[HLF_BGE_V_R]=FALSE
+						CONTINUE
+						$OUT[HLF_BGE_SP_A]=FALSE					
+					ENDIF
+				ENDIF
+			ENDIF
+		   
+		 ENDFOR			
+			
+			;---ENDE--Spanngruppe ist geschlossen--------------
+	   ENDIF
+    ELSE
+	  IF (HLF_SPGR_AKT[i]==FALSE) AND (FEHLER_SPG==i) THEN
+   	     HLF_F_SPANNZ=0
+	     HLF_A_BIS_H=0
+         FEHLER_SPG=0
+         FEHLER_GRU=0
+	     CONTINUE
+		 $OUT[HLF_BGE_V_R]=FALSE
+         CONTINUE
+		 $OUT[HLF_BGE_SP_A]=FALSE					
+	  ENDIF
+	   
+	ENDIF
+
+
+;------------Teilkontrolle----------------
+
+	CONTINUE
+	If (i<=15) AND (HLF_F_SPANNZ<=0) AND ($IN[15]==FALSE) THEN ; Teilkontrollen
+		IF (HLF_BGEKONT[i]==FALSE) AND (FEHLER_TKO==i) THEN ;FEHLER Ruecksetzen wenn nicht aktiv
+			HLF_A_BIS_H=0
+			FEHLER_TKO=0
+			HLF_KLEIN_A_B=0
+		ENDIF
+		IF (HLF_BGEBITA[i]<1) OR (HLF_BGEBITA[i]>4096) THEN ; Fehlerabfang Abfrage Eingabe
+         HLF_BGEBITA[i]=4070
+		ENDIF
+		IF (HLF_BGEBITB[i]<1) OR (HLF_BGEBITB[i]>4096) THEN  ; Fehlerabfang Abfrage Eingabe
+         HLF_BGEBITB[i]=4070
+		ENDIF
+		IF (HLF_BGEKONT[i]==TRUE) AND ((FEHLER_TKO==i) OR (FEHLER_TKO<=0)) THEN   ;Bauteilkontrolle aktiv und (aktueller Fehler oder kein Fehler)
+			IF (HLF_BGETEILV[i]==TRUE) THEN  ; Teilkontrolle Teil ist vorhanden
+				CONTINUE
+				IF (HLF_BGEMITAB[i]==TRUE) THEN  ;Mit klein A und B
+					IF ($IN[(HLF_BGEBITA[i])]==TRUE) AND ($IN[(HLF_BGEBITB[i])]==TRUE) THEN ;; Bauteilkontrolle klein A Nicht vorhanden
+						IF (FEHLER_TKO==i)  THEN ; Rücksetzen Fehler
+							HLF_A_BIS_H=0
+							FEHLER_TKO=0
+							HLF_KLEIN_A_B=0
+						ENDIF
+					ELSE  ; FEHLERAUSGABE
+						HLF_A_BIS_H=i
+						FEHLER_TKO=i
+						IF ($IN[(HLF_BGEBITA[i])]==FALSE) THEN
+							HLF_KLEIN_A_B=1
+						ELSE 
+							HLF_KLEIN_A_B=2
+						ENDIF
+					ENDIF
+					
+				ELSE   ; Ohne klein A und B
+					IF ($IN[(HLF_BGEBITA[i])]==TRUE) THEN ;; Bauteilkontrolle klein A auf vorhanden
+						IF (FEHLER_TKO==i)  THEN ; Rücksetzen Fehler
+							HLF_A_BIS_H=0
+							FEHLER_TKO=0
+							HLF_KLEIN_A_B=0
+						ENDIF
+					ELSE  ; FEHLERAUSGABE
+						HLF_A_BIS_H=i
+						FEHLER_TKO=i
+						HLF_KLEIN_A_B=0
+					ENDIF
+				ENDIF
+			ELSE  ; Teilkontrolle Teil ist NICHT vorhanden
+
+;------------     Auswertung Teilkontrolle KEIN Teil vorhanden			
+				IF (HLF_BGEMITAB[i]==TRUE) THEN  ;Mit klein A und B
+					IF ($IN[(HLF_BGEBITA[i])]==FALSE) AND ($IN[(HLF_BGEBITB[i])]==FALSE) THEN ;; Bauteilkontrolle klein A Nicht vorhanden
+						IF (FEHLER_TKO==i)  THEN ; Rücksetzen Fehler
+							HLF_A_BIS_H=0
+							FEHLER_TKO=0
+							HLF_KLEIN_A_B=0
+						ENDIF
+					ELSE  ; FEHLERAUSGABE
+						HLF_A_BIS_H=i
+						FEHLER_TKO=i
+						IF ($IN[(HLF_BGEBITA[i])]==TRUE) THEN
+							HLF_KLEIN_A_B=1
+						ELSE 
+							HLF_KLEIN_A_B=2
+						ENDIF
+					ENDIF
+					
+				ELSE   ; Ohne klein A und B
+						
+					IF ($IN[(HLF_BGEBITA[i])]==FALSE) THEN ;; Bauteilkontrolle klein A Nicht vorhanden
+						IF (FEHLER_TKO==i)  THEN ; Rücksetzen Fehler
+							HLF_A_BIS_H=0
+							FEHLER_TKO=0
+							HLF_KLEIN_A_B=0
+						ENDIF
+					ELSE  ; FEHLERAUSGABE
+						HLF_A_BIS_H=i
+						FEHLER_TKO=i
+						HLF_KLEIN_A_B=0
+					ENDIF
+
+				ENDIF
+			
+
+			ENDIF ; Teilkontrolle Teil ist vorhanden ENDE
+		ENDIF  ; Bauteilkontrolle ENDE
+		;;;;; KLEIB b
+    ;  ---------------------------
+		
+	ENDIF
+
+	IF (HLF_OPT_SPS>127) THEN
+		CONTINUE
+		HLF_BIN5_AUS((HLF_OPT_SPS), HLF_F_SPANNZ) ; Ausgabe Spannzylinder 
+		CONTINUE
+		HLF_BIN4_AUS((HLF_OPT_SPS+5), HLF_A_BIS_H) ; Ausgabe Teilkontrolle
+		CONTINUE
+		HLF_BIN2_AUS((HLF_OPT_SPS+11), HLF_KLEIN_A_B) ; Ausgabe Klein A_B
+	ENDIF
+ENDFOR
+;
+END
+;ENDFOLD
+
+;FOLD Werteausgabe 4 BIT
+DEF HLF_BIN4_AUS(HLF_STARTADD :IN, HLF_WERT :IN)
+INT HLF_STARTADD, HLF_WERT
+IF (HLF_STARTADD>0) AND (HLF_STARTADD<500) AND (HLF_WERT<17) AND (HLF_WERT>=0) THEN
+
+	IF (HLF_WERT>=8) THEN
+		HLF_WERT = (HLF_WERT-8)
+		CONTINUE
+		$OUT[HLF_STARTADD+3]=TRUE
+	ELSE
+		CONTINUE
+		$OUT[HLF_STARTADD+3]=FALSE
+	ENDIF
+
+	IF (HLF_WERT>=4) THEN
+		HLF_WERT = (HLF_WERT-4)
+		CONTINUE
+		$OUT[(HLF_STARTADD+2)]=TRUE
+	ELSE
+		CONTINUE
+		$OUT[(HLF_STARTADD+2)]=FALSE
+	ENDIF
+
+	IF (HLF_WERT>=2) THEN
+		HLF_WERT = (HLF_WERT-2)
+		CONTINUE
+		$OUT[(HLF_STARTADD+1)]=TRUE
+	ELSE
+		CONTINUE
+		$OUT[(HLF_STARTADD+1)]=FALSE
+	ENDIF
+
+		IF (HLF_WERT>=1) THEN
+		HLF_WERT = (HLF_WERT-1)
+		CONTINUE
+		$OUT[(HLF_STARTADD)]=TRUE
+	ELSE
+		CONTINUE
+		$OUT[(HLF_STARTADD)]=FALSE
+	ENDIF
+
+  
+ENDIF
+
+END
+;ENDFOLD
+
+;FOLD Werteausgabe 5 BIT
+DEF HLF_BIN5_AUS(HLF_STARTADD :IN, HLF_WERT :IN)
+INT HLF_STARTADD, HLF_WERT
+IF (HLF_STARTADD>0) AND (HLF_STARTADD<500) AND (HLF_WERT<33) AND (HLF_WERT>=0) AND (HLF_OPT_SPS>127) THEN
+
+	IF (HLF_WERT>=16) THEN
+		HLF_WERT = (HLF_WERT-16)
+		CONTINUE
+		$OUT[HLF_STARTADD+4]=TRUE
+	ELSE
+		CONTINUE
+		$OUT[HLF_STARTADD+4]=FALSE
+	ENDIF
+
+	IF (HLF_WERT>=8) THEN
+		HLF_WERT = (HLF_WERT-8)
+		CONTINUE
+		$OUT[HLF_STARTADD+3]=TRUE
+	ELSE
+		CONTINUE
+		$OUT[HLF_STARTADD+3]=FALSE
+	ENDIF
+
+	IF (HLF_WERT>=4) THEN
+		HLF_WERT = (HLF_WERT-4)
+		CONTINUE
+		$OUT[(HLF_STARTADD+2)]=TRUE
+	ELSE
+		CONTINUE
+		$OUT[(HLF_STARTADD+2)]=FALSE
+	ENDIF
+
+	IF (HLF_WERT>=2) THEN
+		HLF_WERT = (HLF_WERT-2)
+		CONTINUE
+		$OUT[(HLF_STARTADD+1)]=TRUE
+	ELSE
+		CONTINUE
+		$OUT[(HLF_STARTADD+1)]=FALSE
+	ENDIF
+
+		IF (HLF_WERT>=1) THEN
+		HLF_WERT = (HLF_WERT-1)
+		CONTINUE
+		$OUT[(HLF_STARTADD)]=TRUE
+	ELSE
+		CONTINUE
+		$OUT[(HLF_STARTADD)]=FALSE
+	ENDIF
+  
+ENDIF
+
+END
+;ENDFOLD
+
+;FOLD Werteausgabe 2 BIT
+DEF HLF_BIN2_AUS(HLF_STARTADD :IN, HLF_WERT :IN)
+INT HLF_STARTADD, HLF_WERT
+IF (HLF_STARTADD>0) AND (HLF_STARTADD<500) AND(HLF_WERT<4) AND (HLF_WERT>=0) AND (HLF_OPT_SPS>127) THEN
+
+
+	IF (HLF_WERT>=2) THEN
+		HLF_WERT = (HLF_WERT-2)
+		CONTINUE
+		$OUT[(HLF_STARTADD+1)]=TRUE
+	ELSE
+		CONTINUE
+		$OUT[(HLF_STARTADD+1)]=FALSE
+	ENDIF
+
+		IF (HLF_WERT>=1) THEN
+		HLF_WERT = (HLF_WERT-1)
+		CONTINUE
+		$OUT[(HLF_STARTADD)]=TRUE
+	ELSE
+		CONTINUE
+		$OUT[(HLF_STARTADD)]=FALSE
+	ENDIF
+
+  
+ENDIF
+
+END
+;ENDFOLD

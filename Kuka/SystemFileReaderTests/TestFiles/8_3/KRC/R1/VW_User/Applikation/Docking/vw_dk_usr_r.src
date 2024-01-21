@@ -1,0 +1,536 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Docking
+&PARAM TPVW_VERSION = 8.3.8
+&REL 221
+DEF VW_DK_USR_R( )
+; 
+;*-------------------------------------------------------*
+;*Technologiepaket Docking                               *
+;*                                                       *
+;*Konzernstandard                                        *
+;*Bearbeiter: Chr. Eisenknappl I/PG-C61                  *
+;*                                                       *
+;* Erstellt am:                                          *
+;* 2014.09.11 CE                                         *
+;*                                                       *
+;* Aenderungsjournal                                     *
+;* 2015.02.04 CE Fehlermeldungen erweitert               *
+;* 2015.03.04 LE DK_KONFIG_IO im Makro_Init integriert   *
+;* 2015.06.01 CE Konfiguration flexibilisiert            *
+;* 2015.06.03 LE schreiben "PROCPAR[BHF_Off]=1" ergaenzt *
+;* 2015.06.16 CE RW Reibelement neu hinzu                *
+;* 2015.12.15 OL PN Docken Hinzugefügt                   *
+;* 2016.01.19 OL Fehlerausgabe fuer PN-Docken angepasst  *
+;* 2016.01.28 OL NZ_Servo PAR4==2 nicht aktiviert,       *
+;*               solange keine AS verfügbar              *
+;* 2016.06.16 LZ PN-DOCKEN-SHARING neu hinzu             *
+;* 2016.09.16 LZ PN-DOCKEN in #USR_MAKRO neu hinzu       *
+;* 2017.01.26 BM Dockingkonfig in CASE 103 eingearbeitet *
+;*-------------------------------------------------------*
+;
+END
+;
+;FOLD DK Interface
+GLOBAL DEF DK_Interfac(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+BOOL PAR7
+INT ret, i
+;
+;-----------------------------------------------------
+;
+SWITCH USER_CMD
+;
+;-----------------------------------------------------
+;
+  CASE #USR_INIT
+    ;FOLD Init
+    ;
+    ;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------
+;
+  CASE #USR_ADV
+    ;FOLD Advance
+    ;
+    ;
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------
+;
+  CASE #USR_TRIG
+    ;FOLD Trig
+    SWITCH CMD_SEL
+      ;
+      CASE 301
+        ret=99
+        SWITCH PAR2
+          CASE 50
+            Ret=ioctl("PNIO-CTRL",50,par1)
+          CASE 60
+            Ret=ioctl("PNIO-CTRL",60,par1)
+          CASE 1050                            ;PN-DOCKEN-SHARING
+            Ret=ioctl("PNIO-CTRL",1050,par1)
+          CASE 1060                            ;PN-DOCKEN-SHARING
+            Ret=ioctl("PNIO-CTRL",1060,par1)	  
+          DEFAULT
+            DK_Msg(21,#NotifyMsg) ;P2 falscher Wert
+        ENDSWITCH
+        SWITCH ret
+          CASE 0  ; ioctl OK
+            IF PAR2==50 THEN
+              IF $OUT[O_R_Hand] THEN
+                DK_Msg(90,#NotifyMsg)
+              ELSE
+	       
+              ENDIF
+            ENDIF        
+            IF PAR2==60 THEN
+              IF $OUT[O_R_Hand] THEN
+                DK_Msg(91,#NotifyMsg)
+              ELSE
+
+              ENDIF
+            ENDIF
+            IF PAR2==1050 THEN                 ;PN-DOCKEN-SHARING
+              IF $OUT[O_R_Hand] THEN
+                DK_Msg(90,#NotifyMsg)
+    	      ELSE
+	     
+  	          ENDIF
+            ENDIF        
+            IF PAR2==1060 THEN                 ;PN-DOCKEN-SHARING
+              IF $OUT[O_R_Hand] THEN
+                DK_Msg(91,#NotifyMsg)
+    	      ELSE
+	       
+              ENDIF
+            ENDIF	  
+          CASE 1  ; ioctl Timeout
+            DK_Msg(92,#NotifyMsg)
+          CASE 2  ; ioctl falscher Parameter
+            DK_Msg(93,#NotifyMsg)
+          DEFAULT
+        ENDSWITCH ;ret      
+    ENDSWITCH ;CMD_SEL
+    ;ENDFOLD (Trig)
+;
+;-----------------------------------------------------
+;
+  CASE #USR_MAIN
+    ;FOLD Main
+    ;
+    ;
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------
+;
+  CASE #USR_MAKRO
+    ;FOLD Makro
+    SWITCH CMD_SEL
+      ;FOLD PN_Docken
+      CASE 102
+        ret=99
+        SWITCH PAR2
+          CASE 50
+            Ret=ioctl("PNIO-CTRL",50,par1)
+          CASE 60
+            Ret=ioctl("PNIO-CTRL",60,par1)
+          CASE 1050                            ;PN-DOCKEN-SHARING
+            Ret=ioctl("PNIO-CTRL",1050,par1)
+          CASE 1060                            ;PN-DOCKEN-SHARING
+            Ret=ioctl("PNIO-CTRL",1060,par1)	  
+          DEFAULT
+            DK_Msg(21,#NotifyMsg) ;P2 falscher Wert
+        ENDSWITCH
+        SWITCH ret
+          CASE 0  ; ioctl OK
+            IF PAR2==50 THEN
+              IF $OUT[O_R_Hand] THEN
+                DK_Msg(90,#NotifyMsg)
+              ELSE
+	     
+              ENDIF
+            ENDIF        
+            IF PAR2==60 THEN
+              IF $OUT[O_R_Hand] THEN
+                DK_Msg(91,#NotifyMsg)
+              ELSE
+	 
+              ENDIF
+            ENDIF
+            IF PAR2==1050 THEN                 ;PN-DOCKEN-SHARING
+              IF $OUT[O_R_Hand] THEN
+                DK_Msg(90,#NotifyMsg)
+              ELSE
+	  
+  	          ENDIF
+            ENDIF        
+            IF PAR2==1060 THEN                 ;PN-DOCKEN-SHARING
+              IF $OUT[O_R_Hand] THEN
+                DK_Msg(91,#NotifyMsg)
+              ELSE
+	   
+	          ENDIF
+            ENDIF	  
+          CASE 1  ; ioctl Timeout
+            DK_Msg(92,#NotifyMsg)
+          CASE 2  ; ioctl falscher Parameter
+            DK_Msg(93,#NotifyMsg)
+          DEFAULT
+        ENDSWITCH ;ret
+	  ;ENDFOLD PN_Docken
+      ;
+      ;FOLD DK_Konfig
+      CASE 103
+;
+        IF Docking AND $FLAG[F_m_flex_DK] THEN
+          IF (PAR1==1) THEN
+            Dock_Init=TRUE
+          ENDIF
+;
+          IF Dock_Init THEN
+;
+            Dock_Init=FALSE
+;
+            DK_KONFIG_IO=FALSE
+;
+            DOCK_SZ=FALSE
+            DOCK_NZ=FALSE
+            ReserveBool[46]=FALSE ;DOCK_NZ_hyd
+            DOCK_CZ=FALSE
+            ReserveBool[45]=FALSE ;DOCK_RW
+;
+            Anz_BHF=0
+            ANZ_EZ=0
+            ANZ_NZ=0
+            ANZ_NZ_hyd=0
+            ANZ_CZ=0
+            ANZ_RW=0
+;
+            AntTyp='B0'
+            ZangenNr='B0'
+            ExtAx='B0'
+;
+            EZ_DockAxZ1=0
+            EZ_DockAxZ2=0
+            EZ_DockAxZ3=0
+            EZ_DockAxZ4=0
+;
+            NZ_DockAxZ1=0
+            NZ_DockAxZ2=0
+            NZ_DockAxZ3=0
+            NZ_DockAxZ4=0
+;
+            CZ_DockAxZ1=0
+            CZ_DockAxZ2=0
+            CZ_DockAxZ3=0
+            CZ_DockAxZ4=0
+;
+            RW_DockAxZ1=0
+            RW_DockAxZ2=0
+            RW_DockAxZ3=0
+            RW_DockAxZ4=0
+;
+            ExtAx1Hilf=0
+            ExtAx2Hilf=0
+            ExtAx3Hilf=0
+            ExtAx4Hilf=0
+            ExtAx5Hilf=0
+            ExtAx6Hilf=0
+;
+            AxFehler=FALSE
+;
+            ExtAx1Fehler1=FALSE
+            ExtAx2Fehler1=FALSE
+            ExtAx3Fehler1=FALSE
+            ExtAx4Fehler1=FALSE
+            ExtAx5Fehler1=FALSE
+            ExtAx6Fehler1=FALSE
+;
+            ExtAx1Fehler2=FALSE
+            ExtAx2Fehler2=FALSE
+            ExtAx3Fehler2=FALSE
+            ExtAx4Fehler2=FALSE
+            ExtAx5Fehler2=FALSE
+            ExtAx6Fehler2=FALSE
+;
+            BHF_EZ_Z1=0
+            BHF_EZ_Z2=0
+            BHF_EZ_Z3=0
+            BHF_EZ_Z4=0
+;
+            BHF_NZ_Serv_Z1=0
+            BHF_NZ_Serv_Z2=0
+            BHF_NZ_Serv_Z3=0
+            BHF_NZ_Serv_Z4=0
+;
+            BHF_NZ_hyd_Z1=0
+            BHF_NZ_hyd_Z2=0
+            BHF_NZ_hyd_Z3=0
+            BHF_NZ_hyd_Z4=0
+;
+            BHF_CZ_Serv_Z1=0
+            BHF_CZ_Serv_Z2=0
+            BHF_CZ_Serv_Z3=0
+            BHF_CZ_Serv_Z4=0
+;
+            BHF_RW_Serv_Z1=0
+            BHF_RW_Serv_Z2=0
+            BHF_RW_Serv_Z3=0
+            BHF_RW_Serv_Z4=0
+;
+            PROCPAR[BHF_Off]=0
+;
+            FOR I=1 TO 36
+              PROCPAR[BHF_Off+I]=0
+              IN_BHF_belegt[I]=4081
+            ENDFOR
+          ENDIF
+;
+          SWITCH PAR4
+            CASE 1 ;EZ1
+              AntTyp='B100000000'
+              DOCK_SZ=TRUE
+            CASE 2 ;NZ1-Servo
+              AntTyp='B1000000000'
+              DOCK_NZ=TRUE
+            CASE 3 ;CZ1-Servo
+              AntTyp='B1100000000'
+              DOCK_CZ=TRUE
+            CASE 4 ;NZ1-hydraulisch
+              AntTyp='B10000000000'
+              ReserveBool[46]=TRUE ;DOCK_NZ_hyd
+            CASE 5 ;Greifer/sonstige
+              AntTyp='B10100000000'
+            CASE 6 ;RW1
+              AntTyp='B11000000000'
+              ReserveBool[45]=TRUE ;DOCK_RW
+          ENDSWITCH
+          SWITCH PAR5
+            CASE 1 ;ZangenNr1
+              ZangenNr='B10000'
+            CASE 2 ;ZangenNr2
+              ZangenNr='B100000'
+            CASE 3 ;ZangenNr3
+              ZangenNr='B110000'
+            CASE 4 ;ZangenNr4
+              ZangenNr='B1000000'
+            CASE 5 ;ZangenNr0
+              ZangenNr='B0'
+          ENDSWITCH
+          SWITCH PAR6
+            CASE 1 ;virtuelle Achse Nr1
+              ExtAx='B1'
+              ExtAx1Hilf=ExtAx1Hilf+1
+              ExtAx1Fehler1=ExtAx1Hilf>1 ;Nr1 Doppeldeklaration
+              ExtAx1Fehler2=(SZAxConfig+1)>12 ;Nr der virtuellen Achse 1 ist zu hoch
+            CASE 2 ;virtuelle Achse Nr2
+              ExtAx='B10'
+              ExtAx2Hilf=ExtAx2Hilf+1
+              ExtAx2Fehler1=ExtAx2Hilf>1 ;Nr2 Doppeldeklaration
+              ExtAx2Fehler2=(SZAxConfig+2)>12 ;Nr der virtuellen Achse 2 ist zu hoch
+            CASE 3 ;virtuelle Achse Nr3
+              ExtAx='B11'
+              ExtAx3Hilf=ExtAx3Hilf+1
+              ExtAx3Fehler1=ExtAx3Hilf>1 ;Nr3 Doppeldeklaration
+              ExtAx3Fehler2=(SZAxConfig+3)>12 ;Nr der virtuellen Achse 3 ist zu hoch
+            CASE 4 ;virtuelle Achse Nr4
+              ExtAx='B100'
+              ExtAx4Hilf=ExtAx4Hilf+1
+              ExtAx4Fehler1=ExtAx4Hilf>1 ;Nr4 Doppeldeklaration
+              ExtAx4Fehler2=(SZAxConfig+4)>12 ;Nr der virtuellen Achse 4 ist zu hoch
+            CASE 5 ;virtuelle Achse Nr5
+              ExtAx='B101'
+              ExtAx5Hilf=ExtAx5Hilf+1
+              ExtAx5Fehler1=ExtAx5Hilf>1 ;Nr5 Doppeldeklaration
+              ExtAx5Fehler2=(SZAxConfig+5)>12 ;Nr der virtuellen Achse 5 ist zu hoch
+            CASE 6 ;virtuelle Achse Nr6
+              ExtAx='B110'
+              ExtAx6Hilf=ExtAx6Hilf+1
+              ExtAx6Fehler1=ExtAx6Hilf>1 ;Nr6 Doppeldeklaration
+              ExtAx6Fehler2=(SZAxConfig+6)>12 ;Nr der virtuellen Achse 6 ist zu hoch
+            CASE 7 ;keine virtuelle Achse
+;
+          ENDSWITCH
+
+          ;Nr der virtuellen Achse fehlt - NZ_Servo PAR4==2 derzeit nicht aktiviert
+          IF ((PAR4==1) OR (PAR4==3)) AND NOT ((PAR6>0) AND (PAR6<7)) THEN
+            AxFehler=TRUE 
+          ENDIF
+;
+          Anz_BHF=Anz_BHF+1
+;
+          IF (Anz_BHF<>PAR2) OR (PROCPAR[BHF_Off+PAR2]<>0) OR ExtAx1Fehler1 OR ExtAx2Fehler1 OR ExtAx3Fehler1 OR ExtAx4Fehler1 OR ExtAx5Fehler1 OR ExtAx6Fehler1 OR ExtAx1Fehler2 OR ExtAx2Fehler2 OR ExtAx3Fehler2 OR ExtAx4Fehler2 OR ExtAx5Fehler2 OR ExtAx6Fehler2 OR ExtAx1Fehler3 OR ExtAx2Fehler3 OR ExtAx3Fehler3 OR ExtAx4Fehler3 OR ExtAx5Fehler3 OR ExtAx6Fehler3 OR AxFehler THEN
+            WHILE (PROCPAR[BHF_Off+PAR2]<>0)
+              DK_Msg(2,#QuitMsg) ;BHF Doppeldeklaration
+            ENDWHILE
+            WHILE (Anz_BHF<PAR2)
+              DK_Msg(1,#QuitMsg) ;BHF Reihenfolge falsch
+            ENDWHILE
+            WHILE ExtAx1Fehler1
+              DK_Msg(7,#QuitMsg) ;E1 Doppeldeklaration
+            ENDWHILE
+            WHILE ExtAx2Fehler1
+              DK_Msg(8,#QuitMsg) ;E2 Doppeldeklaration
+            ENDWHILE  
+            WHILE ExtAx3Fehler1
+              DK_Msg(9,#QuitMsg) ;E3 Doppeldeklaration
+            ENDWHILE    
+            WHILE ExtAx4Fehler1
+              DK_Msg(10,#QuitMsg) ;E4 Doppeldeklaration
+            ENDWHILE
+            WHILE ExtAx5Fehler1
+              DK_Msg(11,#QuitMsg) ;E5 Doppeldeklaration
+            ENDWHILE
+            WHILE ExtAx6Fehler1
+              DK_Msg(12,#QuitMsg) ;E6 Doppeldeklaration
+            ENDWHILE
+            WHILE ExtAx1Fehler2
+              DK_Msg(13,#QuitMsg) ;Nr der virtuellen Achse 1 ist zu hoch
+            ENDWHILE
+            WHILE ExtAx2Fehler2
+              DK_Msg(14,#QuitMsg) ;Nr der virtuellen Achse 2 ist zu hoch
+            ENDWHILE        
+            WHILE ExtAx3Fehler2
+              DK_Msg(15,#QuitMsg) ;Nr der virtuellen Achse 3 ist zu hoch
+            ENDWHILE
+            WHILE ExtAx4Fehler2
+              DK_Msg(16,#QuitMsg) ;Nr der virtuellen Achse 4 ist zu hoch
+            ENDWHILE
+            WHILE ExtAx5Fehler2
+              DK_Msg(17,#QuitMsg) ;Nr der virtuellen Achse 5 ist zu hoch
+            ENDWHILE
+            WHILE ExtAx6Fehler2
+              DK_Msg(18,#QuitMsg) ;Nr der virtuellen Achse 6 ist zu hoch
+            ENDWHILE
+            WHILE AxFehler
+              DK_Msg(19,#QuitMsg) ;Nr fuer virtuelle Achse fehlt
+            ENDWHILE
+          ELSE
+            PROCPAR[BHF_Off+PAR2]=(AntTyp+ZangenNr+ExtAx)
+            IN_BHF_belegt[PAR2]=PAR3
+            AntTyp='B0'
+            ZangenNr='B0'
+            ExtAx='B0'
+          ENDIF
+          IF (PAR1==2) THEN
+            DK_setzen=TRUE
+          ENDIF
+;
+          IF (DK_setzen==TRUE) THEN
+            WAIT FOR (DK_KONFIG_IO==TRUE)
+            PROCPAR[BHF_Off]=1
+            DK_Msg(4,#NotifyMsg)
+          ENDIF
+        ELSE
+          IF NOT Docking THEN
+            DK_Msg(5,#NotifyMsg)
+          ENDIF    
+          IF NOT MIT_flex_DK THEN
+            DK_Msg(6,#NotifyMsg)
+          ENDIF
+        ENDIF
+	  ;ENDFOLD DK_Konfig
+      ;
+      DEFAULT
+    ENDSWITCH ;CMD_SEL
+    ;ENDFOLD (Makro)
+;
+;-----------------------------------------------------
+  DEFAULT
+;  
+ENDSWITCH
+END
+;
+;ENDFOLD (DK Interface)
+;
+;-----------------------------------------------------
+;-----------------------------------------------------
+;-----------------------------------------------------
+;
+;FOLD DK Meldungen
+;
+DEF DK_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr, nHandle, Answer, OFFSET
+DECL DKR_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "DK (R_Msg)", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+OFFSET=0
+USER_MSG.Nr = msg_nr
+SWITCH msg_nr
+  CASE 1
+    USER_MSG.MSG_TXT[]="Reihenfolge der BHF nicht aufsteigend"
+  CASE 2
+    USER_MSG.MSG_TXT[]="Doppeldeklaration von BHF"
+  CASE 3
+    USER_MSG.MSG_TXT[]="Nr einer virtuellen Achse ist zu hoch"
+  CASE 4
+    USER_MSG.MSG_TXT[]="Docking Konfiguration wurde gesetzt"
+  CASE 5
+    USER_MSG.MSG_TXT[]="Variable fuer Docking nicht aktiviert"
+  CASE 6
+	 USER_MSG.MSG_TXT[]="Flexibles Docking nicht aktiviert"
+  CASE 7
+    USER_MSG.MSG_TXT[]="Doppeldeklaration virtuelle Achse 1"
+  CASE 8
+    USER_MSG.MSG_TXT[]="Doppeldeklaration virtuelle Achse 2"
+  CASE 9
+    USER_MSG.MSG_TXT[]="Doppeldeklaration virtuelle Achse 3"
+  CASE 10
+    USER_MSG.MSG_TXT[]="Doppeldeklaration virtuelle Achse 4"
+  CASE 11
+    USER_MSG.MSG_TXT[]="Doppeldeklaration virtuelle Achse 5"
+  CASE 12
+    USER_MSG.MSG_TXT[]="Doppeldeklaration virtuelle Achse 6"
+  CASE 13
+    USER_MSG.MSG_TXT[]="Nr der virtuellen Achse 1 ist zu hoch"
+  CASE 14
+    USER_MSG.MSG_TXT[]="Nr der virtuellen Achse 2 ist zu hoch"
+  CASE 15
+    USER_MSG.MSG_TXT[]="Nr der virtuellen Achse 3 ist zu hoch"
+  CASE 16
+    USER_MSG.MSG_TXT[]="Nr der virtuellen Achse 4 ist zu hoch"
+  CASE 17
+    USER_MSG.MSG_TXT[]="Nr der virtuellen Achse 5 ist zu hoch"
+  CASE 18
+    USER_MSG.MSG_TXT[]="Nr der virtuellen Achse 6 ist zu hoch"
+  CASE 19
+    USER_MSG.MSG_TXT[]="Fuer virtuelle Achse fehlt die Achsnummer"
+  CASE 21
+    USER_MSG.MSG_TXT[]="P2 falscher Wert"
+  CASE 90
+    USER_MSG.MSG_TXT[]="PNIO-Teilnehmer angemeldet"
+  CASE 91
+    USER_MSG.MSG_TXT[]="PNIO-Teilnehmer abgemeldet"
+  CASE 92
+    USER_MSG.MSG_TXT[]="PNIO Timeout"
+  CASE 93
+    USER_MSG.MSG_TXT[]="PNIO falscher Parameter"
+  DEFAULT
+    USER_MSG.MSG_TXT[]="unbekannte Meldung"   
+ENDSWITCH
+SWITCH MsgTyp
+    CASE #StateMsg
+      n_DKR_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_DKR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      While ( Exists_KrlMsg(n_DKR_Handle[msg_nr]) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      Endwhile
+    CASE #NotifyMsg
+      n_DKR_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_DKR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+END
+;
+;ENDFOLD (DK Meldungen)

@@ -1,0 +1,72 @@
+&ACCESS RVP
+&COMMENT INITIALISIERUNG MERKER
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrovorgabe.src
+&PARAM EDITMASK = Makro999[0-999]
+&PARAM TPVW_VERSION = 8.1.8
+DEFFCT INT MAKRO52(ADV :IN)
+   ;FOLD Makro Anfang ;%{PSE}%MKUKATPVW
+      BOOL ADV
+      ; interface to basic routines
+      EXT  BAS (BAS_COMMAND  :IN,REAL  :IN )
+      ; interface to VW-standard routines
+      EXT VW (VW_COMMAND:IN, BOOL: IN, REAL:IN, REAL:IN, REAL:IN, REAL:IN, BOOL :IN, E6POS :IN )
+      ; interface select routine
+      EXTFCT INT  SELECT (SUBTYPE  :IN,INT  :IN,BOOL  :IN,ARI_TYP  :IN,INT  :IN,BOOL_TYP  :IN,INT  :IN,BOOL  :IN)
+      SPS_N=-1
+      ;FOLD ;%{H} %MKUKATPVW
+      IF VARSTATE ("ADV") <> #INITIALIZED THEN
+         ADV=FALSE
+      ENDIF
+      IF (NOT ADV) THEN
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Merker -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Merker --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Handling -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Handling --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Vorbesetzung  Merker -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Vorbesetzung  Merker --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Spanngruppe 11a -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Spanngruppe 11a --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M31 = E579 & !E580 & E581 & !E582 & E583 & !E584 & E585 & !E586 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M31 = E579 & !E580 & E581 & !E582 & E583 & !E584 & E585 & !E586, 3: BOASG
+      $CYCFLAG[31] = $IN[579] AND NOT $IN[580] AND $IN[581] AND NOT $IN[582] AND $IN[583] AND NOT $IN[584] AND $IN[585] AND NOT $IN[586]
+   ;ENDFOLD
+   ;FOLD -- Spanngruppe 11a -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Spanngruppe 11a --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M32 = !E579 & E580 & !E581 & E582 & !E583 & E584 & !E585 & E586 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M32 = !E579 & E580 & !E581 & E582 & !E583 & E584 & !E585 & E586, 3: BOASG
+      $CYCFLAG[32] = NOT $IN[579] AND $IN[580] AND NOT $IN[581] AND $IN[582] AND NOT $IN[583] AND $IN[584] AND NOT $IN[585] AND $IN[586]
+   ;ENDFOLD
+   ;FOLD -- Spanngruppe 12a -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Spanngruppe 12a --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M33 = E587 & !E588 & E589 & !E590 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M33 = E587 & !E588 & E589 & !E590, 3: BOASG
+      $CYCFLAG[33] = $IN[587] AND NOT $IN[588] AND $IN[589] AND NOT $IN[590]
+   ;ENDFOLD
+   ;FOLD -- Spanngruppe 12a -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Spanngruppe 12a --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M34 = !E587 & E588 & !E589 & E590 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M34 = !E587 & E588 & !E589 & E590, 3: BOASG
+      $CYCFLAG[34] = NOT $IN[587] AND $IN[588] AND NOT $IN[589] AND $IN[590]
+   ;ENDFOLD
+   ;FOLD -- Benutzerangabe -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Benutzerangabe --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Bauteilkontrollen  Greifer  1  frei -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Bauteilkontrollen  Greifer  1  frei --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M1 = !E605 & !E607 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M1 = !E605 & !E607, 3: BOASG
+      $CYCFLAG[1] = NOT $IN[605] AND NOT $IN[607]
+   ;ENDFOLD
+   ;FOLD -- Bauteilkontrollen  Greifer  1  belegt -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Bauteilkontrollen  Greifer  1  belegt --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M2 = E605 & E607 + E15 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M2 = E605 & E607 + E15, 3: BOASG
+      $CYCFLAG[2] = $IN[605] AND $IN[607] OR $IN[15]
+   ;ENDFOLD
+   ;FOLD -- Typmeldung G1 VW310 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Typmeldung G1 VW310 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M198 = M2 & !M1 & M76 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M198 = M2 & !M1 & M76, 3: BOASG
+      $CYCFLAG[198] = $CYCFLAG[2] AND NOT $CYCFLAG[1] AND $CYCFLAG[76]
+   ;ENDFOLD
+   ; FOLD ;%{H}
+   RETURN 1
+   ELSE
+   RETURN 1
+   ENDIF
+ENDFCT
+; ENDFOLD

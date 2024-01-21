@@ -1,0 +1,204 @@
+&ACCESS  RV
+&COMMENT KS_1.0
+&PARAM DISKPATH = VW_User/Applikation/Blindnietmuttern
+&PARAM TPVW_VERSION = 8.1.8
+&REL 11
+DEFDAT  vw_bn_usr_s PUBLIC
+; 
+;*-------------------------------------------------*
+;*Technologiepaket Blindnietmuttern                *
+;*                                                 *
+;*Konzernstandard                                  *
+;*Bearbeiter: B.Mildenberger PEF-2/E0A             *
+;*                                                 *
+;* Erstellt am:                                    *
+;* 2016.02.19 BM                                   *
+;*                                                 *
+;* Aenderungsjournal                               *
+;*                                                 *
+;*-------------------------------------------------*
+; 
+;FOLD USER_Version
+STRUC _Tech_BN CHAR Name[20],INT Datum
+DECL _Tech_BN Tech_BN
+;ENDFOLD USER_VERSION
+; 
+;FOLD Vorwahlen
+GLOBAL BOOL MIT_BN[1]
+MIT_BN[1]=FALSE
+;ENDFOLD Vorwahlen
+; 
+;FOLD Stukturen
+; 
+;ENDFOLD Strukturen 
+; 
+;FOLD Flags
+GLOBAL INT F_m_BN[1]
+F_m_BN[1]=422
+;ENDFOLD FLAGS
+; 
+;FOLD BOOLEAN
+; 
+GLOBAL BOOL LBitBnRem[1]
+LBitBnRem[1]=TRUE
+GLOBAL BOOL BN_LBitFeh[1]
+BN_LBitFeh[1]=FALSE
+GLOBAL BOOL BN_QuitHifu[1]
+BN_QuitHifu[1]=FALSE
+GLOBAL BOOL BN_FrgQuitHifu[1]
+BN_FrgQuitHifu[1]=TRUE
+; 
+;ENDFOLD BOOLEAN
+; 
+;FOLD INTEGER
+GLOBAL INT F_BN_Sammel[1]
+F_BN_Sammel[1]=423
+GLOBAL INT F_BN_PrzNiO[1]
+F_BN_PrzNiO[1]=424
+; 
+GLOBAL INT I_BN_Ready[1]
+I_BN_Ready[1]=1185
+GLOBAL INT I_BN_LBitBnRob[1]
+I_BN_LBitBnRob[1]=1187
+GLOBAL INT I_BN_eMode[1]
+I_BN_eMode[1]=1188
+GLOBAL INT I_BN_Hand[1]
+I_BN_Hand[1]=1189
+GLOBAL INT I_BN_Auto[1]
+I_BN_Auto[1]=1190
+GLOBAL INT I_BN_FkInit[1]
+I_BN_FkInit[1]=1191
+GLOBAL INT I_BN_FkPrz[1]
+I_BN_FkPrz[1]=1193
+GLOBAL INT I_BN_PrzIo[1]
+I_BN_PrzIo[1]=1194
+GLOBAL INT I_BN_Loaded[1]
+I_BN_Loaded[1]=1195
+GLOBAL INT I_BN_AusglIo[1]
+I_BN_AusglIo[1]=1196
+GLOBAL INT I_BN_LagVerr[1]
+I_BN_LagVerr[1]=1197
+GLOBAL INT I_BN_ElemInFd[1]
+I_BN_ElemInFd[1]=1200
+GLOBAL INT I_BN_ZCodNio[1]
+I_BN_ZCodNio[1]=1201
+GLOBAL INT I_BN_GCodW1[1]
+I_BN_GCodW1[1]=1206
+GLOBAL INT I_BN_GCodW2[1]
+I_BN_GCodW2[1]=1207
+GLOBAL INT I_BN_GCodW4[1]
+I_BN_GCodW4[1]=1208
+GLOBAL INT I_BN_WarnTopf[1]
+I_BN_WarnTopf[1]=1209
+GLOBAL INT I_BN_WarnBunker[1]
+I_BN_WarnBunker[1]=1210
+GLOBAL INT I_BN_WarnZugDorn[1]
+I_BN_WarnZugDorn[1]=1211
+GLOBAL INT I_BN_StdmZugDorn[1]
+I_BN_StdmZugDorn[1]=1212
+GLOBAL INT I_BN_BehVoll[1]
+I_BN_BehVoll[1]=1213
+GLOBAL INT I_BN_WarnOel[1]
+I_BN_WarnOel[1]=1214
+GLOBAL INT I_BN_Sammel[1]
+I_BN_Sammel[1]=1216
+; 
+GLOBAL INT I_BN_OhnePrz[1]
+I_BN_OhnePrz[1]=193
+GLOBAL INT I_BN_AnwZ1[1]
+I_BN_AnwZ1[1]=196
+GLOBAL INT I_BN_AnwZ2[1]
+I_BN_AnwZ2[1]=197
+GLOBAL INT I_BN_AnwZ3[1]
+I_BN_AnwZ3[1]=198
+GLOBAL INT I_BN_AnwZ4[1]
+I_BN_AnwZ4[1]=199
+; 
+GLOBAL INT O_BN_Reset[1]
+O_BN_Reset[1]=1185
+GLOBAL INT O_BN_LBitRobBn[1]
+O_BN_LBitRobBn[1]=1187
+GLOBAL INT O_BN_eMode[1]
+O_BN_eMode[1]=1188
+GLOBAL INT O_BN_R_Hand[1]
+O_BN_R_Hand[1]=1189
+GLOBAL INT O_BN_R_Auto[1]
+O_BN_R_Auto[1]=1190
+GLOBAL INT O_BN_Init[1]
+O_BN_Init[1]=1191
+GLOBAL INT O_BN_FrgPrz[1]
+O_BN_FrgPrz[1]=1192
+GLOBAL INT O_BN_StartPrz[1]
+O_BN_StartPrz[1]=1193
+GLOBAL INT O_BN_Ausspind[1]
+O_BN_Ausspind[1]=1194
+GLOBAL INT O_BN_Reload[1]
+O_BN_Reload[1]=1195
+GLOBAL INT O_BN_FrgP[1]
+O_BN_FrgP[1]=1196
+GLOBAL INT O_BN_LagVerr[1]
+O_BN_LagVerr[1]=1197
+GLOBAL INT O_BN_AnfReload[1]
+O_BN_AnfReload[1]=1198
+GLOBAL INT O_BN_MS1V1_BT[1]
+O_BN_MS1V1_BT[1]=1199
+GLOBAL INT O_BN_MS1V2_FD[1]
+O_BN_MS1V2_FD[1]=1200
+GLOBAL INT O_BN_ZCodW1[1]
+O_BN_ZCodW1[1]=1201
+GLOBAL INT O_BN_ZCodW2[1]
+O_BN_ZCodW2[1]=1202
+GLOBAL INT O_BN_ZCodW4[1]
+O_BN_ZCodW4[1]=1203
+GLOBAL INT O_BN_ZCodRes[1]
+O_BN_ZCodRes[1]=1204
+; 
+GLOBAL INT O_BN_P_act[1]
+O_BN_P_act[1]=193
+GLOBAL INT O_BN_PrzNio[1]
+O_BN_PrzNio[1]=195
+GLOBAL INT O_BN_VwStdm[1]
+O_BN_VwStdm[1]=196
+GLOBAL INT O_BN_Verkl[1]
+O_BN_Verkl[1]=197
+GLOBAL INT O_BN_StartBerFehl[1]
+O_BN_StartBerFehl[1]=198
+GLOBAL INT O_BN_BereitFehlt[1]
+O_BN_BereitFehlt[1]=199
+GLOBAL INT O_BN_Sammel[1]
+O_BN_Sammel[1]=200
+; 
+GLOBAL INT I_MedVorh=24
+GLOBAL INT TimerNr_BN[1]
+TimerNr_BN[1]=74950516
+GLOBAL INT QuitTimer_BN[1]
+QuitTimer_BN[1]=74950517
+GLOBAL CONST INT BN_MaxApp=1 ;Schleifenbegrenzung
+GLOBAL INT BN_ActApp=2
+GLOBAL INT BN_Setzweg_Act[1] ;Setzweg fuer Visualisierung
+BN_Setzweg_Act[1]=0
+GLOBAL INT BN_ErrorCodeAct[1] ;Fehlercode fuer Visualisierung
+BN_ErrorCodeAct[1]=1
+;ENDFOLD INTEGER
+; 
+;FOLD REALS
+; 
+;ENDFOLD REALS
+; 
+;FOLD SIGNALS
+;Fehlercode
+SIGNAL BN1_ErrorCode $IN[1217]  TO $IN[1232]
+;Uebergabe Setzweg von BN1
+SIGNAL BN1_SetzWeg $IN[1233]  TO $IN[1248]
+;Uebergabe Zangencode an BN1
+SIGNAL BN1_ZCode $OUT[1201]  TO $OUT[1203]
+;ENDFOLD SIGNALS
+; 
+;FOLD Meldungsausgabe
+ENUM BN_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_BN_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+
+ENDDAT

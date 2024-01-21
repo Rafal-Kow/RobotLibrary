@@ -1,0 +1,464 @@
+&ACCESS RVO
+&REL 2
+DEF $en_ident( )
+; FOLD SYSTEM FILE .... NEVER EDIT!
+; ENDFOLD 
+; FOLD Deklarations ;%{H} % INITIALISATION 
+INT ERG, AXIS_NO, I
+DECL E6AXIS IDENT_START  
+DECL E6AXIS IDENT_START_M
+DECL REAL TORQMON_SAVE[6], TORQMON2_SAVE[6] 
+DECL KRLMSG_T LDE_MSG			; Modul[], Nr, Msg_txt[]
+DECL EKRLMSGTYPE LDE_MSGTYPE		; ENUM #Notify, #State, #Quit, #Waiting
+DECL KRLMSGPAR_T LDE_PAR[2]		; KRLMSGPARTYPE_T par_Type, Char Par_txt[26], Int Par_Int, Real Par_Real, Bool Par_Bool
+DECL KRLMSGPARTYPE_T LDE_PARTYPE[1]	; ENUM #VALUE, #KEY, #Empty
+DECL KRLMSGOPT_T OPT			; Bool VL_Stop, Bool Clear_P_Reset, Bool Clear_SAW, Bool Log_To_DB
+DECL KrlMsgDlgSK_T LDE_SOFTKEY[7]
+INT nHandle, nAnswer
+INT validPgNo
+
+; messages über MsgLib.src
+DECL CHAR LDEText[50] ;, sModul[], sTextPar[]
+
+LDE_MSG={Modul[] " ", Nr 0, Msg_txt[] "%1"}
+OPT={VL_Stop TRUE,Clear_P_Reset TRUE,Log_To_DB FALSE}
+
+
+FOR AXIS_NO=1 TO  6
+   TORQMON_SAVE[AXIS_NO] = $torqmon[AXIS_NO]
+   $torqmon[AXIS_NO]=200
+ENDFOR
+
+FOR AXIS_NO=1 TO  6
+   $VEL_AXIS[AXIS_NO]=50
+ENDFOR
+
+FOR AXIS_NO=1 TO  $EX_AX_NUM
+   $VEL_EXTAX[AXIS_NO]=100
+ENDFOR
+
+FOR AXIS_NO=1 TO  6
+   $ACC_AXIS[AXIS_NO]=25
+ENDFOR
+
+FOR AXIS_NO=1 TO  $EX_AX_NUM
+   $ACC_EXTAX[AXIS_NO]=50
+ENDFOR
+
+$FILTER=0
+$ADVANCE=0
+
+;ENDFOLD
+
+;FOLD ACTIVATION, STARTPOINT, TESTMOVEMENT
+WAIT FOR TRUE
+$IDENT_STATE=#I_END 
+WAIT SEC 0.1
+$IDENT_STATE=#I_READY ;  Parameter einlesen
+WAIT SEC 0.1
+
+IF $IDENT_STATE<>#I_READY THEN
+   GOTO IDENT_END
+ENDIF
+
+$OV_PRO = 30
+IDENT_START = $IDENT_STARTP
+
+IF $EX_AX_NUM > 0 THEN   
+   IDENT_START.E1 = $AXIS_ACT.E1
+   IDENT_START.E2 = $AXIS_ACT.E2
+   IDENT_START.E3 = $AXIS_ACT.E3
+   IDENT_START.E4 = $AXIS_ACT.E4
+   IDENT_START.E5 = $AXIS_ACT.E5
+   IDENT_START.E6 = $AXIS_ACT.E6
+ENDIF
+
+; PTP Bereich 1 Startwinkel
+PTP IDENT_START
+
+WAIT SEC 0.5
+
+WAIT FOR  TRUE
+WAIT SEC 0.5
+
+MsgDialog(nAnswer, "TestRunBeforeMeas", "LoadDataDetermination", "gg", "End", "NoAnswer", "YesAnswer", , , ,)
+   
+ERG=nAnswer
+
+SWITCH ERG
+
+CASE 5
+
+; Abfolge: 
+; 1)  PTP Bereich 2 Mitte
+; 2)  PTP Bereich 2 negative Grenzen
+; 3)  PTP Bereich 2 positive Grenzen
+; 4)  PTP Bereich 2 Mitte
+; 5)  PTP Bereich 3 Mitte
+; 6)  PTP Bereich 3 negative Grenzen
+; 7)  PTP Bereich 3 positive Grenzen
+; 8)  PTP Bereich 3 Mitte
+; 9)  PTP Bereich 1 Mitte
+; 10) PTP Bereich 1 Startwinkel
+FOR I=1 TO 10
+	$OV_PRO = 10	
+	IDENT_START = $IDENT_STARTP	
+	IF $EX_AX_NUM > 0 THEN   
+  	IDENT_START.E1 = $AXIS_ACT.E1
+   	IDENT_START.E2 = $AXIS_ACT.E2
+   	IDENT_START.E3 = $AXIS_ACT.E3
+   	IDENT_START.E4 = $AXIS_ACT.E4
+   	IDENT_START.E5 = $AXIS_ACT.E5
+   	IDENT_START.E6 = $AXIS_ACT.E6
+	ENDIF
+	
+	PTP IDENT_START
+	WAIT SEC 0.5
+	$OV_PRO = 10	
+ENDFOR	
+
+IF $MODE_OP == #T1 THEN
+   $OV_PRO = 100
+ELSE
+   $OV_PRO = 30
+ENDIF
+$IDENT_STATE=#I_TEST
+
+IF ($IDENT_STATE<>#I_TEST) THEN
+   GOTO IDENT_END
+ENDIF
+
+PTP_REL{A6 -0.001}
+
+WHILE  ($IDENT_STATE==#I_TEST)
+   WAIT SEC 0.1
+ENDWHILE
+WAIT SEC 0.2
+
+CASE 7	
+GOTO IDENT_END
+
+DEFAULT
+
+ENDSWITCH
+
+;ENDFOLD
+
+;FOLD MEASUREMENTS, CALCULATIONS
+
+IF $EX_AX_NUM > 0 THEN   
+   IDENT_START.E1 = $AXIS_ACT.E1
+   IDENT_START.E2 = $AXIS_ACT.E2
+   IDENT_START.E3 = $AXIS_ACT.E3
+   IDENT_START.E4 = $AXIS_ACT.E4
+   IDENT_START.E5 = $AXIS_ACT.E5
+   IDENT_START.E6 = $AXIS_ACT.E6
+ENDIF
+
+; Messfahrt Trajektorie 1
+REPEAT
+   WAIT FOR  TRUE
+
+   IF $MODE_OP == #T1 THEN
+      WAIT SEC 0.5
+      MsgQuit("LdeNotInT1", "LoadDataDetermination")
+      WHILE  $MODE_OP == #T1
+         WAIT SEC 0.5
+      ENDWHILE
+      WAIT SEC 0.5
+   ENDIF
+  
+   MsgDialog(nAnswer, "StartMeasRun", "LoadDataDetermination", , "OK", , , , , , )
+   $OV_PRO = 30
+   PTP IDENT_START
+   $OV_PRO = 100
+   WAIT SEC 0.5
+
+   WAIT FOR  TRUE
+   IF ($OV_PRO < 100) THEN
+      WAIT SEC 0.5
+      MsgQuit("OVNot100", "LoadDataDetermination")
+      WHILE  $OV_PRO < 100
+         WAIT SEC 0.5
+      ENDWHILE
+      WAIT SEC 0.5
+   ENDIF   
+
+   $IDENT_STATE=#I_MEAS ; Messfahrt
+
+   IF $MODE_OP == #T1 THEN
+      WAIT FOR  TRUE
+         WAIT SEC 0.5
+         
+         MsgNotify("MeasNotInT1", "LoadDataDetermination")
+         
+         WAIT SEC 0.5
+         GOTO IDENT_END
+   ENDIF
+
+   IF $OV_PRO < 100 THEN
+      WAIT FOR  TRUE
+         WAIT SEC 0.5
+         
+         MsgNotify("MeasIn100", "LoadDataDetermination")
+         
+         WAIT SEC 0.5
+         GOTO IDENT_END
+   ENDIF
+
+   IF (($IDENT_STATE<>#I_TEST) AND ($IDENT_STATE<>#I_MEAS)) THEN
+      GOTO IDENT_END
+   ENDIF
+
+   PTP_REL{A6 -0.001} ; TEST ODER MESSFAHRT
+
+   WHILE  (($IDENT_STATE==#I_TEST) OR ($IDENT_STATE==#I_MEAS))
+      WAIT SEC 0.1
+   ENDWHILE
+   WAIT SEC 0.2
+
+   IF $IDENT_STATE==#I_END THEN
+      GOTO IDENT_END
+   ENDIF
+UNTIL ($IDENT_STATE==#I_MEAS_OK)
+
+$IDENT_STATE=#I_CALC
+
+WAIT SEC 0.5
+IF $IDENT_STATE==#I_END THEN
+GOTO IDENT_END
+ENDIF
+
+WAIT FOR TRUE
+$IDENT_STATE=#I_READY ;  Parameter einlesen
+WAIT SEC 0.1
+
+IF $IDENT_STATE<>#I_READY THEN
+GOTO IDENT_END
+ENDIF
+
+; Startpunkte fuer Trajektorie 2
+IDENT_START_M = $IDENT_STARTP    ; Mitte des Achsbereichs 2
+IDENT_START    = $IDENT_STARTP   ; Startwinkel
+
+IF $EX_AX_NUM > 0 THEN   
+   IDENT_START.E1  = $AXIS_ACT.E1
+   IDENT_START.E2  = $AXIS_ACT.E2
+   IDENT_START.E3  = $AXIS_ACT.E3
+   IDENT_START.E4  = $AXIS_ACT.E4
+   IDENT_START.E5  = $AXIS_ACT.E5
+   IDENT_START.E6  = $AXIS_ACT.E6
+   IDENT_START_M.E1 = $AXIS_ACT.E1
+   IDENT_START_M.E2 = $AXIS_ACT.E2
+   IDENT_START_M.E3 = $AXIS_ACT.E3
+   IDENT_START_M.E4 = $AXIS_ACT.E4
+   IDENT_START_M.E5 = $AXIS_ACT.E5
+   IDENT_START_M.E6 = $AXIS_ACT.E6
+ENDIF
+
+; Messfahrt Trajektorie 2
+REPEAT
+   WAIT FOR  TRUE
+   WAIT SEC 0.5
+
+   MsgDialog(nAnswer, "GoToMeasRun2", "LoadDataDetermination", , "OK", , , , , ,)
+
+   $OV_PRO = 30
+   PTP IDENT_START_M
+   PTP IDENT_START
+   $OV_PRO = 100
+
+   WAIT FOR  TRUE
+   IF $OV_PRO < 100 THEN
+      WAIT SEC 0.5
+      MsgQuit("OVNot100", "LoadDataDetermination")
+      WHILE  $OV_PRO < 100
+         WAIT SEC 0.5
+      ENDWHILE
+      WAIT SEC 0.5
+   ENDIF
+
+   $IDENT_STATE=#I_MEAS ; Messfahrt
+
+   IF $MODE_OP == #T1 THEN
+      WAIT FOR  TRUE
+      
+      MsgNotify("LdeNotInT1", "LoadDataDetermination")
+      
+      WAIT SEC 0.5
+      GOTO IDENT_END
+   ENDIF
+
+   IF $OV_PRO < 100 THEN
+      WAIT FOR  TRUE
+         WAIT SEC 0.5
+         
+         MsgNotify("MeasIn100", "LoadDataDetermination")
+         
+         WAIT SEC 0.5
+         GOTO IDENT_END
+   ENDIF
+
+   IF (($IDENT_STATE<>#I_TEST) AND ($IDENT_STATE<>#I_MEAS)) THEN
+      GOTO IDENT_END
+   ENDIF
+
+   PTP_REL{A6 -0.001} ; TEST ODER MESSFAHRT
+
+   WHILE  (($IDENT_STATE==#I_TEST) OR ($IDENT_STATE==#I_MEAS))
+      WAIT SEC 0.1
+   ENDWHILE
+   WAIT SEC 0.2
+   
+   IF $IDENT_STATE==#I_END THEN
+      GOTO IDENT_END
+   ENDIF
+UNTIL ($IDENT_STATE==#I_MEAS_OK)
+
+$OV_PRO = 30
+PTP IDENT_START_M
+
+$IDENT_STATE=#I_CALC
+
+WAIT SEC 0.5
+IF $IDENT_STATE==#I_END THEN
+   GOTO IDENT_END
+ENDIF
+
+WAIT SEC 0.5
+$IDENT_STATE=#I_READY ;  Parameter einlesen
+WAIT SEC 0.1
+
+IF $IDENT_STATE<>#I_READY THEN
+   GOTO IDENT_END
+ENDIF
+
+; Startpunkte fuer Trajektorie 3
+IDENT_START_M = $IDENT_STARTP  ; Mitte des Achsbereichs 3
+IDENT_START    = $IDENT_STARTP ; Startwinkel
+
+IF $EX_AX_NUM > 0 THEN   
+   IDENT_START.E1  = $AXIS_ACT.E1
+   IDENT_START.E2  = $AXIS_ACT.E2
+   IDENT_START.E3  = $AXIS_ACT.E3
+   IDENT_START.E4  = $AXIS_ACT.E4
+   IDENT_START.E5  = $AXIS_ACT.E5
+   IDENT_START.E6  = $AXIS_ACT.E6
+   IDENT_START_M.E1 = $AXIS_ACT.E1
+   IDENT_START_M.E2 = $AXIS_ACT.E2
+   IDENT_START_M.E3 = $AXIS_ACT.E3
+   IDENT_START_M.E4 = $AXIS_ACT.E4
+   IDENT_START_M.E5 = $AXIS_ACT.E5
+   IDENT_START_M.E6 = $AXIS_ACT.E6
+ENDIF
+
+; Messfahrt Trajektorie 3
+REPEAT 
+   WAIT FOR  TRUE
+   
+   MsgDialog(nAnswer, "GoToMeasRun3", "LoadDataDetermination", , "OK", , , , , , )
+   
+   WAIT SEC 0.5
+
+   $OV_PRO = 30
+   PTP IDENT_START_M
+   PTP IDENT_START
+   $OV_PRO = 100
+
+   WAIT FOR  TRUE
+   IF $OV_PRO < 100 THEN
+      WAIT SEC 0.5
+      MsgQuit("OVNot100", "LoadDataDetermination")
+      WHILE  $OV_PRO < 100
+         WAIT SEC 0.5
+      ENDWHILE
+      WAIT SEC 0.5
+   ENDIF
+
+   $IDENT_STATE=#I_MEAS ; Messfahrt
+
+   IF $MODE_OP == #T1 THEN
+      WAIT FOR TRUE
+      
+      MsgNotify("LdeNotInT1", "LoadDataDetermination")
+      
+      WAIT SEC 0.5
+      GOTO IDENT_END
+   ENDIF
+
+   IF $OV_PRO < 100 THEN
+      WAIT FOR  TRUE
+         WAIT SEC 0.5
+         
+         MsgNotify("MeasIn100", "LoadDataDetermination")
+         
+         WAIT SEC 0.5
+         GOTO IDENT_END
+   ENDIF
+
+   IF (($IDENT_STATE<>#I_TEST) AND ($IDENT_STATE<>#I_MEAS)) THEN
+      GOTO IDENT_END
+   ENDIF
+
+   PTP_REL{A6 -0.001} ; TEST ODER MESSFAHRT
+
+   WHILE  (($IDENT_STATE==#I_TEST) OR ($IDENT_STATE==#I_MEAS))
+   WAIT SEC 0.1
+   ENDWHILE
+   WAIT SEC 0.2
+   
+   IF $IDENT_STATE==#I_END THEN
+      GOTO IDENT_END
+   ENDIF
+
+UNTIL ($IDENT_STATE==#I_MEAS_OK)
+
+$IDENT_STATE=#I_CALC
+
+WAIT SEC 0.5
+IF $IDENT_STATE==#I_END THEN
+   GOTO IDENT_END
+ENDIF
+;ENDFOLD
+
+;FOLD MOVEMENT TO INITIAL POINT
+IDENT_START = $IDENT_STARTP
+
+IF $EX_AX_NUM > 0 THEN   
+   IDENT_START.E1 = $AXIS_ACT.E1
+   IDENT_START.E2 = $AXIS_ACT.E2
+   IDENT_START.E3 = $AXIS_ACT.E3
+   IDENT_START.E4 = $AXIS_ACT.E4
+   IDENT_START.E5 = $AXIS_ACT.E5
+   IDENT_START.E6 = $AXIS_ACT.E6
+   IDENT_START_M.E1 = $AXIS_ACT.E1
+   IDENT_START_M.E2 = $AXIS_ACT.E2
+   IDENT_START_M.E3 = $AXIS_ACT.E3
+   IDENT_START_M.E4 = $AXIS_ACT.E4
+   IDENT_START_M.E5 = $AXIS_ACT.E5
+   IDENT_START_M.E6 = $AXIS_ACT.E6
+ENDIF
+
+WAIT FOR  TRUE
+
+MsgDialog(nAnswer, "GoToStart", "LoadDataDetermination", , "OK", , , , , , )
+
+WAIT SEC 0.5
+
+$OV_PRO = 30
+PTP IDENT_START_M
+PTP IDENT_START
+$OV_PRO = 100
+;ENDFOLD
+
+;FOLD END
+IDENT_END:
+
+FOR AXIS_NO=1 TO  6
+$torqmon[AXIS_NO]=TORQMON_SAVE[AXIS_NO]
+ENDFOR
+ 
+$IDENT_STATE=#I_END
+WAIT SEC 2.0
+END
+;ENDFOLD

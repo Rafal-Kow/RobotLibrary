@@ -1,0 +1,50 @@
+&ACCESS  R
+&COMMENT KS_1.2
+&PARAM DISKPATH = VW_User/Applikation/R_Zange
+&PARAM TPVW_VERSION = 8.3.8
+&REL 211
+DEFDAT  vw_rz_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket R_Zange                             *
+;*                                                     *
+;*Konzernstandard                                      *
+;*                                                     *
+;*-----------------------------------------------------*
+; 
+;FOLD USER_Version
+STRUC _Tech_RZ CHAR Name[20],INT Datum
+DECL _Tech_RZ Tech_RZ
+;ENDFOLD
+; 
+;FOLD RZ
+; 
+GLOBAL INT F_m_RZ=733
+; 
+GLOBAL BOOL MIT_RZ=FALSE
+; 
+INT RZ_1=3314
+INT RZ_2=3346
+INT RZ_3=3378
+INT RZ_4=3969
+INT RZ_5=3970
+INT RZ_6=3971
+; 
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM RZS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_RZS_Handle[100]
+GLOBAL INT n_RZR_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+
+;Fold Hilfsvariablen
+INT i=0
+INT a=0
+INT b=0
+INT c=0
+;ENDFOLD
+
+ENDDAT

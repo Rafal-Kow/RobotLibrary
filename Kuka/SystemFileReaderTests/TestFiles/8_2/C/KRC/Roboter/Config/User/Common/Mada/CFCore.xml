@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 29.05.2008 Haidinger: CF Konfigurationsdateien für Regler entfernt. -->
+<CFCore xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/CFCore.xsd">
+    <Version Label="" >
+        <Info Version="VW V8.2" />
+        <Schema Version="2" />
+    </Version>
+    <WaggonDriverConfigFile>Mada/CFCoreWaggonDriverConfig.xml</WaggonDriverConfigFile>
+    <ECATConfigFile>ecatms_config.xml</ECATConfigFile>
+    <Trace Samples="1000"/>
+    <AxisConfiguration>
+        <!-- Achse 1 mit RDW -->
+        <Axis>
+            <Control>
+            <PreFilter ID="203"/>
+            <PreFilter ID="204"/> 
+                <Controller ID="0" />
+            </Control>
+            <WaggonDriverInterfaces>
+                <IPos Index="2" Channel="0" />
+                <ICommutation Index="2" Channel="0" />
+                <IVel Index="2" Channel="0" />
+                <ITrq Index="1" Channel="0" />
+                <ITrqWDOut Index="1" Channel="0" /> 
+                <IMultiplexer Index="1" Channel="0" />
+                <IStateKSB Index="1" Channel="0" />
+                <IStateEnabled Index="1" Channel="0" />
+                <IStateBrakeOpen Index="1" Channel="0" />
+                <IStateDevice Index="1" Channel="0" />
+                <OCommutation Index="1" Channel="0" />
+                <OTrq Index="1" Channel="0" />
+                <OCmdKSB Index="1" Channel="0" />
+                <OCmdEnable Index="1" Channel="0" />
+                <OCmdBrakeOpen Index="1" Channel="0" />
+                <OSupplyVoltage Index="1" Channel="0" />
+            </WaggonDriverInterfaces>
+        </Axis>
+        <!-- Achse 2 mit RDW -->
+      <Axis>
+            <Control>
+            <PreFilter ID="203"/>
+            <PreFilter ID="204"/> 
+                <Controller ID="0" />
+            </Control>
+            <WaggonDriverInterfaces>
+                <IPos Index="2" Channel="1" />
+                <ICommutation Index="2" Channel="1" />
+                <IVel Index="2" Channel="1" />
+                <ITrq Index="1" Channel="1" />
+                <ITrqWDOut Index="1" Channel="1" /> 
+                <IMultiplexer Index="1" Channel="1" />
+                <IStateKSB Index="1" Channel="1" />
+                <IStateEnabled Index="1" Channel="1" />
+                <IStateBrakeOpen Index="1" Channel="1" />
+                <IStateDevice Index="1" Channel="1" />
+                <OCommutation Index="1" Channel="1" />
+                <OTrq Index="1" Channel="1" />
+                <OCmdKSB Index="1" Channel="1" />
+                <OCmdEnable Index="1" Channel="1" />
+                <OCmdBrakeOpen Index="1" Channel="1" />
+                <OSupplyVoltage Index="1" Channel="1" />
+            </WaggonDriverInterfaces>
+        </Axis>
+        <!-- Achse 3 mit RDW -->
+        <Axis>
+            <Control>
+            <PreFilter ID="203"/>
+            <PreFilter ID="204"/> 
+                <Controller ID="0" />
+            </Control>
+            <WaggonDriverInterfaces>
+                <IPos Index="2" Channel="2" />
+                <ICommutation Index="2" Channel="2" />
+                <IVel Index="2" Channel="2" />
+                <ITrq Index="1" Channel="2" />
+                <ITrqWDOut Index="1" Channel="2" /> 
+                <IMultiplexer Index="1" Channel="2" />
+                <IStateKSB Index="1" Channel="2" />
+                <IStateEnabled Index="1" Channel="2" />
+                <IStateBrakeOpen Index="1" Channel="2" />
+                <IStateDevice Index="1" Channel="2" />
+                <OCommutation Index="1" Channel="2" />
+                <OTrq Index="1" Channel="2" />
+                <OCmdKSB Index="1" Channel="2" />
+                <OCmdEnable Index="1" Channel="2" />
+                <OCmdBrakeOpen Index="1" Channel="2" />
+                <OSupplyVoltage Index="1" Channel="2" />
+            </WaggonDriverInterfaces>
+        </Axis>
+        <!-- Achse 4 mit RDW -->
+        <Axis>
+            <Control>
+            <PreFilter ID="203"/>
+            <PreFilter ID="204"/> 
+                <Controller ID="0" />
+            </Control>
+            <WaggonDriverInterfaces>
+                <IPos Index="2" Channel="3" />
+                <ICommutation Index="2" Channel="3" />
+                <IVel Index="2" Channel="3" />
+                <ITrq Index="1" Channel="3" />
+                <ITrqWDOut Index="1" Channel="3" /> 
+                <IMultiplexer Index="1" Channel="3" />
+                <IStateKSB Index="1" Channel="3" />
+                <IStateEnabled Index="1" Channel="3" />
+                <IStateBrakeOpen Index="1" Channel="3" />
+                <IStateDevice Index="1" Channel="3" />
+                <OCommutation Index="1" Channel="3" />
+                <OTrq Index="1" Channel="3" />
+                <OCmdKSB Index="1" Channel="3" />
+                <OCmdEnable Index="1" Channel="3" />
+                <OCmdBrakeOpen Index="1" Channel="3" />
+                <OSupplyVoltage Index="1" Channel="3" />
+            </WaggonDriverInterfaces>
+        </Axis>
+        <!-- Achse 5 mit RDW -->
+        <Axis>
+            <Control>
+            <PreFilter ID="203"/>
+            <PreFilter ID="204"/> 
+                <Controller ID="0" />
+            </Control>
+            <WaggonDriverInterfaces>
+                <IPos Index="2" Channel="4" />
+                <ICommutation Index="2" Channel="4" />
+                <IVel Index="2" Channel="4" />
+                <ITrq Index="1" Channel="4" />
+                <ITrqWDOut Index="1" Channel="4" /> 
+                <IMultiplexer Index="1" Channel="4" />
+                <IStateKSB Index="1" Channel="4" />
+                <IStateEnabled Index="1" Channel="4" />
+                <IStateBrakeOpen Index="1" Channel="4" />
+                <IStateDevice Index="1" Channel="4" />
+                <OCommutation Index="1" Channel="4" />
+                <OTrq Index="1" Channel="4" />
+                <OCmdKSB Index="1" Channel="4" />
+                <OCmdEnable Index="1" Channel="4" />
+                <OCmdBrakeOpen Index="1" Channel="4" />
+                <OSupplyVoltage Index="1" Channel="4" />
+            </WaggonDriverInterfaces>
+        </Axis>
+        <!-- Achse 6 mit RDW -->
+        <Axis>
+            <Control>
+            <PreFilter ID="203"/>
+            <PreFilter ID="204"/> 
+                <Controller ID="0" />
+            </Control>
+            <WaggonDriverInterfaces>
+                <IPos Index="2" Channel="5" />
+                <ICommutation Index="2" Channel="5" />
+                <IVel Index="2" Channel="5" />
+                <ITrq Index="1" Channel="5" />
+                <ITrqWDOut Index="1" Channel="5" /> 
+                <IMultiplexer Index="1" Channel="5" />
+                <IStateKSB Index="1" Channel="5" />
+                <IStateEnabled Index="1" Channel="5" />
+                <IStateBrakeOpen Index="1" Channel="5" />
+                <IStateDevice Index="1" Channel="5" />
+                <OCommutation Index="1" Channel="5" />
+                <OTrq Index="1" Channel="5" />
+                <OCmdKSB Index="1" Channel="5" />
+                <OCmdEnable Index="1" Channel="5" />
+                <OCmdBrakeOpen Index="1" Channel="5" />
+		<OSupplyVoltage Index="1" Channel="5" />
+                
+            </WaggonDriverInterfaces>
+        </Axis>
+    </AxisConfiguration>
+
+
+    <SupplyConfiguration>
+
+       <Supply>
+          <WaggonDriverInterfaces>
+                <IMultiplexer Index="0" Channel="0" />
+                <IStateKSB Index="0" Channel="0" />
+                <IStateEnabled Index="0" Channel="0" />
+                <IStateDevice Index="0" Channel="0" />
+                <ISupplyVoltage Index="0" Channel="0" />
+                <IActivationStatus Index="0" Channel="0" />
+                <OCmdKSB Index="0" Channel="0" />
+                <OCmdEnable Index="0" Channel="0" />
+          </WaggonDriverInterfaces>
+       </Supply>
+
+    </SupplyConfiguration>
+
+
+</CFCore>

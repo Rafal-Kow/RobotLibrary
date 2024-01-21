@@ -1,0 +1,543 @@
+&ACCESS RVE
+&REL 9
+&COMMENT KS_17.3_VW
+&PARAM EDITMASK = vw_usr_r
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM DISKPATH = VW_User
+DEF vw_VM_CurrLim()
+; KUKA library for vectormove current Limitation
+; status from August 12th 2015
+END
+;---------------------------------------------------------------------------
+Global DEF GunForceParamDefine(PAR1:IN,PAR2:IN,PAR3:IN)
+INT PAR1, PAR2, PAR3
+; define torque limitation in [N]
+ nForceLimitationVM_Prog = PAR1
+; define duration of active vectormove phase [ms]
+IF (PAR2>200) AND (PAR2<1000) THEN
+ nActiveTimeVectormove = PAR2
+ Params_Prog.Time_Expected=nActiveTimeVectormove*0.001
+ENDIF 
+; define length of active vectormove phase [1/10mm]
+IF (PAR3>10) AND (Par3<100) THEN
+ nActivePathVectormove=PAR3
+ Params_Prog.Proz_Expected=nActivePathVectormove
+ENDIF 
+;
+END
+;---------------------------------------------------------------------------
+Global DEF GunForceLimitOn()
+ INT i
+ ; activate functionality, but without real limits
+ DECL torqlimitparam TrqLimSet
+ TrqLimSet.lower =  -1E10
+ TrqLimSet.upper =  +1E10
+ TrqLimSet.monitor = #off
+ FOR i=1 to 6
+  SET_TORQUE_LIMITS(i, TrqLimSet)
+ ENDFOR
+ ; activate torque limit if no motion is active
+ IF $Rob_Stopped THEN 
+   i=$Filter
+   $Filter = 0
+   ;LIN $POS_ACT
+   $Filter = i
+ ENDIF
+;
+END
+;---------------------------------------------------------------------------
+Global DEF GunForceLimitCalcProgram( )
+  REAL rForceLimit
+  REAL rTorqueFactor
+  DECL torqlimitparam TrqLimSet
+  REAL r_ActTorqueCycleStart
+  REAL r_Mittel_0_5
+  REAL r_Mittel_1_0
+  REAL i_VektorPos
+  REAL r_StartTime; [ms]
+  REAL r_TimeOut; [ms]
+  
+  ; get average torque and calculate configured add on
+  IF VarState("$VMState.leadingaxis") == #initialized THEN
+     ; calculate average torque of leading axis
+     r_ActTorqueCycleStart = $Torque_axis_act[$VMState.leadingaxis]
+     r_Mittel_0_5 = $Torque_axis_act[$VMState.leadingaxis]
+     r_Mittel_1_0 = $Torque_axis_act[$VMState.leadingaxis]
+     i_VektorPos=$VMState.currentPos
+     ; average torque on first 5% (0.5mm) of active phase ter
+     ; time out after double time configured for active phase 
+     r_TimeOut=nActiveTimeVectormove*5/nActivePathVectormove
+     r_StartTime=$Rob_Timer
+     WHILE (($VMState.currentPos - i_VektorPos) < 5) AND ($Rob_Timer>(r_StartTime+2*r_TimeOut))
+        r_Mittel_0_5 = 0.1 * $Torque_axis_act[$VMState.leadingaxis] + 0.9 * r_Mittel_0_5
+     ENDWHILE
+     ; average torque on first 10% (1.0mm) of active phase 
+     WHILE (($VMState.currentPos) - i_VektorPos < 10)  AND ($Rob_Timer>(r_StartTime+4*r_TimeOut))
+       r_Mittel_1_0 = 0.1 * $Torque_axis_act[$VMState.leadingaxis] + 0.9 * r_Mittel_1_0
+     ENDWHILE
+     ; get configured limit to local variable
+     rForceLimit=nForceLimitationVM_Prog
+     ; calculate torque factor
+     GunTCPForceCalc($VMState.leadingaxis, r_Mittel_1_0, rForceLimit, rTorqueFactor)
+     ; disable limitation to holding torque
+     $Holding_torque_mand[$VMState.leadingaxis] = false
+     TrqLimSet.lower = -1E10
+     TrqLimSet.upper = +1E10
+     ; find out direction of torque
+     IF r_Mittel_0_5  > r_ActTorqueCycleStart THEN
+       TrqLimSet.upper = r_Mittel_1_0 + abs(r_Mittel_1_0 * rTorqueFactor)
+     ELSE
+       TrqLimSet.lower = r_Mittel_1_0 - abs(r_Mittel_1_0 * rTorqueFactor)
+     ENDIF  
+     ; activate limitation      
+     SET_TORQUE_LIMITS($VMState.leadingaxis, TrqLimSet)
+  ENDIF
+ ;
+END
+;---------------------------------------------------------------------------
+Global DEF GunForceLimitCalcTeach( )
+  REAL rForceLimit
+  REAL rTorqueFactor
+  DECL torqlimitparam TrqLimSet
+  REAL r_ActTorqueCycleStart
+  REAL r_Mittel_0_5
+  REAL r_Mittel_1_0
+  REAL i_VektorPos
+  REAL r_StartTime; [ms]
+  REAL r_TimeOut; [ms]
+
+  ; get average torque and calculate configured add on
+  IF VarState("$VMState.leadingaxis") == #initialized THEN
+     ; calculate average torque of leading axis
+     r_ActTorqueCycleStart = $Torque_axis_act[$VMState.leadingaxis]
+     r_Mittel_0_5 = $Torque_axis_act[$VMState.leadingaxis]
+     r_Mittel_1_0 = $Torque_axis_act[$VMState.leadingaxis]
+     i_VektorPos=$VMState.currentPos
+     ; average torque on first 5% (0.5mm) of active phase 
+     ; time out after double time configured for active phase 
+     r_TimeOut=nActiveTimeVectormove*5/nActivePathVectormove
+     r_StartTime=$Rob_Timer
+     WHILE (($VMState.currentPos - i_VektorPos) < 5) AND ($Rob_Timer>(r_StartTime+2*r_TimeOut))
+        r_Mittel_0_5 = 0.1 * $Torque_axis_act[$VMState.leadingaxis] + 0.9 * r_Mittel_0_5
+     ENDWHILE
+     ; average torque on first 10% (1.0mm) of active phase 
+     WHILE (($VMState.currentPos) - i_VektorPos < 10)  AND ($Rob_Timer>(r_StartTime+4*r_TimeOut))
+       r_Mittel_1_0 = 0.1 * $Torque_axis_act[$VMState.leadingaxis] + 0.9 * r_Mittel_1_0
+     ENDWHILE
+     ; get configured limit to local variable
+     rForceLimit=nForceLimitationVM_Teach
+     ; calculate torque factor
+     GunTCPForceCalc($VMState.leadingaxis, r_Mittel_1_0, rForceLimit, rTorqueFactor)
+     ; disable limitation to holding torque
+     $Holding_torque_mand[$VMState.leadingaxis] = false
+     TrqLimSet.lower = -1E10
+     TrqLimSet.upper = +1E10
+     ; find out direction of torque
+     IF r_Mittel_0_5  > r_ActTorqueCycleStart THEN
+       TrqLimSet.upper = r_Mittel_1_0 + abs(r_Mittel_1_0 * rTorqueFactor)
+     ELSE
+       TrqLimSet.lower = r_Mittel_1_0 - abs(r_Mittel_1_0 * rTorqueFactor)
+     ENDIF  
+     ; activate limitation      
+     SET_TORQUE_LIMITS($VMState.leadingaxis, TrqLimSet)
+  ENDIF
+ ;
+END
+;---------------------------------------------------------------------------
+Global DEF GunForceLimitOff()
+INT i
+; switch off torque limits 
+FOR i = 1 TO 6
+  Reset_Torque_Limits(i)
+ENDFOR
+END
+;---------------------------------------------------------------------------
+Global DEF GunForceLimitDeactivate()
+INT i
+DECL torqlimitparam TrqLimSet
+; torque limit deactivation 
+TrqLimSet.lower =  -1E10
+TrqLimSet.upper =  +1E10
+TrqLimSet.monitor = #on
+FOR i=1 to 6
+  SET_TORQUE_LIMITS(i, TrqLimSet)
+ENDFOR
+END
+;-------------------------------------------------------
+DEFFCT  REAL SKAL_PROD(V[]:OUT,W[]:OUT,N :IN)
+; Berechnung des Skalarprodukts der beiden N-dimensionalen Vektoren
+; V und W
+REAL V[],W[]
+INT N
+REAL SK_PROD
+INT I
+SK_PROD=0
+FOR I=1 TO  N
+SK_PROD=SK_PROD+V[I]*W[I]
+ENDFOR
+RETURN  (SK_PROD)
+ENDFCT
+;-------------------------------------------------------
+DEFFCT  REAL VEK_LAENGE(V[]:OUT,N :IN)
+; Berechnung der euklidischen Laenge des N-dimensionalen Vektors V
+REAL V[]
+INT N
+RETURN  (SQRT(SKAL_PROD(V[],V[],N)))
+ENDFCT
+;-------------------------------------------------------
+DEF  NORM_VEK (V[]:OUT,N:IN )
+; Der Vektor V wird durch seine Laenge dividiert, so dass er dann
+; Laenge 1 besitzt.
+REAL V[]
+INT N
+REAL LAENGE
+INT I
+LAENGE=VEK_LAENGE(V[],N)
+;wenn Laenge = 0, dann gibt es keinen definierten NormVektor
+IF Laenge==0 Then
+V[1]=1.0
+Return
+ENDIF
+FOR I=1 TO  N
+V[I]=V[I]/LAENGE
+ENDFOR
+END
+;-------------------------------------------------------
+DEFFCT  REAL DIST_FRAME(P1:OUT,P2:OUT)
+; Berechnung des Abstandes zwischen 2 Positionen
+FRAME P1,P2
+REAL DIST_VEC[3]
+DIST_VEC[1]=P2.X-P1.X
+DIST_VEC[2]=P2.Y-P1.Y
+DIST_VEC[3]=P2.Z-P1.Z
+RETURN  (VEK_LAENGE(DIST_VEC[],3))
+ENDFCT
+;-------------------------------------------------------
+DEFFCT FRAME  Diff_Vector (F1:IN,F2:IN )
+  FRAME F1, F2, F3
+  F3=$NullFrame
+  F3.x = F1.x - F2.x
+  F3.y = F1.y - F2.y
+  F3.z = F1.z - F2.z
+  Return (F3)
+ENDFCT
+;--------------------------------------------------------------------------------
+GLOBAL DEF GunTCPForceCalc(nLeadingAxis:IN, rAverageTorque:IN, rForceLimit:IN, rTorqueFactor:OUT)
+INT nLeadingAxis, nStatus
+REAL rAverageTorque,rForceLimit, rTorqueFactor
+
+FRAME A1FrameRot, A1FrameTrans, A2FrameRot, A2FrameTrans, A3FrameTrans, A3FrameRot, A4FrameRot, A5FrameTrans, A5FrameRot, A6FrameRot
+
+lrForceLimit=rForceLimit
+lnLeadingAxis=nLeadingAxis
+FramePosAct=$Pos_Act
+IF $IPO_MODE==#TCP THEN
+ FramePosAct=$Base
+ELSE
+ FramePosAct=$Pos_Act   
+ENDIF
+AxisAxisAct=$Axis_Act
+; get a vector 1mm in TCP direction 
+FrameTCPDirection=FramePosAct:{x 1,y 0,z 0,a 0,b 0,c 0}
+FrameTCPDirection=Diff_Vector(FrameTCPDirection,FramePosAct)
+
+; Calculate A1 Position
+IF $IPO_MODE==#TCP THEN
+  A1Pos= $Nullframe
+ELSE
+  A1Pos=$Base
+ENDIF
+A1PosInv=A1Pos
+INV_Frame(A1PosInv)
+
+; Calculate A2 Position
+A1FrameTrans=$NullFrame
+A1FrameRot=$NullFrame
+A1FrameTrans.x=$Length_A
+A1FrameTrans.z=$TIRORO.z
+A1FrameRot.a=-AxisAxisAct.A1
+A2Pos=A1Pos:A1FrameRot:A1FrameTrans
+A2PosInv=A2Pos
+INV_Frame(A2PosInv)
+
+; Calculate Position A3
+A2FrameTrans=$NullFrame
+A2FrameRot=$NullFrame
+A2FrameTrans.x=$Length_B
+A2FrameRot.b=AxisAxisAct.A2
+A3Pos=A2Pos:A2FrameRot:A2FrameTrans
+A3PosInv=A3Pos
+INV_Frame(A3PosInv)
+
+; Calculate position A4
+A3FrameTrans=$NullFrame
+A3FrameRot=$NullFrame
+A3FrameTrans.x=$TX3P3.x
+A3FrameRot.b=AxisAxisAct.A3
+A4Pos=A3Pos:A3FrameRot:A3FrameTrans
+A4PosInv=A4Pos
+INV_Frame(A4PosInv)
+
+; Calculate position A5
+A4FrameRot=$NullFrame
+A4FrameRot.c=AxisAxisAct.A4
+A5Pos=A4Pos:A4FrameRot
+A5PosInv=A5Pos
+INV_Frame(A5PosInv)
+
+; Calculate position A6
+A5FrameTrans=$NullFrame
+A5FrameRot=$NullFrame
+A5FrameTrans.y=$TX3P3.z
+A5FrameRot.b=-AxisAxisAct.A5
+A6Pos=A5Pos:A5FrameRot:A5FrameTrans
+A6PosInv=A6Pos
+INV_Frame(A6PosInv)
+
+; Calculate arm vector, from axis centre to TCP 
+; calculate axis vector, vector in direction of axis 
+Switch nLeadingAxis
+ CASE 1
+  rDistAxisToTCP=DIST_FRAME(A1Pos,FramePosAct)*0.001
+  AxisVector=A1Pos:{X 0,Y 0,Z 1,A 0,B 0,c 0}
+  AxisVector=Diff_Vector(AxisVector,A1Pos)
+  IF $IPO_MODE==#TCP THEN
+    ArmVector=A1PosInv:$Base
+  ELSE
+    ArmVector=Diff_Vector(FramePosAct,A1Pos)
+  ENDIF  
+ CASE 2
+  rDistAxisToTCP=DIST_FRAME(A2Pos,FramePosAct)*0.001
+  AxisVector=A2Pos:{X 0,Y 1,Z 0,A 0,B 0,c 0}
+  AxisVector=Diff_Vector(AxisVector,A2Pos)
+  IF $IPO_MODE==#TCP THEN
+    ArmVector=A2PosInv:$Base
+  ELSE
+    ArmVector=Diff_Vector(FramePosAct,A2Pos)
+  ENDIF
+ CASE 3
+  rDistAxisToTCP=DIST_FRAME(A3Pos,FramePosAct)*0.001
+  AxisVector=A3Pos:{X 0,Y 1,Z 0,A 0,B 0,c 0}
+  AxisVector=Diff_Vector(AxisVector,A3Pos)
+  IF $IPO_MODE==#TCP THEN
+    ArmVector=A3PosInv:$Base
+  ELSE
+    ArmVector=Diff_Vector(FramePosAct,A3Pos)
+  ENDIF
+ CASE 4
+  rDistAxisToTCP=DIST_FRAME(A4Pos,FramePosAct)*0.001
+  AxisVector=A4Pos:{X 1,Y 0,Z 0,A 0,B 0,c 0}
+  AxisVector=Diff_Vector(AxisVector,A4Pos)
+  IF $IPO_MODE==#TCP THEN
+    ArmVector=A4PosInv:$Base
+  ELSE
+    ArmVector=Diff_Vector(FramePosAct,A4Pos)
+  ENDIF
+ CASE 5
+  rDistAxisToTCP=DIST_FRAME(A5Pos,FramePosAct)*0.001
+  AxisVector=A5Pos:{X 0,Y 1,Z 0,A 0,B 0,c 0}
+  AxisVector=Diff_Vector(AxisVector,A5Pos)
+  IF $IPO_MODE==#TCP THEN
+    ArmVector=A5PosInv:$Base
+  ELSE
+    ArmVector=Diff_Vector(FramePosAct,A5Pos)
+  ENDIF
+ CASE 6
+  rDistAxisToTCP=DIST_FRAME(A6Pos,FramePosAct)*0.001
+  AxisVector=A6Pos:{X 1,Y 0,Z 0,A 0,B 0,c 0}
+  AxisVector=Diff_Vector(AxisVector,A6Pos)
+  IF $IPO_MODE==#TCP THEN
+    ArmVector=A6PosInv:$Base
+  ELSE
+    ArmVector=Diff_Vector(FramePosAct,A6Pos)
+  ENDIF
+ DEFAULT
+  LOOP
+    HALT; not usefull
+  ENDLOOP
+ENDSWITCH
+
+; calculate angle arm vector to axis vector
+ rVector1[1]=AxisVector.x
+ rVector1[2]=AxisVector.y
+ rVector1[3]=AxisVector.z
+ NORM_VEK(rVector1[],3)
+ 
+ rVector2[1]=ArmVector.x
+ rVector2[2]=ArmVector.y
+ rVector2[3]=ArmVector.z
+ NORM_VEK(rVector2[],3)
+ rAngleArmAxis=ACOS(ABS(SKAL_PROD(rVector1[],rVector2[],3)))
+
+; get length of a vector from axis to TCP, but perpendicular to axis vector
+rDistAxisToTCPPerp=rDistAxisToTCP*SIN(rAngleArmAxis)
+
+; get lenght arm vector in axis vector direction
+rDistAxisinAxisDir=rDistAxisToTCP*COS(rAngleArmAxis)
+
+; use lenght of arm perpendicular to axis to calculate Force at TCP
+IF rDistAxisToTCPPerp>0.0001 THEN
+  rForceAtTCP=rAverageTorque/rDistAxisToTCPPerp
+ELSE
+  ; special case, TCP is on axis vector  
+  rForceAtTCP=rAverageTorque*10000
+ENDIF
+
+; get vector of force direction 
+ ; assume positive movement of leading axis about 0.1 degree
+ AxisForceDirection=AxisAxisAct
+ SWITCH nLeadingAxis
+ CASE 1
+   AxisForceDirection.A1=AxisForceDirection.A1+0.1
+ CASE 2
+   AxisForceDirection.A2=AxisForceDirection.A2+0.1
+ CASE 3
+   AxisForceDirection.A3=AxisForceDirection.A3+0.1
+ CASE 4
+   AxisForceDirection.A4=AxisForceDirection.A4+0.1
+ CASE 5
+   AxisForceDirection.A5=AxisForceDirection.A5+0.1
+ CASE 6
+   AxisForceDirection.A6=AxisForceDirection.A6+0.1
+DEFAULT
+  LOOP
+    HALT; not usefull
+  ENDLOOP
+ ENDSWITCH
+ ; get cartesian position
+ nStatus=0
+ FrameForceDirection=Forward(AxisForceDirection,nStatus)
+ ; get the vector TCP is moving when leading axis moves 0.1 degree 
+ FrameForceDirection= Diff_Vector(FrameForceDirection,FramePosAct)
+
+ ; get angle force direction to TCP direction
+ rVector1[1]=FrameForceDirection.x
+ rVector1[2]=FrameForceDirection.y
+ rVector1[3]=FrameForceDirection.z
+ NORM_VEK(rVector1[],3)
+ 
+ rVector2[1]=FrameTCPDirection.x
+ rVector2[2]=FrameTCPDirection.y
+ rVector2[3]=FrameTCPDirection.z
+ NORM_VEK(rVector2[],3)
+ 
+ rAngleForceTCP=ACOS(SKAL_PROD(rVector1[],rVector2[],3))
+ 
+ IF rAngleForceTCP>90 THEN
+   ; special case -0.1 degree leading axis direction is in TCP direction 
+   rAngleForceTCP=180-rAngleForceTCP
+ ENDIF
+ ; get force component in TCP direction  
+ rForceTCPDirection=rForceAtTCP*COS(rAngleForceTCP)
+ 
+; calculate torque for allowed additional force
+IF ABS(rForceTCPDirection) > 1 THEN
+  rTorqueFactor=rForceLimit/rForceTCPDirection
+ELSE
+  ; special case nearly no force in TCP direction 
+  rTorqueFactor=rForceLimit
+ENDIF
+; save results locally 
+lrTorqueFactor=rTorqueFactor
+rAdditionalTorque=rAverageTorque*rTorqueFactor
+;
+END
+;-------------------------------------------------------
+DEF  INV_FRAME (F:OUT )
+FRAME F
+REAL O[3,3],MINUS_P[3],INV_P[3]
+; Orientierung invertieren:
+RPY_TO_MAT (O[,],F.A,F.B,F.C )
+INV_ORI_MAT (O[,] )
+MAT_TO_RPY (O[,],F.A,F.B,F.C )
+; Ort invertieren:
+MINUS_P[1]=-F.X
+MINUS_P[2]=-F.Y
+MINUS_P[3]=-F.Z
+MAT_MAL_VEK (O[,],MINUS_P[],INV_P[],3,3 )
+F.X=INV_P[1]
+F.Y=INV_P[2]
+F.Z=INV_P[3]
+END
+;-------------------------------------------------------
+DEF  RPY_TO_MAT (T[,]:OUT,A :IN,B :IN,C :IN )
+; Umwandlung von RPY-Winkeln A, B, C in eine Trafo-Matrix T
+; T = Rot_z(A) * Rot_y(B) * Rot_x(C)
+REAL T[,],A,B,C
+REAL COS_A,SIN_A,COS_B,SIN_B,COS_C,SIN_C
+COS_A=COS(A)
+SIN_A=SIN(A)
+COS_B=COS(B)
+SIN_B=SIN(B)
+COS_C=COS(C)
+SIN_C=SIN(C)
+T[1,1]=COS_A*COS_B
+T[1,2]=-SIN_A*COS_C+COS_A*SIN_B*SIN_C
+T[1,3]=SIN_A*SIN_C+COS_A*SIN_B*COS_C
+T[2,1]=SIN_A*COS_B
+T[2,2]=COS_A*COS_C+SIN_A*SIN_B*SIN_C
+T[2,3]=-COS_A*SIN_C+SIN_A*SIN_B*COS_C
+T[3,1]=-SIN_B
+T[3,2]=COS_B*SIN_C
+T[3,3]=COS_B*COS_C
+END
+;-------------------------------------------------------
+DEF  INV_ORI_MAT (O[,]:OUT )
+; Invertieren der orthogonalen 3x3-Orientierungsmatrix durch Transponieren
+REAL O[,]
+REAL TAUSCH
+INT I,J
+FOR I=1 TO  3
+FOR J=I+1 TO  3
+TAUSCH=O[I,J]
+O[I,J]=O[J,I]
+O[J,I]=TAUSCH
+ENDFOR
+ENDFOR
+END
+;-------------------------------------------------------
+DEF  MAT_TO_RPY (T[,]:OUT,A:OUT,B:OUT,C:OUT )
+; Umwandlung einer Trafo-Matrix T in die RPY-Winkel A, B, C
+; T = Rot_z(A) * Rot_y(B) * Rot_x(C)
+REAL T[,],A,B,C
+REAL SIN_A,COS_A,SIN_B,ABS_COS_B,SIN_C,COS_C
+A=ARCTAN2(T[2,1],T[1,1])
+SIN_A=SIN(A)
+COS_A=COS(A)
+SIN_B=-T[3,1]
+ABS_COS_B=COS_A*T[1,1]+SIN_A*T[2,1]
+B=ARCTAN2(SIN_B,ABS_COS_B) ;       Hier: -90 <= B <= +90 !!
+SIN_C=SIN_A*T[1,3]-COS_A*T[2,3]
+COS_C=-SIN_A*T[1,2]+COS_A*T[2,2]
+C=ARCTAN2(SIN_C,COS_C)
+END
+;-------------------------------------------------------
+DEF  MAT_MAL_VEK (A[,]:OUT,X[]:OUT,Be[]:OUT,N :IN,M :IN )
+; b = A * x wird berechnet, wobei dim(A) = N x M
+REAL A[,],X[],Be[]
+INT N,M
+REAL SUM
+INT I,J
+FOR I=1 TO  N
+SUM=0
+FOR J=1 TO  M
+SUM=SUM+A[I,J]*X[J]
+ENDFOR
+Be[I]=SUM
+ENDFOR
+END
+;ENDFOLD
+;
+;-------------------------------------------------------
+DEFFCT  REAL ARCTAN2(Y :IN,X :IN)
+; Arcustangens mit 2 Argumenten und Check, ob x und y numerisch 0 sind
+REAL X,Y
+REAL ATAN_EPS
+ATAN_EPS=0.00011
+IF ((ABS(X)<ATAN_EPS) AND (ABS(Y)<ATAN_EPS)) THEN
+RETURN  (0)
+ELSE
+RETURN  (ATAN2(Y,X))
+ENDIF
+ENDFCT
+;--------------------------------------------------------------------------------

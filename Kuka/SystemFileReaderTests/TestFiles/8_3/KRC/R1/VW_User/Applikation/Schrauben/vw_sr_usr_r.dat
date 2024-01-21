@@ -1,0 +1,49 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Schrauben
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEFDAT  vw_sr_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Schrauben                           *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.17 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD Schrauben
+;Schraub-Punkt an SPS
+;Schraub-Programm an S1-4
+SIGNAL O_SR_Nr_SPS $OUT[97]  TO $OUT[112]
+SIGNAL O_SR1_ProgNr $OUT[2217]  TO $OUT[2222]
+SIGNAL O_SR2_ProgNr $OUT[2233]  TO $OUT[2238]
+SIGNAL O_SR3_ProgNr $OUT[2249]  TO $OUT[2254]
+SIGNAL O_SR4_ProgNr $OUT[2265]  TO $OUT[2270]
+; 
+SIGNAL I_SR1_ProgNr $IN[2217]  TO $IN[2222]
+SIGNAL I_SR2_ProgNr $IN[2233]  TO $IN[2238]
+SIGNAL I_SR3_ProgNr $IN[2249]  TO $IN[2254]
+SIGNAL I_SR4_ProgNr $IN[2265]  TO $IN[2270]
+; 
+GLOBAL INT F_SR1_aktiv=851
+GLOBAL INT F_SR2_aktiv=852
+GLOBAL INT F_SR3_aktiv=853
+GLOBAL INT F_SR4_aktiv=854
+; 
+GLOBAL INT O_SR1_aktiv=193
+GLOBAL INT O_SR2_aktiv=201
+GLOBAL INT O_SR3_aktiv=209
+GLOBAL INT O_SR4_aktiv=217
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM SRR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

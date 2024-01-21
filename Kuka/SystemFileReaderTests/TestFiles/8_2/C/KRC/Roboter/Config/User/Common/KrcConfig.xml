@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<KrcConfig xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/KrcConfig.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Version Label="">
+    <Info Version="KRC V8.2" />
+    <Schema Version="300" />
+  </Version>
+  <MemConfig>
+    <MODULE MAX_MODULE_NUM="1000" />
+    <SIZE>
+      <A_PAGE_MAX_SIZE Value="64" />
+      <O_PAGE_MAX_SIZE Value="64" />
+      <MIN_PHY_PAGES Value="10" />
+      <MIN_PHY_PAGES_BASIS Value="40" />
+      <EXPANSION_SIZE Value="32" />
+      <BINDING_PAGE_SIZE Value="8" />
+      <ERROR_FILE_SIZE Value="8" />
+    </SIZE>
+  </MemConfig>
+  <TEST>
+    <ADSAUSGABE Value="false" />
+    <ADS_LOGGING Value="false" />
+    <DEBUGMASK Value="0" />
+  </TEST>
+  <MOTIONSYNC>
+    <SEND_MODE Value="singlecast" />
+    <REPORT_FREQUENCY Value="50" />
+  </MOTIONSYNC>
+  <FEATURES>
+    <CONST_KEY Value="true" />
+    <GLOBAL_KEY Value="true" />
+    <MAX_DOWNLOADS Value="3" />
+    <SUSPEND_SETINFOS Value="true" />
+    <MOVE_KEYS_NEW Value="true" />
+    <MSTEP_IN_EXT Value="false" />
+    <SLOW_BCO_EXT Value="false" />
+    <NO_STOP_ON_BCO Value="false" />
+    <IO_SYS_DOWN_ON_24V Value="false" />
+    <IOSYS_IN_TRUE Value="4081" />
+    <IOSYS_IN_FALSE Value="4082" />
+    <ANALIMITMSG Value="false" />
+    <MAX_POS_TRIGGER_DELAY Value="1000" />
+    <PATHTRIGG_MSG_TOLERANCE_SHIFTLIMIT_PATH_MM Value="1" />
+    <PATHTRIGG_MSG_TOLERANCE_SHIFTLIMIT_DELAY_MSEC Value="2" />
+    <DISTTRIGG_MSG_TOLERANCE_SHIFTLIMIT_DELAY_MSEC Value="100" />
+    <M309 Value="true" />
+    <MAX_IOLINKS Value="32" />
+    <INT_STACK_MONITORING Value="3" />
+    <MSG_DONT_BLOCK_IN_TEST Value="1" />
+    <MAX_KFA_MEM_SIZE Value="1048576" />
+    <LINE_SEL_LOCAL_SUB Value="false" />
+    <OBJH_DELAY_CYCLE Value="10" />
+    <OBJH_DELAY_TIME Value="1" />
+    <WS_DIAG_CHECK_RATE Value="1000" />
+    <TIMEOUT_MSG_IN_AUT Value="true" />
+    <MAX_UP_TRIGGER_TIMEOUT Value="5000" />
+    <Customer_VW>
+      <STOP_AT_PTP_SINGULARITY Value="true" />
+      <WAIT_FOR_INDEX_RES Value="false" />
+      <CYCFL_IDX_MOV_COND Value="254" />
+    </Customer_VW>
+    <Customer_KUKA>
+      <STOP_AT_PTP_SINGULARITY Value="false" />
+      <WAIT_FOR_INDEX_RES Value="true" />
+    </Customer_KUKA>
+  </FEATURES>
+  <KRLDIAG>
+    <MAX_LOGS Value="10" />
+    <BUF_SIZE_INT Value="1000" />
+    <BUF_SIZE_ZYK Value="250" />
+    <BUF_SIZE_PBA Value="250" />
+    <BUF_SIZE_KFI Value="30" />
+    <TABLE_SIZE Value="30" />
+  </KRLDIAG>
+</KrcConfig>

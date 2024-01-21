@@ -1,0 +1,4680 @@
+&ACCESS  R
+&COMMENT KS_1.1
+&PARAM DISKPATH = VW_User/Applikation/Vision/Perceptron
+&PARAM TPVW_VERSION = 8.1.8
+&REL 200
+DEF vw_prc_usr_r( )
+;
+;*---------------------------------------------*
+;* Perceptron GmbH                             *
+;* Version 1.1.0  / VKRC 2                     *
+;* Bearbeitet am:                              *
+;* 21.12.2010 MG                               *
+;*     ueberarbeitet auf Stand V1.0.0 / VKRC 4 *
+;*                                             *
+;* 26.12.2013 HF                               *
+;*     512 Kompensations-UP holen neu          *
+;*     521 Messpunkte abgeschlossen neu        *
+;*     531 Messende mit SPS entfernt           *
+;*     512 ist jetzt 514                       *
+;*                                             *
+;*     FLAG-Modell-Kontrolle                   *
+;* 05.02.2014 MG                               *
+;*     V1.1.6: VKRC4 mit                       *
+;*             Robotertausch                   *
+;*             Sensortausch                    *
+;*             Compmodell                      *
+;*             Tempcompsystem                  *
+;*---------------------------------------------*
+;
+END
+;
+;FOLD Perceptron Interface
+GLOBAL DEF PRC_Interface(USER_CMD:IN,CMD_SEL:IN,FUNKTION:IN,TYP:IN,SUBTYP:IN,NR:IN,PAR5:IN,WIEDERHOLUNG:IN)
+  DECL VW_USER_CMD USER_CMD
+  DECL INT         CMD_SEL      ; Modus
+  DECL INT         FUNKTION     ; Funktion
+  DECL INT         TYP
+  DECL INT         SUBTYP
+  DECL INT         NR
+  DECL INT         PAR5
+  DECL INT         WIEDERHOLUNG
+  DECL INT         nFlagCounter
+  DECL INT         I ;allgemeiner Zaehler
+  ;  N_PRC_Err1   = 0
+  ;  N_PRC_Err2   = 0
+  ;  N_PRC_MsgOff = 0
+  ;  B_PRC_MsgFlg = FALSE
+  ;  N_PRC_Fkt = 0
+  IF USER_CMD <> #USR_INIT THEN
+    SWITCH CMD_SEL
+    CASE 1001   ; IMT  Hauptgruppe 9, Untergruppe 1
+      N_PRC_Fkt = CMD_SEL
+      SWITCH FUNKTION
+        CASE 501,510,511,512,513,514,520,521,522,523,524,530,540,545,550,551,552,553,554,598,599
+      ; OK
+      DEFAULT
+        N_PRC_MsgOff = 900
+        B_PRC_MsgFlg = TRUE
+        N_PRC_Err1   = 902   ; Funktion P1 ungueltig
+        N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,FUNKTION,CMD_SEL)
+        $FLAG[F_PRC_Err] = TRUE
+        RETURN
+      ENDSWITCH
+    CASE 1002   ; RF  Hauptgruppe 9, Untergruppe 2
+      N_PRC_Fkt = CMD_SEL
+      SWITCH FUNKTION
+      CASE 501,510,511,512,520,521,522,523,530,540,545,552,553,554,598,599
+        ; OK
+      DEFAULT
+        N_PRC_MsgOff = 900
+        B_PRC_MsgFlg = TRUE
+        N_PRC_Err1   = 902   ; Funktion P1 ungueltig
+        N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,FUNKTION,CMD_SEL)
+        $FLAG[F_PRC_Err] = TRUE
+        RETURN
+      ENDSWITCH
+    CASE 1003   ; AGauge  Hauptgruppe 9, Untergruppe 3
+      N_PRC_Fkt = CMD_SEL
+      SWITCH FUNKTION
+      CASE 501,510,511,530,598,599
+        ; OK
+      DEFAULT
+        N_PRC_MsgOff = 900
+        B_PRC_MsgFlg = TRUE
+        N_PRC_Err1   = 902   ; Funktion P1 ungueltig
+        N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,FUNKTION,CMD_SEL)
+        $FLAG[F_PRC_Err] = TRUE
+        RETURN
+      ENDSWITCH
+    DEFAULT
+      N_PRC_MsgOff = 900
+      B_PRC_MsgFlg = TRUE
+      N_PRC_Err1   = 1001   ; Modus P2 ungueltig
+      N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,CMD_SEL,N_PRC_Ret1)
+      $FLAG[F_PRC_Err] = TRUE
+      RETURN
+    ENDSWITCH
+  ENDIF
+  SWITCH USER_CMD
+  CASE #USR_INIT
+    ;
+    ;FOLD Init
+    ;
+    N_PRC_MsgOff = 50
+    B_PRC_MsgFlg = FALSE
+    B_PRC_RetVal = PRC_Sync()
+    ;
+    ;ENDFOLD (Init)
+    ;
+  CASE #USR_ADV
+    ;
+    ;FOLD Advance
+    ;
+    SWITCH N_PRC_Fkt
+    CASE 1001  ; Hauptgruppe 9, Untergruppe 1
+     ;PRC_IMTInterface
+      N_PRC_Err1   = 0
+      N_PRC_Err2   = 0
+      N_PRC_UpNr   = 0
+      N_PRC_MsgOff = 0
+      B_PRC_MsgFlg = FALSE
+      FOR nFlagCounter = N_PRC_FiErr TO N_PRC_FiErr + N_PRC_LgErr
+        $FLAG[nFlagCounter] = FALSE
+      ENDFOR
+      N_PRC_Err1 = PRC_CheckParams(TYP,SUBTYP,NR,WIEDERHOLUNG)
+      IF N_PRC_Err1 > 0 THEN
+        N_PRC_Ret1 = PRC_MsgErr(#DlgMsg,N_PRC_Err1)
+        $FLAG[F_PRC_Err] = TRUE
+        RETURN
+      ENDIF
+      SWITCH FUNKTION
+      CASE 553   ;korrektur ausfuehren
+        PRC_DebugDlg(8,0,0)
+        PRC_SetKorrektur(NR)
+        N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+      DEFAULT
+      ENDSWITCH
+    CASE 1002  ; Hauptgruppe 9, Untergruppe 2
+      PRC_AutoGuideInterface(#USR_ADV,CMD_SEL,FUNKTION,TYP,SUBTYP,NR,PAR5,WIEDERHOLUNG)
+    CASE 1003  ; Hauptgruppe 9, Untergruppe 3
+      PRC_AutoGaugeInterface(#USR_ADV,CMD_SEL,FUNKTION,TYP,SUBTYP,NR,PAR5,WIEDERHOLUNG)
+    ENDSWITCH
+    ;
+    ;ENDFOLD (Advance)
+    ;
+  CASE #USR_TRIG
+    ;
+    ;FOLD Trig
+    ;
+    SWITCH N_PRC_Fkt
+    CASE 1001  ; Hauptgruppe 9, Untergruppe 1
+      ;PRC_IMTInterface
+      SWITCH FUNKTION
+      CASE 523   ; Scanning stoppen
+        N_PRC_MsgOff = 250
+        B_PRC_MsgFlg = FALSE
+        REPEAT
+          N_PRC_Err1 = PRC_EndScan(NR)
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+        UNTIL (N_PRC_Ret1 == 1)
+        IF B_PRC_MsgFlg == TRUE THEN
+          $FLAG[F_PRC_Err]   = TRUE
+      ELSE
+      $FLAG[F_PRC_NoErr] = TRUE
+      ENDIF
+      DEFAULT
+      ENDSWITCH
+    CASE 1002  ; Hauptgruppe 9, Untergruppe 2
+      PRC_AutoGuideInterface(#USR_TRIG,CMD_SEL,FUNKTION,TYP,SUBTYP,NR,PAR5,WIEDERHOLUNG)
+    CASE 1003  ; Hauptgruppe 9, Untergruppe 3
+      PRC_AutoGaugeInterface(#USR_TRIG,CMD_SEL,FUNKTION,TYP,SUBTYP,NR,PAR5,WIEDERHOLUNG)
+    ENDSWITCH
+    ;
+    ;ENDFOLD (Trig)
+    ;
+  CASE #USR_MAIN
+    ;
+    ;FOLD Main
+    ;
+    SWITCH N_PRC_Fkt
+    CASE 1001  ; Hauptgruppe 9, Untergruppe 1
+      ; PRC_IMTInterface #USR_MAIN
+      $timer[N_PRC_Tm4Nr]      = 0
+      $timer_stop[N_PRC_Tm4Nr] = FALSE
+      ;PRC_MainPrg
+      N_PRC_PktNr = NR
+      B_PRC_Ghost = $IN[N_PRC_Ghost]
+      ; bei Geisterschicht nur Messung starten, da
+      ; dabei auch UP mit Punktmessung gestartet wird
+      IF ((B_PRC_Ghost) AND (FUNKTION <> 510)) THEN
+        $FLAG[F_PRC_Err]   = FALSE
+        $FLAG[F_PRC_NoErr] = TRUE
+        RETURN
+      ENDIF
+      SWITCH FUNKTION
+      CASE 501 ; Statusanforderung
+        N_PRC_MsgOff   = 300
+        REPEAT
+          N_PRC_Err1   = 1
+          B_PRC_MsgFlg = False
+          N_PRC_Status = PRC_GetStatus()
+          PRC_DebugDlg(1,N_PRC_Status,0)
+          SWITCH N_PRC_Status
+          CASE 300
+            ; OK
+          CASE 301,306,307,308,309,317,318,323,324,327,328,329,330,343
+            B_PRC_MsgFlg = TRUE
+          DEFAULT
+            N_PRC_Status = 309
+            B_PRC_MsgFlg = TRUE
+          ENDSWITCH
+          IF B_PRC_MsgFlg THEN
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Status)
+          ENDIF
+          IF N_PRC_Status <> 300 THEN
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,345)
+            IF N_PRC_Ret1 == 2 THEN
+              REPEAT
+                PRC_DebugDlg(9,0,0)
+                N_PRC_Err2 = PRC_Reset()
+                N_PRC_Ret2 = PRC_MsgErr(#NotifyMsg,N_PRC_Err2)
+              UNTIL (N_PRC_Ret2 == 1)
+            ENDIF
+          ELSE
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,1,N_PRC_Status)
+          ENDIF
+        UNTIL (N_PRC_Ret1 == 1)
+        IF (B_PRC_MsgFlg == True) THEN
+          $FLAG[F_PRC_Err]   = TRUE
+          $FLAG[F_PRC_NoErr] = FALSE
+        ELSE
+          $FLAG[F_PRC_Err]   = FALSE
+          $FLAG[F_PRC_NoErr] = TRUE
+        ENDIF
+      CASE 510,514 ; Messung mit Punktmessung starten
+        N_PRC_MsgOff = 100
+        B_PRC_MsgFlg = FALSE
+        IF (FUNKTION == 514) THEN
+          O_PRC_CmpStr = TRUE
+        ENDIF
+        PRC_DebugDlg(6,0,0)
+        PRC_DebugDlg(25,TYP,SUBTYP)
+        IF (PRC_StartMsrPktMsr(TYP,SUBTYP,WIEDERHOLUNG) == N_PRC_MsgOff) THEN
+          $FLAG[F_PRC_NoErr] = TRUE
+        ELSE
+          $FLAG[F_PRC_Err]   = TRUE
+        ENDIF
+        O_PRC_CmpStr = FALSE
+      CASE 511 ; Mess UP-Nummer holen fuer Punktmessung
+        N_PRC_MsgOff = 800
+        B_PRC_MsgFlg = FALSE
+        PRC_DebugDlg(24,0,0)
+        N_PRC_Ret1 = PRC_GetMessUpNr(TYP,SUBTYP,WIEDERHOLUNG)
+        SWITCH N_PRC_Ret1
+        CASE 800
+          ; OK
+        CASE 801,807,829,840,841
+          $FLAG[F_PRC_Err] = TRUE
+          B_PRC_MsgFlg     = TRUE
+        DEFAULT
+          $FLAG[F_PRC_Err] = TRUE
+          B_PRC_MsgFlg     = TRUE
+        ENDSWITCH
+      CASE 512 ; Kompensations UP-Nummer holen fuer Punktmessung
+        N_PRC_MsgOff = 800
+        B_PRC_MsgFlg = FALSE
+        PRC_DebugDlg(24,0,0)
+        N_PRC_Ret1 = PRC_GetKompUpNr(TYP,SUBTYP,WIEDERHOLUNG)
+        SWITCH N_PRC_Ret1
+        CASE 800,850,851,852,853,860,861
+          ; OK
+        CASE 801,807,809,811,829,840,841,843,870,871
+          $FLAG[F_PRC_Err] = TRUE
+          B_PRC_MsgFlg     = TRUE
+        DEFAULT
+          $FLAG[F_PRC_Err] = TRUE
+          B_PRC_MsgFlg     = TRUE
+        ENDSWITCH
+      CASE 513 ; Messen komplett
+        N_PRC_MsgOff = 100
+        B_PRC_MsgFlg = FALSE
+        N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      CASE 520 ;Punktmessung starten
+        N_PRC_MsgOff = 200
+        B_PRC_MsgFlg = FALSE
+        REPEAT
+          PRC_DebugDlg(3,N_PRC_PktNr,0)
+          PRC_PunktMessung(N_PRC_PktNr)
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,0,N_PRC_PktNr)
+        UNTIL (N_PRC_Ret1 == 1)
+        IF B_PRC_MsgFlg THEN
+          $FLAG[F_PRC_Err]   = TRUE
+        ELSE
+          $FLAG[F_PRC_NoErr] = TRUE
+        ENDIF
+      CASE 521 ; Punkte beendet
+        N_PRC_MsgOff = 200
+        B_PRC_MsgFlg = FALSE
+        REPEAT
+          PRC_DebugDlg(3,N_PRC_LstPkt,0)          
+          PRC_PunktMessung(N_PRC_LstPkt)
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,0,N_PRC_LstPkt)          
+        UNTIL (N_PRC_Ret1 == 1)
+        IF B_PRC_MsgFlg THEN
+          $FLAG[F_PRC_Err]   = TRUE
+        ELSE
+          $FLAG[F_PRC_NoErr] = TRUE
+        ENDIF
+      CASE 522 ;Scanning starten
+        N_PRC_MsgOff = 250
+        B_PRC_MsgFlg = FALSE
+        REPEAT
+          N_PRC_Err1 = 0
+          PRC_StrtScan(N_PRC_PktNr)
+          N_PRC_Ret1 = 1
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+        UNTIL (N_PRC_Ret1 == 1)
+        IF B_PRC_MsgFlg THEN
+          $FLAG[F_PRC_Err]   = TRUE
+        ELSE
+          $FLAG[F_PRC_NoErr] = TRUE
+        ENDIF
+      CASE 523
+        ; in TRIG ausgelagert
+      CASE 524 ;Achswinkel speichern
+        wait for true
+        IF ((N_PRC_PktNr > 0) and (N_PRC_PktNr <=100)) THEN
+          AxisPos[N_PRC_PktNr]=$Axis_act
+        ENDIF
+      CASE 530 ;Messung beenden
+        N_PRC_MsgOff = 400
+        B_PRC_MsgFlg = FALSE
+        N_PRC_Err1   =  1
+        PRC_DebugDlg(4,0,0)
+        PRC_MessungBeenden(CMD_SEL)
+        N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+        IF B_PRC_MsgFlg THEN
+          $FLAG[F_PRC_Err]   = TRUE
+        ELSE
+          $FLAG[F_PRC_NoErr] = TRUE
+        ENDIF
+      CASE 540 ;Sensortausch (Messung mit Punktmessung)
+        PRC_DebugDlg(5,0,0)
+        N_PRC_MsgOff = 600
+        B_PRC_MsgFlg = FALSE
+        B_PRC_1Kalib = FALSE
+        B_PRC_TmpKalib = FALSE
+        B_PRC_ToolFinder_OK=FALSE
+        IF (($mode_op <> #T1) AND ($mode_op <> #T2)) THEN
+          N_PRC_Err1   = 639
+          B_PRC_MsgFlg = TRUE
+          N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+          $FLAG[F_PRC_Err] = TRUE
+          RETURN
+        ENDIF
+        LOOP
+          REPEAT ; Sensorpruefung
+            N_PRC_ModNr = N_PRC_SenPrM
+            N_PRC_UpNr  = N_PRC_SenPrU
+            REPEAT
+              N_PRC_Err1   = 0
+              N_PRC_Ret1   = 1
+              B_PRC_MsgFlg = FALSE
+              N_PRC_Status = PRC_GetStatus()
+              PRC_DebugDlg(1,N_PRC_Status,0)
+              IF B_PRC_MsgFlg THEN
+                N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Status)
+                RETURN
+              ELSE
+                IF (N_PRC_Status <> 600) THEN
+                  N_PRC_Status=606
+                  N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Status)
+                  SWITCH N_PRC_Ret1
+                  CASE 1
+                    N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,644)
+                    return
+                  CASE 2
+                    N_PRC_Ret1   = 0
+                  DEFAULT
+                    ;falsche Dialogantwort
+                    $FLAG[F_PRC_Err]   = TRUE
+                    RETURN
+                  ENDSWITCH
+                ELSE
+                  N_PRC_Ret1 = 1
+                ENDIF
+              ENDIF
+            UNTIL (N_PRC_Ret1 == 1)
+            IF B_PRC_MsgFlg THEN
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+            B_PRC_ISTOOL = TRUE
+            PRC_DebugDlg(16,0,0)
+            PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+            N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG)
+            N_PRC_MsgOff = 600
+            IF B_PRC_MsgFlg THEN
+              B_PRC_ISTOOL = FALSE
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+            SWITCH N_PRC_MsrErg
+            CASE 600,601  ;alles ok
+              N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,633)
+              B_PRC_ISTOOL = FALSE
+              if B_PRC_1Kalib then ;min 1mal kalib
+                B_PRC_ToolFinder_OK=TRUE
+                if ((N_PRC_SubSystem == 1) and not B_PRC_TmpKalib) then
+                  ;Tempkalib ausfuehren
+                else
+                  N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,698)
+                  $FLAG[F_PRC_NoErr] = TRUE
+                  RETURN
+                endif
+              endif
+            CASE 1151, 1152, 1155, 1156   ; Kalibrierung erforderlich
+              N_PRC_RET1 = 1
+            CASE 603, 605, 606, 607, 1153, 1154, 1157, 1158   ; Sensormontage pruefen
+              N_PRC_MsrErg = 610
+              N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_MsrErg)
+              IF N_PRC_Ret1 == 1 THEN
+                B_PRC_ISTOOL = FALSE
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+              ENDIF
+            DEFAULT
+              N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+              B_PRC_ISTOOL = FALSE
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDSWITCH
+          UNTIL N_PRC_Ret1 == 1
+          B_PRC_ISTOOL = FALSE
+          if (((N_PRC_SubSystem == 1) and (B_PRC_ToolFinder_OK)) OR (N_PRC_SubSystem == 0))then 
+            N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,630)
+          else
+            N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,650)
+          endif
+          REPEAT
+            N_PRC_Err1   = 0
+            B_PRC_MsgFlg = False
+            N_PRC_Status = PRC_GetStatus()
+            PRC_DebugDlg(1,N_PRC_Status,0)
+            IF ((N_PRC_SubSystem == 1) AND NOT(B_PRC_ToolFinder_OK)) THEN
+              if (N_PRC_Status <> 630) then
+                N_PRC_Err1   = 652   ; Perceptron nicht in Toolfinder-Modus
+                B_PRC_MsgFlg = TRUE
+              endif
+            endif
+            IF ((N_PRC_SubSystem <> 1) OR ((N_PRC_SubSystem == 1) AND (B_PRC_ToolFinder_OK))) then
+              if(N_PRC_Status <> 623) THEN
+                N_PRC_Err1   = 632   ; Perceptron nicht in Kalibrier-Modus
+                B_PRC_MsgFlg = TRUE
+              endif
+            endif
+            IF B_PRC_MsgFlg THEN
+              N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+            ELSE
+              N_PRC_Ret1   = 1
+            ENDIF
+          UNTIL (N_PRC_Ret1 == 1)
+          IF (B_PRC_MsgFlg) THEN
+            $FLAG[F_PRC_Err] = TRUE
+            RETURN
+          ENDIF
+          IF (((N_PRC_SubSystem == 1) and B_PRC_ToolFinder_OK) OR (N_PRC_SubSystem == 0)) then
+            N_PRC_ModNr = N_PRC_TmpCmpM
+            N_PRC_UpNr  = N_PRC_TmpCmpU
+            B_PRC_TmpKalib = TRUE
+          else
+            N_PRC_ModNr = N_PRC_SenTaM
+            N_PRC_UpNr  = N_PRC_SenTaU
+          endif
+          PRC_DebugDlg(26,0,0)
+          PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+          N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG) ; Starten im Toolfinder od. Kalib-Modus
+          N_PRC_MsgOff = 600
+          IF B_PRC_MsgFlg THEN
+            N_PRC_Ret1       = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+            $FLAG[F_PRC_Err] = TRUE
+            RETURN
+          ENDIF
+          IF (((N_PRC_SubSystem == 1) and B_PRC_ToolFinder_OK)  OR (N_PRC_SubSystem == 0)) then
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,699)
+          ELSE
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,653)
+          ENDIF
+          B_PRC_1Kalib = true
+        ENDLOOP
+      CASE 545 ;Robotertausch
+        PRC_DebugDlg(10,0,0)
+        N_PRC_MsgOff = 700
+        B_PRC_MsgFlg = FALSE
+        B_PRC_TmpKalib = FALSE
+        B_PRC_ToolFinder_OK = FALSE
+        B_PRC_CheckedNoBasekorr = FALSE
+        IF (($mode_op <> #T1) AND ($mode_op <> #T2)) THEN
+          N_PRC_Err1 = 739
+          B_PRC_MsgFlg = TRUE
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+          $FLAG[F_PRC_Err] = TRUE
+          RETURN
+        ENDIF
+        REPEAT ; Roboterpruefung
+          N_PRC_ModNr = N_PRC_RobPrM
+          N_PRC_UpNr  = N_PRC_RobPrU
+          REPEAT
+            N_PRC_Err1   = 0
+            N_PRC_Ret1   = 1
+            B_PRC_MsgFlg = False
+
+            N_PRC_Status = PRC_GetStatus()
+            PRC_DebugDlg(1,N_PRC_Status,0)
+            IF B_PRC_MsgFlg THEN
+              N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Status)
+              RETURN
+            ELSE
+              IF (N_PRC_Status <> 700) THEN
+                N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Status)
+                SWITCH N_PRC_Ret1
+                CASE 1
+                  N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,744)
+                  RETURN
+                CASE 2
+                  N_PRC_Ret1   = 0
+                DEFAULT
+                  ;falsche Dialogantwort
+                  $FLAG[F_PRC_Err]   = TRUE
+                  RETURN
+                ENDSWITCH
+              ELSE
+                N_PRC_Ret1 = 1
+              ENDIF
+            ENDIF
+          UNTIL(N_PRC_Ret1 == 1)
+          IF B_PRC_MsgFlg THEN
+            $FLAG[F_PRC_Err] = TRUE
+            RETURN
+          ENDIF
+          B_PRC_ISBASE = TRUE
+          PRC_DebugDlg(6,0,0)
+          PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+          N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG)
+          N_PRC_MsgOff = 700
+          IF B_PRC_MsgFlg THEN
+            B_PRC_ISBASE = FALSE
+            $FLAG[F_PRC_Err] = TRUE
+            RETURN
+          ENDIF
+          SWITCH N_PRC_MsrErg
+          CASE 700, 1152, 1156; alles ok. ,Sensortoleranz
+            if (N_PRC_MsrErg == 700) then
+              ;N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,733)
+            endif
+            B_PRC_ISBASE = FALSE
+            ;---------Sensortausch -----------------------------
+            PRC_DebugDlg(5,0,0)
+            N_PRC_MsgOff = 600
+            B_PRC_MsgFlg = FALSE
+            B_SensIsKalib = FALSE
+            IF (($mode_op <> #T1) AND ($mode_op <> #T2)) THEN
+              N_PRC_Err1   = 639
+              B_PRC_MsgFlg = TRUE
+              N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+            Repeat
+              ;-------------Sensorkalibrierung-------------------
+              B_PRC_ISTOOL = FALSE
+              IF (N_PRC_SubSystem==1) THEN
+                N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,650)
+              ELSE
+                N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,630)
+              ENDIF
+              REPEAT
+                N_PRC_Err1   = 0
+                B_PRC_MsgFlg = False
+                N_PRC_Status = PRC_GetStatus()
+                PRC_DebugDlg(1,N_PRC_Status,0)
+                IF (N_PRC_SubSystem == 1) THEN
+                  if (N_PRC_Status <> 630) then
+                    N_PRC_Err1   = 652   ; Perceptron nicht in Toolfinder-Modus
+                    B_PRC_MsgFlg = TRUE
+                  endif
+                endif
+                IF (N_PRC_SubSystem <> 1) then
+                  if(N_PRC_Status <> 623) THEN
+                    N_PRC_Err1   = 632   ; Perceptron nicht in Kalibrier-Modus
+                    B_PRC_MsgFlg = TRUE
+                  endif
+                endif
+                IF B_PRC_MsgFlg THEN
+                  N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                ELSE
+                  N_PRC_Ret1   = 1
+                ENDIF
+              UNTIL (N_PRC_Ret1 == 1)
+              IF (B_PRC_MsgFlg) THEN
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+              ENDIF
+              IF (N_PRC_SubSystem == 1) then
+                N_PRC_ModNr = N_PRC_SenTaM
+                N_PRC_UpNr  = N_PRC_SenTaU
+              else
+                N_PRC_ModNr = N_PRC_TmpCmpM
+                N_PRC_UpNr  = N_PRC_TmpCmpU
+              endif
+              PRC_DebugDlg(26,0,0)
+              PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+              N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG) ; Starten im Toolfinder-Modus
+              N_PRC_MsgOff = 600
+              IF B_PRC_MsgFlg THEN
+                N_PRC_Ret1       = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+              ENDIF
+              SWITCH N_PRC_MsrErg
+              CASE 600,601  ;alles ok
+                ;N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,699)
+                $FLAG[F_PRC_NoErr] = TRUE
+                B_SensIsKalib = TRUE
+              CASE 1151, 1152, 1155, 1156   ; Kalibrierung erforderlich
+                N_PRC_RET1 = 1
+              CASE 603, 605, 606, 607, 1153, 1154, 1157, 1158   ; Sensormontage pruefen
+                N_PRC_MsrErg = 610
+                N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_MsrErg)
+                IF N_PRC_Ret1 == 1 THEN
+                  B_PRC_ISTOOL = FALSE
+                  $FLAG[F_PRC_Err] = TRUE
+                  RETURN
+                ENDIF
+              DEFAULT
+                N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                B_PRC_ISTOOL = FALSE
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+              ENDSWITCH
+              Until B_SensIsKalib
+            IF (N_PRC_SubSystem == 1) then
+              N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,796)
+            else
+              ;                 N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,699)
+            ENDIF
+            ;---------------ende Sensorkalibrierung-------------------
+            N_PRC_MsgOff = 700
+            B_PRC_MsgFlg = FALSE
+          CASE 703, 705, 706, 707, 1151, 1152, 1153, 1154, 1155, 1157, 1158   ;Robotermontage pruefen
+            N_PRC_MsrErg = 710
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_MsrErg)
+            IF N_PRC_Ret1 == 1 THEN
+              B_PRC_ISBASE = FALSE
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+          DEFAULT
+            B_PRC_ISBASE = FALSE
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+            $FLAG[F_PRC_Err] = TRUE
+            RETURN
+          ENDSWITCH
+        UNTIL (N_PRC_Ret1 == 1)
+        B_PRC_ISBASE = FALSE
+        REPEAT
+          REPEAT
+            N_PRC_MsgOff = 700
+            N_PRC_Err1   = PRC_MsgErr(#NotifyMsg,730)
+            N_PRC_Err1   = 0
+            B_PRC_MsgFlg = False
+            N_PRC_Status = PRC_GetStatus()
+            PRC_DebugDlg(1,N_PRC_Status,0)
+            IF (N_PRC_Status <> 700) THEN
+              N_PRC_Err1   = 732 ; Perceptron nicht in Automtikmodus
+              B_PRC_MsgFlg = TRUE
+            ELSE
+              B_PRC_MsgFlg = FALSE
+              N_PRC_Ret1   = 1
+            ENDIF
+            IF B_PRC_MsgFlg THEN
+              N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+            ENDIF
+          UNTIL (N_PRC_Ret1 == 1)
+          IF (B_PRC_MsgFlg) THEN
+            $FLAG[F_PRC_Err] = TRUE
+            RETURN
+          ENDIF
+          N_PRC_ModNr  = N_PRC_RobTaM
+          N_PRC_UpNr   = N_PRC_RobTaU
+          PRC_DebugDlg(6,0,0)
+          PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+          N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG)
+          N_PRC_MsgOff = 700
+          IF B_PRC_MsgFlg THEN
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+            $FLAG[F_PRC_Err] = TRUE
+            RETURN
+          ENDIF
+          SWITCH N_PRC_MsrErg
+          CASE 700,701  ;alles ok
+          ;N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,733)
+          IF ((N_PRC_Subsystem == 1) and NOT(B_PRC_TMPKALIB)) THEN
+            ;-------------Sensorkalibrierung-------------------
+            B_SensIsKalib = FALSE
+            N_PRC_MsgOff = 600
+            N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,795)
+            Repeat
+              B_PRC_ISTOOL = FALSE
+              N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,630)
+              REPEAT
+                N_PRC_Err1   = 0
+                B_PRC_MsgFlg = False
+                N_PRC_Status = PRC_GetStatus()
+                PRC_DebugDlg(1,N_PRC_Status,0)
+                IF (N_PRC_Status <> 623) THEN ;kalibmode
+                  N_PRC_Err1   = 632   ; Perceptron nicht in Kalibrier-Modus
+                  B_PRC_MsgFlg = TRUE
+                ELSE
+                  B_PRC_MsgFlg = FALSE
+                  N_PRC_Ret1   = 1
+                ENDIF
+                IF B_PRC_MsgFlg THEN
+                  N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                ENDIF
+              UNTIL (N_PRC_Ret1 == 1)
+              IF (B_PRC_MsgFlg) THEN
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+              ENDIF
+              N_PRC_ModNr = N_PRC_TmpCmpM
+              N_PRC_UpNr  = N_PRC_TmpCmpU
+              PRC_DebugDlg(26,0,0)
+              PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+              N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG) ; Starten im Kalibrier-Modus
+              N_PRC_MsgOff = 600
+              IF B_PRC_MsgFlg THEN
+                N_PRC_Ret1       = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+              ENDIF
+              SWITCH N_PRC_MsrErg
+              CASE 600,601  ;alles ok
+                ;N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,699)
+                $FLAG[F_PRC_NoErr] = TRUE
+                B_SensIsKalib = TRUE
+                B_PRC_TmpKalib = TRUE
+              CASE 1152, 1156   ; Kalibrierung erforderlich
+                N_PRC_RET1 = 1
+              CASE 1153, 1154, 1157, 1158   ; Sensormontage pruefen
+                N_PRC_MsrErg = 610
+                N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_MsrErg)
+                IF N_PRC_Ret1 == 1 THEN
+                B_PRC_ISTOOL = FALSE
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+                ENDIF
+              DEFAULT
+                N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                B_PRC_ISTOOL = FALSE
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+              ENDSWITCH
+            Until B_SensIsKalib
+            ;---------------ende Sensorkalibrierung-------------------
+          ENDIF
+          B_PRC_ISBase = FALSE
+          IF not(B_PRC_CheckedNoBasekorr) then
+            N_PRC_RET1 = 0
+            B_PRC_CheckedNoBasekorr = TRUE
+          else
+            N_PRC_RET1 = 1
+          endif
+          CASE 1151, 1152, 1155, 1156   ; Korrektur holen+aufrechnen
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,797)
+          Rob_KORRFRAME = $BASE:AVF_PRC_Korr[N_PRC_VFNr]:INV_POS($BASE)
+          ;halt ; rob_korrframe checken
+          FOR I = 1 TO MAX_BASE
+            BASE_DATA[I] = rob_KORRFRAME:BASE_DATA[I]
+          ENDFOR
+          ;zum testen nur Base4
+          ;BASE_DATA[4] = rob_KORRFRAME:BASE_DATA[4]
+          ;-------------Sensorkalibrierung-------------------
+          N_PRC_MsgOff = 600
+          N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,795)
+          Repeat
+            B_PRC_ISTOOL = FALSE
+            N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,630)
+            REPEAT
+              N_PRC_Err1   = 0
+              B_PRC_MsgFlg = False
+              N_PRC_Status = PRC_GetStatus()
+              PRC_DebugDlg(1,N_PRC_Status,0)
+              IF (N_PRC_Status <> 623) THEN ;kalibmode
+                N_PRC_Err1   = 632   ; Perceptron nicht in Kalibrier-Modus
+                B_PRC_MsgFlg = TRUE
+              ELSE
+                B_PRC_MsgFlg = FALSE
+                N_PRC_Ret1   = 1
+              ENDIF
+              IF B_PRC_MsgFlg THEN
+                N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+              ENDIF
+            UNTIL (N_PRC_Ret1 == 1)
+            IF (B_PRC_MsgFlg) THEN
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+            N_PRC_ModNr = N_PRC_TmpCmpM
+            N_PRC_UpNr  = N_PRC_TmpCmpU
+            PRC_DebugDlg(26,0,0)
+            PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+            N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG)
+            N_PRC_MsgOff = 600
+            IF B_PRC_MsgFlg THEN
+              N_PRC_Ret1       = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+            SWITCH N_PRC_MsrErg
+            CASE 600,601  ;alles ok
+              ;N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,699)
+              $FLAG[F_PRC_NoErr] = TRUE
+              B_SensIsKalib = TRUE
+              B_PRC_TmpKalib = TRUE
+              N_PRC_RET1 = 2 ;damit wird nochmal pruefprogramm gefahren.
+            CASE 1152, 1156   ; Kalibrierung erforderlich
+              N_PRC_RET1 = 1
+            CASE 1153, 1154, 1157, 1158   ; Sensormontage pruefen
+              N_PRC_MsrErg = 610
+              N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_MsrErg)
+              IF N_PRC_Ret1 == 1 THEN
+                B_PRC_ISTOOL = FALSE
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+              ENDIF
+            DEFAULT
+              N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+              B_PRC_ISTOOL = FALSE
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDSWITCH
+          Until B_SensIsKalib
+          ;---------------ende Sensorkalibrierung-------------------
+          N_PRC_MsgOff = 700
+          N_PRC_RET1 = 0
+          CASE 1151, 1154, 1155, 1158, 2000 ;Robotermontage pruefen
+            N_PRC_MsrErg = 710
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,710)
+            IF N_PRC_Ret1 == 1 THEN
+              B_PRC_ISBASE = FALSE
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+          DEFAULT
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+            B_PRC_ISBase = FALSE
+            $FLAG[F_PRC_Err] = TRUE
+            RETURN
+          ENDSWITCH
+        UNTIL (N_PRC_RET1 == 1)
+
+        N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,798)
+        $FLAG[F_PRC_NoErr] = TRUE
+      CASE 551 ;Messen, Korrketurwerte abholen, Korrektur ausfuehren
+        N_PRC_MsgOff = 1000
+        B_PRC_MsgFlg = FALSE
+        N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      CASE 552 ;Korrketurwerte abholen
+        N_PRC_MsgOff = 1000
+        B_PRC_MsgFlg = FALSE
+        PRC_DebugDlg(7,0,0)
+        PRC_GetKorrektur(TYP,SUBTYP,NR,WIEDERHOLUNG)
+        SWITCH N_PRC_Ret1
+        CASE 1000
+          ; OK
+        CASE 1001,1017,1018,1027,1028,1038,1042,1043
+          B_PRC_MsgFlg = TRUE
+        DEFAULT
+          B_PRC_MsgFlg = TRUE
+        ENDSWITCH
+        N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+      CASE 553 ;Korrketur ausfuehren
+        N_PRC_MsgOff = 1000
+        B_PRC_MsgFlg = FALSE
+          ;wird im Advance erledigt
+      CASE 554   ;korrektur holen + ausfuehren
+        N_PRC_MsgOff = 1000
+        B_PRC_MsgFlg = FALSE
+        PRC_DebugDlg(7,0,0)
+        PRC_GetKorrektur(TYP,SUBTYP,NR,WIEDERHOLUNG)
+        SWITCH N_PRC_Ret1
+        CASE 1000
+          ; OK
+        CASE 1001,1017,1018,1027,1028,1038,1042,1043
+          B_PRC_MsgFlg = TRUE
+        DEFAULT
+          B_PRC_MsgFlg = TRUE
+        ENDSWITCH
+        N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+        N_PRC_MsgOff = 1000
+        B_PRC_MsgFlg = FALSE
+        PRC_DebugDlg(8,0,0)
+        PRC_SetKorrektur(NR)
+        N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+      CASE 598 ;Perceptron reset
+        N_PRC_MsgOff = 500
+        B_PRC_MsgFlg = FALSE
+        PRC_DebugDlg(9,0,0)
+        N_PRC_Err1   = PRC_Reset()
+        N_PRC_Ret1   = 1
+        N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+        IF N_PRC_Err1 > 0 THEN
+          $FLAG[F_PRC_Err]   = TRUE
+        ELSE
+          $FLAG[F_PRC_NoErr] = TRUE
+        ENDIF
+      CASE 599 ;Version
+        B_PRC_MsgKri = TRUE
+        N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,9000)
+      ENDSWITCH
+      $timer_stop[N_PRC_Tm4Nr] = TRUE
+      $timer[N_PRC_Tm5Nr]      = $timer[N_PRC_Tm4Nr]
+      $timer_stop[N_PRC_Tm5Nr] = TRUE
+      ;ENDFOLD (Main IMT)
+    CASE 1002  ; Hauptgruppe 9, Untergruppe 2
+      PRC_AutoGuideInterface(#USR_MAIN,CMD_SEL,FUNKTION,TYP,SUBTYP,NR,PAR5,WIEDERHOLUNG)
+    CASE 1003  ; Hauptgruppe 9, Untergruppe 3
+      PRC_AutoGaugeInterface(#USR_MAIN,CMD_SEL,FUNKTION,TYP,SUBTYP,NR,PAR5,WIEDERHOLUNG)
+    ENDSWITCH
+    ;
+    ;ENDFOLD (Main)
+    ;
+  DEFAULT
+    N_PRC_MsgOff = 900
+    B_PRC_MsgFlg = TRUE
+    N_PRC_Err1   = 911   ; Kommando ungueltig
+    N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,CMD_SEL,N_PRC_Ret1)
+    $FLAG[F_PRC_Err] = TRUE
+    RETURN
+  ENDSWITCH
+END
+;
+  ;FOLD Roboter Fuehrung
+;
+GLOBAL DEF PRC_AutoGuideInterface(USER_CMD:IN,CMD_SEL:IN,FUNKTION:IN,TYP:IN,SUBTYP:IN,NR:IN,PAR5:IN,WIEDERHOLUNG:IN)
+DECL VW_USER_CMD USER_CMD
+DECL INT         CMD_SEL
+DECL INT         FUNKTION
+DECL INT         TYP
+DECL INT         SUBTYP
+DECL INT         NR
+DECL INT         PAR5
+DECL INT         WIEDERHOLUNG
+DECL INT         nFlagCounter
+  SWITCH USER_CMD
+    CASE #USR_ADV
+;
+    ;FOLD Advance
+;
+      N_PRC_UpNr = 0
+      FOR nFlagCounter = N_PRC_FiErr TO N_PRC_FiErr + N_PRC_LgErr
+        $FLAG[nFlagCounter] = FALSE
+      ENDFOR
+      N_PRC_Err1 = PRC_CheckParams(TYP,SUBTYP,NR,WIEDERHOLUNG)
+      IF N_PRC_Err1 > 0 THEN
+        N_PRC_Ret1 = PRC_MsgErr(#DlgMsg,N_PRC_Err1)
+        $FLAG[F_PRC_Err]   = TRUE
+        RETURN
+      ENDIF
+      SWITCH FUNKTION
+        CASE 553   ;korrektur ausfuehren
+          PRC_DebugDlg(8,0,0)
+          PRC_SetKorrektur(NR)
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+        DEFAULT
+      ENDSWITCH
+;
+    ;ENDFOLD (Advance)
+;
+    CASE #USR_TRIG
+;
+    ;FOLD Trig
+;
+      SWITCH FUNKTION
+        CASE 523   ; Scanning stoppen
+          N_PRC_MsgOff = 250
+          B_PRC_MsgFlg = FALSE
+          REPEAT
+            N_PRC_Err1 = PRC_EndScan(NR)
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+          UNTIL (N_PRC_Ret1 == 1)
+          IF B_PRC_MsgFlg THEN
+            $FLAG[F_PRC_Err]   = TRUE
+          ELSE
+            $FLAG[F_PRC_NoErr] = TRUE
+          ENDIF
+        DEFAULT
+      ENDSWITCH
+;
+    ;ENDFOLD (Trig)
+;
+    CASE #USR_MAIN
+;
+    ;FOLD Main
+;
+      $timer[N_PRC_Tm4Nr]      = 0
+      $timer_stop[N_PRC_Tm4Nr] = FALSE
+      PRC_MainPrg(FUNKTION,CMD_SEL,TYP,SUBTYP,NR,PAR5,WIEDERHOLUNG)
+      $timer_stop[N_PRC_Tm4Nr] = TRUE
+      $timer[N_PRC_Tm5Nr]      = $timer[N_PRC_Tm4Nr]
+      $timer_stop[N_PRC_Tm5Nr] = TRUE
+;
+    ;ENDFOLD (Main)
+;
+  ENDSWITCH
+END
+;
+  ;ENDFOLD (Roboter Fuehrung)
+;
+  ;FOLD AutoGauge
+;
+GLOBAL DEF PRC_AutoGaugeInterface(USER_CMD:IN,CMD_SEL:IN,FUNKTION:IN,TYP:IN,SUBTYP:IN,NR:IN,PAR5:IN,WIEDERHOLUNG:IN)
+DECL VW_USER_CMD USER_CMD
+DECL INT         CMD_SEL
+DECL INT         FUNKTION
+DECL INT         TYP
+DECL INT         SUBTYP
+DECL INT         NR
+DECL INT         PAR5
+DECL INT         WIEDERHOLUNG
+DECL INT         nFlagCounter
+  SWITCH USER_CMD
+    CASE #USR_ADV
+;
+    ;FOLD Advance
+;
+      N_PRC_Err1   = 0
+      N_PRC_Err2   = 0
+      N_PRC_UpNr   = 0
+      N_PRC_MsgOff = 0
+      B_PRC_MsgFlg = FALSE
+      FOR nFlagCounter = N_PRC_FiErr TO N_PRC_FiErr + N_PRC_LgErr
+        $FLAG[nFlagCounter] = FALSE
+      ENDFOR
+      N_PRC_Err1 = PRC_CheckParams(TYP,SUBTYP,NR,WIEDERHOLUNG)
+      IF N_PRC_Err1 > 0 THEN
+        N_PRC_Ret1 = PRC_MsgErr(#DlgMsg,N_PRC_Err1)
+        $FLAG[F_PRC_Err] = TRUE
+        RETURN
+      ENDIF
+;
+    ;ENDFOLD (Advance)
+;
+    CASE #USR_TRIG
+;
+    ;FOLD Trig
+;
+      RETURN
+;
+    ;ENDFOLD (Trig)
+;
+    CASE #USR_MAIN
+;
+    ;FOLD Main
+;
+      $timer[N_PRC_Tm4Nr]      = 0
+      $timer_stop[N_PRC_Tm4Nr] = FALSE
+      PRC_MainPrg(FUNKTION,CMD_SEL,TYP,SUBTYP,NR,PAR5,WIEDERHOLUNG)
+      $timer_stop[N_PRC_Tm4Nr] = TRUE
+      $timer[N_PRC_Tm5Nr]      = $timer[N_PRC_Tm4Nr]
+      $timer_stop[N_PRC_Tm5Nr] = TRUE
+;
+    ;ENDFOLD (Main)
+;
+  ENDSWITCH
+END
+;
+  ;ENDFOLD (AutoGauge)
+;
+;ENDFOLD (Perceptron Interface)
+;
+;FOLD Perceptron Lokale Unterprogramme
+;
+  ;FOLD Messsystem initialisieren und Handshake synchronisieren
+;
+DEFFCT BOOL PRC_Sync()
+INT nOutputCounter
+INT nCounter1
+INT nCounter2
+  IF $IN[N_PRC_Ghost] THEN
+    RETURN(TRUE)
+  ENDIF
+  B_PRC_ISTOOL = FALSE
+  B_PRC_ISBASE = FALSE
+  FOR nOutputCounter = 0 TO N_PRC_AnzWrt * 16
+    $OUT[N_PRC_StrOut + nOutputCounter] = FALSE
+  ENDFOR
+  FOR nCounter1 = 1 to 17
+    FOR nCounter2 = 1 to 6
+      NA_PRC_Data[nCounter1,nCounter2] = 0
+    ENDFOR
+  ENDFOR
+  B_PRC_InDone = FALSE   ; dadurch kein automatischer Reset Perceptron
+  IF B_PRC_InDone THEN
+    REPEAT
+      N_PRC_Err1   = 1
+      B_PRC_MsgFlg = False
+      N_PRC_Status = PRC_GetStatus()
+      PRC_DebugDlg(1,N_PRC_Status,0)
+      SWITCH N_PRC_Status
+        CASE 50
+          ; OK
+        CASE 51,56,57,58,59,73,74,77,78,79,80,87,88,93
+          B_PRC_MsgFlg = TRUE
+        DEFAULT
+          N_PRC_Status = 59
+          B_PRC_MsgFlg = TRUE
+      ENDSWITCH
+      IF B_PRC_MsgFlg THEN
+        B_PRC_MsgKri = TRUE
+        N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Status)
+      ENDIF
+      IF N_PRC_Status <> 50 THEN
+        B_PRC_MsgKri = TRUE
+        N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,95)
+        IF N_PRC_Ret1 == 2 THEN
+          REPEAT
+            PRC_DebugDlg(9,0,0)
+            N_PRC_Err2 = PRC_Reset()
+            B_PRC_MsgKri = TRUE
+            N_PRC_Ret2 = PRC_MsgErr(#NotifyMsg,N_PRC_Err2)
+          UNTIL (N_PRC_Ret2 == 1)
+        ENDIF
+      ELSE
+        N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Status)
+      ENDIF
+    UNTIL (N_PRC_Ret1 == 1)
+    IF (B_PRC_MsgFlg == True) THEN
+      $FLAG[F_PRC_Err]   = TRUE
+      $FLAG[F_PRC_NoErr] = FALSE
+    ELSE
+      $FLAG[F_PRC_Err]   = FALSE
+      $FLAG[F_PRC_NoErr] = TRUE
+    ENDIF
+    B_PRC_InDone = TRUE
+  ENDIF
+;
+  GLOBAL INTERRUPT DECL N_PRC_Int1 WHEN $OUT[N_PRC_RobMv]   DO PRC_Move(1)
+  GLOBAL INTERRUPT DECL N_PRC_Int2 WHEN $OUT[N_PRC_RobNoMv] DO PRC_Move(2)
+  INTERRUPT ON N_PRC_Int1
+  INTERRUPT ON N_PRC_Int2
+;
+  RETURN(TRUE)
+ENDFCT
+;
+  ;ENDFOLD (Messsystem initialisieren und Handshake synchronisieren)
+;
+  ;FOLD Main Programm
+;
+GLOBAL DEF PRC_MainPrg(FUNKTION:IN,CMD_SEL:IN,TYP:IN,SUBTYP:IN,NR:IN,PAR5:IN,WIEDERHOLUNG:IN)
+INT FUNKTION
+INT CMD_SEL
+INT TYP
+INT SUBTYP
+INT NR
+INT PAR5
+INT WIEDERHOLUNG
+INT I
+
+  N_PRC_PktNr = NR
+  B_PRC_Ghost = $IN[N_PRC_Ghost]
+  ; bei Geisterschicht nur Messung starten, da
+  ; dabei auch UP mit Punktmessung gestartet wird
+  IF ((B_PRC_Ghost) AND (FUNKTION <> 510)) THEN
+    $FLAG[F_PRC_Err]   = FALSE
+    $FLAG[F_PRC_NoErr] = TRUE
+    RETURN
+  ENDIF
+  SWITCH FUNKTION
+    CASE 501 ; Statusanforderung
+      N_PRC_MsgOff   = 300
+      REPEAT
+        N_PRC_Err1   = 1
+        B_PRC_MsgFlg = False
+        N_PRC_Status = PRC_GetStatus()
+        PRC_DebugDlg(1,N_PRC_Status,0)
+        SWITCH N_PRC_Status
+          CASE 300
+            ; OK
+          CASE 301,306,307,308,309,317,318,323,324,327,328,329,330,343
+            B_PRC_MsgFlg = TRUE
+          DEFAULT
+            N_PRC_Status = 309
+            B_PRC_MsgFlg = TRUE
+        ENDSWITCH
+        IF B_PRC_MsgFlg THEN
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Status)
+        ENDIF
+        IF N_PRC_Status <> 300 THEN
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,345)
+          IF N_PRC_Ret1 == 2 THEN
+            REPEAT
+              PRC_DebugDlg(9,0,0)
+              N_PRC_Err2 = PRC_Reset()
+              N_PRC_Ret2 = PRC_MsgErr(#NotifyMsg,N_PRC_Err2)
+            UNTIL (N_PRC_Ret2 == 1)
+          ENDIF
+        ELSE
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,1,N_PRC_Status)
+        ENDIF
+      UNTIL (N_PRC_Ret1 == 1)
+      IF (B_PRC_MsgFlg == True) THEN
+        $FLAG[F_PRC_Err]   = TRUE
+        $FLAG[F_PRC_NoErr] = FALSE
+      ELSE
+        $FLAG[F_PRC_Err]   = FALSE
+        $FLAG[F_PRC_NoErr] = TRUE
+      ENDIF
+    CASE 510,514 ; Messung mit Punktmessung starten
+      N_PRC_MsgOff = 100
+      B_PRC_MsgFlg = FALSE
+      SWITCH CMD_SEL
+        CASE 1001 ;IMT  ; Hauptgruppe 9, Untergruppe 1
+          IF (FUNKTION == 514) THEN
+            O_PRC_CmpStr = TRUE
+          ENDIF
+          REPEAT
+            N_PRC_Err1   = 0
+            B_PRC_MsgFlg = FALSE
+            PRC_DebugDlg(6,0,0)
+            PRC_DebugDlg(25,TYP,SUBTYP)
+            PRC_StartMessung(TYP,SUBTYP,WIEDERHOLUNG)
+            SWITCH N_PRC_Err1
+              CASE 100
+                ; OK
+              CASE 105,106,107,108,109,111,112,143
+                B_PRC_MsgFlg = TRUE
+              DEFAULT
+                B_PRC_MsgFlg = TRUE
+            ENDSWITCH
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+            IF N_PRC_Ret1 == 2 THEN
+              N_PRC_MsgOff = 100
+              REPEAT
+                PRC_DebugDlg(9,0,0)
+                N_PRC_Err2 = PRC_Reset()
+                N_PRC_Ret2 = PRC_MsgErr(#NotifyMsg,N_PRC_Err2)
+              UNTIL (N_PRC_Ret2 == 1)
+            ENDIF
+          UNTIL (N_PRC_Ret1 == 1)
+          IF (B_PRC_MsgFlg) THEN
+            $FLAG[F_PRC_Err]   = TRUE
+          ELSE
+            $FLAG[F_PRC_NoErr] = TRUE
+          ENDIF
+          O_PRC_CmpStr = FALSE
+        CASE 1003 ;AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 511 ; Mess UP-Nummer holen fuer Punktmessung
+      N_PRC_MsgOff = 800
+      B_PRC_MsgFlg = FALSE
+      SWITCH CMD_SEL
+        CASE 1002 ; RF  ; Hauptgruppe 9, Untergruppe 1 + 2
+          PRC_DebugDlg(24,0,0)
+          N_PRC_Ret1 = PRC_GetMessUpNr(TYP,SUBTYP,WIEDERHOLUNG)
+          SWITCH N_PRC_Ret1
+            CASE 800
+              ; OK
+            CASE 801,807,829,840,841
+              $FLAG[F_PRC_Err] = TRUE
+              B_PRC_MsgFlg     = TRUE
+            DEFAULT
+              $FLAG[F_PRC_Err] = TRUE
+              B_PRC_MsgFlg     = TRUE
+          ENDSWITCH
+        CASE 1003 ; AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+         N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 512 ; Kompensations UP-Nummer holen fuer Punktmessung
+      N_PRC_MsgOff = 800
+      B_PRC_MsgFlg = FALSE
+      SWITCH CMD_SEL
+        CASE 1002 ; RF  ; Hauptgruppe 9, Untergruppe 1 + 2
+          PRC_DebugDlg(24,0,0)
+          N_PRC_Ret1 = PRC_GetKompUpNr(TYP,SUBTYP,WIEDERHOLUNG)
+          SWITCH N_PRC_Ret1
+            CASE 800,850,851,852,853,860,861
+              ; OK
+            CASE 801,807,809,811,829,840,841,843,870,871
+              $FLAG[F_PRC_Err] = TRUE
+              B_PRC_MsgFlg     = TRUE
+            DEFAULT
+              $FLAG[F_PRC_Err] = TRUE
+              B_PRC_MsgFlg     = TRUE
+          ENDSWITCH
+        CASE 1003 ; AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 513 ; Messen komplett
+      N_PRC_MsgOff = 100
+      B_PRC_MsgFlg = FALSE
+      SWITCH CMD_SEL
+        CASE 1002,1003 ; RF / AG ; Hauptgruppe 9, Untergruppe 2 + 3
+          REPEAT
+            N_PRC_Err1   = 0
+            B_PRC_MsgFlg = FALSE
+            PRC_DebugDlg(6,0,0)
+            PRC_DebugDlg(25,TYP,SUBTYP)
+            PRC_StartMessung(TYP,SUBTYP,WIEDERHOLUNG)
+            SWITCH N_PRC_Err1
+              CASE 100
+                ; OK
+              CASE 105,106,107,108,109,111,112,143
+                B_PRC_MsgFlg = TRUE
+              DEFAULT
+                B_PRC_MsgFlg = TRUE
+            ENDSWITCH
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+            IF N_PRC_Ret1 == 2 THEN
+              N_PRC_MsgOff = 100
+              REPEAT
+                PRC_DebugDlg(9,0,0)
+                N_PRC_Err2 = PRC_Reset()
+                N_PRC_Ret2 = PRC_MsgErr(#NotifyMsg,N_PRC_Err2)
+              UNTIL (N_PRC_Ret2 == 1)
+            ENDIF
+          UNTIL (N_PRC_Ret1 == 1)
+          IF (B_PRC_MsgFlg) THEN
+            $FLAG[F_PRC_Err]   = TRUE
+          ELSE
+            $FLAG[F_PRC_NoErr] = TRUE
+          ENDIF
+          N_PRC_MsgOff = 400
+          B_PRC_MsgFlg = FALSE
+          N_PRC_Err1   =  1
+          IF (FUNKTION == 530) THEN
+            PRC_DebugDlg(4,0,0)
+            PRC_MessungBeenden(CMD_SEL)
+          ENDIF
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+          IF B_PRC_MsgFlg THEN
+            $FLAG[F_PRC_Err]   = TRUE
+          ELSE
+            $FLAG[F_PRC_NoErr] = TRUE
+          ENDIF
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 520 ;Punktmessung starten
+      N_PRC_MsgOff = 200
+      B_PRC_MsgFlg = FALSE
+      SWITCH CMD_SEL
+        CASE 1002 ; RF  ; Hauptgruppe 9, Untergruppe 2
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        CASE 1003 ;AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 521 ; Punkte beendet
+      N_PRC_MsgOff = 200
+      B_PRC_MsgFlg = FALSE
+      SWITCH CMD_SEL
+        CASE 1002 ; RF  ; Hauptgruppe 9, Untergruppe 1 + 2
+          REPEAT
+            PRC_DebugDlg(3,N_PRC_LstPkt,0)          
+            PRC_PunktMessung(N_PRC_LstPkt)
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,0,N_PRC_LstPkt)          
+          UNTIL (N_PRC_Ret1 == 1)
+          IF B_PRC_MsgFlg THEN
+            $FLAG[F_PRC_Err]   = TRUE
+          ELSE
+            $FLAG[F_PRC_NoErr] = TRUE
+          ENDIF
+        CASE 1003 ; AG  ; Hauptgruppe 9, Untergruppe 3
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 522 ;Scanning starten
+      N_PRC_MsgOff = 250
+      B_PRC_MsgFlg = FALSE
+      SWITCH CMD_SEL
+        CASE 1002 ; RF  ; Hauptgruppe 9, Untergruppe 2
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        CASE 1003 ;AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 523
+    ; in TRIG ausgelagert
+    CASE 530 ;Messung beenden
+      N_PRC_MsgOff = 400
+      B_PRC_MsgFlg = FALSE
+      SWITCH CMD_SEL
+        CASE 1002 ; RF ; Hauptgruppe 9, Untergruppe 1 + 2
+          N_PRC_Err1   =  1
+            PRC_DebugDlg(4,0,0)
+            PRC_MessungBeenden(CMD_SEL)
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+          IF B_PRC_MsgFlg THEN
+            $FLAG[F_PRC_Err]   = TRUE
+          ELSE
+            $FLAG[F_PRC_NoErr] = TRUE
+          ENDIF
+        CASE 1003 ;AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1=PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 540 ;Sensortausch (Messung mit Punktmessung)
+      PRC_DebugDlg(5,0,0)
+      N_PRC_MsgOff = 600
+      B_PRC_MsgFlg = FALSE
+      B_PRC_1Kalib = FALSE
+      B_PRC_TmpKalib = FALSE
+      B_PRC_ToolFinder_OK=FALSE
+      SWITCH CMD_SEL
+        CASE 1002 ; RF  ; Hauptgruppe 9, Untergruppe 1 + 2
+          IF (($mode_op <> #T1) AND ($mode_op <> #T2)) THEN
+            N_PRC_Err1   = 639
+            B_PRC_MsgFlg = TRUE
+            N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+            $FLAG[F_PRC_Err] = TRUE
+            RETURN
+          ENDIF
+          LOOP
+            REPEAT ; Sensorpruefung
+              N_PRC_ModNr = N_PRC_SenPrM
+              N_PRC_UpNr  = N_PRC_SenPrU
+              REPEAT
+                N_PRC_Err1   = 0
+                N_PRC_Ret1   = 1
+                B_PRC_MsgFlg = FALSE
+                N_PRC_Status = PRC_GetStatus()
+                PRC_DebugDlg(1,N_PRC_Status,0)
+                IF B_PRC_MsgFlg THEN
+                  N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Status)
+                  RETURN
+                ELSE
+                  IF (N_PRC_Status <> 600) THEN
+                    N_PRC_Status=606
+                    N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Status)
+                    SWITCH N_PRC_Ret1
+                    CASE 1
+                      N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,644)
+                      return
+                    CASE 2
+                      N_PRC_Ret1   = 0
+                    DEFAULT
+                      ;falsche Dialogantwort
+                      $FLAG[F_PRC_Err]   = TRUE
+                      RETURN
+                    ENDSWITCH
+                  ELSE
+                    N_PRC_Ret1 = 1
+                  ENDIF
+                ENDIF
+              UNTIL (N_PRC_Ret1 == 1)
+              IF B_PRC_MsgFlg THEN
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+              ENDIF
+              B_PRC_ISTOOL = TRUE
+              PRC_DebugDlg(16,0,0)
+              PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+              N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG)
+              N_PRC_MsgOff = 600
+              IF B_PRC_MsgFlg THEN
+                B_PRC_ISTOOL = FALSE
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+              ENDIF
+              SWITCH N_PRC_MsrErg
+                CASE 600,601  ;alles ok
+                  N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,633)
+                  B_PRC_ISTOOL = FALSE
+                  if B_PRC_1Kalib then ;min 1mal kalib
+                     B_PRC_ToolFinder_OK=TRUE
+                     if ((N_PRC_SubSystem == 1) and not B_PRC_TmpKalib) then
+                        ;Tempkalib ausfuehren
+                     else
+                       N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,698)
+                       $FLAG[F_PRC_NoErr] = TRUE
+                       RETURN
+                    endif
+                  endif
+                CASE 1151, 1152, 1155, 1156   ; Kalibrierung erforderlich
+                  N_PRC_RET1 = 1
+                CASE 603, 605, 606, 607, 1153, 1154, 1157, 1158   ; Sensormontage pruefen
+                  N_PRC_MsrErg = 610
+                  N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_MsrErg)
+                  IF N_PRC_Ret1 == 1 THEN
+                    B_PRC_ISTOOL = FALSE
+                    $FLAG[F_PRC_Err] = TRUE
+                    RETURN
+                  ENDIF
+                DEFAULT
+                  N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                  B_PRC_ISTOOL = FALSE
+                  $FLAG[F_PRC_Err] = TRUE
+                  RETURN
+              ENDSWITCH
+            UNTIL N_PRC_Ret1 == 1
+            B_PRC_ISTOOL = FALSE
+            if (((N_PRC_SubSystem == 1) and (B_PRC_ToolFinder_OK)) OR (N_PRC_SubSystem == 0))then 
+              N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,630)
+            else
+              N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,650)
+            endif
+            REPEAT
+              N_PRC_Err1   = 0
+              B_PRC_MsgFlg = False
+              N_PRC_Status = PRC_GetStatus()
+              PRC_DebugDlg(1,N_PRC_Status,0)
+              IF ((N_PRC_SubSystem == 1) AND NOT(B_PRC_ToolFinder_OK)) THEN
+                 if (N_PRC_Status <> 630) then
+                   N_PRC_Err1   = 652   ; Perceptron nicht in Toolfinder-Modus
+                   B_PRC_MsgFlg = TRUE
+                endif
+              endif
+              IF ((N_PRC_SubSystem <> 1) OR ((N_PRC_SubSystem == 1) AND (B_PRC_ToolFinder_OK))) then
+                if(N_PRC_Status <> 623) THEN
+                   N_PRC_Err1   = 632   ; Perceptron nicht in Kalibrier-Modus
+                   B_PRC_MsgFlg = TRUE
+                endif
+              endif
+              IF B_PRC_MsgFlg THEN
+                N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+              ELSE
+                N_PRC_Ret1   = 1
+              ENDIF
+            UNTIL (N_PRC_Ret1 == 1)
+            IF (B_PRC_MsgFlg) THEN
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+            IF (((N_PRC_SubSystem == 1) and B_PRC_ToolFinder_OK) OR (N_PRC_SubSystem == 0)) then
+              N_PRC_ModNr = N_PRC_TmpCmpM
+              N_PRC_UpNr  = N_PRC_TmpCmpU
+              B_PRC_TmpKalib = TRUE
+            else
+              N_PRC_ModNr = N_PRC_SenTaM
+              N_PRC_UpNr  = N_PRC_SenTaU
+            endif
+            PRC_DebugDlg(26,0,0)
+            PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+            N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG) ; Starten im Toolfinder od. Kalib-Modus
+            N_PRC_MsgOff = 600
+            IF B_PRC_MsgFlg THEN
+              N_PRC_Ret1       = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+            IF (((N_PRC_SubSystem == 1) and B_PRC_ToolFinder_OK)  OR (N_PRC_SubSystem == 0)) then
+              N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,699)
+            ELSE
+              N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,653)
+            ENDIF
+            B_PRC_1Kalib = true
+          ENDLOOP
+        CASE 1003 ;AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1=PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 545 ;Robotertausch
+      PRC_DebugDlg(10,0,0)
+      N_PRC_MsgOff = 700
+      B_PRC_MsgFlg = FALSE
+      B_PRC_TmpKalib = FALSE
+      B_PRC_ToolFinder_OK = FALSE
+      B_PRC_CheckedNoBasekorr = FALSE
+      SWITCH CMD_SEL
+        CASE 1002 ; RF  ; Hauptgruppe 9, Untergruppe 1 + 2
+          IF (($mode_op <> #T1) AND ($mode_op <> #T2)) THEN
+            N_PRC_Err1 = 739
+            B_PRC_MsgFlg = TRUE
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+            $FLAG[F_PRC_Err] = TRUE
+            RETURN
+          ENDIF
+          REPEAT ; Roboterpruefung
+            N_PRC_ModNr = N_PRC_RobPrM
+            N_PRC_UpNr  = N_PRC_RobPrU
+            REPEAT
+              N_PRC_Err1   = 0
+              N_PRC_Ret1   = 1
+              B_PRC_MsgFlg = False
+              N_PRC_Status = PRC_GetStatus()
+              PRC_DebugDlg(1,N_PRC_Status,0)
+              IF B_PRC_MsgFlg THEN
+                N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Status)
+                RETURN
+              ELSE
+                IF (N_PRC_Status <> 700) THEN
+                  N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Status)
+                  SWITCH N_PRC_Ret1
+                  CASE 1
+                    N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,744)
+                    RETURN
+                  CASE 2
+                    N_PRC_Ret1   = 0
+                  DEFAULT
+                    ;falsche Dialogantwort
+                    $FLAG[F_PRC_Err]   = TRUE
+                    RETURN
+                  ENDSWITCH
+                ELSE
+                  N_PRC_Ret1 = 1
+                ENDIF
+              ENDIF
+            UNTIL(N_PRC_Ret1 == 1)
+            IF B_PRC_MsgFlg THEN
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+            B_PRC_ISBASE = TRUE
+            PRC_DebugDlg(6,0,0)
+            PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+            N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG)
+            N_PRC_MsgOff = 700
+            IF B_PRC_MsgFlg THEN
+              B_PRC_ISBASE = FALSE
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+            SWITCH N_PRC_MsrErg
+              CASE 700, 1152, 1156; alles ok. ,Sensortoleranz
+                if (N_PRC_MsrErg == 700) then
+                  ;N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,733)
+                endif
+                B_PRC_ISBASE = FALSE
+                ;---------Sensortausch -----------------------------
+                PRC_DebugDlg(5,0,0)
+                N_PRC_MsgOff = 600
+                B_PRC_MsgFlg = FALSE
+                B_SensIsKalib = FALSE
+                IF (($mode_op <> #T1) AND ($mode_op <> #T2)) THEN
+                  N_PRC_Err1   = 639
+                  B_PRC_MsgFlg = TRUE
+                  N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                  $FLAG[F_PRC_Err] = TRUE
+                  RETURN
+                ENDIF
+                Repeat
+                  ;-------------Sensorkalibrierung-------------------
+                  B_PRC_ISTOOL = FALSE
+                  IF (N_PRC_SubSystem==1) THEN
+                    N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,650)
+                  ELSE
+                    N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,630)
+                  ENDIF
+                  REPEAT
+                    N_PRC_Err1   = 0
+                    B_PRC_MsgFlg = False
+                    N_PRC_Status = PRC_GetStatus()
+                    PRC_DebugDlg(1,N_PRC_Status,0)
+                    IF (N_PRC_SubSystem == 1) THEN
+                      if (N_PRC_Status <> 630) then
+                        N_PRC_Err1   = 652   ; Perceptron nicht in Toolfinder-Modus
+                        B_PRC_MsgFlg = TRUE
+                      endif
+                    endif
+                    IF (N_PRC_SubSystem <> 1) then
+                      if(N_PRC_Status <> 623) THEN
+                        N_PRC_Err1   = 632   ; Perceptron nicht in Kalibrier-Modus
+                        B_PRC_MsgFlg = TRUE
+                      endif
+                    endif
+                    IF B_PRC_MsgFlg THEN
+                      N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                    ELSE
+                      N_PRC_Ret1   = 1
+                    ENDIF
+                  UNTIL (N_PRC_Ret1 == 1)
+                  IF (B_PRC_MsgFlg) THEN
+                    $FLAG[F_PRC_Err] = TRUE
+                    RETURN
+                  ENDIF
+                  IF (N_PRC_SubSystem == 1) then
+                    N_PRC_ModNr = N_PRC_SenTaM
+                    N_PRC_UpNr  = N_PRC_SenTaU
+                  else
+                    N_PRC_ModNr = N_PRC_TmpCmpM
+                    N_PRC_UpNr  = N_PRC_TmpCmpU
+                  endif
+                  PRC_DebugDlg(26,0,0)
+                  PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+                  N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG) ; Starten im Toolfinder-Modus
+                  N_PRC_MsgOff = 600
+                  IF B_PRC_MsgFlg THEN
+                    N_PRC_Ret1       = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                    $FLAG[F_PRC_Err] = TRUE
+                    RETURN
+                  ENDIF
+                  SWITCH N_PRC_MsrErg
+                    CASE 600,601  ;alles ok
+                      ;N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,699)
+                      $FLAG[F_PRC_NoErr] = TRUE
+                      B_SensIsKalib = TRUE
+                    CASE 1151, 1152, 1155, 1156   ; Kalibrierung erforderlich
+                      N_PRC_RET1 = 1
+                    CASE 603, 605, 606, 607, 1153, 1154, 1157, 1158   ; Sensormontage pruefen
+                      N_PRC_MsrErg = 610
+                      N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_MsrErg)
+                      IF N_PRC_Ret1 == 1 THEN
+                        B_PRC_ISTOOL = FALSE
+                        $FLAG[F_PRC_Err] = TRUE
+                        RETURN
+                      ENDIF
+                    DEFAULT
+                      N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                      B_PRC_ISTOOL = FALSE
+                      $FLAG[F_PRC_Err] = TRUE
+                      RETURN
+                  ENDSWITCH
+                Until B_SensIsKalib
+                IF (N_PRC_SubSystem == 1) then
+                  N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,796)
+                else
+;                 N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,699)
+                ENDIF
+                ;---------------ende Sensorkalibrierung-------------------
+                N_PRC_MsgOff = 700
+                B_PRC_MsgFlg = FALSE
+              CASE 703, 705, 706, 707, 1151, 1152, 1153, 1154, 1155, 1157, 1158   ;Robotermontage pruefen
+                N_PRC_MsrErg = 710
+                N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_MsrErg)
+                IF N_PRC_Ret1 == 1 THEN
+                  B_PRC_ISBASE = FALSE
+                  $FLAG[F_PRC_Err] = TRUE
+                  RETURN
+                ENDIF
+              DEFAULT
+                B_PRC_ISBASE = FALSE
+                N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+            ENDSWITCH
+          UNTIL (N_PRC_Ret1 == 1)
+          B_PRC_ISBASE = FALSE
+          REPEAT
+            REPEAT
+              N_PRC_MsgOff = 700
+              N_PRC_Err1   = PRC_MsgErr(#NotifyMsg,730)
+              N_PRC_Err1   = 0
+              B_PRC_MsgFlg = False
+              N_PRC_Status = PRC_GetStatus()
+              PRC_DebugDlg(1,N_PRC_Status,0)
+              IF (N_PRC_Status <> 700) THEN
+                N_PRC_Err1   = 732 ; Perceptron nicht in Automtikmodus
+                B_PRC_MsgFlg = TRUE
+              ELSE
+                B_PRC_MsgFlg = FALSE
+                N_PRC_Ret1   = 1
+              ENDIF
+              IF B_PRC_MsgFlg THEN
+                N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+              ENDIF
+            UNTIL (N_PRC_Ret1 == 1)
+            IF (B_PRC_MsgFlg) THEN
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+            N_PRC_ModNr  = N_PRC_RobTaM
+            N_PRC_UpNr   = N_PRC_RobTaU
+            PRC_DebugDlg(6,0,0)
+            PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+            N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG)
+            N_PRC_MsgOff = 700
+            IF B_PRC_MsgFlg THEN
+              N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+              $FLAG[F_PRC_Err] = TRUE
+              RETURN
+            ENDIF
+            SWITCH N_PRC_MsrErg
+              CASE 700,701  ;alles ok
+                ;N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,733)
+                IF ((N_PRC_Subsystem == 1) and NOT(B_PRC_TMPKALIB)) THEN
+                    ;-------------Sensorkalibrierung-------------------
+                  B_SensIsKalib = FALSE
+                  N_PRC_MsgOff = 600
+                  N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,795)
+                  Repeat
+                    B_PRC_ISTOOL = FALSE
+                    N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,630)
+                    REPEAT
+                      N_PRC_Err1   = 0
+                      B_PRC_MsgFlg = False
+                      N_PRC_Status = PRC_GetStatus()
+                      PRC_DebugDlg(1,N_PRC_Status,0)
+                      IF (N_PRC_Status <> 623) THEN ;kalibmode
+                        N_PRC_Err1   = 632   ; Perceptron nicht in Kalibrier-Modus
+                        B_PRC_MsgFlg = TRUE
+                      ELSE
+                        B_PRC_MsgFlg = FALSE
+                        N_PRC_Ret1   = 1
+                      ENDIF
+                      IF B_PRC_MsgFlg THEN
+                       N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                      ENDIF
+                    UNTIL (N_PRC_Ret1 == 1)
+                    IF (B_PRC_MsgFlg) THEN
+                      $FLAG[F_PRC_Err] = TRUE
+                      RETURN
+                    ENDIF
+                    N_PRC_ModNr = N_PRC_TmpCmpM
+                    N_PRC_UpNr  = N_PRC_TmpCmpU
+                    PRC_DebugDlg(26,0,0)
+                    PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+                    N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG) ; Starten im Kalibrier-Modus
+                    N_PRC_MsgOff = 600
+                    IF B_PRC_MsgFlg THEN
+                      N_PRC_Ret1       = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                      $FLAG[F_PRC_Err] = TRUE
+                      RETURN
+                    ENDIF
+                    SWITCH N_PRC_MsrErg
+                      CASE 600,601  ;alles ok
+                        ;N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,699)
+                        $FLAG[F_PRC_NoErr] = TRUE
+                        B_SensIsKalib = TRUE
+                        B_PRC_TmpKalib = TRUE
+                      CASE 1152, 1156   ; Kalibrierung erforderlich
+                        N_PRC_RET1 = 1
+                      CASE 1153, 1154, 1157, 1158   ; Sensormontage pruefen
+                        N_PRC_MsrErg = 610
+                        N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_MsrErg)
+                        IF N_PRC_Ret1 == 1 THEN
+                          B_PRC_ISTOOL = FALSE
+                          $FLAG[F_PRC_Err] = TRUE
+                          RETURN
+                        ENDIF
+                      DEFAULT
+                        N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                        B_PRC_ISTOOL = FALSE
+                        $FLAG[F_PRC_Err] = TRUE
+                        RETURN
+                    ENDSWITCH
+                  Until B_SensIsKalib
+                  ;---------------ende Sensorkalibrierung-------------------
+                ENDIF
+                B_PRC_ISBase = FALSE
+                IF not(B_PRC_CheckedNoBasekorr) then
+                  N_PRC_RET1 = 0
+                  B_PRC_CheckedNoBasekorr = TRUE
+                else
+                  N_PRC_RET1 = 1
+                endif
+              CASE 1151, 1152, 1155, 1156   ; Korrektur holen+aufrechnen
+                N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,797)
+                Rob_KORRFRAME = $BASE:AVF_PRC_Korr[N_PRC_VFNr]:INV_POS($BASE)
+                ;halt ; rob_korrframe checken
+                FOR I = 1 TO MAX_BASE
+                  BASE_DATA[I] = rob_KORRFRAME:BASE_DATA[I]
+                ENDFOR
+                ;zum testen nur Base4
+                ;BASE_DATA[4] = rob_KORRFRAME:BASE_DATA[4]
+                  ;-------------Sensorkalibrierung-------------------
+                N_PRC_MsgOff = 600
+                N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,795)
+                Repeat
+                  B_PRC_ISTOOL = FALSE
+                  N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,630)
+                  REPEAT
+                    N_PRC_Err1   = 0
+                    B_PRC_MsgFlg = False
+                    N_PRC_Status = PRC_GetStatus()
+                    PRC_DebugDlg(1,N_PRC_Status,0)
+                    IF (N_PRC_Status <> 623) THEN ;kalibmode
+                      N_PRC_Err1   = 632   ; Perceptron nicht in Kalibrier-Modus
+                      B_PRC_MsgFlg = TRUE
+                    ELSE
+                      B_PRC_MsgFlg = FALSE
+                      N_PRC_Ret1   = 1
+                    ENDIF
+                    IF B_PRC_MsgFlg THEN
+                     N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                    ENDIF
+                  UNTIL (N_PRC_Ret1 == 1)
+                  IF (B_PRC_MsgFlg) THEN
+                    $FLAG[F_PRC_Err] = TRUE
+                    RETURN
+                  ENDIF
+                  N_PRC_ModNr = N_PRC_TmpCmpM
+                  N_PRC_UpNr  = N_PRC_TmpCmpU
+                  PRC_DebugDlg(26,0,0)
+                  PRC_DebugDlg(25,N_PRC_ModNr,N_PRC_UpNr)
+                  N_PRC_MsrErg = PRC_StartMsrPktMsr(N_PRC_ModNr,N_PRC_UpNr,WIEDERHOLUNG)
+                  N_PRC_MsgOff = 600
+                  IF B_PRC_MsgFlg THEN
+                    N_PRC_Ret1       = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                    $FLAG[F_PRC_Err] = TRUE
+                    RETURN
+                  ENDIF
+                  SWITCH N_PRC_MsrErg
+                    CASE 600,601  ;alles ok
+                      ;N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,699)
+                      $FLAG[F_PRC_NoErr] = TRUE
+                      B_SensIsKalib = TRUE
+                      B_PRC_TmpKalib = TRUE
+                      N_PRC_RET1 = 2 ;damit wird nochmal pruefprogramm gefahren.
+                    CASE 1152, 1156   ; Kalibrierung erforderlich
+                      N_PRC_RET1 = 1
+                    CASE 1153, 1154, 1157, 1158   ; Sensormontage pruefen
+                      N_PRC_MsrErg = 610
+                      N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_MsrErg)
+                      IF N_PRC_Ret1 == 1 THEN
+                        B_PRC_ISTOOL = FALSE
+                        $FLAG[F_PRC_Err] = TRUE
+                        RETURN
+                      ENDIF
+                    DEFAULT
+                      N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                      B_PRC_ISTOOL = FALSE
+                      $FLAG[F_PRC_Err] = TRUE
+                      RETURN
+                  ENDSWITCH
+                Until B_SensIsKalib
+                ;---------------ende Sensorkalibrierung-------------------
+                N_PRC_MsgOff = 700
+                N_PRC_RET1 = 0
+              CASE 1151, 1154, 1155, 1158, 2000 ;Robotermontage pruefen
+                N_PRC_MsrErg = 710
+                N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,710)
+                IF N_PRC_Ret1 == 1 THEN
+                  B_PRC_ISBASE = FALSE
+                  $FLAG[F_PRC_Err] = TRUE
+                  RETURN
+                ENDIF
+              DEFAULT
+                N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+                B_PRC_ISBase = FALSE
+                $FLAG[F_PRC_Err] = TRUE
+                RETURN
+            ENDSWITCH
+          UNTIL (N_PRC_RET1 == 1)
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,798)
+          $FLAG[F_PRC_NoErr] = TRUE
+        CASE 1003 ;AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1=PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 551 ;Messen, Korrketurwerte abholen, Korrektur ausfuehren
+      N_PRC_MsgOff = 1000
+      B_PRC_MsgFlg = FALSE
+      SWITCH CMD_SEL
+        CASE 1002 ; RF  ; Hauptgruppe 9, Untergruppe 2
+          REPEAT ;Wiederholen in T1 u. T2
+            PRC_DebugDlg(6,0,0)
+            PRC_DebugDlg(25,TYP,SUBTYP)
+            PRC_StartMessung(TYP,SUBTYP,WIEDERHOLUNG)
+            SWITCH N_PRC_Ret1
+              CASE 1000
+                ; OK
+              CASE 1005,1006,1007,1008,1009,1011,1012,1043
+                B_PRC_MsgFlg = TRUE
+              DEFAULT
+                B_PRC_MsgFlg = TRUE
+            ENDSWITCH
+            N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+            IF N_PRC_Ret1 == 2 THEN
+              N_PRC_MsgOff = 1000
+              REPEAT
+                PRC_DebugDlg(9,0,0)
+                N_PRC_Err2 = PRC_Reset()
+                N_PRC_Ret2 = PRC_MsgErr(#NotifyMsg,N_PRC_Err2)
+              UNTIL (N_PRC_Ret2 == 1)
+            ENDIF
+          UNTIL (N_PRC_Ret1 == 1)
+          IF (B_PRC_MsgFlg) THEN
+            $FLAG[F_PRC_Err]   = TRUE
+            RETURN
+          ELSE
+            $FLAG[F_PRC_NoErr] = TRUE
+          ENDIF
+          N_PRC_MsgOff = 1000
+          PRC_DebugDlg(7,0,0)
+          PRC_GetKorrektur(TYP,SUBTYP,NR,WIEDERHOLUNG)
+          SWITCH N_PRC_Ret1
+            CASE 1000
+              ; OK
+            CASE 1001,1017,1018,1027,1028,1038,1042,1043
+              B_PRC_MsgFlg = TRUE
+              RETURN
+            DEFAULT
+              B_PRC_MsgFlg = TRUE
+          ENDSWITCH
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+          N_PRC_MsgOff = 1000
+          B_PRC_MsgFlg = FALSE
+          SWITCH CMD_SEL
+            CASE 1001,1002 ; IMT / RF  ; Hauptgruppe 9, Untergruppe 1 + 2
+              ;wird im Advance erledigt
+            CASE 1003 ;AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+              N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+            DEFAULT
+              N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+          ENDSWITCH
+        CASE 1003 ;AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 552 ;Korrketurwerte abholen
+      N_PRC_MsgOff = 1000
+      B_PRC_MsgFlg = FALSE
+      SWITCH CMD_SEL
+        CASE 1002 ; RF  ; Hauptgruppe 9, Untergruppe 1 + 2
+          PRC_DebugDlg(7,0,0)
+          PRC_GetKorrektur(TYP,SUBTYP,NR,WIEDERHOLUNG)
+          SWITCH N_PRC_Ret1
+            CASE 1000
+              ; OK
+            CASE 1001,1017,1018,1027,1028,1038,1042,1043
+              B_PRC_MsgFlg = TRUE
+            DEFAULT
+              B_PRC_MsgFlg = TRUE
+          ENDSWITCH
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+        CASE 1003 ;AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 553 ;Korrketur ausfuehren
+      N_PRC_MsgOff = 1000
+      B_PRC_MsgFlg = FALSE
+      SWITCH CMD_SEL
+        CASE 1002 ; RF  ; Hauptgruppe 9, Untergruppe 1 + 2
+          ;wird im Advance erledigt
+        CASE 1003 ;AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 554   ;korrektur holen + ausfuehren
+      N_PRC_MsgOff = 1000
+      B_PRC_MsgFlg = FALSE
+      SWITCH CMD_SEL
+        CASE 1002 ; RF  ; Hauptgruppe 9, Untergruppe 1 + 2
+          PRC_DebugDlg(7,0,0)
+          PRC_GetKorrektur(TYP,SUBTYP,NR,WIEDERHOLUNG)
+          SWITCH N_PRC_Ret1
+            CASE 1000
+              ; OK
+            CASE 1001,1017,1018,1027,1028,1038,1042,1043
+              B_PRC_MsgFlg = TRUE
+            DEFAULT
+              B_PRC_MsgFlg = TRUE
+          ENDSWITCH
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+          N_PRC_MsgOff = 1000
+          B_PRC_MsgFlg = FALSE
+          PRC_DebugDlg(8,0,0)
+          PRC_SetKorrektur(NR)
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+        CASE 1003 ;AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 598 ;Perceptron reset
+      SWITCH CMD_SEL
+        CASE 1002,1003 ; RF / AG  ; Hauptgruppe 9, Untergruppe 1 + 2 + 3
+          N_PRC_MsgOff = 500
+          B_PRC_MsgFlg = FALSE
+          PRC_DebugDlg(9,0,0)
+          N_PRC_Err1   = PRC_Reset()
+          N_PRC_Ret1   = 1
+          N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+          IF N_PRC_Err1 > 0 THEN
+            $FLAG[F_PRC_Err]   = TRUE
+          ELSE
+            $FLAG[F_PRC_NoErr] = TRUE
+          ENDIF
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+    CASE 599 ;Version
+      SWITCH CMD_SEL
+        CASE 1002,1003 ; RF / AG  ; Hauptgruppe 9, Untergruppe 1 + 2 + 3
+          B_PRC_MsgKri = TRUE
+          N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,9000)
+        DEFAULT
+          N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,910,FUNKTION,CMD_SEL)
+      ENDSWITCH
+  ENDSWITCH
+END
+;
+  ;ENDFOLD (Main Programm)
+;
+  ;FOLD Start Punktmessung
+;
+DEFFCT INT PRC_StartMsrPktMsr(TYP:IN,SUBTYP:IN,WIEDERHOLUNG:IN)
+INT TYP
+INT SUBTYP
+INT WIEDERHOLUNG
+INT MsgOffset
+INT nTypFlag
+BOOL bTypOk
+  MsgOffset = N_PRC_MsgOff
+  N_PRC_CurMod = TYP
+  ; Modellkontrolle def. im Makro 50
+  IF (TYP <= (N_PRC_LgMod + N_PRC_OffMod)) THEN ; Modellnummer 1 - 9
+    nTypFlag = TYP + N_PRC_OffMod + N_PRC_FiMod - 1
+  ELSE                                          ; Sondermodellnummer 40 - 46
+    nTypFlag = TYP + N_PRC_OffSon + N_PRC_FiSon - 1
+  ENDIF
+  IF (nTypFlag < N_PRC_FiMod) OR (nTypFlag > (N_PRC_FiMod + N_PRC_LgMod + N_PRC_LgSon - 1)) THEN
+    bTypOk       = FALSE
+    N_PRC_Err1   = 872
+    B_PRC_MsgFlg = TRUE
+    B_PRC_MsgKri = TRUE
+    N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,nTypFlag)
+    RETURN(N_PRC_Err1)
+  ELSE
+    bTypOk = $FLAG[nTypFlag]
+    IF bTypOk == FALSE THEN
+      N_PRC_Err3 = 0
+      B_PRC_MsgFlg = TRUE
+      B_PRC_MsgKri = TRUE
+      N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,nTypFlag,N_PRC_CurMod)
+      RETURN(N_PRC_Err1)
+    ENDIF
+  ENDIF
+  IF B_PRC_Ghost THEN
+    N_PRC_Err1 = MsgOffset
+    IF NA_PRC_UPNR[TYP,SUBTYP] > 0 THEN
+      IF NA_PRC_UPNR[N_PRC_CurMod,N_PRC_UpNr] > 0 THEN
+        SEL_RES = SELECT(#UP,NA_PRC_UPNR[N_PRC_CurMod,N_PRC_UpNr],TRUE)
+        N_PRC_MsgOff = MsgOffset
+        N_PRC_Err1   = MsgOffset
+      ELSE
+        N_PRC_Err1   = MsgOffset + 41
+        B_PRC_MsgFlg = TRUE
+        N_PRC_Ret1   = N_PRC_UpNr
+        N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,N_PRC_CurMod,N_PRC_Ret1)
+        RETURN(N_PRC_Err1)
+      ENDIF
+    ELSE
+      N_PRC_Err1   = MsgOffset + 40
+      B_PRC_MsgFlg = TRUE
+      N_PRC_Ret1   = SUBTYP
+      N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,TYP,N_PRC_Ret1)
+    ENDIF
+    RETURN(N_PRC_Err1)
+  ENDIF
+  REPEAT
+    N_PRC_Err1   = MsgOffset
+    B_PRC_MsgFlg = FALSE
+    PRC_DebugDlg(6,0,0)
+    PRC_DebugDlg(25,TYP,SUBTYP)
+    PRC_StartMessung(TYP,SUBTYP,WIEDERHOLUNG)
+    IF N_PRC_Err1 <> MsgOffset THEN
+      B_PRC_MsgFlg = TRUE
+    ENDIF
+    N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+    IF N_PRC_Ret1 == 2 THEN
+      REPEAT
+        PRC_DebugDlg(9,0,0)
+        N_PRC_Err2 = PRC_Reset()
+        N_PRC_Ret2 = PRC_MsgErr(#NotifyMsg,N_PRC_Err2)
+      UNTIL (N_PRC_Ret2 == 1)
+    ENDIF
+  UNTIL(N_PRC_Ret1 == 1)
+  IF B_PRC_MsgFlg THEN
+    RETURN(N_PRC_Err1)
+  ENDIF
+  N_PRC_CurMod = TYP
+  N_PRC_UpNr   = N_PRC_P2Ack
+  IF ((N_PRC_UpNr == 0) AND (NOT B_PRC_StrSPS)) THEN
+    PRC_DebugDlg(4,0,0)
+    PRC_MessungBeenden(1002)
+    N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+    N_PRC_Err1   = MsgOffset + 29   ; Routinennummer ist NULL
+    B_PRC_MsgFlg = TRUE
+    N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+    RETURN(N_PRC_Err1)
+  ENDIF
+  WHILE N_PRC_UpNr <> 0
+IF (NA_PRC_UPNR[TYP,SUBTYP] > 0) AND (bTypOk == TRUE) THEN
+IF (NA_PRC_UPNR[N_PRC_CurMod,N_PRC_UpNr] > 0) AND (bTypOk == TRUE) THEN
+        SEL_RES = SELECT(#UP,NA_PRC_UPNR[N_PRC_CurMod,N_PRC_UpNr],TRUE)
+        B_PRC_MsgFlg = false
+        N_PRC_MsgOff = MsgOffset
+        N_PRC_Err1   = MsgOffset
+      ELSE
+        N_PRC_Err1   = MsgOffset + 41
+        B_PRC_MsgFlg = TRUE
+        N_PRC_Ret1   = N_PRC_UpNr
+        N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,N_PRC_CurMod,N_PRC_Ret1)
+        IF (NOT B_PRC_StrSPS) THEN
+          PRC_DebugDlg(4,0,0)
+          ;korrekturen holen wenn Robotertausch
+          if ((TYP == N_PRC_RobTaM) and (SUBTYP == N_PRC_RobTaU)) then
+            PRC_GetKorrektur(TYP,SUBTYP,N_PRC_VFNr,WIEDERHOLUNG)
+          endif
+          PRC_MessungBeenden(1002)
+        ENDIF
+        B_PRC_MsgFlg = TRUE
+        RETURN(MsgOffset + 41)
+      ENDIF
+    ELSE
+      N_PRC_Err1   = MsgOffset + 40
+      B_PRC_MsgFlg = TRUE
+      N_PRC_Ret1   = N_PRC_UpNr
+      N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,N_PRC_CurMod,N_PRC_Ret1)
+      IF (NOT B_PRC_StrSPS) THEN
+        PRC_DebugDlg(4,0,0)
+        ;korrekturen holen wenn Robotertausch
+        if ((TYP == N_PRC_RobTaM) and (SUBTYP == N_PRC_RobTaU)) then
+          PRC_GetKorrektur(TYP,SUBTYP,N_PRC_VFNr,WIEDERHOLUNG)
+        endif
+        PRC_MessungBeenden(1002)
+      ENDIF
+      B_PRC_MsgFlg = TRUE
+      RETURN(MsgOffset + 40)
+    ENDIF
+    IF (NOT B_PRC_StrSPS) THEN
+      PRC_DebugDlg(4,0,0)
+      ;korrekturen holen wenn Robotertausch
+      if ((TYP == N_PRC_RobTaM) and (SUBTYP == N_PRC_RobTaU)) then
+        PRC_GetKorrektur(TYP,SUBTYP,N_PRC_VFNr,WIEDERHOLUNG)
+        N_PRC_Err3 = N_PRC_Err1
+      endif
+      PRC_MessungBeenden(1001)
+    ENDIF
+    IF (((N_PRC_Err1 <> MsgOffset) AND (B_PRC_MsgFlg == TRUE)) OR ((N_PRC_UpNr == 0) AND (N_PRC_Err1 <> MsgOffset)) OR (N_PRC_Err3 <> 0)) THEN
+      if (n_prc_err3 == 2000) then
+         N_PRC_Err1 = N_PRC_Err3
+      endif
+      RETURN(N_PRC_Err1)
+    ENDIF
+  ENDWHILE
+  RETURN(MsgOffset)
+ENDFCT
+;
+  ;ENDFOLD (Start Punktmessung)
+;
+  ;FOLD Get Mess UP Nummer
+;
+DEFFCT INT PRC_GetMessUpNr(TYP:IN,SUBTYP:IN,WIEDERHOLUNG:IN)
+INT TYP
+INT SUBTYP
+INT WIEDERHOLUNG
+INT nAnzWdh
+INT nTypFlag
+BOOL bTypOk
+  N_PRC_Err1 = 800
+  SUBTYP = 0
+  IF B_PRC_Ghost THEN
+    IF NA_PRC_UPNR[N_PRC_RobGhM,N_PRC_RobGhU] > 0 THEN
+      IF NA_PRC_UPNR[N_PRC_CurMod,N_PRC_UpNr] > 0 THEN
+        SEL_RES=SELECT(#UP,NA_PRC_UPNR[N_PRC_CurMod,N_PRC_UpNr],TRUE)
+      ELSE
+        N_PRC_Err1   = 841
+        B_PRC_MsgFlg = TRUE
+        N_PRC_Ret1   = N_PRC_UpNr
+        B_PRC_MsgKri = TRUE
+        N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,N_PRC_CurMod,N_PRC_Ret1)
+        RETURN(N_PRC_Err1)
+      ENDIF
+    ELSE
+      N_PRC_Err1   = 840
+      B_PRC_MsgFlg = TRUE
+      N_PRC_Ret1   = N_PRC_RobGhU
+      B_PRC_MsgKri = TRUE
+      N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,TYP,N_PRC_Ret1)
+    ENDIF
+    RETURN(N_PRC_Err1)
+  ENDIF
+  REPEAT
+    nAnzWdh    = 0
+    REPEAT
+      nAnzWdh = nAnzWdh + 1
+      PRC_StartUpMess(TYP,SUBTYP,WIEDERHOLUNG)
+      SWITCH N_PRC_Err1
+        CASE 800
+          ; OK
+        CASE 801,805,806,807,808,809,811,817,818,827,828,843
+          B_PRC_MsgFlg = TRUE
+        DEFAULT
+          B_PRC_MsgFlg = TRUE
+      ENDSWITCH
+      IF N_PRC_Err1 == 807 THEN
+        wait sec 0.5
+      ENDIF
+    UNTIL ((N_PRC_Err1 <> 807) OR (nAnzWdh >= N_PRC_MaxAnz))
+    IF nAnzWdh >= N_PRC_MaxAnz THEN
+      B_PRC_MsgKri = TRUE
+    ENDIF
+    N_PRC_Ret1  = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,N_PRC_CurMod,N_PRC_UpNr)
+  UNTIL (N_PRC_Ret1 == 1)
+  IF N_PRC_Err1 <> 800 THEN
+    RETURN(N_PRC_Err1)
+  ENDIF
+  N_PRC_UpNr   = N_PRC_P2Ack
+  N_PRC_CurMod = TYP
+  IF (N_PRC_UpNr == 0) THEN
+    N_PRC_Err1 = 829       ;Routinennummer ist NULL
+    B_PRC_MsgKri = TRUE
+    N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+    RETURN(N_PRC_Err1)
+  ENDIF
+  IF NA_PRC_UPNR[N_PRC_CurMod,N_PRC_UpNr] > 0 THEN
+    SEL_RES=SELECT(#UP,NA_PRC_UPNR[N_PRC_CurMod,N_PRC_UpNr],TRUE)
+  ELSE
+    N_PRC_Err1 = 841
+    N_PRC_Ret1 = N_PRC_UpNr
+    N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,N_PRC_CurMod,N_PRC_Ret1)
+    B_PRC_MsgKri = TRUE
+    RETURN(N_PRC_Err1)
+  ENDIF
+  RETURN(N_PRC_Err1)
+ENDFCT
+;
+  ;ENDFOLD (Get Mess UP Nummer)
+;
+  ;FOLD Get Komp UP Nummer
+;
+DEFFCT INT PRC_GetKompUpNr(TYP:IN,SUBTYP:IN,WIEDERHOLUNG:IN)
+INT TYP
+INT SUBTYP
+INT WIEDERHOLUNG
+INT nAnzWdhErr        ; Anzahl der Wiederholungen im Fehlerfall (max 6, sh.dat)
+INT nAnzWdhStat       ; Anzahl der Wiederholungen im Wartezustand (System noch im Messzyklus, aber Abbruch nach max. 60 + 2s)
+INT nTypFlag
+BOOL bTypOk
+
+  N_PRC_Err1   = 800
+  N_PRC_CurMod = TYP
+  
+  ; Modellkontrolle def. im Makro 120
+  IF (TYP <= (N_PRC_LgMod + N_PRC_OffMod)) THEN ; Modellnummer 1 - 9
+    nTypFlag = TYP + N_PRC_OffMod + N_PRC_FiMod - 1
+  ELSE                                          ; Sondermodellnummer 40 - 46
+    nTypFlag = TYP + N_PRC_OffSon + N_PRC_FiSon - 1
+  ENDIF
+  IF (nTypFlag < N_PRC_FiMod) OR (nTypFlag > (N_PRC_FiMod + N_PRC_LgMod + N_PRC_LgSon - 1)) THEN
+    bTypOk       = FALSE
+    N_PRC_Err1   = 872
+    B_PRC_MsgFlg = TRUE
+    B_PRC_MsgKri = TRUE
+    N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,nTypFlag)         
+    RETURN(N_PRC_Err1)    
+  ELSE
+    bTypOk = $FLAG[nTypFlag]
+    IF bTypOk == FALSE THEN
+      N_PRC_Err1   = 873
+      B_PRC_MsgFlg = TRUE
+      B_PRC_MsgKri = TRUE
+      N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,nTypFlag,N_PRC_CurMod)         
+      RETURN(N_PRC_Err1)    
+    ENDIF
+  ENDIF
+  IF B_PRC_Ghost THEN 
+    IF (NA_PRC_UPNR[N_PRC_RobGhM,N_PRC_RobGhU] > 0) AND (bTypOk == TRUE) THEN    
+      IF (NA_PRC_UPNR[N_PRC_CurMod,N_PRC_UpNr] > 0) AND (bTypOk == TRUE) THEN      
+        SEL_RES=SELECT(#UP,NA_PRC_UPNR[N_PRC_CurMod,N_PRC_UpNr],TRUE)        
+      ELSE	    
+        N_PRC_Err1   = 841
+        B_PRC_MsgFlg = TRUE
+        N_PRC_Ret1   = N_PRC_UpNr
+        B_PRC_MsgKri = TRUE
+        N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,N_PRC_CurMod,N_PRC_Ret1)        
+        RETURN(N_PRC_Err1)       
+      ENDIF      
+    ELSE    
+      N_PRC_Err1   = 840
+      B_PRC_MsgFlg = TRUE
+      N_PRC_Ret1   = N_PRC_RobGhU
+      B_PRC_MsgKri = TRUE
+      N_PRC_Ret1   = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,TYP,N_PRC_Ret1)      
+    ENDIF    
+    RETURN(N_PRC_Err1)    
+  ENDIF
+  
+  REPEAT
+    nAnzWdhErr  = 0
+    nAnzWdhStat = 0
+    REPEAT
+      PRC_StartUpKomp(TYP,SUBTYP,WIEDERHOLUNG) 
+	
+      SWITCH N_PRC_Err1
+        CASE 800,850,851,852,853,860,861
+          ; OK
+        CASE 801,805,806,807,808,809,811,817,818,827,828,843,854,870,871
+          B_PRC_MsgFlg = TRUE
+        DEFAULT
+          B_PRC_MsgFlg = TRUE
+      ENDSWITCH
+      
+	  IF (N_PRC_Err1 == 860) OR (N_PRC_Err1 == 861) THEN
+        wait sec 2
+        nAnzWdhStat = nAnzWdhStat + 1
+        IF nAnzWdhStat >= N_PRC_MaxSta THEN
+          nAnzWdhErr = N_PRC_MaxErr
+        ENDIF
+      ELSE
+        nAnzWdhErr = nAnzWdhErr + 1
+      ENDIF
+    UNTIL (((N_PRC_Err1 <> 860) AND (N_PRC_Err1 <> 861)) OR (nAnzWdhErr >= N_PRC_MaxErr))
+    
+	IF (nAnzWdhErr >= N_PRC_MaxErr) AND (B_PRC_Debug == TRUE) THEN
+      B_PRC_MsgKri = TRUE
+    ENDIF
+    N_PRC_Ret1  = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,N_PRC_CurMod,N_PRC_UpNr)
+  UNTIL (N_PRC_Ret1 == 1)
+  
+  N_PRC_UpNr   = N_PRC_P2Ack
+  
+  IF (N_PRC_Err1 <> 851) AND (N_PRC_Err1 <> 852) THEN
+    RETURN(N_PRC_Err1) ; keine Kompensation
+  ENDIF
+  
+  IF (NA_PRC_UPNR[N_PRC_CurMod,N_PRC_UpNr] > 0) AND (bTypOk == TRUE) THEN    
+    SEL_RES=SELECT(#UP,NA_PRC_UPNR[N_PRC_CurMod,N_PRC_UpNr],TRUE)      
+  ELSE    
+    N_PRC_Err1 = 841
+    N_PRC_Ret1 = N_PRC_UpNr
+    N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1,N_PRC_CurMod,N_PRC_Ret1)      
+    B_PRC_MsgKri = TRUE
+    RETURN(N_PRC_Err1)      
+  ENDIF    
+  RETURN(N_PRC_Err1)
+ENDFCT
+;
+  ;ENDFOLD (Get Komp UP Nummer)
+;
+  ;FOLD Get Status
+;
+DEFFCT INT PRC_GetStatus()
+  N_PRC_ID     = 2
+
+  PRC_SendeKanalOeffnen()
+  IF N_PRC_Err1 <> N_PRC_MsgOff THEN
+    RETURN(N_PRC_Err1)
+  ENDIF
+  O_PRC_Data2 = 0
+  O_PRC_Data1 = N_PRC_ID
+  IF NOT PRC_DatenSenden() THEN
+    RETURN(N_PRC_Err1)
+  ENDIF
+  PRC_SendeKanalSchliessen()
+  IF NOT PRC_DatenEmpfangen() THEN
+    RETURN(N_PRC_Err1)
+  ENDIF
+  PRC_EmpfKanalSchliessen()               ; PRC_EmpfKanalSchliessen
+  PRC_EmpfDatenAuswerten()                ; PRC_EmpfDatenAuswerten
+  IF N_PRC_IDAck <> N_PRC_ID THEN
+    N_PRC_Err1   = N_PRC_MsgOff + 43      ; falsche RETURNID
+    B_PRC_MsgFlg = TRUE
+    RETURN(N_PRC_Err1)
+  ENDIF
+  SWITCH N_PRC_KennAck
+    CASE 0
+      N_PRC_Err1   = N_PRC_MsgOff         ; Perceptron bereit
+    CASE 5
+      N_PRC_Err1   = N_PRC_MsgOff + 7     ; Perceptron von diesem Roboter bereits gestartet
+    CASE 12
+      N_PRC_Err1   = N_PRC_MsgOff + 6     ; Perceptron offline
+    CASE 23
+      N_PRC_Err1   = N_PRC_MsgOff + 23    ; Kalibriermodus
+    CASE 24
+      N_PRC_Err1   = N_PRC_MsgOff + 24    ; Teachmodus
+    CASE 29
+      N_PRC_Err1   = N_PRC_MsgOff + 29    ; BaseFinder
+    CASE 30
+      N_PRC_Err1   = N_PRC_MsgOff + 30    ; ToolFinder
+    CASE 255
+      N_PRC_Err1   = N_PRC_MsgOff + 8     ; allg. Fehler
+    DEFAULT
+      N_PRC_Err1   = N_PRC_MsgOff + 9     ; Fehler nicht spezifiziert
+  ENDSWITCH
+  RETURN(N_PRC_Err1)
+ENDFCT
+;
+  ;ENDFOLD (Get Status)
+;
+  ;FOLD Punkt Messung
+;
+DEF PRC_PunktMessung(nPktNr:IN)
+INT nPktNr
+  N_PRC_Err1   = 200
+  B_PRC_MsgFlg = FALSE
+  IF (NOT I_PRC_Zyklus) AND (NOT I_PRC_PgmMod) THEN
+    B_PRC_MsgFlg = TRUE
+    N_PRC_Err1   = 224   ; Messung nicht gestartet
+    RETURN
+  ENDIF
+  O_PRC_PktNr = nPktNr
+  O_PRC_Pkt   = TRUE
+  PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  wait for (I_PRC_PktAck OR I_PRC_PosInf OR ($timer_flag[N_PRC_Tm1Nr] AND NOT I_PRC_PgmMod))
+  PRC_StopTimer(N_PRC_Tm1Nr)
+  IF $timer_flag[N_PRC_Tm1Nr] AND NOT I_PRC_PgmMod THEN
+    N_PRC_Err1   = 225   ; Timeout beim warten auf Messungende
+    B_PRC_MsgFlg = TRUE
+    O_PRC_PktNr  = 0
+    O_PRC_Pkt    = FALSE
+    RETURN
+  ENDIF
+  IF I_PRC_Fehler THEN   ; Perceptron Fehler bei PRC_PunktMessung
+    B_PRC_MsgFlg = TRUE
+    SWITCH I_PRC_FehlNr
+      CASE 1
+        N_PRC_Err1 = 223   ; PositionsID ungueltig
+      CASE 5
+        N_PRC_Err1 = 224   ; Messytstem nicht gestartet
+      CASE 18
+        N_PRC_Err1 = 213   ; Allgemeiner Fehler
+      CASE 19
+        N_PRC_Err1 = 227   ; Falsche Punktreihenfolge
+CASE 512
+        N_PRC_Err1 = 213   ; Allgemeiner Fehler
+        IF B_PRC_ISTOOL == TRUE THEN
+          N_PRC_Err1   = 228   ; Nur im ToolFinder-Modus (Messfehler)
+          B_PRC_MsgFlg = FALSE
+        ENDIF
+        IF B_PRC_ISBASE == TRUE THEN
+          N_PRC_Err1   = 229   ; Nur im BaseFinder-Modus (Messfehler)
+          B_PRC_MsgFlg = FALSE
+        ENDIF
+      DEFAULT
+    ENDSWITCH
+    O_PRC_PktNr = 0
+    O_PRC_Pkt   = FALSE
+    RETURN
+  ENDIF
+  IF I_PRC_PosInf THEN
+    PRC_SendInfo (3,N_PRC_CurMod,nPktNr)
+    IF (N_PRC_Err1 <> N_PRC_MsgOff) AND (B_PRC_MsgFlg) THEN
+      N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+    ENDIF
+  ENDIF
+  PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  wait for (I_PRC_PktAck OR ($timer_flag[N_PRC_Tm1Nr] AND NOT I_PRC_PgmMod))
+  PRC_StopTimer(N_PRC_Tm1Nr)
+  O_PRC_Pkt   = FALSE
+  O_PRC_PktNr = 0
+  IF $timer_flag[N_PRC_Tm1Nr] AND NOT I_PRC_PgmMod THEN
+    N_PRC_Err1   = 225   ; Timeout beim warten auf Messungende
+    B_PRC_MsgFlg = TRUE
+    RETURN
+  ENDIF
+  PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  wait for (NOT(I_PRC_PktAck) OR ($timer_flag[N_PRC_Tm1Nr] AND NOT I_PRC_PgmMod))
+  PRC_StopTimer(N_PRC_Tm1Nr)
+  IF $timer_flag[N_PRC_Tm1Nr] AND NOT I_PRC_PgmMod THEN
+    N_PRC_Err1   = 225   ; Timeout beim warten auf Messungende
+    B_PRC_MsgFlg = TRUE
+    RETURN
+  ENDIF
+END
+;
+  ;ENDFOLD (Punkt Messung)
+;
+  ;FOLD Start Scan
+;
+DEF PRC_StrtScan(nScanSct:IN)
+INT nScanSct
+  IF (NOT I_PRC_Zyklus) AND (NOT I_PRC_PgmMod) THEN
+    B_PRC_MsgFlg = TRUE
+    N_PRC_ERR1   = 284     ; Messung nicht gestartet
+    RETURN
+  ENDIF
+  IF I_PRC_SScAck THEN
+    B_PRC_MsgFlg = TRUE
+    N_PRC_ERR1   = 291     ; StartScanAck nicht zurueckgenommen
+    RETURN
+  ENDIF
+  $TIMER[N_PRC_Tm2Nr]      = 0
+  $TIMER_STOP[N_PRC_Tm2Nr] = FALSE
+  O_PRC_PktNr = nScanSct
+  O_PRC_SSc   = TRUE
+  PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  wait for (I_PRC_SScAck OR I_PRC_PosInf OR ($timer_flag[N_PRC_Tm1Nr] AND NOT I_PRC_PgmMod))
+  PRC_StopTimer(N_PRC_Tm1Nr)
+  IF $timer_flag[N_PRC_Tm1Nr] THEN
+    N_PRC_Err1   = 292       ; StartScanAck nicht gesetzt
+    B_PRC_MsgFlg = TRUE
+    O_PRC_PktNr  = 0
+    O_PRC_SSc    = FALSE
+    $TIMER_STOP[N_PRC_Tm2Nr] = TRUE
+    RETURN
+  ENDIF
+  IF I_PRC_Fehler THEN       ;Perceptron Fehler bei PRC_PunktMessung
+    SWITCH I_PRC_FehlNr
+      CASE 1
+        N_PRC_Err1   = 283   ; PositionsID ungueltig
+        B_PRC_MsgFlg = TRUE
+      CASE 5
+        N_PRC_Err1   = 284   ; Messytstem nicht gestartet
+        B_PRC_MsgFlg = TRUE
+      CASE 18
+        N_PRC_Err1   = 285   ; Allgemeiner Fehler
+        B_PRC_MsgFlg = TRUE
+      DEFAULT
+    ENDSWITCH
+    O_PRC_PktNr = 0
+    O_PRC_SSc   = FALSE
+    $TIMER_STOP[N_PRC_Tm2Nr]=TRUE
+    RETURN
+  ENDIF
+  IF I_PRC_PosInf THEN
+    PRC_SendInfo(3,N_PRC_CurMod,nScanSct)
+    IF (N_PRC_Err1 <> N_PRC_MsgOff) AND (B_PRC_MsgFlg) THEN
+      N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+    ENDIF
+    PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+    wait for (I_PRC_SScAck OR $timer_flag[N_PRC_Tm1Nr])
+    PRC_StopTimer(N_PRC_Tm1Nr)
+    IF $timer_flag[N_PRC_Tm1Nr] THEN
+      N_PRC_Err1   = 292   ; StartScanAck nicht gesetzt
+      B_PRC_MsgFlg = TRUE
+      O_PRC_PktNr  = 0
+      O_PRC_SSc    = FALSE
+      $TIMER_STOP[N_PRC_Tm2Nr] = TRUE
+      RETURN
+    ENDIF
+  ENDIF
+  O_PRC_SSc = FALSE
+  $TIMER_STOP[N_PRC_Tm2Nr] = TRUE
+  O_PRC_StrVrz=$TIMER[N_PRC_Tm2Nr]
+END
+;
+  ;ENDFOLD (Start Scan)
+;
+  ;FOLD End Scan
+;
+DEFFCT INT PRC_EndScan(nScanSct:IN)
+REAL rVelocity
+INT  nScanSct
+INT  nErr
+INT  nByte01
+INT  nByte02
+INT  nByte03
+INT  nByte04
+  IF (NOT I_PRC_Zyklus) AND (NOT I_PRC_PgmMod) THEN
+    B_PRC_MsgFlg = TRUE
+    RETURN(284)  ; Messung nicht gestartet
+  ENDIF
+  IF I_PRC_EScAck THEN
+    B_PRC_MsgFlg = TRUE
+    RETURN(281)  ; EndScanAck nicht zurueckgenommen
+  ENDIF
+  $TIMER[N_PRC_Tm3Nr]      = 0
+  $TIMER_STOP[N_PRC_Tm3Nr] = FALSE
+  O_PRC_PktNr = nScanSct
+  rVelocity   = $VEL.CP * ($OV_ROB / 100.0) * 1000
+  PRC_ConvReal2Bytes(rVelocity,nByte01,nByte02,nByte03,nByte04 )
+  O_PRC_Speed1 = nByte01
+  O_PRC_Speed2 = nByte02
+  O_PRC_Speed3 = nByte03
+  O_PRC_Speed4 = nByte04
+  O_PRC_ESc    = TRUE
+  PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  WAIT FOR (I_PRC_EScAck OR I_PRC_PosInf OR ($timer_flag[N_PRC_Tm1Nr] AND NOT I_PRC_PgmMod))
+  PRC_StopTimer(N_PRC_Tm1Nr)
+  IF $timer_flag[N_PRC_Tm1Nr] THEN
+    O_PRC_PktNr = 0
+    O_PRC_ESc   = FALSE
+    $TIMER_STOP[N_PRC_Tm3Nr] = TRUE
+    O_PRC_Speed1 = 0
+    O_PRC_Speed2 = 0
+    O_PRC_Speed3 = 0
+    O_PRC_Speed4 = 0
+    B_PRC_MsgFlg = TRUE
+    RETURN(282)  ; EndScanAck nicht gesetzt
+  ENDIF
+  IF I_PRC_Fehler THEN   ; Perceptron Fehler bei PRC_EndScan
+    B_PRC_MsgFlg = TRUE
+    SWITCH I_PRC_FehlNr
+      CASE 1
+        nErr = 283  ; PositionsID ungueltig
+      CASE 5
+        nErr = 284  ; Messytstem nicht gestartet
+      CASE 18
+        nErr = 285  ; Allgemeiner Fehler
+      DEFAULT
+        nErr = 286  ; Fehler nicht spezifiziert
+    ENDSWITCH
+    O_PRC_PktNr  = 0
+    O_PRC_Speed1 = 0
+    O_PRC_Speed2 = 0
+    O_PRC_Speed3 = 0
+    O_PRC_Speed4 = 0
+    O_PRC_ESc    = FALSE
+    $TIMER_STOP[N_PRC_Tm3Nr] = TRUE
+    RETURN(nErr)
+  ENDIF
+  IF I_PRC_PosInf THEN
+    PRC_SendInfo(3,N_PRC_CurMod,nScanSct)
+    IF (N_PRC_Err1 <> N_PRC_MsgOff) AND (B_PRC_MsgFlg) THEN
+      N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,N_PRC_Err1)
+    ENDIF
+    PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+    WAIT FOR (I_PRC_EScAck OR $timer_flag[N_PRC_Tm1Nr])
+    PRC_StopTimer(N_PRC_Tm1Nr)
+    IF $timer_flag[N_PRC_Tm1Nr] THEN
+      O_PRC_PktNr = 0
+      O_PRC_ESc   = FALSE
+      $TIMER_STOP[N_PRC_Tm3Nr] = TRUE
+      B_PRC_MsgFlg = TRUE
+      RETURN(282)   ; EndScanAck nicht gesetzt
+    ENDIF
+  ENDIF
+  O_PRC_PktNr = 0
+  $TIMER_STOP[N_PRC_Tm3Nr] = TRUE
+  O_PRC_EndVrz = $TIMER[N_PRC_Tm3Nr]
+  O_PRC_ESc    = FALSE
+  PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  WAIT FOR (I_PRC_EScAck OR $timer_flag[N_PRC_Tm1Nr])
+  PRC_StopTimer(N_PRC_Tm1Nr)
+  IF $timer_flag[N_PRC_Tm1Nr] THEN
+    B_PRC_MsgFlg = TRUE
+    RETURN(282)   ; EndScanAck nicht gesetzt
+  ENDIF
+  RETURN(0)
+ENDFCT
+;
+  ;ENDFOLD (End Scan)
+;
+  ;FOLD Set Korr
+;
+DEF PRC_SetKorrektur (VFNR:IN)
+INT VFNR
+  IF (B_PRC_VFErr == TRUE) THEN
+    IF $ACT_BASE == 0 THEN
+      BASE_DATA[N_PRC_KorBas] = $Nullframe
+    ELSE
+      BASE_DATA[N_PRC_KorBas] = BASE_DATA[$ACT_BASE]
+    ENDIF
+    N_PRC_Err1         = 1046
+    $FLAG[F_PRC_VFErr] = TRUE
+    $FLAG[F_PRC_Err]   = TRUE
+    $FLAG[F_PRC_NoErr] = FALSE
+  ELSE
+    IF $ACT_BASE == 0 THEN
+      BASE_DATA[N_PRC_KorBas] = AVF_PRC_Korr[VFNR]
+    ELSE
+      BASE_DATA[N_PRC_KorBas] = BASE_DATA[$ACT_BASE] : AVF_PRC_Korr[VFNR]
+    ENDIF
+    $FLAG[F_PRC_VFErr] = FALSE
+    $FLAG[F_PRC_Err]   = FALSE
+    $FLAG[F_PRC_NoErr] = TRUE
+    N_PRC_Err1 = 1000
+  ENDIF
+END
+;
+  ;ENDFOLD (Set Korr)
+;
+  ;FOLD Get Korr
+;
+DEF PRC_GetKorrektur (TYP:IN,SUBTYP:IN,VFNR:IN,WIEDERHOLUNG:IN)
+INT TYP
+INT SUBTYP
+INT VFNR
+INT WIEDERHOLUNG
+INT nByte1
+INT nByte2
+  B_PRC_MsgFlg = FALSE
+  AVF_PRC_Korr[VFNR] = $NULLFRAME
+  ; Korrektur abholen
+  PRC_SendeKanalOeffnen()
+  IF N_PRC_Err1 <> N_PRC_MsgOff THEN
+    GOTO Get_Korr_Err
+  ENDIF
+  O_PRC_Data2 = 0 ; leer
+  O_PRC_Data1 = 6 ; ID
+  PRC_ConvWort2Byte(VFNR,nByte2,nByte1)
+  O_PRC_Data3 = nByte1
+  O_PRC_Data4 = nByte2
+  PRC_ConvWort2Byte(3,nByte2,nByte1)
+  O_PRC_Data5 = nByte1
+  O_PRC_Data6 = nByte2
+  IF NOT PRC_DatenSenden() THEN
+    GOTO Get_Korr_Err
+  ENDIF
+  PRC_SendeKanalSchliessen()
+  IF NOT PRC_DatenEmpfangen() THEN
+    GOTO Get_Korr_Err
+  ENDIF
+  PRC_EmpfKanalSchliessen()
+  PRC_EmpfDatenAuswerten()
+  IF N_PRC_IDAck <> 6 THEN
+    N_PRC_Err1   = 1043 ;falsche RETURNID
+    GOTO Get_Korr_Err
+  ENDIF
+  IF N_PRC_P1Ack <> VFNR THEN
+    N_PRC_Err1   = 1038 ;Falsche RETURN Fixnr
+    GOTO Get_Korr_Err
+  ENDIF
+  IF N_PRC_P2Ack <> 0 THEN
+    N_PRC_Err1   = 1042 ;keine Korrekturwerte vorhanden
+    GOTO Get_Korr_Err
+  ENDIF
+  GOTO Get_Korr_OK
+Get_Korr_Err:
+  B_PRC_VFErr = TRUE
+  $FLAG[F_PRC_VFErr]  = TRUE
+  $FLAG[F_PRC_Err]    = TRUE
+  $FLAG[F_PRC_NoErr]  = FALSE
+  AVF_PRC_Korr[VFNR] = $Nullframe
+  VF_PRC_Sen          = $Nullframe
+  RETURN
+Get_Korr_OK:
+  B_PRC_VFErr = FALSE
+  IF PRC_CheckMaxVF(VF_PRC_Sen) THEN
+    AVF_PRC_Korr[VFNR] = VF_PRC_Sen
+    N_PRC_Err1          = 1000
+  ELSE
+    B_PRC_VFErr = TRUE
+    $FLAG[F_PRC_VFMax] = TRUE
+    $FLAG[F_PRC_VFErr] = TRUE
+    $FLAG[F_PRC_Err]   = TRUE
+    $FLAG[F_PRC_NoErr] = FALSE
+    AVF_PRC_Korr[VFNR] = $Nullframe
+    VF_PRC_Sen          = $Nullframe
+    N_PRC_Err1 = 2000
+  ENDIF
+END
+;
+  ;ENDFOLD (Get Korr)
+;
+  ;FOLD Start Messung
+;
+DEF PRC_StartMessung(TYP:IN,SUBTYP:IN,WIEDERHOLUNG:IN)
+INT TYP
+INT SUBTYP
+INT WIEDERHOLUNG
+INT nByte1
+INT nByte2
+  N_PRC_ID     = 1
+  B_PRC_StrSPS = FALSE
+  PRC_SendeKanalOeffnen()
+  IF N_PRC_Err1 <> N_PRC_MsgOff THEN
+    RETURN
+  ENDIF
+  O_PRC_Data2 = 0                         ;JSN,AuxID,ColorCode,AuxID-String
+  O_PRC_Data1 = N_PRC_ID                  ;ID
+  PRC_ConvWort2Byte(TYP,nByte2,nByte1)    ;Modell HL Byte gedreht!!!
+  O_PRC_Data3 = nByte1
+  O_PRC_Data4 = nByte2
+  PRC_ConvWort2Byte(SUBTYP,nByte2,nByte1) ;Routine HL Byte gedreht!!!
+  O_PRC_Data5 = nByte1
+  O_PRC_Data6 = nByte2
+  IF NOT PRC_DatenSenden() THEN
+    RETURN
+  ENDIF
+  PRC_SendeKanalSchliessen()
+  IF NOT PRC_DatenEmpfangen() THEN
+    RETURN
+  ENDIF
+  PRC_EmpfKanalSchliessen()
+  PRC_EmpfDatenAuswerten()
+  SWITCH N_PRC_KennAck
+    CASE 0
+      N_PRC_Err1   = N_PRC_MsgOff      ; Befehl ok
+    CASE 1
+      N_PRC_Err1   = N_PRC_MsgOff + 5  ; Modell od. Routine nicht definiert
+    CASE 5
+      N_PRC_Err1   = N_PRC_MsgOff + 7  ; Perceptron bereits gestartet
+    CASE 12
+      N_PRC_Err1   = N_PRC_MsgOff + 6  ; Perceptron offline
+    CASE 254
+      N_PRC_Err1   = N_PRC_MsgOff + 12 ; Perceptron von SPS gestartet
+    CASE 255
+      N_PRC_Err1   = N_PRC_MsgOff + 8  ; allg. Fehler
+    DEFAULT
+      N_PRC_Err1   = N_PRC_MsgOff + 9  ; Fehler nicht spezifiziert
+  ENDSWITCH
+  IF N_PRC_Err1 <> N_PRC_MsgOff THEN
+    IF N_PRC_Err1 == (N_PRC_MsgOff + 7) THEN
+      PRC_DebugDlg(11,0,0)
+      B_PRC_StrSPS = TRUE
+    ENDIF
+    RETURN
+  ENDIF
+  IF N_PRC_IDAck <> N_PRC_ID THEN
+    N_PRC_Err1    = N_PRC_MsgOff + 43  ;falsche RETURNID
+  ELSE
+    IF (N_PRC_P1Ack <> TYP) THEN
+      N_PRC_Err1   = N_PRC_MsgOff + 11 ;falsche RETURN ModellNr
+    ENDIF
+  ENDIF
+END
+;
+  ;ENDFOLD (Start Messung)
+;
+  ;FOLD Start UP Messung
+;
+DEF PRC_StartUpMess (TYP:IN,SUBTYP:IN,WIEDERHOLUNG:IN)
+INT TYP
+INT SUBTYP
+INT WIEDERHOLUNG
+INT nByte1
+INT nByte2
+  ;holt nur UP-Nr von Perceptron wenn Perc von SPS gestartet
+  N_PRC_ID = 11
+  PRC_SendeKanalOeffnen()
+  IF N_PRC_Err1 <> N_PRC_MsgOff THEN
+    RETURN
+  ENDIF
+  O_PRC_Data2 = 0        ;JSN,AuxID,ColorCode,AuxID-String
+  O_PRC_Data1 = N_PRC_ID ;ID
+  PRC_ConvWort2Byte(TYP,nByte2,nByte1)
+  O_PRC_Data3 = nByte1
+  O_PRC_Data4 = nByte2
+  PRC_ConvWort2Byte(SUBTYP,nByte2,nByte1)
+  O_PRC_Data5 = nByte1
+  O_PRC_Data6 = nByte2
+  IF NOT PRC_DatenSenden() THEN
+    RETURN
+  ENDIF
+  PRC_SendeKanalSchliessen()
+  IF NOT PRC_DatenEmpfangen() THEN
+    RETURN
+  ENDIF
+  PRC_EmpfKanalSchliessen()
+  PRC_EmpfDatenAuswerten()
+  SWITCH N_PRC_KennAck
+    CASE 0
+      N_PRC_Err1 = N_PRC_MsgOff      ; Befehl ok
+    CASE 1
+      N_PRC_Err1 = N_PRC_MsgOff + 5  ; Modell od. Routine nicht definiert
+    CASE 5
+      N_PRC_Err1 = N_PRC_MsgOff + 7  ; Perceptron von SPS nicht gestartet
+    CASE 12
+      N_PRC_Err1 = N_PRC_MsgOff + 6  ; Perceptron offline
+    CASE 255
+      N_PRC_Err1 = N_PRC_MsgOff + 8  ; allg. Fehler
+    DEFAULT
+      N_PRC_Err1 = N_PRC_MsgOff + 9  ; Fehler nicht spezifiziert
+  ENDSWITCH
+  IF N_PRC_Err1 <> N_PRC_MsgOff THEN
+    RETURN
+  ENDIF
+  IF N_PRC_IDAck <> N_PRC_ID THEN
+    N_PRC_Err1 = N_PRC_MsgOff + 43   ; Falsche RETURNID
+  ELSE
+    IF N_PRC_P1Ack <> TYP THEN
+      N_PRC_Err1 = N_PRC_MsgOff + 11 ; Falsche RETURN ModellNr
+    ENDIF
+  ENDIF
+END
+;
+;ENDFOLD (Start UP Messung)
+;
+;FOLD Start UP Komp
+;
+DEF PRC_StartUpKomp (TYP:IN,SUBTYP:IN,WIEDERHOLUNG:IN)
+INT TYP
+INT SUBTYP
+INT WIEDERHOLUNG
+INT nByte1
+INT nByte2
+  N_PRC_ID = 12
+  PRC_SendeKanalOeffnen()
+  IF N_PRC_Err1 <> N_PRC_MsgOff THEN
+    RETURN
+  ENDIF
+  O_PRC_Data2 = 0        ; JSN,AuxID,ColorCode,AuxID-String
+  O_PRC_Data1 = N_PRC_ID ; ID
+  PRC_ConvWort2Byte(TYP,nByte2,nByte1)
+  O_PRC_Data3 = nByte1
+  O_PRC_Data4 = nByte2
+  PRC_ConvWort2Byte(SUBTYP,nByte2,nByte1)
+  O_PRC_Data5 = nByte1
+  O_PRC_Data6 = nByte2
+  IF NOT PRC_DatenSenden() THEN
+    RETURN
+  ENDIF
+  PRC_SendeKanalSchliessen()
+  IF NOT PRC_DatenEmpfangen() THEN
+    RETURN
+  ENDIF
+  PRC_EmpfKanalSchliessen()
+  PRC_EmpfDatenAuswerten()
+  SWITCH N_PRC_KennAck
+    CASE 0 
+      N_PRC_Err1 = N_PRC_MsgOff + 50 ; Kompensation ok (nicht erforderlich)
+    CASE 1 
+      N_PRC_Err1 = N_PRC_MsgOff + 51 ; Kompensation erforderlich (Voll)
+    CASE 2 
+      N_PRC_Err1 = N_PRC_MsgOff + 52 ; Kompensation erforderlich (Split)
+    CASE 4 
+      N_PRC_Err1 = N_PRC_MsgOff + 53 ; Kompensation deaktiviert (SPS)
+    CASE 6 
+      N_PRC_Err1 = N_PRC_MsgOff + 54 ; Modell/UP ungueltig
+    CASE 16 
+      N_PRC_Err1 = N_PRC_MsgOff + 60 ; Perceptron im falschen Status
+    CASE 32 
+      N_PRC_Err1 = N_PRC_MsgOff + 61 ; Perceptron in der Startprozedur
+    CASE 64 
+      N_PRC_Err1 = N_PRC_MsgOff + 70 ; Fehler in der Startprozedur
+    CASE 128
+      N_PRC_Err1 = N_PRC_MsgOff + 71 ; Fehler in der Kompensation (Konfiguration)
+    DEFAULT 
+      N_PRC_Err1 = N_PRC_MsgOff + 9  ; Fehler nicht spezifiziert
+  ENDSWITCH
+  IF N_PRC_Err1 <> N_PRC_MsgOff THEN
+    RETURN
+  ENDIF
+  IF N_PRC_IDAck <> N_PRC_ID THEN 
+    N_PRC_Err1 = N_PRC_MsgOff + 43   ; Falsche RETURNID
+  ELSE
+    IF N_PRC_P1Ack <> TYP THEN
+      N_PRC_Err1 = N_PRC_MsgOff + 11 ; Falsche RETURN ModellNr
+    ENDIF
+  ENDIF
+END
+;
+  ;ENDFOLD (Start UP Komp)
+;
+  ;FOLD Reset
+;
+DEFFCT INT PRC_Reset()
+  O_PRC_Reset = TRUE
+  PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  WAIT FOR (I_PRC_Reset OR $timer_flag[N_PRC_Tm1Nr])
+  PRC_StopTimer(N_PRC_Tm1Nr)
+  O_PRC_Reset = FALSE
+  IF $timer_flag[N_PRC_Tm1Nr] THEN
+    RETURN(521)  ; Timeout bei Reset Perceptron
+  ELSE
+    PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+    WAIT FOR (NOT(I_PRC_Reset) OR $timer_flag[N_PRC_Tm1Nr])
+    PRC_StopTimer(N_PRC_Tm1Nr)
+    IF $timer_flag[N_PRC_Tm1Nr] THEN
+      RETURN(522)  ; Timeout bei Reset Perceptron
+    ENDIF
+  ENDIF
+  RETURN (0)
+ENDFCT
+;
+  ;ENDFOLD (Reset)
+;
+  ;FOLD Messung Beenden
+;
+DEF PRC_MessungBeenden(CMD_SEL:IN)
+INT CMD_SEL
+  O_PRC_ME = TRUE   ; End Measurement
+  PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  wait for (I_PRC_MEACK OR $timer_flag[N_PRC_Tm1Nr])
+  PRC_StopTimer(N_PRC_Tm1Nr)
+  IF $timer_flag[N_PRC_Tm1Nr] THEN   ;timeout beim warten auf I_PRC_MEACK
+    N_PRC_Err1   = N_PRC_MsgOff + 4
+    B_PRC_MsgFlg = TRUE
+    RETURN
+  ENDIF
+  O_PRC_ME = FALSE
+  IF NOT PRC_EmpfangsKanalOeffnen() THEN
+    B_PRC_MsgFlg = TRUE
+    RETURN
+  ENDIF
+  IF NOT PRC_DatenEmpfangen() THEN
+    B_PRC_MsgFlg = TRUE
+    RETURN
+  ENDIF
+  PRC_EmpfKanalSchliessen()
+  PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  wait for (NOT I_PRC_MEACK OR $timer_flag[N_PRC_Tm1Nr])
+  PRC_StopTimer(N_PRC_Tm1Nr)
+  PRC_EmpfDatenAuswerten()
+  IF N_PRC_IDAck <> 7 THEN ;Falsche Antwort auf MessEnde
+    N_PRC_Err1   = N_PRC_MsgOff + 43
+    B_PRC_MsgFlg = TRUE
+    RETURN
+  ENDIF
+  SWITCH CMD_SEL
+    CASE 1001                 ; IMT  ; Hauptgruppe 9, Untergruppe 1
+      SWITCH N_PRC_KennAck
+        CASE 0,1 ; Messung Ende
+        CASE 4
+          N_PRC_Err1   = N_PRC_MsgOff + 24         ; Messung ist nicht gestartet
+          B_PRC_MsgFlg = TRUE
+          RETURN
+        DEFAULT
+          N_PRC_Err1   = N_PRC_MsgOff + 43         ; Parameter-Kennung nicht definiert
+          B_PRC_MsgFlg = TRUE
+          RETURN
+      ENDSWITCH
+      SWITCH N_PRC_P1Ack
+        CASE 0                              ; alles ok
+          N_PRC_Err1   = N_PRC_MsgOff
+        CASE 1
+          N_PRC_Err1   = 1151   ; Robot 1 SensorError
+          ;N_PRC_Err1 = N_PRC_MsgOff + 1  ; Trend bei Messende
+        CASE 2
+          N_PRC_Err1   = 1152   ; Robot 1 SensorToleranz
+          ;N_PRC_Err1 = N_PRC_MsgOff + 2  ; Spec bei Messende
+        CASE 3
+          N_PRC_Err1 = N_PRC_MsgOff + 3  ; Trend+Spec bei Messende
+        CASE 4
+          N_PRC_Err1   = 1153   ; Robot 1 VF Error
+          ;N_PRC_Err1 = N_PRC_MsgOff + 4  ; Reject bei Messende
+        CASE 5
+          N_PRC_Err1 = N_PRC_MsgOff + 5  ; Reject+Trend bei Messende
+        CASE 6
+          N_PRC_Err1 = N_PRC_MsgOff + 6  ; Reject+Spec bei Messende
+        CASE 7
+          N_PRC_Err1 = N_PRC_MsgOff + 7  ; Reject+Trend+Spec bei Messende
+        CASE 8,9,10,11,12,13,14,15
+          N_PRC_Err1   = 1154   ; Robot 1 VF Toleranz
+          ;N_PRC_Err1 = N_PRC_MsgOff + 8   ; Error bei Messende
+        CASE 16
+          N_PRC_Err1   = 1155   ; Robot 2 SensorError
+        CASE 32
+          N_PRC_Err1   = 1156   ; Robot 2 SensorToleranz
+        CASE 48
+          N_PRC_Err1 = N_PRC_MsgOff + 3  ; Robot 2 Trend+Spec bei Messende
+        CASE 64
+          N_PRC_Err1   = 1157   ; Robot 2 VF Error
+        CASE 80
+          N_PRC_Err1 = N_PRC_MsgOff + 5  ; Robot 2 Reject+Trend bei Messende
+        CASE 96
+          N_PRC_Err1 = N_PRC_MsgOff + 6  ; Robot 2 Reject+Spec bei Messende
+        CASE 112
+           N_PRC_Err1 = N_PRC_MsgOff + 7  ; Robot 2 Reject+Trend+Spec bei Messende
+        CASE 128, 144, 160, 176, 192, 208, 224, 240
+          N_PRC_Err1   = 1158   ; Robot 2 VF Toleranz
+        DEFAULT
+          N_PRC_Err1   = N_PRC_MsgOff + 36         ; Ungueltiger Par1 bei Messende
+          B_PRC_MsgFlg = TRUE
+      ENDSWITCH
+    CASE 1002 ; AutoGuide  ; Hauptgruppe 9, Untergruppe 2
+      SWITCH N_PRC_KennAck
+        CASE 0 ; Messung Ende
+        CASE 4
+          N_PRC_Err1   = N_PRC_MsgOff + 24         ; Messung ist nicht gestartet
+          B_PRC_MsgFlg = TRUE
+          RETURN
+        DEFAULT
+          N_PRC_Err1   = N_PRC_MsgOff + 43         ; Parameter-Kennung nicht definiert
+          B_PRC_MsgFlg = TRUE
+          RETURN
+      ENDSWITCH
+      SWITCH N_PRC_P1Ack
+        CASE 0                              ; alles ok
+          N_PRC_Err1   = N_PRC_MsgOff
+        CASE 1
+          N_PRC_Err1   = 1151   ; Robot 1 SensorError
+        CASE 2
+          N_PRC_Err1   = 1152   ; Robot 1 SensorToleranz
+        CASE 4
+          N_PRC_Err1   = 1153   ; Robot 1 VF Error
+        CASE 8
+          N_PRC_Err1   = 1154   ; Robot 1 VF Toleranz
+        CASE 16
+          N_PRC_Err1   = 1155   ; Robot 2 SensorError
+        CASE 32
+          N_PRC_Err1   = 1156   ; Robot 2 SensorToleranz
+        CASE 64
+          N_PRC_Err1   = 1157   ; Robot 2 VF Error
+        CASE 128
+          N_PRC_Err1   = 1158   ; Robot 2 VF Toleranz
+        DEFAULT
+          IF N_PRC_P1Ack < 16 THEN
+            N_PRC_Err1   = 1159  ; Rob 1 mehrere Fehler
+            B_PRC_MsgFlg = TRUE
+          ELSE
+            IF N_PRC_P1Ack < 256 THEN
+              N_PRC_Err1   = 1160  ; Rob 2 mehrere Fehler
+              B_PRC_MsgFlg = TRUE
+            ELSE
+              N_PRC_Err1   = N_PRC_MsgOff + 36 ; Ungueltiger Par1 bei Messende
+              B_PRC_MsgFlg = TRUE
+            ENDIF
+          ENDIF
+      ENDSWITCH
+    CASE 1003                 ; AutoGauge  ; Hauptgruppe 9, Untergruppe 3
+  ENDSWITCH
+END
+;
+  ;ENDFOLD (Messung Beenden)
+;
+  ;FOLD Kommunikations Routinen
+;
+DEF PRC_SendeKanalOeffnen()
+  ;PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+  $TIMER[N_PRC_Tm1Nr] = (-1000 * N_PRC_Tm1)
+  IF NOT B_PRC_Debug THEN
+    $TIMER_STOP[N_PRC_Tm1Nr] = FALSE
+  ENDIF
+  WAIT FOR (NOT(I_PRC_DaSend) OR $timer_flag[N_PRC_Tm1Nr])
+  ;PRC_StopTimer(N_PRC_Tm1Nr)
+  $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+  IF $timer_flag[N_PRC_Tm1Nr] THEN
+    B_PRC_MsgFlg = TRUE
+    N_PRC_Err1   = N_PRC_MsgOff + 1   ; Timeout beim PRC_SendeKanalOeffnen
+  ELSE
+    N_PRC_Err1   = N_PRC_MsgOff
+    O_PRC_DaSend = TRUE
+    B_PRC_MsgFlg = FALSE
+  ENDIF
+END
+;
+DEFFCT BOOL PRC_DatenSenden()
+  N_PRC_Err1  = N_PRC_MsgOff
+  O_PRC_DaNew = TRUE
+  ;PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+  $TIMER[N_PRC_Tm1Nr] = (-1000 * N_PRC_Tm1)
+  IF NOT B_PRC_Debug THEN
+    $TIMER_STOP[N_PRC_Tm1Nr] = FALSE
+  ENDIF
+  WAIT FOR (I_PRC_DaAck OR $timer_flag[N_PRC_Tm1Nr])
+  ;PRC_StopTimer(N_PRC_Tm1Nr)
+  $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+  IF $timer_flag[N_PRC_Tm1Nr] THEN
+    N_PRC_Err1   = N_PRC_MsgOff + 17   ; timeout beim PRC_DatenSenden
+    GOTO FctErr
+  ENDIF
+  IF NOT((I_PRC_Data1==O_PRC_Data1) OR (I_PRC_Data2==O_PRC_Data2) OR (I_PRC_Data3==O_PRC_Data3) OR (I_PRC_Data4==O_PRC_Data4) OR (I_PRC_Data5==O_PRC_Data5) OR (I_PRC_Data6==O_PRC_Data6)) THEN
+    N_PRC_Err1 = N_PRC_MsgOff + 18   ; Daten und gespiegelte daten nicht gleich beim PRC_DatenSenden
+    GOTO FctErr
+  ENDIF
+  O_PRC_DaNew = FALSE
+  ;PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+  $TIMER[N_PRC_Tm1Nr] = (-1000 * N_PRC_Tm1)
+  IF NOT B_PRC_Debug THEN
+    $TIMER_STOP[N_PRC_Tm1Nr] = FALSE
+  ENDIF
+  WAIT FOR (NOT(I_PRC_DaAck) OR $timer_flag[N_PRC_Tm1Nr])
+  ;PRC_StopTimer(N_PRC_Tm1Nr)
+  $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+  O_PRC_Data1 = 0
+  O_PRC_Data2 = 0
+  O_PRC_Data3 = 0
+  O_PRC_Data4 = 0
+  O_PRC_Data5 = 0
+  O_PRC_Data6 = 0
+  IF $timer_flag[N_PRC_Tm1Nr] THEN
+    N_PRC_Err1 = N_PRC_MsgOff + 17   ; timeout beim PRC_DatenSenden
+    GOTO FctErr
+  ENDIF
+  RETURN(TRUE)
+FctErr:
+  O_PRC_DaNew  = FALSE
+  O_PRC_DaSend = FALSE
+  B_PRC_MsgFlg = TRUE
+  RETURN(FALSE)
+ENDFCT
+;
+DEF PRC_SendeKanalSchliessen()
+  O_PRC_DaComp = TRUE
+  ;PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+  $TIMER[N_PRC_Tm1Nr] = (-1000 * N_PRC_Tm1)
+  IF NOT B_PRC_Debug THEN
+    $TIMER_STOP[N_PRC_Tm1Nr] = FALSE
+  ENDIF
+  WAIT FOR (I_PRC_DaComp OR $timer_flag[N_PRC_Tm1Nr])
+  ;PRC_StopTimer(N_PRC_Tm1Nr)
+  $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+  O_PRC_DaComp = FALSE
+  O_PRC_DaSend = FALSE
+  IF $timer_flag[N_PRC_Tm1Nr] THEN
+    N_PRC_Err1   = N_PRC_MsgOff + 2   ; Timeout beim warten auf I_PRC_DaComp
+    B_PRC_MsgFlg = TRUE
+  ELSE
+    ;PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+    $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+    $TIMER[N_PRC_Tm1Nr] = (-1000 * N_PRC_Tm1)
+    IF NOT B_PRC_Debug THEN
+      $TIMER_STOP[N_PRC_Tm1Nr] = FALSE
+    ENDIF
+    WAIT FOR (NOT(I_PRC_DaComp) OR $timer_flag[N_PRC_Tm1Nr])
+    ;PRC_StopTimer(N_PRC_Tm1Nr)
+    $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+    IF $timer_flag[N_PRC_Tm1Nr] THEN
+      N_PRC_Err1   = N_PRC_MsgOff + 3   ; Timeout beim warten auf nicht I_PRC_DaComp
+      B_PRC_MsgFlg = TRUE
+    ENDIF
+  ENDIF
+END
+;
+DEFFCT BOOL PRC_EmpfangsKanalOeffnen()
+  O_PRC_DaSend = FALSE
+  PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  WAIT FOR (I_PRC_DaSend OR $timer_flag[N_PRC_Tm1Nr])
+  PRC_StopTimer(N_PRC_Tm1Nr)
+  IF $timer_flag[N_PRC_Tm1Nr] THEN
+    N_PRC_Err1 = N_PRC_MsgOff + 26    ; Timeout beim warten auf I_PRC_DaSend
+    RETURN(FALSE)
+  ENDIF
+  RETURN(TRUE)
+ENDFCT
+;
+DEFFCT BOOL PRC_DatenEmpfangen ()
+INT DATEN_NR
+  DATEN_NR = 0
+  REPEAT
+    PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+    WAIT FOR (I_PRC_DaNew OR I_PRC_DaComp OR $timer_flag[N_PRC_Tm1Nr])
+    PRC_StopTimer(N_PRC_Tm1Nr)
+    IF $timer_flag[N_PRC_Tm1Nr] THEN
+      N_PRC_Err1   = N_PRC_MsgOff + 27  ; Timeout beim warten auf I_PRC_DaNew
+      B_PRC_MsgFlg = TRUE
+      RETURN(FALSE)
+    ENDIF
+    IF I_PRC_DaNew THEN
+      DATEN_NR = DATEN_NR + 1
+      PRC_EmpfangsKanalLesen(DATEN_NR)
+      O_PRC_DaAck = TRUE
+      PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+      WAIT FOR (NOT(I_PRC_DaNew) OR $timer_flag[N_PRC_Tm1Nr])
+      PRC_StopTimer(N_PRC_Tm1Nr)
+      O_PRC_DaAck = FALSE
+      IF $timer_flag[N_PRC_Tm1Nr] THEN
+        N_PRC_Err1   = N_PRC_MsgOff + 28  ; Timeout beim warten auf nicht I_PRC_DaNew
+        B_PRC_MsgFlg = TRUE
+        RETURN(FALSE)
+      ENDIF
+    ENDIF
+  UNTIL I_PRC_DaComp
+  RETURN(TRUE)
+ENDFCT
+;
+DEF PRC_EmpfangsKanalLesen(DATEN_NR:IN)
+INT DATEN_NR
+  NA_PRC_Data[DATEN_NR,1] = I_PRC_Data1  ; Byte1
+  NA_PRC_Data[DATEN_NR,2] = I_PRC_Data2  ; Byte2
+  NA_PRC_Data[DATEN_NR,3] = I_PRC_Data3  ; Byte3
+  NA_PRC_Data[DATEN_NR,4] = I_PRC_Data4  ; Byte4
+  NA_PRC_Data[DATEN_NR,5] = I_PRC_Data5  ; Byte5
+  NA_PRC_Data[DATEN_NR,6] = I_PRC_Data6  ; Byte6
+  O_PRC_Data1 = NA_PRC_Data[DATEN_NR,1]  ; spiegeln Byte1
+  O_PRC_Data2 = NA_PRC_Data[DATEN_NR,2]  ; spiegeln Byte2
+  O_PRC_Data3 = NA_PRC_Data[DATEN_NR,3]  ; spiegeln Byte3
+  O_PRC_Data4 = NA_PRC_Data[DATEN_NR,4]  ; spiegeln Byte4
+  O_PRC_Data5 = NA_PRC_Data[DATEN_NR,5]  ; spiegeln Byte5
+  O_PRC_Data6 = NA_PRC_Data[DATEN_NR,6]  ; spiegeln Byte6
+END
+;
+DEF PRC_EmpfKanalSchliessen()
+  O_PRC_Data1  = 0
+  O_PRC_Data2  = 0
+  O_PRC_Data3  = 0
+  O_PRC_Data4  = 0
+  O_PRC_Data5  = 0
+  O_PRC_Data6  = 0
+  O_PRC_DaComp = TRUE
+  PRC_StartTimer(N_PRC_Tm1Nr,N_PRC_Tm1)
+  WAIT FOR (NOT(I_PRC_DaComp) OR $timer_flag[N_PRC_Tm1Nr])
+  PRC_StopTimer(N_PRC_Tm1Nr)
+  O_PRC_DaComp = FALSE
+  IF $timer_flag[N_PRC_Tm1Nr] THEN
+    ; hier keine Fehlermeldung!!
+  ENDIF
+END
+;
+DEF PRC_EmpfDatenAuswerten()
+  N_PRC_KennAck = NA_PRC_Data[1,2]
+  N_PRC_IDAck   = NA_PRC_Data[1,1]
+  N_PRC_P1Ack   = NA_PRC_Data[1,4] * 255 + NA_PRC_Data[1,3]
+  N_PRC_P2Ack   = NA_PRC_Data[1,6] * 255 + NA_PRC_Data[1,5]
+  PRC_ConvBytes2Real(NA_PRC_Data[2,1],NA_PRC_Data[2,2],NA_PRC_Data[2,3],NA_PRC_Data[2,4],VF_PRC_Sen.X)
+  PRC_ConvBytes2Real(NA_PRC_Data[2,5],NA_PRC_Data[2,6],NA_PRC_Data[3,1],NA_PRC_Data[3,2],VF_PRC_Sen.Y)
+  PRC_ConvBytes2Real(NA_PRC_Data[3,3],NA_PRC_Data[3,4],NA_PRC_Data[3,5],NA_PRC_Data[3,6],VF_PRC_Sen.Z)
+  PRC_ConvBytes2Real(NA_PRC_Data[4,1],NA_PRC_Data[4,2],NA_PRC_Data[4,3],NA_PRC_Data[4,4],VF_PRC_Sen.A)
+  PRC_ConvBytes2Real(NA_PRC_Data[4,5],NA_PRC_Data[4,6],NA_PRC_Data[5,1],NA_PRC_Data[5,2],VF_PRC_Sen.B)
+  PRC_ConvBytes2Real(NA_PRC_Data[5,3],NA_PRC_Data[5,4],NA_PRC_Data[5,5],NA_PRC_Data[5,6],VF_PRC_Sen.C)
+END
+;
+DEF PRC_StartTimer(nTimerNr:IN,nTime:IN)
+INT nTime
+INT nTimerNr
+  $TIMER_STOP[nTimerNr] = TRUE
+  $TIMER[nTimerNr] = (-1000 * nTime)
+  IF NOT B_PRC_Debug THEN
+    $TIMER_STOP[nTimerNr] = FALSE
+  ENDIF
+END
+;
+DEF PRC_StopTimer(nTimerNr:IN)
+INT nTimerNr
+  $TIMER_STOP[nTimerNr] = TRUE
+END
+;
+DEF  PRC_ConvBytes2Real (nVal4 :IN,nVal3 :IN,nVal2 :IN,nVal1 :IN,rVal :OUT )
+REAL rVal
+INT  nVal1
+INT  nVal2
+INT  nVal3
+INT  nVal4
+BOOL NEG
+  NEG = FALSE
+  IF nVal1 > 127 THEN
+    nVal1 = 255 - nVal1
+    nVal2 = 255 - nVal2
+    nVal3 = 255 - nVal3
+    nVal4 = 255 - nVal4
+    NEG = TRUE
+  ENDIF
+  rVal = nVal1
+  rVal = rVal * 256 + nVal2
+  rVal = rVal * 256 + nVal3
+  rVal = rVal * 256 + nVal4
+  IF NEG THEN
+    rVal =-(rVal + 1)
+  ENDIF
+  rVal = rVal / 100000
+END
+;
+DEF PRC_ConvWort2Byte(NWORD:IN,nByte1:OUT,nByte2:OUT)
+INT NWORD
+INT nByte1
+INT nByte2
+  nByte1 = (NWORD B_AND 65280) / 256
+  nByte2 =  NWORD B_AND 255
+END
+;
+DEF  PRC_ConvReal2Bytes (rVal :IN,nVal1 :OUT,nVal2 :OUT,nVal3 :OUT,nVal4 :OUT )
+REAL rVal
+INT  nVal1
+INT  nVal2
+INT  nVal3
+INT  nVal4
+INT  nDWort
+  nDWort = rVal * 100000
+  IF rVal < 0 THEN
+   if nDWort < 0 then
+     nDWort = (-1* nDWort) -1
+   else
+     nDWort = nDWort - 1
+   endif
+;alt2    nDWort = sqrt(nDWort*nDWort) -1
+;   nDWort = ABS(nDWort) - 1
+  ENDIF
+  nVal4  = nDWort B_AND 255
+  nDWort = nDWort / 256
+  nVal3  = nDWort B_AND 255
+  nDWort = nDWort / 256
+  nVal2  = nDWort B_AND 255
+  nDWort = nDWort / 256
+  nVal1  = nDWort B_AND 255
+  nDWort = nDWort / 256
+  IF nDWort >= 1 THEN
+    ;Wert zu gross
+  ENDIF
+  IF rVal < 0 THEN
+    nVal1 = 255 - nVal1
+    nVal2 = 255 - nVal2
+    nVal3 = 255 - nVal3
+    nVal4 = 255 - nVal4
+  ENDIF
+END
+;
+DEF  PRC_Send3Real (rVal01 :IN,rVal02 :IN,rVal03 :IN )
+REAL rVal01
+REAL rVal02
+REAL rVal03
+INT  nByte01
+INT  nByte02
+INT  nByte03
+INT  nByte04
+INT  nByte05
+INT  nByte06
+INT  nByte07
+INT  nByte08
+INT  nByte09
+INT  nByte10
+INT  nByte11
+INT  nByte12
+  PRC_ConvReal2Bytes(rVal01,nByte01,nByte02,nByte03,nByte04 )
+  PRC_ConvReal2Bytes(rVal02,nByte05,nByte06,nByte07,nByte08 )
+  PRC_ConvReal2Bytes(rVal03,nByte09,nByte10,nByte11,nByte12 )
+  PRC_Send6Byte(nByte01,nByte02,nByte03,nByte04,nByte05,nByte06 )
+  PRC_Send6Byte(nByte07,nByte08,nByte09,nByte10,nByte11,nByte12 )
+END
+;
+DEF  PRC_Send6Byte (nVal01 :IN,nVal02 :IN,nVal03 :IN,nVal04 :IN,nVal05 :IN,nVal06 :IN )
+INT nVal01
+INT nVal02
+INT nVal03
+INT nVal04
+INT nVal05
+INT nVal06
+  O_PRC_Data1 = nVal02
+  O_PRC_Data2 = nVal01
+  O_PRC_Data3 = nVal04
+  O_PRC_Data4 = nVal03
+  O_PRC_Data5 = nVal06
+  O_PRC_Data6 = nVal05
+
+; DEFFCT BOOL PRC_DatenSenden()
+  N_PRC_Err1  = N_PRC_MsgOff
+  O_PRC_DaNew = TRUE
+  $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+  $TIMER[N_PRC_Tm1Nr] = (-1000 * N_PRC_Tm1)
+  IF NOT B_PRC_Debug THEN
+    $TIMER_STOP[N_PRC_Tm1Nr] = FALSE
+  ENDIF
+  WAIT FOR (I_PRC_DaAck OR $timer_flag[N_PRC_Tm1Nr])
+   $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+  IF $timer_flag[N_PRC_Tm1Nr] THEN
+    N_PRC_Err1   = N_PRC_MsgOff + 17   ; timeout beim PRC_DatenSenden
+    GOTO DataSendErr
+  ENDIF
+  IF NOT((I_PRC_Data1==O_PRC_Data1) OR (I_PRC_Data2==O_PRC_Data2) OR (I_PRC_Data3==O_PRC_Data3) OR (I_PRC_Data4==O_PRC_Data4) OR (I_PRC_Data5==O_PRC_Data5) OR (I_PRC_Data6==O_PRC_Data6)) THEN
+    N_PRC_Err1 = N_PRC_MsgOff + 18   ; Daten und gespiegelte daten nicht gleich beim PRC_DatenSenden
+    GOTO DataSendErr
+  ENDIF
+  O_PRC_DaNew = FALSE
+  $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+  $TIMER[N_PRC_Tm1Nr] = (-1000 * N_PRC_Tm1)
+  IF NOT B_PRC_Debug THEN
+    $TIMER_STOP[N_PRC_Tm1Nr] = FALSE
+  ENDIF
+  WAIT FOR (NOT(I_PRC_DaAck) OR $timer_flag[N_PRC_Tm1Nr])
+  $TIMER_STOP[N_PRC_Tm1Nr] = TRUE
+  O_PRC_Data1 = 0
+  O_PRC_Data2 = 0
+  O_PRC_Data3 = 0
+  O_PRC_Data4 = 0
+  O_PRC_Data5 = 0
+  O_PRC_Data6 = 0
+  IF $timer_flag[N_PRC_Tm1Nr] THEN
+    N_PRC_Err1 = N_PRC_MsgOff + 17   ; timeout beim PRC_DatenSenden
+    GOTO DataSendErr
+  ENDIF
+  RETURN
+DataSendErr:
+  O_PRC_DaNew  = FALSE
+  O_PRC_DaSend = FALSE
+  B_PRC_MsgFlg = TRUE
+  RETURN
+END
+;
+DEF PRC_SendInfo (nID:IN,nPar1:IN,nPar2:IN)
+INT nID
+INT nPar1
+INT nPar2
+INT nByte1
+INT nByte2
+INT  nByte01
+INT  nByte02
+INT  nByte03
+INT  nByte04
+INT  nByte05
+INT  nByte06
+INT  nByte07
+INT  nByte08
+INT  nByte09
+INT  nByte10
+INT  nByte11
+INT  nByte12
+
+  PRC_SendeKanalOeffnen()
+  IF N_PRC_Err1 == N_PRC_MsgOff THEN
+    O_PRC_Data2 = 0
+    O_PRC_Data1 = nID
+    PRC_ConvWort2Byte(nPar1,nByte1,nByte2)   ; Modell HL Byte gedreht!!!
+    O_PRC_Data3 = nByte2
+    O_PRC_Data4 = nByte1
+    PRC_ConvWort2Byte(nPar2,nByte1,nByte2)   ; Sequenz HL Byte gedreht!!!
+    O_PRC_Data5 = nByte2
+    O_PRC_Data6 = nByte1
+    IF NOT PRC_DatenSenden() THEN
+      RETURN
+    ENDIF
+    ;PRC_Send3Real($POS_ACT.X,$POS_ACT.Y,$POS_ACT.Z )
+    PRC_ConvReal2Bytes($POS_ACT.X,nByte01,nByte02,nByte03,nByte04 )
+    PRC_ConvReal2Bytes($POS_ACT.Y,nByte05,nByte06,nByte07,nByte08 )
+    PRC_ConvReal2Bytes($POS_ACT.Z,nByte09,nByte10,nByte11,nByte12 )
+    PRC_Send6Byte(nByte01,nByte02,nByte03,nByte04,nByte05,nByte06 )
+    PRC_Send6Byte(nByte07,nByte08,nByte09,nByte10,nByte11,nByte12 )
+    ;PRC_Send3Real($POS_ACT.A,$POS_ACT.B,$POS_ACT.C )
+    PRC_ConvReal2Bytes($POS_ACT.A,nByte01,nByte02,nByte03,nByte04 )
+    PRC_ConvReal2Bytes($POS_ACT.B,nByte05,nByte06,nByte07,nByte08 )
+    PRC_ConvReal2Bytes($POS_ACT.C,nByte09,nByte10,nByte11,nByte12 )
+    PRC_Send6Byte(nByte01,nByte02,nByte03,nByte04,nByte05,nByte06 )
+    PRC_Send6Byte(nByte07,nByte08,nByte09,nByte10,nByte11,nByte12 )
+    ;PRC_Send3Real($AXIS_ACT.A1,$AXIS_ACT.A2,$AXIS_ACT.A3 )
+    PRC_ConvReal2Bytes($AXIS_ACT.A1,nByte01,nByte02,nByte03,nByte04 )
+    PRC_ConvReal2Bytes($AXIS_ACT.A2,nByte05,nByte06,nByte07,nByte08 )
+    PRC_ConvReal2Bytes($AXIS_ACT.A3,nByte09,nByte10,nByte11,nByte12 )
+    PRC_Send6Byte(nByte01,nByte02,nByte03,nByte04,nByte05,nByte06 )
+    PRC_Send6Byte(nByte07,nByte08,nByte09,nByte10,nByte11,nByte12 )
+    ;PRC_Send3Real($AXIS_ACT.A4,$AXIS_ACT.A5,$AXIS_ACT.A6 )
+    PRC_ConvReal2Bytes($AXIS_ACT.A4,nByte01,nByte02,nByte03,nByte04 )
+    PRC_ConvReal2Bytes($AXIS_ACT.A5,nByte05,nByte06,nByte07,nByte08 )
+    PRC_ConvReal2Bytes($AXIS_ACT.A6,nByte09,nByte10,nByte11,nByte12 )
+    PRC_Send6Byte(nByte01,nByte02,nByte03,nByte04,nByte05,nByte06 )
+    PRC_Send6Byte(nByte07,nByte08,nByte09,nByte10,nByte11,nByte12 )
+    ;PRC_Send3Real($BASE.X,$BASE.Y,$BASE.Z )
+    PRC_ConvReal2Bytes($BASE.X,nByte01,nByte02,nByte03,nByte04 )
+    PRC_ConvReal2Bytes($BASE.Y,nByte05,nByte06,nByte07,nByte08 )
+    PRC_ConvReal2Bytes($BASE.Z,nByte09,nByte10,nByte11,nByte12 )
+    PRC_Send6Byte(nByte01,nByte02,nByte03,nByte04,nByte05,nByte06 )
+    PRC_Send6Byte(nByte07,nByte08,nByte09,nByte10,nByte11,nByte12 )
+    ;PRC_Send3Real($BASE.A,$BASE.B,$BASE.C )
+    PRC_ConvReal2Bytes($BASE.A,nByte01,nByte02,nByte03,nByte04 )
+    PRC_ConvReal2Bytes($BASE.B,nByte05,nByte06,nByte07,nByte08 )
+    PRC_ConvReal2Bytes($BASE.C,nByte09,nByte10,nByte11,nByte12 )
+    PRC_Send6Byte(nByte01,nByte02,nByte03,nByte04,nByte05,nByte06 )
+    PRC_Send6Byte(nByte07,nByte08,nByte09,nByte10,nByte11,nByte12 )
+    ;PRC_Send3Real($TOOL.X,$TOOL.Y,$TOOL.Z )
+    PRC_ConvReal2Bytes($TOOL.X,nByte01,nByte02,nByte03,nByte04 )
+    PRC_ConvReal2Bytes($TOOL.Y,nByte05,nByte06,nByte07,nByte08 )
+    PRC_ConvReal2Bytes($TOOL.Z,nByte09,nByte10,nByte11,nByte12 )
+    PRC_Send6Byte(nByte01,nByte02,nByte03,nByte04,nByte05,nByte06 )
+    PRC_Send6Byte(nByte07,nByte08,nByte09,nByte10,nByte11,nByte12 )
+    ;PRC_Send3Real($TOOL.A,$TOOL.B,$TOOL.C )
+    PRC_ConvReal2Bytes($TOOL.A,nByte01,nByte02,nByte03,nByte04 )
+    PRC_ConvReal2Bytes($TOOL.B,nByte05,nByte06,nByte07,nByte08 )
+    PRC_ConvReal2Bytes($TOOL.C,nByte09,nByte10,nByte11,nByte12 )
+    PRC_Send6Byte(nByte01,nByte02,nByte03,nByte04,nByte05,nByte06 )
+    PRC_Send6Byte(nByte07,nByte08,nByte09,nByte10,nByte11,nByte12 )
+    PRC_SendeKanalSchliessen()
+  ENDIF
+END
+;
+  ;ENDFOLD (Kommunikations Routinen)
+;
+  ;FOLD CheckMaxVF
+;
+DEFFCT  BOOL PRC_CheckMaxVF(BP :IN)
+FRAME BP
+  IF ((BP.X<=VF_PRC_Max.X) AND (BP.Y<=VF_PRC_Max.Y) AND (BP.Z<=VF_PRC_Max.Z) AND (BP.A<=VF_PRC_Max.A) AND (BP.B<=VF_PRC_Max.B) AND (BP.C<=VF_PRC_Max.C)) THEN
+    IF ((BP.X>=VF_PRC_Min.X) AND (BP.Y>=VF_PRC_Min.Y) AND (BP.Z>=VF_PRC_Min.Z) AND (BP.A>=VF_PRC_Min.A) AND (BP.B>=VF_PRC_Min.B) AND (BP.C>=VF_PRC_Min.C)) THEN
+      RETURN  (TRUE)
+    ELSE
+      N_PRC_Err1 = 1019
+      RETURN(FALSE)
+    ENDIF
+  ELSE
+    N_PRC_Err1 = 1020
+    RETURN  (FALSE)
+  ENDIF
+ENDFCT
+  ;ENDFOLD (CheckMaxVF)
+;
+  ;FOLD CheckParameter
+;
+DEFFCT INT PRC_CheckParams(TYP :IN,SUBTYP :IN, NR :IN,WIEDERHOLUNG :IN)
+INT TYP
+INT SUBTYP
+INT NR
+INT WIEDERHOLUNG
+  IF ((TYP < 0) OR (TYP > 255)) THEN
+    RETURN(904)   ;USER PAR2 ungueltig (0-255)  z.B. Modellnummer
+  ENDIF
+  IF ((SUBTYP < 0) OR (SUBTYP > 65535)) THEN
+    RETURN(905)   ;USER PAR3 ungueltig (0-65535)     Z.B. Routine
+  ENDIF
+  IF ((NR < 0) OR (NR > 65535)) THEN
+    RETURN(906)   ;USER PAR4 ungueltig (0-65535)      z.B. Punkt Nr.
+  ENDIF
+  IF (WIEDERHOLUNG < 0) OR (WIEDERHOLUNG >255) THEN
+    RETURN(907)   ;USER PAR6 ungueltig (0-255)       z.B. Wiederholungen
+  ENDIF
+  RETURN(0)
+ENDFCT
+;
+  ;ENDFOLD (CheckParameter)
+;
+  ;FOLD PRC_DebugDlg
+;
+DEF PRC_DebugDlg(nNr:IN,rPar1:IN,rPar2:IN)
+INT  nNr
+INT  nPar1
+INT  nPar2
+REAL rPar1
+REAL rPar2
+  IF varState("rPar1") <> #Initialized THEN
+    rPar1 = 0
+  ENDIF
+  IF varState("rPar2") <> #Initialized THEN
+    rPar2 = 0
+  ENDIF
+  nPar1 = rPar1
+  nPar2 = rPar2
+  IF (B_PRC_Debug == TRUE) AND (($mode_op == #T1) OR ($mode_op == #T2)) THEN
+    B_PRC_MsgKri = TRUE
+    IF B_PRC_DebugH THEN
+      N_PRC_Ret1 = PRC_MsgErr(#DlgMsg,nNr,nPar1,nPar2)
+    ELSE
+      N_PRC_Ret1 = PRC_MsgErr(#NotifyMsg,nNr,nPar1,nPar2)
+    ENDIF
+  ENDIF
+  IF B_PRC_DebugH THEN
+    HALT
+  ENDIF
+END
+;
+  ;ENDFOLD (PRC_DebugDlg)
+;
+  ;FOLD Ausgabe Roboter bewegt sich an Perceptron
+;
+DEF PRC_Move(PRC_Move: IN)
+INT PRC_Move
+  SWITCH PRC_Move
+    CASE 1
+      O_PRC_RobBwg = TRUE
+    CASE 2
+      O_PRC_RobBwg = FALSE
+  ENDSWITCH
+END
+;
+  ;ENDFOLD (Ausgabe Roboter bewegt sich an Perceptron)
+;
+    ;ENDFOLD (Perceptron Lokale Unterprogramme)
+;
+;Meldungsart:
+;In Automatik duerfen nur NIO-Meldungen ausgegeben werden
+;In Single-Step alle wichtigen Meldungen
+;In Single-Step + Debugger-Flag alle Meldungen
+;
+;FOLD Perceptron Meldungen
+DEFFCT INT PRC_MsgErr (MSG_TYP:IN, MSG_NR:IN, rPar :IN, nPar:IN)
+DECL Real          rPar
+DECL INT           MSG_NR
+DECL INT           nPar
+DECL INT           OFFSET
+DECL PRC_MsgType   MSG_TYP
+DECL STATE_T       STATE
+DECL KRLMSG_T      USER_MSG
+DECL KRLMSGPAR_T   PAR[3]
+DECL KRLMSGOPT_T   OPT
+DECL KrlMsgDlgSK_T SK[7]
+DECL Char          sMeldFunction[80]
+DECL INT           nTmp
+DECL INT           nDlgHandle
+DECL INT           nDlgAnswer
+  IF ($mode_op <> #T1) AND ($mode_op <> #T2) AND (NOT B_PRC_MsgKri) THEN
+    RETURN(1)
+  ENDIF
+  B_PRC_MsgKri = FALSE
+  IF (MSG_NR == 0) OR (MSG_NR == 50) OR (MSG_NR == 100) OR (MSG_NR == 200) OR (MSG_NR == 250) OR (MSG_NR == 300) OR (MSG_NR == 400) OR (MSG_NR == 500) OR (MSG_NR == 600) OR (MSG_NR == 700) OR (MSG_NR == 800) OR (MSG_NR == 900) OR (MSG_NR == 1000) OR (MSG_NR == 1100) THEN
+    IF B_PRC_Debug == FALSE THEN
+      RETURN(1)
+    ENDIF
+  ENDIF
+;
+  ;FOLD Init
+;
+  IF varState("rPar") <> #INITIALIZED THEN
+  	 rPar = -1
+  ENDIF
+  IF varState("nPar") <> #INITIALIZED THEN
+  	 nPar = -1
+  ENDIF
+  USER_MSG         = { Modul[] "PRC_MsgErr", Nr 1, Msg_txt[] " "}
+  Par[1]           = { Par_type #Value, Par_txt[] " " }
+  Opt              = { VL_Stop TRUE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+  FOR nTmp = 1 TO 7
+    SK[nTmp] = {Sk_Type #Empty}
+  ENDFOR
+  ;ENDFOLD (Init)
+;
+  ;FOLD	Fehler Funktion
+;
+  sMeldFunction[] = "Unbekannt - "
+  IF ((MSG_NR >= 1) AND (MSG_NR <= 49)) THEN
+  	sMeldFunction[] = "Debug - "
+  ENDIF
+  IF ((MSG_NR >= 50) AND (MSG_NR <= 99)) THEN
+  	sMeldFunction[] = "Sync - "
+  ENDIF
+  IF ((MSG_NR >= 100) AND (MSG_NR <= 199)) THEN
+  	sMeldFunction[] = "Messstart - "
+  ENDIF
+  IF ((MSG_NR >= 200) AND (MSG_NR <= 249)) THEN
+  	sMeldFunction[] = "Punktmessung - "
+  ENDIF
+  IF ((MSG_NR >= 250) AND (MSG_NR <= 299)) THEN
+  	sMeldFunction[] = "Scanning - "
+  ENDIF
+  IF ((MSG_NR >= 300) AND (MSG_NR <= 399)) THEN
+  	sMeldFunction[] = "Statusanforderung - "
+  ENDIF
+  IF ((MSG_NR >= 400) AND (MSG_NR <= 499)) THEN
+  	sMeldFunction[] = "Messende - "
+  ENDIF
+  IF ((MSG_NR >= 500) AND (MSG_NR <= 599)) THEN
+  	sMeldFunction[] = "Reset - "
+  ENDIF
+  IF ((MSG_NR >= 600) AND (MSG_NR <= 699)) THEN
+  	sMeldFunction[] = "Sensortausch - "
+  ENDIF
+  IF ((MSG_NR >= 700) AND (MSG_NR <= 799)) THEN
+  	sMeldFunction[] = "Robotertausch - "
+  ENDIF
+  IF ((MSG_NR >= 800) AND (MSG_NR <= 899)) THEN
+  	sMeldFunction[] = "Hole UP-Nr - "
+  ENDIF
+  IF ((MSG_NR >= 900) AND (MSG_NR <= 999)) THEN
+  	sMeldFunction[] = "Ungueltige Parameter - "
+  ENDIF
+  IF ((MSG_NR >= 1000) AND (MSG_NR <= 1099)) THEN
+  	sMeldFunction[] = "Hole Korrektur - "
+  ENDIF
+  IF ((MSG_NR >= 1100) AND (MSG_NR <= 1199)) THEN
+  	sMeldFunction[] = "Alarme - "
+  ENDIF
+  IF (MSG_NR == 9000) THEN
+  	sMeldFunction[] = "Version - "
+  ENDIF
+;
+  ;FOLD (Fehler Funktion)
+;
+  ;FOLD Meldungs-Nr
+;
+  OFFSET  = 0
+  nTmp    = rPar
+  SK[1]   = {Sk_Type #Value,Sk_Txt[] "Weiter"}
+  SWITCH MSG_NR
+;	Fehler (Debug)
+    CASE 1
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Status %d",nTmp)
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 2
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Modell %d",nTmp)
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 3
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Punkt %d",nTmp)
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 4
+      USER_MSG.MSG_TXT[] = "Messende"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 5
+      USER_MSG.MSG_TXT[] = "Sensortausch"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 6
+      USER_MSG.MSG_TXT[] = "StartMessung"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 7
+      USER_MSG.MSG_TXT[] = "Korrekturwerte holen"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 8
+      USER_MSG.MSG_TXT[] = "Korrekturwerte setzen"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 9
+      USER_MSG.MSG_TXT[] = "System Reset"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 10
+      USER_MSG.MSG_TXT[] = "Robotertausch"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 11
+      USER_MSG.MSG_TXT[] = "Messstart von SPS"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 16
+      USER_MSG.MSG_TXT[] = "Senspruef: StartMessung"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 23
+      USER_MSG.MSG_TXT[] = "System im Kalibiriermodus"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 24
+      USER_MSG.MSG_TXT[] = "Hole UP Nr."
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 25
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Modell %d , Routine %d",nTmp,nPar)
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 26
+      USER_MSG.MSG_TXT[] = "Toolfinder: StartMessung"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+;	Fehler (Init)
+    CASE 50
+  		USER_MSG.MSG_TXT[] = "Erfolgreich"
+    CASE 51
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim Sendekanal oeffnen"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 56
+  		USER_MSG.MSG_TXT[] = "System im Offline/Programmier-Modus"
+    CASE 57
+  		USER_MSG.MSG_TXT[] = "System bereits gestartet"
+    CASE 58
+  		USER_MSG.MSG_TXT[] = "Fehler allgemein"
+    CASE 59
+  		USER_MSG.MSG_TXT[] = "Fehler nicht spezifiziert"
+    CASE 67
+      USER_MSG.MSG_TXT[] = "Timeout: Beim Daten Senden"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 68
+      USER_MSG.MSG_TXT[] = "Daten nicht gespiegelt"
+    CASE 73
+      USER_MSG.MSG_TXT[] = "System im Kalibrier-Modus"
+    CASE 74
+      USER_MSG.MSG_TXT[] = "System im Programmier-Modus"
+    CASE 77
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 78
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 79
+      USER_MSG.MSG_TXT[] = "System im Basefinder-Modus"
+    CASE 80
+      USER_MSG.MSG_TXT[] = "System im Toolfinder-Modus"
+    CASE 93
+      USER_MSG.MSG_TXT[] = "Falsche Return ID"
+    CASE 94
+      USER_MSG.MSG_TXT[] = "Abbruch durch User"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 95
+      USER_MSG.MSG_TXT[] = "Reset durchfuehren"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+;	Fehler (Messstart)
+    CASE 100
+  		USER_MSG.MSG_TXT[] = "Erfolgreich"
+    CASE 101
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim Sendekanal oeffnen"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 102
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaComp"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 103
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaComp"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 104
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_MEACK"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 105
+  		USER_MSG.MSG_TXT[] = "Modell oder Routine nicht definiert"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 106
+  		USER_MSG.MSG_TXT[] = "System im Offline/Programmier-Modus"
+      SK[3] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 107
+  		USER_MSG.MSG_TXT[] = "System bereits gestartet"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 108
+  		USER_MSG.MSG_TXT[] = "Fehler allgemein"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 109
+  		USER_MSG.MSG_TXT[] = "Fehler nicht spezifiziert"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 111
+  		USER_MSG.MSG_TXT[] = "System mit anderem Modell gestartet"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 112
+  		USER_MSG.MSG_TXT[] = "System von der SPS gestartet"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 117
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim Daten Senden"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 118
+      USER_MSG.MSG_TXT[] = "Daten nicht gespiegelt"
+    CASE 124
+      USER_MSG.MSG_TXT[] = "System nicht gestartet"
+    CASE 126
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaSend"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 127
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaNew"
+    CASE 128
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 129
+  		USER_MSG.MSG_TXT[] = "Routinennummer ist 0"
+    CASE 135
+  		USER_MSG.MSG_TXT[] = "Anzahl Messpunkte zu klein u. falsche PunktFolge"
+    CASE 136
+  		USER_MSG.MSG_TXT[] = "Ungueltiger PAR_1 bei Messende"
+    CASE 137
+  		USER_MSG.MSG_TXT[] = "Anzahl Messpunkte zu klein"
+    CASE 140
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"UP Mod: %d/Rout: %d nicht definiert; DAT bearbeiten",nTmp,nPar)
+    CASE 141
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"UP Mod: %d/Rout: %d ist 0; DAT bearbeiten",nTmp,nPar)
+    CASE 143
+      USER_MSG.MSG_TXT[] = "Falsche Return ID"
+;	Fehler (Punktmessung)
+    CASE 200
+  		USER_MSG.MSG_TXT[] = "Erfolgreich"
+    CASE 201
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim Sendekanal oeffnen"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 202
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaComp"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 203
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaComp"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 212
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_Zyklus"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 213
+  		USER_MSG.MSG_TXT[] = "Fehler allgemeine"
+    CASE 217
+      USER_MSG.MSG_TXT[] = "Timeout: Beim Daten Senden"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 218
+      USER_MSG.MSG_TXT[] = "Daten nicht gespiegelt"
+    CASE 223
+  		USER_MSG.MSG_TXT[] = "Positionsnummer ungueltig"
+    CASE 224
+  		USER_MSG.MSG_TXT[] = "System nicht gestartet"
+    CASE 225
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_MEACK"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 226
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaSend"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 227
+  		USER_MSG.MSG_TXT[] = "Falsche Punktreihenfolge"
+    CASE 228
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Sensormontage pruefen im Punkt: %d",nPar)
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 229
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Robotermontage pruefen im Punkt: %d",nPar)
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+;	Fehler (Scanning)
+    CASE 250
+  		USER_MSG.MSG_TXT[] = "Erfolgreich"
+    CASE 251
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim Sendekanal oeffnen"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 252
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaComp"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 253
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaComp"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 267
+      USER_MSG.MSG_TXT[] = "Timeout: Beim Daten Senden"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 268
+      USER_MSG.MSG_TXT[] = "Daten nicht gespiegelt"
+    CASE 281
+  		USER_MSG.MSG_TXT[] = "Fehler: I_PRC_EScAck noch gesetzt"
+    CASE 282
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_EScAck"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 283
+  		USER_MSG.MSG_TXT[] = "Positionsnummer ungueltig"
+    CASE 284
+  		USER_MSG.MSG_TXT[] = "System nicht gestartet"
+    CASE 285
+  		USER_MSG.MSG_TXT[] = "Fehler allgemeine"
+    CASE 286
+  		USER_MSG.MSG_TXT[] = "Fehler nicht spezifiziert"
+    CASE 291
+  		USER_MSG.MSG_TXT[] = "Fehler: I_PRC_SScAck noch gesetzt"
+    CASE 292
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_SScAck"
+      $FLAG[F_PRC_TmOut]=TRUE
+;	Fehler (Statusanforderung)
+    CASE 300
+  		USER_MSG.MSG_TXT[] = "Erfolgreich"
+    CASE 301
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim Sendekanal oeffnen"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 306
+  		USER_MSG.MSG_TXT[] = "System im Offline/Programmier-Modus"
+    CASE 307
+  		USER_MSG.MSG_TXT[] = "System bereits gestartet"
+    CASE 308
+  		USER_MSG.MSG_TXT[] = "Fehler allgemein"
+    CASE 309
+  		USER_MSG.MSG_TXT[] = "Fehler nicht spezifiziert"
+    CASE 317
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim Daten Senden"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 318
+      USER_MSG.MSG_TXT[] = "Daten nicht gespiegelt"
+    CASE 323
+      USER_MSG.MSG_TXT[] = "System im Kalibrier-Modus"
+    CASE 324
+      USER_MSG.MSG_TXT[] = "System im Programmier-Modus"
+    CASE 327
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 328
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 329
+      USER_MSG.MSG_TXT[] = "System im Basefinder-Modus"
+    CASE 330
+      USER_MSG.MSG_TXT[] = "System im Toolfinder-Modus"
+    CASE 343
+      USER_MSG.MSG_TXT[] = "Falsche Return ID"
+    CASE 344
+      USER_MSG.MSG_TXT[] = "Abbruch durch User"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 345
+      USER_MSG.MSG_TXT[] = "Reset durchfuehren"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+;	Fehler (Messende)
+    CASE 400
+  		USER_MSG.MSG_TXT[] = "Erfolgreich"
+    CASE 404
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_MEACK"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 424
+      USER_MSG.MSG_TXT[] = "System nicht gestartet"
+    CASE 426
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaSend"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 427
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 428
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 434
+  		USER_MSG.MSG_TXT[] = "Falsche PunktFolge"
+    CASE 435
+  		USER_MSG.MSG_TXT[] = "Anzahl MP zu klein u. falsche PunktFolge"
+    CASE 436
+  		USER_MSG.MSG_TXT[] = "Ungueltiger PAR_1 bei Messende"
+    CASE 437
+  		USER_MSG.MSG_TXT[] = "Anzahl MP zu klein"
+    CASE 443
+      USER_MSG.MSG_TXT[] = "Falsche Return ID"
+;	Fehler (Reset)
+    CASE 500
+  		USER_MSG.MSG_TXT[] = "Erfolgreich"
+    CASE 521
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_Reset"
+      $FLAG[F_PRC_TmOut]=TRUE
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 522
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_Reset"
+      $FLAG[F_PRC_TmOut]=TRUE
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+;	Fehler (Sensortausch)
+    CASE 600
+  		USER_MSG.MSG_TXT[] = "gestartet"
+    CASE 601
+      USER_MSG.MSG_TXT[] = "Timeout: Beim Sendekanal oeffnen"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 602
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaComp"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 603
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaComp"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 604
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_MEACK"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 605
+  		USER_MSG.MSG_TXT[] = "Modell oder Routine nicht definiert"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+      MLD_TYP = #DlgMsg
+    CASE 606
+  		USER_MSG.MSG_TXT[] = "System in Automatikmodus schalten"
+      SK[1] = {Sk_Type #Empty}
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 607
+  		USER_MSG.MSG_TXT[] = "System bereits gestartet"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 608
+  		USER_MSG.MSG_TXT[] = "Fehler allgemein"
+    CASE 609
+  		USER_MSG.MSG_TXT[] = "Fehler nicht spezifiziert"
+    CASE 610
+  		USER_MSG.MSG_TXT[] = "Sensormontage pruefen"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "Abbr."}
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 611
+  		USER_MSG.MSG_TXT[] = "System mit anderem Modell gestartet"
+    CASE 612
+  		USER_MSG.MSG_TXT[] = "System von der SPS gestartet"
+    CASE 613
+      USER_MSG.MSG_TXT[] = "Fehler allgemein"
+    CASE 617
+      USER_MSG.MSG_TXT[] = "Timeout: Beim Daten Senden"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 618
+      USER_MSG.MSG_TXT[] = "Daten nicht gespiegelt"
+    CASE 623
+      USER_MSG.MSG_TXT[] = "Positionsnummer ungueltig"
+    CASE 624
+      USER_MSG.MSG_TXT[] = "System nicht gestartet"
+    CASE 625
+      USER_MSG.MSG_TXT[] = "Falsche Punktreihenfolge"
+    CASE 626
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaSend"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 627
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 628
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 629
+      USER_MSG.MSG_TXT[] = "Routinennummer ist 0"
+    CASE 630
+  		USER_MSG.MSG_TXT[] = "Bitte System in den Kalibriermodus schalten"
+    CASE 631
+      SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Falscher Status vom System: %d",nTmp)
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 632
+  		USER_MSG.MSG_TXT[] = "System nicht im Kalibriermodus"
+      SK[1] = {Sk_Type #Empty}
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 633
+  		USER_MSG.MSG_TXT[] = "Pruefen Erfolgreich"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "Weiter"}
+    CASE 634
+  		USER_MSG.MSG_TXT[] = "Falsche PunktFolge"
+    CASE 635
+  		USER_MSG.MSG_TXT[] = "Anzahl Messpunkte zu klein u. falsche PunktFolge"
+    CASE 636
+  		USER_MSG.MSG_TXT[] = "Ungueltiger PAR_1 bei Messende"
+    CASE 637
+  		USER_MSG.MSG_TXT[] = "Anzahl Messpunkte zu klein"
+    CASE 638
+  		USER_MSG.MSG_TXT[] = "Kalibrierung erforderlich"
+    CASE 639
+  		USER_MSG.MSG_TXT[] = "Nur im SingleStep-Betrieb moeglich"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+   CASE 640
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"UP Mod: %d/Rout: %d nicht definiert; DAT bearbeiten",nTmp,nPar)
+    CASE 641
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"UP Mod: %d/Rout: %d ist 0; DAT bearbeiten",nTmp,nPar)
+    CASE 643
+      USER_MSG.MSG_TXT[] = "Falsche Return ID"
+    CASE 644
+      USER_MSG.MSG_TXT[] = "Abbruch durch User"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 650
+  		USER_MSG.MSG_TXT[] = "Bitte System in den Toolfindermodus schalten"
+    CASE 652
+  		USER_MSG.MSG_TXT[] = "System nicht im Toolfindermodus"
+      SK[1] = {Sk_Type #Empty}
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 653
+  		USER_MSG.MSG_TXT[] = "Toolfinder berechnen und anwenden!"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 698
+  		USER_MSG.MSG_TXT[] = "Sensortausch erfolgreich durchgefuehrt"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 699
+  		USER_MSG.MSG_TXT[] = "Kalibrierung pruefen"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+;	Fehler (Robotertausch)
+    CASE 700
+  		USER_MSG.MSG_TXT[] = "Abgeschlossen"
+    CASE 701
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim Sendekanal oeffnen"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 702
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaComp"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 703
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaComp"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 704
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_MEACK"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 705
+  		USER_MSG.MSG_TXT[] = "Modell oder Routine nicht definiert"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+      MLD_TYP = #DlgMsg
+    CASE 706
+      USER_MSG.MSG_TXT[] = "System in Automatikmodus schalten"
+      SK[1] = {Sk_Type #Empty}
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 707
+  		USER_MSG.MSG_TXT[] = "System bereits gestartet"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 708
+  		USER_MSG.MSG_TXT[] = "Fehler allgemein"
+    CASE 709
+  		USER_MSG.MSG_TXT[] = "Fehler nicht spezifiziert"
+    CASE 710
+  		USER_MSG.MSG_TXT[] = "Robotermontage pruefen"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "Abbr."}
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 711
+  		USER_MSG.MSG_TXT[] = "System mit anderem Modell gestartet"
+    CASE 712
+  		USER_MSG.MSG_TXT[] = "System von der SPS gestartet"
+    CASE 713
+      USER_MSG.MSG_TXT[] = "Fehler allgemein"
+    CASE 714
+  		USER_MSG.MSG_TXT[] = "Keine Korrekturwerte vorhanden"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 718
+    CASE 723
+      USER_MSG.MSG_TXT[] = "Positionsnummer ungueltig"
+    CASE 724
+      USER_MSG.MSG_TXT[] = "System nicht gestartet"
+    CASE 725
+      USER_MSG.MSG_TXT[] = "Falsche Punktreihenfolge"
+    CASE 726
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaSend"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 727
+  		USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 728
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 729
+      USER_MSG.MSG_TXT[] = "Routinennummer ist 0"
+    CASE 730
+  		USER_MSG.MSG_TXT[] = "Bitte System in den Automatik-Modus schalten"
+    CASE 731
+      SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Falscher Status vom System: %d",nTmp)
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 732
+  		USER_MSG.MSG_TXT[] = "System nicht im Automatik-Modus"
+      SK[1] = {Sk_Type #Empty}
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 733
+  		USER_MSG.MSG_TXT[] = "Pruefen Erfolgreich"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "Weiter"}
+    CASE 734
+      USER_MSG.MSG_TXT[] = "Falsche PunktFolge"
+    CASE 735
+  		USER_MSG.MSG_TXT[] = "Anzahl Messpunkte zu klein u. falsche PunktFolge"
+    CASE 736
+  		USER_MSG.MSG_TXT[] = "Ungueltiger PAR_1 bei Messende"
+    CASE 737
+  		USER_MSG.MSG_TXT[] = "Anzahl Messpunkte zu klein"
+    CASE 739
+  		USER_MSG.MSG_TXT[] = "Nur im SingleStep-Betrieb moeglich"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 740
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"UP Mod: %d/Rout: %d nicht definiert; DAT bearbeiten",nTmp,nPar)
+    CASE 741
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"UP Mod: %d/Rout: %d ist 0; DAT bearbeiten",nTmp,nPar)
+    CASE 743
+      USER_MSG.MSG_TXT[] = "Falsche Return ID"
+    CASE 744
+      USER_MSG.MSG_TXT[] = "Abbruch durch User"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 795
+  		USER_MSG.MSG_TXT[] = "Rob.Pos ungueltig schalten"
+    CASE 796
+  		USER_MSG.MSG_TXT[] = "Toolfinder berechnen und anwenden!"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 797
+  		USER_MSG.MSG_TXT[] = "Korrektur notwendig, Basekorr. wird ausgefuehrt"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 798
+  		USER_MSG.MSG_TXT[] = "Robotertausch erfolgreich durchgefuehrt"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 799
+  		USER_MSG.MSG_TXT[] = "Kalibrierung pruefen"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+;	Fehler (Hole UP-Nr)
+    CASE 800
+  		USER_MSG.MSG_TXT[] = "Erfolgreich"
+    CASE 801
+      USER_MSG.MSG_TXT[] = "Timeout: Beim Sendekanal oeffnen"
+      $FLAG[F_PRC_TmOut]=TRUE
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 802
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf IN_DataComplete"
+      $FLAG[F_PRC_TmOut]=TRUE
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 803
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht IN_DataComplete"
+      $FLAG[F_PRC_TmOut]=TRUE
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 804
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_MEACK"
+      $FLAG[F_PRC_TmOut]=TRUE
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 805
+      USER_MSG.MSG_TXT[] = "Modell od. Routine nicht definiert"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 806
+      USER_MSG.MSG_TXT[] = "System im Offline/Programmier-Modus"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      SK[3] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+      MLD_TYP = #DlgMsg
+    CASE 807
+      USER_MSG.MSG_TXT[] = "System von SPS nicht gestartet"
+      SK[3] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+      MLD_TYP = #DlgMsg
+    CASE 808
+      USER_MSG.MSG_TXT[] = "Fehler allgemein"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+      MLD_TYP = #DlgMsg
+    CASE 809
+      USER_MSG.MSG_TXT[] = "System Fehler nicht spezifiziert"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+      MLD_TYP = #DlgMsg
+    CASE 811
+      USER_MSG.MSG_TXT[] = "System mit anderem Modell bereits gestartet"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+      MLD_TYP = #DlgMsg
+    CASE 817
+      USER_MSG.MSG_TXT[] = "Timeout: Beim Daten senden"
+      $FLAG[F_PRC_TmOut]=TRUE
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 818
+      USER_MSG.MSG_TXT[] = "Daten nicht gespiegelt"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 827
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaNew"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 828
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 829
+      USER_MSG.MSG_TXT[] = "Routinennummer ist 0"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 840
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"UP Mod: %d/Rout: %d Aufruf nicht definiert; In .DAT einfuegen",nTmp,nPar)
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 841
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"UP Mod: %d/Rout: %d Antwort nicht definiert; In .DAT einfuegen",nTmp,nPar)
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 843
+      USER_MSG.MSG_TXT[] = "Falsche Return ID"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+	CASE 850
+      USER_MSG.MSG_TXT[] = "Kompensation OK"
+    CASE 851
+      USER_MSG.MSG_TXT[] = "Kompensation erford. (Voll)"
+    CASE 852
+      USER_MSG.MSG_TXT[] = "Kompensation erford. (Split)"
+    CASE 853
+      USER_MSG.MSG_TXT[] = "Kompensation deaktiviert (SPS)"
+    CASE 854
+      USER_MSG.MSG_TXT[] = "Modell/UP ungueltig"
+    CASE 860
+      USER_MSG.MSG_TXT[] = "Startprozedur laeuft (Status)"
+    CASE 861
+      USER_MSG.MSG_TXT[] = "Startprozedur laeuft (Programm)"
+    CASE 870
+      USER_MSG.MSG_TXT[] = "Fehler in der Startprozedur"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 871
+      USER_MSG.MSG_TXT[] = "Kompensation NOK (Konfiguration)"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 872
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Flag: %d ungueltig",nTmp)
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+    CASE 873
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Flag: %d = False fuer das Modell: %d",nTmp,nPar)
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+;	Fehler (Ungueltige Parameter)
+    CASE 900
+  		USER_MSG.MSG_TXT[] = "Gueltig"
+    CASE 901
+      SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Modus %d ungueltig (1001-1003)",nTmp)
+      MLD_TYP = #DlgMsg
+    CASE 902
+      SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Funktion %d im Modus %d ungueltig",nTmp,nPar)
+      MLD_TYP = #DlgMsg
+    CASE 903
+      SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Modell %d ungueltig (1-65535)",nTmp)
+      MLD_TYP = #DlgMsg
+    CASE 904
+      SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Parameter 3 %d ungueltig (0-65535)",nTmp)
+      MLD_TYP = #DlgMsg
+    CASE 905
+      SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Parameter 4 %d ungueltig (0-256)",nTmp)
+      MLD_TYP = #DlgMsg
+    CASE 906
+      SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Parameter 5 %d ungueltig (0-265)",nTmp)
+      MLD_TYP = #DlgMsg
+    CASE 907
+      SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Parameter 6 %d ungueltig (>0)",nTmp)
+      MLD_TYP = #DlgMsg
+    CASE 910
+      SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Modus %d mit Funktion %d ungueltig",nTmp,nPar)
+      MLD_TYP = #DlgMsg
+    CASE 911
+      SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Kommando %d ungueltig",nTmp)
+      MLD_TYP = #DlgMsg
+;	Fehler (Hole Korrektur)
+    CASE 1000
+  		USER_MSG.MSG_TXT[] = "Erfolgreich"
+    CASE 1001
+      USER_MSG.MSG_TXT[] = "Timeout: Beim Sendekanal oeffnen"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 1002
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaComp"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 1003
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaComp"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 1004
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_MEACK"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 1005
+  		USER_MSG.MSG_TXT[] = "Modell oder Routine nicht definiert"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 1006
+  		USER_MSG.MSG_TXT[] = "System im Offline/Programmier-Modus"
+      SK[3] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    CASE 1007
+  		USER_MSG.MSG_TXT[] = "System bereits gestartet"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 1008
+  		USER_MSG.MSG_TXT[] = "Fehler allgemein"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 1009
+  		USER_MSG.MSG_TXT[] = "Fehler nicht spezifiziert"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 1011
+  		USER_MSG.MSG_TXT[] = "System mit anderem Modell gestartet"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 1012
+  		USER_MSG.MSG_TXT[] = "System von der SPS gestartet"
+      SK[2] = {Sk_Type #Value,Sk_Txt[] "Reset"}
+    CASE 1017
+      USER_MSG.MSG_TXT[] = "Timeout: Beim Daten Senden"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 1018
+      USER_MSG.MSG_TXT[] = "Fehler: Beim Daten spiegeln"
+    CASE 1019
+      USER_MSG.MSG_TXT[] = "Werte ueberschreiten VF_PRC_Min"
+    CASE 1020
+      USER_MSG.MSG_TXT[] = "Werte ueberschreiten VF_PRC_Max"
+    CASE 1027
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 1028
+      USER_MSG.MSG_TXT[] = "Timeout: Beim warten auf nicht I_PRC_DaNew"
+      $FLAG[F_PRC_TmOut]=TRUE
+    CASE 1038
+      USER_MSG.MSG_TXT[] = "Falsche Return Korrekturnummer"
+    CASE 1042
+      USER_MSG.MSG_TXT[] = "keine Korrekturwerte vorhanden"
+    CASE 1043
+      USER_MSG.MSG_TXT[] = "Falsche Return ID"
+    CASE 1046
+      USER_MSG.MSG_TXT[] = "Korrekturwerte nicht umgesetzt"
+;	Fehler (Alarme)
+    CASE 1100
+  		USER_MSG.MSG_TXT[] = "Erfolgreich"
+    CASE 1101
+      USER_MSG.MSG_TXT[] = "Trend"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1102
+      USER_MSG.MSG_TXT[] = "Toleranz"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1103
+      USER_MSG.MSG_TXT[] = "Toleranz, Trend"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1104
+      USER_MSG.MSG_TXT[] = "Ausschuss"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1105
+      USER_MSG.MSG_TXT[] = "Ausschuss, Trend"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1106
+      USER_MSG.MSG_TXT[] = "Ausschuss, Toleranz"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1107
+      USER_MSG.MSG_TXT[] = "Ausschuss, Toleranz, Trend"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1108
+      USER_MSG.MSG_TXT[] = "Error"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1151
+      USER_MSG.MSG_TXT[] = "Roboter.1 Error"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1152
+      USER_MSG.MSG_TXT[] = "Roboter.1 Toleranz"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1153
+      USER_MSG.MSG_TXT[] = "Roboter.1 VF Error"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1154
+      USER_MSG.MSG_TXT[] = "Roboter.1 VF Toleranz"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1155
+      USER_MSG.MSG_TXT[] = "Roboter.2 Error"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1156
+      USER_MSG.MSG_TXT[] = "Roboter.2 Toleranz"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1157
+      USER_MSG.MSG_TXT[] = "Roboter.2 VF Error"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1158
+      USER_MSG.MSG_TXT[] = "Roboter.2 VF Toleranz"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1159
+      USER_MSG.MSG_TXT[] = "Roboter.1 mehrere Fehler"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE 1160
+      USER_MSG.MSG_TXT[] = "Roboter.2 mehrere Fehler"
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+;  Version
+    CASE 9000
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Major-Nr: %d Minor-Nr: %d Revisions-Nr: %d",N_PRC_VerMaj,N_PRC_VerMin,N_PRC_VerRev)
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+      MLD_TYP = #DlgMsg
+;	Fehler: (Unbekannt)
+    DEFAULT
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Unbekannter Fehler %d",MSG_NR)
+      SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+  ENDSWITCH
+;
+  ;ENDFOLD (Meldungs-Nr)
+;
+  IF MSG_NR > 0 THEN
+    USER_MSG.Nr = MSG_NR
+  ENDIF
+  OFFSET      = 0
+  SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"%s %s",sMeldFunction[],USER_MSG.MSG_TXT[])
+  IF (($mode_op == #T1) OR ($mode_op == #T2)) THEN
+    MLD_TYP = #DlgMsg
+  ENDIF
+  nDlgAnswer = 1
+  SWITCH MLD_TYP
+    CASE #DlgMsg
+      nDlgHandle = Set_KrlDlg(USER_MSG,Par[],SK[],Opt)
+      IF (nDlgHandle > 0) Then
+        While (Exists_KrlDlg(nDlgHandle, nDlgAnswer))         ;Warten bis der Dialog beantwortet wird
+          Wait Sec 0.1
+        ENDWHILE
+        SWITCH nDlgAnswer
+          CASE 1
+            ;HALT ;Softkey 1 was hit
+          CASE 2
+            ;HALT ;Softkey 2 was hit
+          CASE 3
+            ;HALT ;Softkey 3 was hit
+          DEFAULT
+            ;HALT ;Wrong softkey was hit
+        ENDSWITCH
+      ENDIF
+    CASE #StatMsg
+      nDlgHandle = Set_KrlMsg (#State, USER_MSG, Par[], OPT)   ; Ausgabe Statusmeldung
+    CASE #QuitMsg
+      nDlgHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], OPT)    ; Ausgabe Quittierungsmeldung
+      IF (nDlgHandle > 0) Then
+        While ( Exists_KrlMsg(nDlgHandle))                     ;Warten bis der Anwender quittiert
+          Wait Sec 0.1
+        ENDWHILE
+      ENDIF
+    CASE #NotifyMsg
+      nDlgHandle = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt)  ; Ausgabe Hinweismeldung
+    CASE #WaitMsg
+      nDlgHandle = Set_KrlMsg (#Waiting, USER_MSG, Par[], Opt) ; Ausgabe Hinweismeldung
+    DEFAULT
+      USER_MSG.MSG_TXT[] = "MSG_Typ falsch"
+      nDlgHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], OPT)    ; Ausgabe Quittierungsmeldung
+      IF (nDlgHandle > 0) Then
+        While (Exists_KrlMsg(nDlgHandle))                      ;Warten bis der Anwender quittiert
+          Wait Sec 0.1
+        ENDWHILE
+      ENDIF
+  ENDSWITCH
+  RETURN(nDlgAnswer)
+ENDFCT
+;
+;ENDFOLD (Fehlermeldungen)
+;
+;endfold

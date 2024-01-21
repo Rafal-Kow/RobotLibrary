@@ -1,0 +1,144 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/CleanLaser
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEF vw_cl_usr_r( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket CleanLaser                          *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.17 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD CleanLaser_Interface
+GLOBAL DEF CL_Interfac(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+INT i
+;
+;-----------------------------------------------------------
+SWITCH USER_CMD
+;
+;-----------------------------------------------------------
+  CASE #USR_INIT
+    ;FOLD Init
+    ;
+    ;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------------
+  CASE #USR_ADV
+    ;FOLD Advance
+;    
+    WHILE ((PAR1<1) OR (PAR1>254))
+      CleanLaser_Msg(1,#QuitMsg) ; ungueltiger Wert fuer ProgNr
+    ENDWHILE
+    CONTINUE
+    CL_Prog_Nr=PAR1
+    CONTINUE
+    O_CL_P_Anw=TRUE
+    CONTINUE
+    CL_L_Leist=PAR2 ;Laserleistung
+    WHILE ((PAR2<5) OR (PAR2>500))
+      CleanLaser_Msg(2,#QuitMsg) ; Laserleistung ungueltiger Wert
+    ENDWHILE
+    CONTINUE
+    CL_Naht_Nr=PAR6 ;Nahtnummer an SPS 
+;
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------------
+  CASE #USR_TRIG
+    ;FOLD Trig
+;    
+    CONTINUE
+    IF ((CL_Prog_Nr<>PAR1) OR (CL_L_Leist<>PAR2)) THEN
+      CONTINUE
+      CL_Prog_Nr=PAR1
+      CONTINUE
+      PULSE(O_CL_P_Anw,TRUE,0.2)
+      CONTINUE
+      CL_L_Leist=PAR2 ;Laserleistung
+    ENDIF  
+    CONTINUE
+    O_CL_P_Anw=FALSE
+;
+    ;ENDFOLD (Trig)
+;
+;-----------------------------------------------------------
+  CASE #USR_MAIN
+    ;FOLD Main
+;    
+    
+;
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------------
+  DEFAULT
+;  
+  ENDSWITCH
+END
+;
+;ENDFOLD (Bolzen Interface)
+;
+;-----------------------------------------------------------
+;FOLD CL_Meldungen
+DEF CleanLaser_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr
+DECL CLR_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "CL_R_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF ((n_CLR_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+      USER_MSG.MSG_TXT[]="P1 nur Werte von 1-254"
+    CASE 2
+	   USER_MSG.MSG_TXT[]="P2 nur Werte von 5-500"
+    CASE 3
+      USER_MSG.MSG_TXT[]=" "
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 19
+	   USER_MSG.MSG_TXT[]="Falsche Gruppen-Auswahl"  
+    CASE 20
+	   USER_MSG.MSG_TXT[]="P1: Falsche Auswahl"
+    CASE 21
+	   USER_MSG.MSG_TXT[]="P2: Falsche Auswahl" 
+    CASE 22
+	   USER_MSG.MSG_TXT[]="P3: Falsche Auswahl"    
+    DEFAULT
+      USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_CLR_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_CLR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      While ( Exists_KrlMsg(n_CLR_Handle[msg_nr]) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      Endwhile
+    CASE #NotifyMsg
+      n_CLR_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_CLR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF  
+END
+;
+;ENDFOLD (CL Meldungen)
+

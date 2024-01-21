@@ -1,0 +1,3053 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/MigMag
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEF vw_ms_usr_r( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket MIG/MAG                             *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.16 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD MigMag_Interface
+GLOBAL DEF MS_Interfac(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+INT i
+;
+;-----------------------------------------------------------
+SWITCH USER_CMD
+;
+;-----------------------------------------------------------
+  CASE #USR_INIT
+    ;FOLD Init
+    ;
+    ;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------------
+  CASE #USR_ADV
+    ;FOLD Advance
+;    
+    SWITCH CMD_SEL
+;
+      CASE 104    
+        SWITCH PAR1
+          CASE 8  ;Auswahl MIG/MAG 1
+            CONTINUE
+            MS_PktNr_SPS=PAR6
+            SWITCH PAR2
+              CASE 1
+                WHILE ((PAR6<1) OR (PAR6>31))
+                  MigMag_Msg(25,#QuitMsg) ; PAR6 Falscher Wert
+                ENDWHILE
+                IF (PAR3==1) AND $FLAG[PAR6+640] THEN
+                  $FLAG[F_MS_N_Wied]=TRUE ; Nahtwiederholung angewaehlt
+                ELSE
+                  $FLAG[F_MS_N_Wied]=FALSE
+                ENDIF
+                IF NOT $FLAG[PAR6+609] THEN
+                  $FLAG[F_FRG_LB_Ein]=TRUE ;Freigabe Lichtbogen Ein
+                ELSE
+                  $FLAG[F_FRG_LB_Ein]=FALSE
+                ENDIF
+                IF MIT_MIG_SUCH THEN
+                  MS_HILF=PAR5
+                  IF (MS_HILF==MS_T1_N1) THEN
+                    IF (MS_Spaltmas > MS_T1_SCHW_1) AND (MS_Spaltmas < MS_T1_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N1_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T1_SCHW_2) AND (MS_Spaltmas < MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N1_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N1_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T1_SCHW_1) AND (MS_Spaltmas < MS_T1_SCHW_2) AND (MS_Spaltmas < MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T1_N2) THEN
+                    IF (MS_Spaltmas > MS_T1_SCHW_1) AND (MS_Spaltmas < MS_T1_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N2_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T1_SCHW_2) AND (MS_Spaltmas < MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N2_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N2_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T1_SCHW_1) AND (MS_Spaltmas < MS_T1_SCHW_2) AND (MS_Spaltmas < MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T1_N3) THEN
+                    IF (MS_Spaltmas > MS_T1_SCHW_1) AND (MS_Spaltmas < MS_T1_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N3_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T1_SCHW_2) AND (MS_Spaltmas < MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N3_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N3_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T1_SCHW_1) AND (MS_Spaltmas < MS_T1_SCHW_2) AND (MS_Spaltmas < MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T1_N4) THEN
+                    IF (MS_Spaltmas > MS_T1_SCHW_1) AND (MS_Spaltmas < MS_T1_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N4_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T1_SCHW_2) AND (MS_Spaltmas < MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N4_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N4_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T1_SCHW_1) AND (MS_Spaltmas < MS_T1_SCHW_2) AND (MS_Spaltmas < MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T1_N5) THEN
+                    IF (MS_Spaltmas > MS_T1_SCHW_1) AND (MS_Spaltmas < MS_T1_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N5_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T1_SCHW_2) AND (MS_Spaltmas < MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N5_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N5_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T1_SCHW_1) AND (MS_Spaltmas < MS_T1_SCHW_2) AND (MS_Spaltmas < MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T1_N6) THEN
+                    IF (MS_Spaltmas > MS_T1_SCHW_1) AND (MS_Spaltmas < MS_T1_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N6_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T1_SCHW_2) AND (MS_Spaltmas < MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N6_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T1_N6_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T1_SCHW_1) AND (MS_Spaltmas < MS_T1_SCHW_2) AND (MS_Spaltmas < MS_T1_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T2_N1) THEN
+                    IF (MS_Spaltmas > MS_T2_SCHW_1) AND (MS_Spaltmas < MS_T2_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N1_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T2_SCHW_2) AND (MS_Spaltmas < MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N1_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N1_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T2_SCHW_1) AND (MS_Spaltmas < MS_T2_SCHW_2) AND (MS_Spaltmas < MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T2_N2) THEN
+                    IF (MS_Spaltmas > MS_T2_SCHW_1) AND (MS_Spaltmas < MS_T2_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N2_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T2_SCHW_2) AND (MS_Spaltmas < MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N2_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N2_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T2_SCHW_1) AND (MS_Spaltmas < MS_T2_SCHW_2) AND (MS_Spaltmas < MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T2_N3) THEN
+                    IF (MS_Spaltmas > MS_T2_SCHW_1) AND (MS_Spaltmas < MS_T2_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N3_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T2_SCHW_2) AND (MS_Spaltmas < MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N3_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N3_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T2_SCHW_1) AND (MS_Spaltmas < MS_T2_SCHW_2) AND (MS_Spaltmas < MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T2_N4) THEN
+                    IF (MS_Spaltmas > MS_T2_SCHW_1) AND (MS_Spaltmas < MS_T2_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N4_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T2_SCHW_2) AND (MS_Spaltmas < MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N4_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N4_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T2_SCHW_1) AND (MS_Spaltmas < MS_T2_SCHW_2) AND (MS_Spaltmas < MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T2_N5) THEN
+                    IF (MS_Spaltmas > MS_T2_SCHW_1) AND (MS_Spaltmas < MS_T2_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N5_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T2_SCHW_2) AND (MS_Spaltmas < MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N5_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N5_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T2_SCHW_1) AND (MS_Spaltmas < MS_T2_SCHW_2) AND (MS_Spaltmas < MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T2_N6) THEN
+                    IF (MS_Spaltmas > MS_T2_SCHW_1) AND (MS_Spaltmas < MS_T2_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N6_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T2_SCHW_2) AND (MS_Spaltmas < MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N6_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T2_N6_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T2_SCHW_1) AND (MS_Spaltmas < MS_T2_SCHW_2) AND (MS_Spaltmas < MS_T2_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T3_N1) THEN
+                    IF (MS_Spaltmas > MS_T3_SCHW_1) AND (MS_Spaltmas < MS_T3_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N1_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T3_SCHW_2) AND (MS_Spaltmas < MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N1_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N1_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T3_SCHW_1) AND (MS_Spaltmas < MS_T3_SCHW_2) AND (MS_Spaltmas < MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T3_N2) THEN
+                    IF (MS_Spaltmas > MS_T3_SCHW_1) AND (MS_Spaltmas < MS_T3_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N2_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T3_SCHW_2) AND (MS_Spaltmas < MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N2_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N2_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T3_SCHW_1) AND (MS_Spaltmas < MS_T3_SCHW_2) AND (MS_Spaltmas < MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T3_N3) THEN
+                    IF (MS_Spaltmas > MS_T3_SCHW_1) AND (MS_Spaltmas < MS_T3_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N3_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T3_SCHW_2) AND (MS_Spaltmas < MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N3_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N3_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T3_SCHW_1) AND (MS_Spaltmas < MS_T3_SCHW_2) AND (MS_Spaltmas < MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T3_N4) THEN
+                    IF (MS_Spaltmas > MS_T3_SCHW_1) AND (MS_Spaltmas < MS_T3_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N4_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T3_SCHW_2) AND (MS_Spaltmas < MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N4_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N4_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T3_SCHW_1) AND (MS_Spaltmas < MS_T3_SCHW_2) AND (MS_Spaltmas < MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T3_N5) THEN
+                    IF (MS_Spaltmas > MS_T3_SCHW_1) AND (MS_Spaltmas < MS_T3_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N5_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T3_SCHW_2) AND (MS_Spaltmas < MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N5_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N5_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T3_SCHW_1) AND (MS_Spaltmas < MS_T3_SCHW_2) AND (MS_Spaltmas < MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T3_N6) THEN
+                    IF (MS_Spaltmas > MS_T3_SCHW_1) AND (MS_Spaltmas < MS_T3_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N6_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T3_SCHW_2) AND (MS_Spaltmas < MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N6_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T3_N6_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T3_SCHW_1) AND (MS_Spaltmas < MS_T3_SCHW_2) AND (MS_Spaltmas < MS_T3_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T4_N1) THEN
+                    IF (MS_Spaltmas > MS_T4_SCHW_1) AND (MS_Spaltmas < MS_T4_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N1_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T4_SCHW_2) AND (MS_Spaltmas < MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N1_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N1_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T4_SCHW_1) AND (MS_Spaltmas < MS_T4_SCHW_2) AND (MS_Spaltmas < MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T4_N2) THEN
+                    IF (MS_Spaltmas > MS_T4_SCHW_1) AND (MS_Spaltmas < MS_T4_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N2_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T4_SCHW_2) AND (MS_Spaltmas < MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N2_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N2_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T4_SCHW_1) AND (MS_Spaltmas < MS_T4_SCHW_2) AND (MS_Spaltmas < MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T4_N3) THEN
+                    IF (MS_Spaltmas > MS_T4_SCHW_1) AND (MS_Spaltmas < MS_T4_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N3_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T4_SCHW_2) AND (MS_Spaltmas < MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N3_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N3_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T4_SCHW_1) AND (MS_Spaltmas < MS_T4_SCHW_2) AND (MS_Spaltmas < MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T4_N4) THEN
+                    IF (MS_Spaltmas > MS_T4_SCHW_1) AND (MS_Spaltmas < MS_T4_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N4_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T4_SCHW_2) AND (MS_Spaltmas < MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N4_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N4_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T4_SCHW_1) AND (MS_Spaltmas < MS_T4_SCHW_2) AND (MS_Spaltmas < MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T4_N5) THEN
+                    IF (MS_Spaltmas > MS_T4_SCHW_1) AND (MS_Spaltmas < MS_T4_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N5_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T4_SCHW_2) AND (MS_Spaltmas < MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N5_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N5_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T4_SCHW_1) AND (MS_Spaltmas < MS_T4_SCHW_2) AND (MS_Spaltmas < MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_HILF==MS_T4_N6) THEN
+                    IF (MS_Spaltmas > MS_T4_SCHW_1) AND (MS_Spaltmas < MS_T4_SCHW_2) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N6_S1
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T4_SCHW_2) AND (MS_Spaltmas < MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N6_S2
+                    ENDIF
+                    IF (MS_Spaltmas > MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_T4_N6_S3
+                    ENDIF
+                    IF (MS_Spaltmas < MS_T4_SCHW_1) AND (MS_Spaltmas < MS_T4_SCHW_2) AND (MS_Spaltmas < MS_T4_SCHW_3) THEN
+                      CONTINUE
+                      MS1_P_Nr=MS_HILF
+                    ENDIF
+                  ENDIF
+                  IF (MS_INT1_FEHLER==TRUE) THEN
+                    CONTINUE
+                    MS1_P_Nr=MS_HILF
+                  ENDIF 
+                ELSE
+                  CONTINUE
+                  MS1_P_Nr=PAR5
+                ENDIF
+;
+              CASE 2 ;Nur Main
+;
+              CASE 3 ;Vorgezogenes Endkrater fuellen
+                TRIGGER WHEN PATH = MS_EKF_WERT DELAY = 0 DO MIG_EKF() PRIO =-1
+;
+              CASE 31 ;Nur Main
+;
+              CASE 32 ;Nur Main
+;
+              CASE 33 ;Nur Main
+;    	
+              CASE 34 ;Nur Main
+;
+              CASE 35 ;Nur Main
+; 
+              CASE 36 ;Nur Main
+; 
+              CASE 37 ;Nur Main
+;
+              CASE 38 ;Nur Main
+;
+              DEFAULT
+                MigMag_Msg(21,#QuitMsg) ;P2 Falsche Auswahl
+;
+            ENDSWITCH ;von PAR2
+;
+          CASE 9  ;Auswahl MIG/MAG 2
+            CONTINUE
+            MS_PktNr_SPS=PAR6
+            SWITCH PAR2
+              CASE 1
+                WHILE ((PAR6<1) OR (PAR6>30))
+                  MigMag_Msg(25,#QuitMsg) ; PAR6 Falscher Wert
+                ENDWHILE
+                IF (PAR3==1) AND $FLAG[PAR6+640] THEN
+                  $FLAG[F_MS_N_Wied]=TRUE ; Nahtwiederholung angewaehlt
+                ELSE
+                  $FLAG[F_MS_N_Wied]=FALSE
+                ENDIF
+                IF NOT $FLAG[PAR6+609] THEN
+                  $FLAG[F_FRG_LB_Ein]=TRUE ;Freigabe Lichtbogen Ein
+                ELSE
+                  $FLAG[F_FRG_LB_Ein]=FALSE
+                ENDIF
+                CONTINUE
+                MS2_P_Nr=PAR5
+;
+              CASE 2 ;Nur Main
+;
+              CASE 3 ;Vorgezogenes Endkrater fuellen
+                TRIGGER WHEN PATH = MS_EKF_WERT DELAY = 0 DO MIG_EKF() PRIO =-1
+;
+              CASE 31 ;Nur Main
+;
+              CASE 32 ;Nur Main
+;
+              CASE 33 ;Nur Main
+;    	
+              CASE 34 ;Nur Main
+;
+              CASE 35 ;Nur Main
+;
+              CASE 36 ;Nur Main
+;
+              CASE 37 ;Nur Main
+;
+              CASE 38 ;Nur Main
+;
+              DEFAULT
+                MigMag_Msg(21,#QuitMsg) ;P2 Falsche Auswahl
+            ENDSWITCH ;von PAR2
+;
+          DEFAULT
+            MigMag_Msg(20,#QuitMsg) ;P1 Falsche Auswahl
+        ENDSWITCH ;von PAR1
+;
+      CASE 205  
+        MS_TOOL_NR=VW_MPARA_ACT.TOOL_NO
+        MS_BASE_NR=VW_MPARA_ACT.BASE_NO
+        MS_CheckParams(PAR1, PAR2, PAR3, PAR4, PAR5, PAR6)
+        SWITCH PAR1
+          CASE 1
+            MS_Init ()	; Initialisierung der Variablen
+;  
+          CASE 2
+            MIG_Suchlauf_OUT=TRUE
+;  
+          CASE 3 ;Nur Main
+;      	  
+          CASE 4
+            MIG_Suchlauf_OUT=TRUE
+;      	  
+          CASE 5
+            ;ohne Korrektur
+            BASE_DATA[31]=BASE_DATA[MS_BASE_NR]
+            TOOL_DATA[31]=TOOL_DATA[MS_TOOL_NR]
+;  
+          CASE 10 ;Nur Main
+;
+          DEFAULT
+            MigMag_Msg(20,#QuitMsg) ;P1 Falscher Wert
+        ENDSWITCH ;von PAR1
+;
+      DEFAULT
+        MigMag_Msg(19,#QuitMsg) ;Falsche Gruppe
+    ENDSWITCH ;von CMD_SEL   
+;
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------------
+  CASE #USR_TRIG
+    ;FOLD Trig
+;    
+    SWITCH PAR1 
+      CASE 8  ;Auswahl MIG/MAG 1
+        SWITCH PAR2
+          CASE 1
+            MS_Time=$Rob_Timer
+            REPEAT
+            UNTIL ((MS1_P_Nr==MS1_P_Nr_IN) OR (($Rob_Timer-MS_Time)>400))
+            IF (($Rob_Timer-MS_Time)>700) THEN
+              WHILE (MS1_P_Nr<>MS1_P_Nr_IN)
+                $FLAG[F_MS1_Sammel]=TRUE
+                MigMag_Msg(5,#QuitMsg) ; Quitt. Programm-Nr. falsch
+              ENDWHILE
+              $FLAG[F_MS1_Sammel]=FALSE
+            ENDIF 
+        ENDSWITCH        
+;
+      CASE 9  ;Auswahl MIG/MAG 2
+        SWITCH PAR2
+          CASE 1
+            MS_Time=$Rob_Timer
+            REPEAT
+            UNTIL ((MS2_P_Nr==MS2_P_Nr_IN) OR (($Rob_Timer-MS_Time)>400))
+            IF (($Rob_Timer-MS_Time)>700) THEN
+              WHILE (MS2_P_Nr<>MS2_P_Nr_IN)
+                $FLAG[F_MS2_Sammel]=TRUE
+                MigMag_Msg(5,#QuitMsg) ; Quitt. Programm-Nr. falsch
+              ENDWHILE
+              $FLAG[F_MS2_Sammel]=FALSE
+            ENDIF 
+        ENDSWITCH        
+    ENDSWITCH ;von PAR1
+;
+    ;ENDFOLD (Trig)
+;
+;-----------------------------------------------------------
+  CASE #USR_MAIN
+    ;FOLD Main
+;    
+    SWITCH CMD_SEL
+      CASE 104
+        SWITCH PAR1
+          CASE 8  ;Auswahl MIG/MAG 1
+            SWITCH PAR2
+              CASE 1;Nur ADV
+;          
+              CASE 2,3
+                IF NOT $FLAG[F_MS_N_nio] THEN
+	               MS_PktNr_SPS  = PAR6
+                  $FLAG[PAR6+609] = TRUE
+	               $FLAG[PAR6+640] = FALSE
+                  $FLAG[F_MS_LB_Ein] = FALSE
+                  $FLAG[F_MS_TOUT_Na] = FALSE
+                  $OUT[O_MS1_P_akt] = FALSE
+                ELSE
+                  IF (PAR3==1) AND $FLAG[F_MS_LB_Ein] THEN 
+	                 $FLAG[PAR6+640] = TRUE ;Naht wird am Unterbrechungspunkt wiederholt
+	                 IF NOT $EXT AND NOT $FLAG[F_MS_TOUT_Na] THEN
+	                   MigMag_Msg(1,#NotifyMsg)   ;Fehler beim Zuenden
+	                 ENDIF
+                  ENDIF
+	               IF NOT $EXT AND $FLAG[F_MS_TOUT_Na] THEN
+	                 MigMag_Msg(2,#NotifyMsg)   ;Limitfehler/Brennerabschaltung n.i.O.
+	               ENDIF
+                  $FLAG[F_MS_LB_Ein] = FALSE
+                  $FLAG[F_MS_TOUT_Na] = FALSE
+                  $OUT[O_MS1_P_akt] = FALSE
+                ENDIF
+                $COUNT_I[I_Arbpkt_Nr]=PAR6
+; 
+              CASE 31
+                MIG_WK=PAR4
+                MIG_ko_eb ( ) ;TCP_Testbetrieb (Ebene)
+;
+              CASE 32
+                MIG_WK=PAR4
+                MIG_ko_st ( ) ;TCP_Testbetrieb (Stoﬂrichtung)
+; 
+              CASE 33
+                MIG_WK=PAR4
+                IF $TIMER_FLAG[17]==TRUE THEN
+                  MIG_ko_eb ( ) ;TCP_Testbetrieb (Ebene - bedingt Timer 17)
+                ENDIF
+;  
+              CASE 34
+                MIG_WK=PAR4
+                IF ((MIG_WK==1) AND ($IN[212]==TRUE)) OR ((MIG_WK==2) AND ($IN[204]==TRUE)) THEN ;TCP_Testbetrieb (Stossrichtung - Bedingt Anwahl SPS)
+                  MIG_ko_st ( ) ;TCP_Testbetrieb (Stoﬂrichtung)
+                ENDIF
+;  
+              CASE 35
+                MIG_WK=PAR4
+                MIG_inst ( ) ;TCP_INSTALLATION
+;   
+              CASE 36
+                MIG_WK=PAR4
+                MIG_re_eb ( ) ;TCP_Referenzfahrt (Ebene)
+;   
+              CASE 37
+                MIG_WK=PAR4
+                MIG_re_st ( ) ;TCP_Referenzfahrt (Stossrichtung)
+;   
+              CASE 38
+                MIG_WK=PAR4
+                MIG_ko_gd ( ) ;Kontrolle Gasduese
+;
+              DEFAULT
+                MigMag_Msg(21,#QuitMsg) ;P2 Falsche Auswahl
+;    
+            ENDSWITCH ;von PAR2
+;         
+          CASE 9  ;Auswahl MIG/MAG 2
+            SWITCH PAR2
+              CASE 1 ;Nur ADV
+;  
+              CASE 2,3 
+                IF NOT $FLAG[F_MS_N_nio] THEN
+	               MS_PktNr_SPS  = PAR6
+                  $FLAG[PAR6+609] = TRUE
+	               $FLAG[PAR6+640] = FALSE
+                  $FLAG[F_MS_LB_Ein] = FALSE
+                  $FLAG[F_MS_TOUT_Na] = FALSE
+                  $OUT[O_MS2_P_akt] = FALSE
+                ELSE
+                  IF (PAR3==1) AND $FLAG[F_MS_LB_Ein] THEN
+	                 $FLAG[PAR6+640] = TRUE ;Naht wird am Unterbrechungspunkt wiederholt
+	                 IF NOT $EXT AND NOT $FLAG[F_MS_TOUT_Na] THEN
+	                   MigMag_Msg(3,#NotifyMsg)   ;Fehler beim Zuenden
+	                 ENDIF
+	               ENDIF
+	               IF NOT $EXT AND $FLAG[F_MS_TOUT_Na] THEN
+	                 MigMag_Msg(4,#NotifyMsg)   ;Limitfehler/Brennerabschaltung n.i.O.
+	               ENDIF
+                  $FLAG[F_MS_LB_Ein] = FALSE
+                  $FLAG[F_MS_TOUT_Na] = FALSE
+                  $OUT[O_MS2_P_akt] = FALSE
+                ENDIF
+                $COUNT_I[I_Arbpkt_Nr]=PAR6
+; 
+              CASE 31
+                MIG_WK=PAR4
+                MIG_ko_eb ( ) ;TCP_Testbetrieb (Ebene)
+;
+              CASE 32
+                MIG_WK=PAR4
+                MIG_ko_st ( ) ;TCP_Testbetrieb (Stoﬂrichtung)
+;      
+              CASE 33
+                MIG_WK=PAR4
+                IF $TIMER_FLAG[17]==TRUE THEN
+                  MIG_ko_eb ( ) ;TCP_Testbetrieb (Ebene - bedingt Timer 17)
+                ENDIF
+;   
+              CASE 34
+                MIG_WK=PAR4
+                IF ((MIG_WK==1) AND ($IN[212]==TRUE)) OR ((MIG_WK==2) AND ($IN[204]==TRUE)) THEN ;TCP_Testbetrieb (Stossrichtung - Bedingt Anwahl SPS)
+                  MIG_ko_st ( ) ;TCP_Testbetrieb (Stoﬂrichtung)
+                ENDIF
+;   
+              CASE 35
+                MIG_WK=PAR4
+                MIG_inst ( ) ;TCP_INSTALLATION
+;   
+              CASE 36
+                MIG_WK=PAR4
+                MIG_re_eb ( ) ;TCP_Referenzfahrt (Ebene)
+;   
+              CASE 37
+                MIG_WK=PAR4
+                MIG_re_st ( ) ;TCP_Referenzfahrt (Stossrichtung)
+;   
+              CASE 38
+                MIG_WK=PAR4
+                MIG_ko_gd ( ) ;Kontrolle Gasduese
+;
+              DEFAULT
+                MigMag_Msg(21,#QuitMsg) ;P2 Falsche Auswahl
+;    
+            ENDSWITCH ;von PAR2
+;
+          DEFAULT
+            MigMag_Msg(20,#QuitMsg) ;P1 Falsche Auswahl
+        ENDSWITCH ;von PAR1
+;
+      CASE 205
+        SWITCH PAR1
+          CASE 1 ;Nur ADV 
+;
+          CASE 2 ;Naht suchen - Referenzfahrt
+            MS_Referenzfahrt=TRUE
+            IF (PAR3==1) THEN
+              MS_AnmessenP1 ()
+            ENDIF
+            IF (PAR3==2) THEN
+              MS_AnmessenP1P2 ()
+            ENDIF
+;   
+          CASE 3 ;Naht suchen - Korrektur
+            MS_Referenzfahrt=FALSE
+            IF (MS_INT1_FEHLER==TRUE) THEN
+              O_MS_F_Such=TRUE ;Fehlerausgang an SPS  
+              IF ms_errStrategy==#useOrigData THEN
+                MS_MoveBaseOrTool31($IPO_MODE, $NULLFRAME)
+                MsgNotify("Messung fehlerhaft: keine Programmverschiebung", "MS",,,110)         
+              ENDIF
+              IF ms_errStrategy==#useLastMeasValues THEN
+                MS_MoveBaseOrTool31($IPO_MODE, MS_MESS_WERT[MS_Typ, MS_Messung] )
+                MsgNotify("Messung fehlerhaft: Verwendung der letzen Messdaten", "MS",,,110)                  
+              ENDIF          
+            ELSE
+              IF ((ABS(MS_DELTA_K_X)>ReserveReal[10]) OR (ABS(MS_DELTA_K_Y)>ReserveReal[10]) OR (ABS(MS_DELTA_K_Z)>ReserveReal[10])) THEN
+                MS_MoveBaseOrTool31($IPO_MODE, $NULLFRAME)
+                O_MS_F_Such=TRUE ;Fehlerausgang an SPS 
+                ;MsgNotify("KEINE Programmverschiebung , Messwert ausser Toleranz", "MS",,,110)
+                MigMag_Msg(6,#QuitMsg) ;KEINE Programmverschiebung , Messwert ausser Toleranz
+              ELSE
+                MS_MoveBaseOrTool31($IPO_MODE, MS_MESS_WERT[MS_Typ, MS_Messung] )
+              ENDIF   
+            ENDIF
+;   
+          CASE 4 ;Naht suchen - Vermessung
+            MS_Referenzfahrt=FALSE
+            IF (PAR3==1) THEN
+              MS_AnmessenP1 ()
+            ENDIF
+            IF (PAR3==2) THEN
+              MS_AnmessenP1P2 ()
+            ENDIF
+;
+          CASE 10 ; Inbetriebnahme
+            MS_IBN ()	
+;
+          CASE 5 ;Nur ADV 
+;
+          DEFAULT
+            MigMag_Msg(20,#QuitMsg) ;P1 Falscher Wert
+        ENDSWITCH ;von PAR1
+;
+      DEFAULT
+            MigMag_Msg(19,#QuitMsg) ;Falsche Gruppe
+    ENDSWITCH ;von CMD_SEL
+;
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------------
+  DEFAULT
+;  
+  ENDSWITCH
+END
+;
+;ENDFOLD (Bolzen Interface)
+;
+;-----------------------------------------------------------
+;FOLD MS_Meldungen
+DEF MigMag_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr, Answer, OFFSET
+DECL MSR_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "MS_R_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+OFFSET=0
+IF ((n_MSR_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+      USER_MSG.MSG_TXT[]="MS1: Fehler beim Zuenden"
+    CASE 2
+	   USER_MSG.MSG_TXT[]="MS1: Limitfehler/Brennerabschaltung "
+    CASE 3
+      USER_MSG.MSG_TXT[]="MS2: Fehler beim Zuenden"
+    CASE 4
+	   USER_MSG.MSG_TXT[]="MS2: Limitfehler/Brennerabschaltung"
+    CASE 5
+	   USER_MSG.MSG_TXT[]="Quitt. Programm-Nr. falsch"
+    CASE 6
+	   USER_MSG.MSG_TXT[]="KEINE Programmverschiebung , Messwert ausser Toleranz" 
+    CASE 6
+	   USER_MSG.MSG_TXT[]=" "        
+    CASE 19
+	   USER_MSG.MSG_TXT[]="Falsche Gruppen-Auswahl"  
+    CASE 20
+	   USER_MSG.MSG_TXT[]="P1: Falsche Auswahl"
+    CASE 21
+	   USER_MSG.MSG_TXT[]="P2: Falsche Auswahl" 
+    CASE 22
+	   USER_MSG.MSG_TXT[]="P3: Falsche Auswahl"    
+    CASE 23
+	   USER_MSG.MSG_TXT[]="P4: Falsche Auswahl"
+    CASE 24
+	   USER_MSG.MSG_TXT[]="P5: Falsche Auswahl"
+    CASE 25
+	   USER_MSG.MSG_TXT[]="P6: Falsche Auswahl"      
+    DEFAULT
+      USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_MSR_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_MSR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      While ( Exists_KrlMsg(n_MSR_Handle[msg_nr]) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      Endwhile
+    CASE #NotifyMsg
+      n_MSR_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_MSR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF  
+END
+;
+;ENDFOLD (MS Meldungen)
+;
+;------------------------------------------------------
+;FOLD MIG_Endkrater fuellen
+DEF MIG_EKF()
+CONTINUE
+$FLAG[F_MS1_LB_Ein]=FALSE
+$FLAG[F_MS2_LB_Ein]=FALSE
+END
+;ENDFOLD
+;
+;--------------------------------------------------------------------------------
+;FOLD KORREKTUR EBENE
+DEF  MIG_KO_EB ( )
+INT Z,Anzahl_Drahtvor, offset
+REAL Messabweichung, CorrValue
+DECL STATE_T STATE
+DECL CHAR strCorrValue[5]
+;
+;Bahngeschwindigkeit reduzieren
+$VEL.CP=0.833
+Anzahl_Drahtvor=0
+;
+;Abfrage ob Lichtschranke i.o
+MIG_LichtschrankeBelegt($IN[MS_Licht_1],$IN[MS_Licht_2])
+;
+;Bedingtes Anstarten der Korrektur am Programmanfang nach 60 min
+VW(#SET_TIME,TRUE,10,0,(-36000))
+;
+; Variablen vorbesetzen fuer TCP-Berechnung
+REF_P_X=0.0
+REF_P_Y=0.0
+REF_P_Z=0.0
+MESS_P_X=0.0
+MESS_P_Y=0.0
+MESS_P_Z=0.0
+;
+;Durchlaufzaehler
+Z=0
+;
+;Variable mit Referenzwert laden
+REF_P_X=mig_RefX[MIG_WK].X
+REF_P_Y=mig_RefY[MIG_WK].Y
+$TOOL=TOOL_DATA[mig_toolNr[MIG_WK]]
+;
+;Interrupts initialisieren
+INTERRUPT DECL 13 WHEN $IN[MS_Licht_2] DO MIG_INTMES (2)
+INTERRUPT DECL 14 WHEN $IN[MS_Licht_1] DO MIG_INTMES (1)
+INTERRUPT OFF 13
+INTERRUPT OFF 14
+;
+;Fehlerfaggs vorbesetzen
+INT1_FEHLER=FALSE
+INT2_FEHLER=FALSE
+;
+LABEL2:
+LIN mig_TCP2[MIG_WK]
+;
+;Startpunkt fuer den Messlauf anfahren
+LIN  mig_StartMess[MIG_WK]
+FEHLER_anSPS=FALSE
+Z=Z+1
+;Interrupt vorbereiten
+$ADVANCE=0
+INTERRUPT ON 13
+INTERRUPT ON 14
+;Variablen fuer Fehlerauswertung setzen
+INT1_FEHLER=TRUE
+INT2_FEHLER=TRUE
+;Messbewegung ausfuehren
+$VEL.CP=SUCH_VEL
+LIN  mig_StartMess[MIG_WK]
+LIN  mig_EndMess[MIG_WK]
+$VEL.CP=0.833
+$advance=1
+LIN mig_TCP2[MIG_WK]
+;Interrupts ausschalten
+INTERRUPT OFF 13
+INTERRUPT OFF 14
+IF (((INT1_FEHLER==TRUE) OR (INT2_FEHLER==TRUE)) AND (Z<3)) THEN
+  IF MIG_WK==1 THEN
+    PULSE (DRAHT_VOR,TRUE,PULS_DRAHT_VOR )
+  ELSE
+    PULSE (DRAHT_VOR_2,TRUE,PULS_DRAHT_VOR )
+  ENDIF
+  MIG_meld(1,90)
+  GOTO LABEL2
+ENDIF
+;Keine der beiden Lichtschranken wurde ausgeloest
+IF ((INT1_FEHLER==TRUE) AND (INT2_FEHLER==TRUE) AND (Z>=3)) THEN
+  FEHLER_anSPS=TRUE
+  MIG_meld (2,10 )
+  MIG_meld (2,16 )
+  MIG_meld (3,11 )
+  IF VW_ANTWORT==1 THEN
+    GOTO LABEL2
+  ELSE
+    return
+  ENDIF
+ENDIF
+IF ((INT1_FEHLER==TRUE) AND (INT2_FEHLER==FALSE) AND (Z>=3))THEN
+  ;Lichtschranke 1 wurde nicht ausgeloest
+  FEHLER_anSPS=TRUE
+  MIG_meld (2,11 )
+  MIG_meld (2,16 )
+  MIG_meld (3,11 )
+  IF VW_ANTWORT==1 THEN
+    GOTO LABEL2
+  ELSE
+    return
+  ENDIF
+ENDIF
+IF ((INT1_FEHLER==FALSE) AND (INT2_FEHLER==TRUE) AND (Z>=3))THEN
+  ;Lichtschranke 2 wurde nicht ausgeloest
+  FEHLER_anSPS=TRUE
+  MIG_meld (2,12 )
+  MIG_meld (2,16 )
+  MIG_meld (3,11 )
+  IF VW_ANTWORT==1 THEN
+    GOTO LABEL2
+  ELSE
+    RETURN
+  ENDIF
+ENDIF
+IF ((INT1_FEHLER==FALSE) AND (INT2_FEHLER==FALSE)) THEN
+  ;*********************************
+  ;Interruptpositionen auswerten
+  ;*********************************
+  ;Vergleich Soll- Istwerkzeug (Abweichung)
+  DELTA_Y=REF_P_Y-MESS_P_Y
+  DELTA_X=REF_P_X-MESS_P_X
+  DELTA_Z=0.0
+  ;Bereich berechnen
+  DELTA_X=DELTA_X*DELTA_X
+  DELTA_Y=DELTA_Y*DELTA_Y
+  DELTA_XY=DELTA_X+DELTA_Y
+  DELTA=SQRT(DELTA_XY)
+  CorrValue=DELTA
+  SWITCH  DELTA_MERKE
+    CASE 0
+      IF (DELTA>BEREICH_1) AND (DELTA<BEREICH_2) THEN
+        IF DELTA_MERKE<1 THEN
+          DELTA_MERKE=1
+          DELTA_NEU=DELTA
+          MIG_kalk ( )
+        ELSE
+          IF DELTA_NEU<>DELTA THEN
+            CorrValue=DELTA
+            DELTA_NEU=DELTA
+            MIG_kalk ( )
+          ELSE
+            MIG_kalk ( )
+          ENDIF
+        ENDIF
+      ELSE
+        IF DELTA>BEREICH_2 THEN
+          ;Abweichung zu gross,Brenner richten
+          FEHLER_anSPS=TRUE
+        ELSE
+          DELTA_MERKE=0
+          ;TCP OK
+          TOOL_DATA[31]=TOOL_DATA[mig_toolNr[MIG_WK]]
+          MIG_meld (1,5 )
+        ENDIF
+      ENDIF
+    CASE 1
+      IF (DELTA>BEREICH_1) AND (DELTA<BEREICH_2) THEN
+        IF DELTA_NEU<>DELTA THEN
+          DELTA_NEU=DELTA
+          MIG_kalk ( )
+        ELSE
+          MIG_kalk ( )
+        ENDIF
+      ELSE
+        IF DELTA>BEREICH_2 THEN
+          ;TCP Abweichung groesser Bereich 2 TCP muss gerichtet werden
+          FEHLER_anSPS=TRUE
+        ELSE
+          DELTA_MERKE=0
+          ;TCP OK
+          TOOL_DATA[31]=TOOL_DATA[mig_toolNr[MIG_WK]]
+          MIG_meld (1,5 )
+        ENDIF
+      ENDIF
+  ENDSWITCH
+  IF ((M_AUSGABE OR NOT $EXT) AND (CorrValue > 0.0)) THEN
+    OFFSET=0
+    SWRITE(strCorrValue[],STATE,OFFSET," %2.2F",CorrValue)
+    MsgNotify("Korrekturwert= %1 [mm]", "MIG",,strCorrValue[],110)
+  ENDIF
+ENDIF
+IF DELTA>BEREICH_2 THEN
+  ;Abweichung zu gross brenner muss gerichtet werden
+  FEHLER_anSPS=TRUE
+  MIG_meld (1,15 )
+  MIG_meld (2,15 )
+  MIG_meld (3,10 )
+  IF VW_ANTWORT==1 THEN
+    GOTO LABEL2
+  ELSE
+    RETURN
+  ENDIF
+ENDIF
+LABEL5:		; Programmabbruch
+END
+;ENDFOLD
+;
+;--------------------------------------------------------------------------------
+;FOLD KORREKTUR STOSSRICHTUNG
+DEF  MIG_KO_ST ( )
+DECL STATE_T STATE
+DECL CHAR strCorrValue[5]
+REAL CorrValue
+INT OFFSET
+;Bahngeschwindigkeit reduzieren
+$VEL.CP=0.833
+MIG_LichtschrankeBelegt($IN[MS_Licht_1],FALSE)
+;
+LABEL1:
+; Variablen vorbesetzen fuer TCP-Berechnung
+FEHLER_anSPS=FALSE
+REF_P_X=0.0
+REF_P_Y=0.0
+REF_P_Z=0.0
+MESS_P_X=0.0
+MESS_P_Y=0.0
+MESS_P_Z=0.0
+;Variable mit mit Referenzwert laden
+REF_P_Z=mig_RefZ[MIG_WK].Z
+;Tool_data[] mit in Ebene korregierten Daten laden um Stromduese mittig zu messen
+TOOL_DATA[31]=mig_ToolSave[MIG_WK]
+$TOOL=TOOL_DATA[31]
+;Interrupts initialisieren
+INTERRUPT DECL 15 WHEN $IN[MS_Licht_1] DO MIG_INTMES(3)
+INTERRUPT OFF 13
+INTERRUPT OFF 14
+;Fehlerfaggs vorbesetzen
+INT3_FEHLER=FALSE
+LIN  mig_TCP2[MIG_WK]
+;Startpunkt fuer den Messlauf anfahren
+LIN  mig_StartZ1[MIG_WK]
+;Interrupt vorbereiten
+$ADVANCE=0
+INTERRUPT ON 15
+;Variablen fuer Fehlerauswertung setzen
+INT3_FEHLER=TRUE
+;Messbewegung ausfuehren
+$VEL.CP=SUCH_VEL
+LIN  mig_StartZ1[MIG_WK]
+LIN  mig_EndZ1[MIG_WK]
+$VEL.CP=0.833
+$ADVANCE=1
+LIN  mig_StartZ1[MIG_WK]
+LIN  mig_TCP2[MIG_WK]
+;Interrupts ausschalten
+INTERRUPT OFF 15
+;Lichtschranke 1 wurde nicht ausgeloest
+IF INT3_FEHLER==TRUE THEN
+  FEHLER_anSPS=TRUE
+  MIG_meld (2,11 )
+  MIG_meld (2,16 )
+  HALT
+  MIG_meld(3,11 )
+  IF VW_ANTWORT==1 THEN ; weiter
+    GOTO LABEL1
+  ELSE
+    RETURN
+  ENDIF
+ENDIF
+;*********************************
+;Interruptpositionen auswerten
+;*********************************
+IF INT3_FEHLER==FALSE THEN
+  CorrValue=-1
+  ;Vergleich Soll- Istwerkzeug (Abweichung)
+  DELTA_X=0.0
+  DELTA_Y=0.0
+  DELTA_Z=REF_P_Z-MESS_P_Z
+  DELTA=ABS(DELTA_Z)
+  IF  DELTA<BEREICH_Z THEN
+    IF M_AUSGABE OR NOT $EXT THEN
+      CorrValue=DELTA
+      ;TCP wurde korrigiert
+      OFFSET=0
+      SWRITE(strCorrValue[],STATE,OFFSET," %2.2F",CorrValue)
+      MsgNotify("Korrekturwert= %1", "MIG",,strCorrValue[],110)
+      FEHLER_anSPS=FALSE
+    ENDIF
+    MIG_kalk ( )
+  ENDIF
+ENDIF
+IF  DELTA>BEREICH_Z THEN
+  ;Abweichung zu gross brenner muss gerichtet werden
+  FEHLER_anSPS=TRUE
+  MIG_meld (1,18 )
+  MIG_meld (2,15 )
+  HALT
+  MIG_meld (3,10 )
+  IF VW_ANTWORT==1 THEN ; weiter
+    GOTO LABEL1
+  ELSE
+    return
+  ENDIF
+ENDIF
+; Abweichung in Stoﬂrichtung merken
+IF INT3_FEHLER==FALSE THEN
+  MERK_DIFF_Z=REF_P_Z-MESS_P_Z
+ENDIF
+END
+;ENDFOLD
+;
+;--------------------------------------------------------------------------------
+;FOLD INSTALLATION
+DEF  MIG_INST ( )
+IF (MIG_WK<1) OR (MIG_WK>2) THEN
+  MsgQuit("Brenner-Nummer ungueltig", "MIG",,,110)
+  RETURN
+ENDIF
+mig_toolNr[MIG_WK]= VW_MPARA_ACT.TOOL_NO
+;
+; Positionen fuer die TCP-Funktion berechnen
+IF TCP_Gertyp=="A" THEN ;neue Vorrichtung (Laser)
+  MIG_posa ( )
+ELSE ;Kein Typ vorgegeben
+  MIG_posv ( )
+ENDIF
+MIG_meld (3,4 )
+;
+; Refernzwerte ermitteln ( Ebene )
+MIG_re_eb ( )
+;
+; TCP testen ( Ebene )
+MIG_ko_eb ( )
+MIG_meld (3,5 )
+;
+; Refernzwerte ermitteln ( Stoﬂrichtung )
+MIG_re_st ( )
+;
+; TCP testen ( Stossrichtung )
+MIG_ko_st ( )
+MIG_meld (1,7 )
+END
+;ENDFOLD
+;
+;------------------------------------------------------
+;FOLD REFERENZ EBENE
+DEF  MIG_RE_EB ( )
+;Bahngeschwindigkeit reduzieren
+$VEL.CP=0.833
+$TOOL=TOOL_DATA[mig_toolNr[MIG_WK]]
+;Fehlerfaggs vorbesetzen
+INT1_FEHLER=FALSE
+INT2_FEHLER=FALSE
+;Interrupts initialisieren
+INTERRUPT DECL 13 WHEN $IN[MS_Licht_2] DO MIG_INTREF(2)
+INTERRUPT DECL 14 WHEN $IN[MS_Licht_1] DO MIG_INTREF(1)
+INTERRUPT OFF 13
+INTERRUPT OFF 14
+;PTP  mig_TCP2[MIG_WK]
+;Startpunkt fuer den Messlauf anfahren
+LIN  mig_StartMess[MIG_WK]
+;Interrupt vorbereiten
+$ADVANCE=0
+INTERRUPT ON 13
+INTERRUPT ON 14
+;Variablen fuer Fehlerauswertung setzen
+INT1_FEHLER=TRUE
+INT2_FEHLER=TRUE
+;Messbewegung ausfuehren
+$VEL.CP=SUCH_VEL
+LIN  mig_StartMess[MIG_WK]
+LIN  mig_EndMess[MIG_WK]
+$VEL.CP=0.833
+INTERRUPT OFF 13
+INTERRUPT OFF 14
+$advance=1
+LIN  mig_TCP2[MIG_WK]
+;*********************************
+;Interruptfehler auswerten
+;*********************************
+;Keine der beiden Lichtschranken wurde ausgeloest
+IF ((INT1_FEHLER==TRUE) AND (INT2_FEHLER==TRUE)) THEN
+  REPEAT
+    MIG_meld (2,10 )
+    HALT
+  UNTIL ((INT1_FEHLER==FALSE) AND (INT2_FEHLER==FALSE))
+ENDIF
+;Lichtschranke 1 wurde nicht ausgeloest
+IF INT1_FEHLER==TRUE THEN
+  REPEAT
+    MIG_meld (2,11 )
+  UNTIL INT1_FEHLER==FALSE
+ENDIF
+;Lichtschranke 2 wurde nicht ausgeloest
+IF INT2_FEHLER==TRUE THEN
+  REPEAT
+    MIG_meld (2,12 )
+  UNTIL INT2_FEHLER==FALSE
+ENDIF
+;Referenz Punkte sind geteacht
+MIG_meld (1,12 )
+MIG_meld (1,6 )
+END
+;ENDFOLD
+;
+;--------------------------------------------------------------------------------
+;FOLD REFERENZ STOSSRICHTUNG
+DEF  MIG_RE_ST ( )
+;Bahngeschwindigkeit reduzieren
+$VEL.CP=0.833
+$TOOL=TOOL_DATA[mig_toolNr[MIG_WK]]
+;Variablen fuer Fehlerauswertung zuruecksetzen
+INT1_FEHLER=FALSE
+INT2_FEHLER=FALSE
+;Interrupts initialisieren
+INTERRUPT DECL 15 WHEN $IN[MS_Licht_1] DO MIG_INTREF(3)
+INTERRUPT OFF 13
+INTERRUPT OFF 14
+LIN  mig_TCP2[MIG_WK]
+;Startpunkt fuer den Messlauf anfahren
+LIN  mig_StartZ1[MIG_WK]
+;Interrupt vorbereiten
+$ADVANCE=0
+;Unterkannte der Stromduese messen
+INTERRUPT ON 15
+;Variablen fuer Fehlerauswertung setzen
+INT3_FEHLER=TRUE
+;Messbewegung ausfuehren
+$VEL.CP=SUCH_VEL
+LIN  mig_StartZ1[MIG_WK]
+LIN  mig_EndZ1[MIG_WK]
+$VEL.CP=0.833
+INTERRUPT OFF 15
+$ADVANCE=1
+;zum Ausgangspunkt zurueckfahren
+LIN  mig_StartZ1[MIG_WK]
+LIN  mig_TCP2[MIG_WK]
+;*********************************
+;Interruptfehler auswerten
+;*********************************
+;Lichtschranke 1 wurde nicht ausgeloest
+IF INT3_FEHLER==TRUE THEN
+  REPEAT
+    MIG_meld (2,11 )
+  UNTIL INT1_FEHLER==FALSE
+ENDIF
+;*******************************************************
+;**                                                   **
+;**              STARTTASTE BETAETIGEN                **
+;**                                                   **
+;**                       UND                         **
+;**                                                   **
+;**        MELDUNGEN IM MELDUNGSFENSTER BEACHTEN      **
+;**                                                   **
+;*******************************************************
+;Referenz Punkte sind geteacht
+MIG_meld (1,12 )
+MIG_meld (1,6 )
+END
+;ENDFOLD
+;
+;--------------------------------------------------------------------------------
+;FOLD KORREKTUR GASDUESE
+DEF  MIG_KO_GD ( )
+DECL STATE_T STATE
+DECL CHAR strCorrValue[5]
+REAL CorrValue
+DECL POS start_z2[2], end_z2[2]
+INT OFFSET
+;Bahngeschwindigkeit reduzieren
+$VEL.CP=0.833
+MIG_LichtschrankeBelegt($IN[MS_Licht_1],FALSE)
+LABEL1:
+FEHLER_anSPS=FALSE
+; Variablen vorbesetzen fuer TCP-Berechnung
+REF_P_X=0.0
+REF_P_Y=0.0
+REF_P_Z=0.0
+MESS_P_X=0.0
+MESS_P_Y=0.0
+MESS_P_Z=0.0
+;Variable mit mit Referenzwert laden
+REF_P_Z=mig_RefZ[MIG_WK].Z
+;Tool_data[] mit in Ebene korregierten Daten laden um Stromduese mittig zu messen
+TOOL_DATA[31]=mig_ToolSave[MIG_WK]
+$TOOL=TOOL_DATA[31]
+;Interrupts initialisieren
+INTERRUPT DECL 15 WHEN $IN[MS_Licht_1] DO MIG_INTMES(3)
+INTERRUPT OFF 13
+INTERRUPT OFF 14
+INTERRUPT OFF 15
+;Fehlerfaggs vorbesetzen
+INT3_FEHLER=FALSE
+;Start und Endpunkte fuer Kontrolle Gasduese berechnen
+START_Z2[MIG_WK]=mig_StartZ1[MIG_WK]
+START_Z2[MIG_WK].X=mig_StartZ1[MIG_WK].X-5.0
+END_Z2[MIG_WK]=mig_EndZ1[MIG_WK]
+END_Z2[MIG_WK].X=mig_EndZ1[MIG_WK].X-5.0
+WAIT SEC 0.2
+PTP  mig_TCP2[MIG_WK]
+;Startpunkt fuer den Messlauf anfahren
+LIN  START_Z2[MIG_WK]
+;Interrupt vorbereiten
+$ADVANCE=0
+INTERRUPT ON 15
+;Variablen fuer Fehlerauswertung setzen
+INT3_FEHLER=TRUE
+;Messbewegung ausfuehren
+$VEL.CP=SUCH_VEL
+LIN  START_Z2[MIG_WK]
+LIN  END_Z2[MIG_WK]
+$VEL.CP=0.833
+$ADVANCE=1
+LIN  mig_StartZ1[MIG_WK]
+LIN  mig_TCP2[MIG_WK]
+;Interrupts ausschalten
+INTERRUPT OFF 15
+;Lichtschranke 1 wurde nicht ausgeloest
+IF INT3_FEHLER==TRUE THEN
+  FEHLER_anSPS=TRUE
+  MIG_meld (2,11 )
+  MIG_meld (2,16 )
+  HALT
+  MIG_meld(3,11 )
+  IF VW_ANTWORT==1 THEN ; weiter
+    GOTO LABEL1
+  ELSE
+    return
+  ENDIF
+ENDIF
+;*********************************
+;Interruptpositionen auswerten
+;*********************************
+IF INT3_FEHLER==FALSE THEN
+  CorrValue=-1
+  ;Vergleich Soll- Istwerkzeug (Abweichung)
+  DELTA_X=0.0
+  DELTA_Y=0.0
+  DELTA_Z=REF_P_Z-MESS_P_Z
+  DELTA=ABS(DELTA_Z)
+  IF  DELTA<BEREICH_Z THEN
+    IF M_AUSGABE OR NOT $EXT THEN
+      CorrValue=DELTA
+      ;Gasduese wurde Kontrolliert
+      OFFSET=0
+      SWRITE(strCorrValue[],STATE,OFFSET," %2.2F",CorrValue)
+      MsgNotify("GASDUESE ABWEICHUNG   %1 mm", "MIG",,strCorrValue[],110)
+    ENDIF
+  ENDIF
+ENDIF
+IF  DELTA>BEREICH_Z THEN
+  ;Abweichung zu gross brenner muss gerichtet werden
+  FEHLER_anSPS=TRUE
+  MIG_meld (1,19 )
+  MIG_meld (2,18 )
+  MIG_meld (3,14 )
+  IF VW_ANTWORT==1 THEN ; weiter
+    GOTO LABEL1
+  ELSE
+    return
+  ENDIF
+ENDIF
+LABEL5:		; Programmabbruch
+END
+;ENDFOLD
+;
+;-------------------------------------------------------
+;FOLD MIG Hilfsprogramme
+DEF  MIG_INTMES (param:IN )
+;Interruptpositionen speichern
+INT param
+DECL POS posint
+posint = $pos_int
+;
+SWITCH param
+  CASE 1
+    INTERRUPT OFF 14
+    INT1_FEHLER=FALSE
+    MESS_P_X=posint.X
+  CASE 2
+    INTERRUPT OFF 13
+    INT2_FEHLER=FALSE
+    MESS_P_Y=posint.Y
+  CASE 3
+    INTERRUPT OFF 15
+    INT3_FEHLER=FALSE
+    MESS_P_Z=posint.Z
+  DEFAULT
+    MsgQuit("falscher Parameter in mig_intmes", "MIG",,,110)   
+ENDSWITCH
+END
+;
+;-------------------------------------------------------
+DEF MIG_INTREF(param:IN)
+;Interruptpositionen speichern
+INT param
+DECL POS posint
+posint = $pos_int
+;
+SWITCH param
+  CASE 1
+    INTERRUPT OFF 14
+    INT1_FEHLER=FALSE
+    REF_P_X=posint.X
+    mig_RefX[MIG_WK].X=posint.X
+  CASE 2
+    INTERRUPT OFF 13
+    INT2_FEHLER=FALSE
+    REF_P_Y=posint.Y
+    mig_RefY[MIG_WK].Y=posint.Y
+  CASE 3
+    INTERRUPT OFF 15
+    INT3_FEHLER=FALSE
+    REF_P_Z=posint.Z
+    mig_RefZ[MIG_WK].Z=posint.Z   
+  DEFAULT
+    MsgQuit("falscher Parameter in mig_intref", "MIG",,,110)   
+ENDSWITCH
+END
+;
+;--------------------------------------------------------------------------------
+DEF  MIG_KALK ( )
+DECL FRAME ORI_FL
+DECL FRAME DIFF, DIFF_Z 
+DECL FRAME DIFF_FL
+DECL FRAME DIFF_FL_Z
+;
+INT I
+INT J
+J=0
+$TOOL=$NULLFRAME
+ORI_FL=$POS_ACT
+ORI_FL.X=0.0
+ORI_FL.Y=0.0
+ORI_FL.Z=0.0
+INV_FRAME (ORI_FL )
+;
+; Differenzkoordinaten  Tool
+DIFF=$NULLFRAME
+DIFF.X=REF_P_X-MESS_P_X
+DIFF.Y=REF_P_Y-MESS_P_Y
+DIFF.Z=MERK_DIFF_Z
+DIFF_FL=ORI_FL:DIFF
+;
+TOOL_DATA[31].X=TOOL_DATA[mig_toolNr[MIG_WK]].X+DIFF_FL.X
+TOOL_DATA[31].Y=TOOL_DATA[mig_toolNr[MIG_WK]].Y+DIFF_FL.Y
+TOOL_DATA[31].Z=TOOL_DATA[mig_toolNr[MIG_WK]].Z+DIFF_FL.Z
+MS_TOOL_SAVE[MIG_WK]=TOOL_DATA[31]
+;
+; Differenzkoordinaten  Tool
+DIFF_Z=$NULLFRAME
+DIFF_Z.X=REF_P_X-MESS_P_X
+DIFF_Z.Y=REF_P_Y-MESS_P_Y
+DIFF_Z.Z=0.0
+DIFF_FL_Z=ORI_FL:DIFF_Z
+;
+mig_ToolSave[MIG_WK].X=mig_ToolRef[MIG_WK].X+DIFF_FL_Z.X
+mig_ToolSave[MIG_WK].Y=mig_ToolRef[MIG_WK].Y+DIFF_FL_Z.Y
+mig_ToolSave[MIG_WK].Z=mig_ToolRef[MIG_WK].Z+DIFF_FL_Z.Z   
+;
+$TOOL=TOOL_DATA[31]
+;  
+;Daten mitloggen
+;MIG_log ( )
+END
+;
+;-------------------------------------------------------
+DEF  RPY_TO_MAT (T[,]:OUT,A :IN,B :IN,C :IN )
+; Umwandlung von RPY-Winkeln A, B, C in eine Trafo-Matrix T
+; T = Rot_z(A) * Rot_y(B) * Rot_x(C)
+REAL T[,],A,B,C
+REAL COS_A,SIN_A,COS_B,SIN_B,COS_C,SIN_C
+COS_A=COS(A)
+SIN_A=SIN(A)
+COS_B=COS(B)
+SIN_B=SIN(B)
+COS_C=COS(C)
+SIN_C=SIN(C)
+T[1,1]=COS_A*COS_B
+T[1,2]=-SIN_A*COS_C+COS_A*SIN_B*SIN_C
+T[1,3]=SIN_A*SIN_C+COS_A*SIN_B*COS_C
+T[2,1]=SIN_A*COS_B
+T[2,2]=COS_A*COS_C+SIN_A*SIN_B*SIN_C
+T[2,3]=-COS_A*SIN_C+SIN_A*SIN_B*COS_C
+T[3,1]=-SIN_B
+T[3,2]=COS_B*SIN_C
+T[3,3]=COS_B*COS_C
+END
+;
+;-------------------------------------------------------
+DEF  INV_FRAME (F:OUT )
+FRAME F
+REAL O[3,3],MINUS_P[3],INV_P[3]
+; Orientierung invertieren:
+RPY_TO_MAT (O[,],F.A,F.B,F.C )
+INV_ORI_MAT (O[,] )
+MAT_TO_RPY (O[,],F.A,F.B,F.C )
+; Ort invertieren:
+MINUS_P[1]=-F.X
+MINUS_P[2]=-F.Y
+MINUS_P[3]=-F.Z
+MAT_MAL_VEK (O[,],MINUS_P[],INV_P[],3,3 )
+F.X=INV_P[1]
+F.Y=INV_P[2]
+F.Z=INV_P[3]
+END
+;
+;-------------------------------------------------------
+DEF  INV_ORI_MAT (O[,]:OUT )
+; Invertieren der orthogonalen 3x3-Orientierungsmatrix durch Transponieren
+REAL O[,]
+REAL TAUSCH
+INT I,J
+FOR I=1 TO  3
+FOR J=I+1 TO  3
+TAUSCH=O[I,J]
+O[I,J]=O[J,I]
+O[J,I]=TAUSCH
+ENDFOR
+ENDFOR
+END
+;
+;-------------------------------------------------------
+DEF  MAT_MAL_VEK (A[,]:OUT,X[]:OUT,Be[]:OUT,N :IN,M :IN )
+; b = A * x wird berechnet, wobei dim(A) = N x M
+REAL A[,],X[],Be[]
+INT N,M
+REAL SUM
+INT I,J
+FOR I=1 TO  N
+  SUM=0
+  FOR J=1 TO  M
+    SUM=SUM+A[I,J]*X[J]
+  ENDFOR
+  Be[I]=SUM
+ENDFOR
+END
+;
+;--------------------------------------------------------------------------------
+DEFFCT  REAL SIGN(X :IN)
+; Bestimmung des Vorzeichens von x
+REAL X
+IF X<0 THEN
+  RETURN  (-1)
+ELSE
+  RETURN  (1)
+ENDIF
+ENDFCT
+;
+;-------------------------------------------------------
+DEFFCT  REAL ARCTAN2(Y :IN,X :IN)
+; Arcustangens mit 2 Argumenten und Check, ob x und y numerisch 0 sind
+REAL X,Y
+REAL ATAN_EPS
+ATAN_EPS=0.00011
+IF ((ABS(X)<ATAN_EPS) AND (ABS(Y)<ATAN_EPS)) THEN
+  RETURN  (0)
+ELSE
+  RETURN  (ATAN2(Y,X))
+ENDIF
+ENDFCT
+;
+;-------------------------------------------------------
+DEFFCT  REAL ASIN(X :IN)
+; Berechnung des Arcussinus
+REAL X
+RETURN  (90-ACOS(X))
+ENDFCT
+;
+;-------------------------------------------------------
+DEFFCT  REAL SKAL_PROD(V[]:OUT,W[]:OUT,N :IN)
+; Berechnung des Skalarprodukts der beiden N-dimensionalen Vektoren
+; V und W
+REAL V[],W[]
+INT N
+REAL SK_PROD
+INT I
+SK_PROD=0
+FOR I=1 TO  N
+  SK_PROD=SK_PROD+V[I]*W[I]
+ENDFOR
+RETURN  (SK_PROD)
+ENDFCT
+;
+;-------------------------------------------------------
+DEF  KREUZ_PROD (U[]:OUT,V[]:OUT,W[]:OUT )
+; Berechnung des Kreuzproduktes der 3-dim Vektoren U und V.
+; Das Ergebnis wird in W abgespeichert.
+REAL U[],V[],W[]
+W[1]=U[2]*V[3]-U[3]*V[2]
+W[2]=U[3]*V[1]-U[1]*V[3]
+W[3]=U[1]*V[2]-U[2]*V[1]
+END
+;
+;-------------------------------------------------------
+DEFFCT  REAL VEK_LAENGE(V[]:OUT,N :IN)
+; Berechnung der euklidischen Laenge des N-dimensionalen Vektors V
+REAL V[]
+INT N
+RETURN  (SQRT(SKAL_PROD(V[],V[],N)))
+ENDFCT
+;
+;-------------------------------------------------------
+DEF  NORM_VEK (V[]:OUT,N:IN )
+; Der Vektor V wird durch seine Laenge dividiert, so dass er dann
+; Laenge 1 besitzt.
+REAL V[]
+INT N
+REAL LAENGE
+INT I
+LAENGE=VEK_LAENGE(V[],N)
+;wenn Laenge = 0, dann gibt es keinen definierten NormVektor
+IF Laenge==0 Then
+  V[1]=1.0
+  Return
+ENDIF
+FOR I=1 TO  N
+  V[I]=V[I]/LAENGE
+ENDFOR
+END
+;
+;-------------------------------------------------------
+DEF  MAT_TO_RPY (T[,]:OUT,A:OUT,B:OUT,C:OUT )
+; Umwandlung einer Trafo-Matrix T in die RPY-Winkel A, B, C
+; T = Rot_z(A) * Rot_y(B) * Rot_x(C)
+REAL T[,],A,B,C
+REAL SIN_A,COS_A,SIN_B,ABS_COS_B,SIN_C,COS_C
+A=ARCTAN2(T[2,1],T[1,1])
+SIN_A=SIN(A)
+COS_A=COS(A)
+SIN_B=-T[3,1]
+ABS_COS_B=COS_A*T[1,1]+SIN_A*T[2,1]
+B=ARCTAN2(SIN_B,ABS_COS_B) ;       Hier: -90 <= B <= +90 !!
+SIN_C=SIN_A*T[1,3]-COS_A*T[2,3]
+COS_C=-SIN_A*T[1,2]+COS_A*T[2,2]
+C=ARCTAN2(SIN_C,COS_C)
+END
+;
+;-------------------------------------------------------
+DEFFCT  REAL DIST_FRAME(P1:OUT,P2:OUT)
+; Berechnung des Abstandes zwischen 2 Positionen
+FRAME P1,P2
+REAL DIST_VEC[3]
+DIST_VEC[1]=P2.X-P1.X
+DIST_VEC[2]=P2.Y-P1.Y
+DIST_VEC[3]=P2.Z-P1.Z
+RETURN  (VEK_LAENGE(DIST_VEC[],3))
+ENDFCT
+;
+;-------------------------------------------------------
+DEF MIG_LichtschrankeBelegt(ls1:IN, ls2:IN)
+BOOL ls1,ls2
+FEHLER_anSPS=FALSE
+WHILE (ls1 OR ls2)
+  FEHLER_anSPS=TRUE
+  MsgQuit("Lichtschranke vor Messvorgang belegt", "MIG",,,110)
+ENDWHILE
+END
+;ENDFOLD
+;
+;-------------------------------------------------------
+;FOLD POSITIONEN BERECHNEN
+DEF MIG_POSA( )
+DECL POS start_pu_t[2]
+;Bahngeschwindigkeit reduzieren
+$VEL.CP=0.833
+mig_ToolRef[MIG_WK]=TOOL_DATA[mig_toolNr[MIG_WK]]
+mig_ToolSave[MIG_WK]=TOOL_DATA[mig_toolNr[MIG_WK]]
+MERK_DIFF_Z=0.0
+$TOOL=TOOL_DATA[mig_toolNr[MIG_WK]]
+;**********************************************
+;Startpunkt teachen und Starttaste betaetigen
+;**********************************************
+MIG_meld (1,1 )
+MIG_meld (1,2 )
+HALT
+START_PU_T[MIG_WK]=$POS_ACT
+mig_StartMess[MIG_WK]=START_PU_T[MIG_WK]
+mig_StartMess[MIG_WK].X=0.0
+mig_StartMess[MIG_WK].Y=0.0
+mig_StartMess[MIG_WK].Z=0.0
+mig_StartMess[MIG_WK].A=START_PU_T[MIG_WK].A
+mig_StartMess[MIG_WK].B=START_PU_T[MIG_WK].B
+mig_StartMess[MIG_WK].C=START_PU_T[MIG_WK].C
+mig_StartMess[MIG_WK].X=mig_StartMess[MIG_WK].X+112.0
+mig_StartMess[MIG_WK].Y=mig_StartMess[MIG_WK].Y-43.0
+mig_StartMess[MIG_WK].Z=mig_StartMess[MIG_WK].Z+10.0+FREI_DRAHT-7.0
+;Endpunkt fuer den Messlauf erzeugen
+mig_EndMess[MIG_WK]=START_PU_T[MIG_WK]
+mig_EndMess[MIG_WK].X=0.0
+mig_EndMess[MIG_WK].Y=0.0
+mig_EndMess[MIG_WK].Z=0.0
+mig_EndMess[MIG_WK].A=START_PU_T[MIG_WK].A
+mig_EndMess[MIG_WK].B=START_PU_T[MIG_WK].B
+mig_EndMess[MIG_WK].C=START_PU_T[MIG_WK].C
+mig_EndMess[MIG_WK].X=mig_EndMess[MIG_WK].X-48.0
+mig_EndMess[MIG_WK].Y=mig_EndMess[MIG_WK].Y+119.0
+mig_EndMess[MIG_WK].Z=mig_EndMess[MIG_WK].Z+10.0+FREI_DRAHT-7.0
+mig_TCP2[MIG_WK]=START_PU_T[MIG_WK]
+mig_TCP2[MIG_WK].Z=START_PU_T[MIG_WK].Z-100.0
+mig_TCP2[MIG_WK].X=0.0
+mig_TCP2[MIG_WK].Y=0.0
+mig_TCP2[MIG_WK].Z=0.0
+mig_TCP2[MIG_WK].A=START_PU_T[MIG_WK].A
+mig_TCP2[MIG_WK].B=START_PU_T[MIG_WK].B
+mig_TCP2[MIG_WK].C=START_PU_T[MIG_WK].C
+mig_TCP2[MIG_WK].Y=mig_TCP2[MIG_WK].Y+119.0
+mig_TCP2[MIG_WK].Z=mig_TCP2[MIG_WK].Z-100.0
+;Startpunkt fuer Z Messung
+mig_StartZ1[MIG_WK]=mig_EndMess[MIG_WK]
+mig_StartZ1[MIG_WK].Z=mig_EndMess[MIG_WK].Z-20
+mig_StartZ1[MIG_WK].Y=mig_StartZ1[MIG_WK].Y-25.0
+mig_StartZ1[MIG_WK].X=mig_StartZ1[MIG_WK].X+48.0
+; Wert von 55.0 und 65.0 mm fuer Gasduese
+; 60.0 mm fuer Sromduese (mittig)
+;Endpunkt fuer Z Messung
+mig_EndZ1[MIG_WK]=mig_StartZ1[MIG_WK]
+mig_EndZ1[MIG_WK].Z=mig_EndZ1[MIG_WK].Z+40.0
+PTP  $POS_ACT
+LIN  mig_TCP2[MIG_WK]
+;Positionen sind geteacht
+MIG_meld (1,8 )
+MIG_meld (1,9 )
+MIG_meld (1,6 )
+END
+;
+;-------------------------------------------------------
+DEF  MIG_POSV ( )
+DECL POS start_pu_t[2]
+;Bahngeschwindigkeit reduzieren
+$VEL.CP=0.833
+mig_ToolRef[MIG_WK]=TOOL_DATA[mig_toolNr[MIG_WK]]
+mig_ToolSave[MIG_WK]=TOOL_DATA[mig_toolNr[MIG_WK]]
+MERK_DIFF_Z=0.0
+$TOOL=TOOL_DATA[mig_toolNr[MIG_WK]]
+;**********************************************
+;Startpunkt teachen und Starttaste betaetigen
+;**********************************************
+mig_meld (1,1 )
+mig_meld (1,2 )
+HALT
+START_PU_T[MIG_WK]=$POS_ACT
+;Startpunkt fuer den Messlauf erzeugen
+mig_StartMess[MIG_WK]=START_PU_T[MIG_WK]
+mig_StartMess[MIG_WK].X=START_PU_T[MIG_WK].X+100.0
+mig_StartMess[MIG_WK].Y=START_PU_T[MIG_WK].Y-200
+mig_StartMess[MIG_WK].Z=START_PU_T[MIG_WK].Z+21.0+FREI_DRAHT-5.0 ;Altes Geraet 42+FD-5
+;Endpunkt fuer den Messlauf erzeugen
+mig_EndMess[MIG_WK]=START_PU_T[MIG_WK]
+mig_EndMess[MIG_WK].X=START_PU_T[MIG_WK].X-60.0
+mig_EndMess[MIG_WK].Y=START_PU_T[MIG_WK].Y-38.0
+mig_EndMess[MIG_WK].Z=START_PU_T[MIG_WK].Z+21.0+FREI_DRAHT-5.0 ;Altes Geraet 42+FD-5
+;Position ueber dem zweiten Endpunkt
+mig_TCP2[MIG_WK]=START_PU_T[MIG_WK]
+mig_TCP2[MIG_WK].Z=START_PU_T[MIG_WK].Z-100.0
+;Startpunkt fuer Z Messung
+mig_StartZ1[MIG_WK]=mig_EndMess[MIG_WK]
+mig_StartZ1[MIG_WK].Z=mig_EndMess[MIG_WK].Z-20
+mig_StartZ1[MIG_WK].X=mig_StartZ1[MIG_WK].X+60.0
+; Wert von 55.0 und 65.0 mm fuer Gasduese
+; 60.0 mm fuer Sromduese (mittig)
+;Endpunkt fuer Z Messung
+mig_EndZ1[MIG_WK]=mig_StartZ1[MIG_WK]
+mig_EndZ1[MIG_WK].Z=mig_EndZ1[MIG_WK].Z+40.0
+PTP  $POS_ACT
+LIN  mig_TCP2[MIG_WK]
+;Positionen sind geteacht
+mig_meld (1,8 )
+mig_meld (1,9 )
+mig_meld (1,6 )
+END
+;ENDFOLD
+;
+;--------------------------------------------------------------------------------
+;FOLD MELDUNGEN
+DEF  MIG_MELD (MELD_ART :IN,MELD_NR :IN )
+;Programm zur Ausgabe von
+;Hinweisen und Fehlermedungen
+;fuer das TCP_Kontrollprogramm
+;*************************************************
+DECL INT MELD_NR
+DECL INT MELD_ART
+DECL INT OFFSET
+DECL STATE_T STATE
+DECL KRLMSG_T USER_MSG
+DECL KRLMSGPAR_T PAR[3]
+DECL KRLMSGOPT_T OPT
+DECL KrlMsgDlgSK_T SK[7]
+INT nHandle, Answer
+USER_MSG = { Modul[] "VW_USR_R", Nr 123, Msg_txt[] " "}
+Par[1] = { Par_type #Value, Par_txt[] " " }
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+SWITCH  MELD_ART
+  CASE 1
+  ;Hinweismeldungen
+    SWITCH  MELD_NR
+      CASE 1
+        USER_MSG.MSG_TXT[]="MIT TCP PUNKT -XY- ANFAHREN."
+      CASE 2
+        USER_MSG.MSG_TXT[]="UND STARTTASTE BETAETIGEN."
+      CASE 3
+        USER_MSG.MSG_TXT[]="                                      "
+      CASE 4
+        OFFSET=0
+        USER_MSG.MSG_TXT[]="Werkzeugabweichung    mm"
+      CASE 5
+        USER_MSG.MSG_TXT[]="TCP OK !"
+      CASE 6
+        USER_MSG.MSG_TXT[]=" --- Weiter mit ---> START --- "
+      CASE 7
+        USER_MSG.MSG_TXT[]="TCP-GERAT FERTIG EINGERICHTET !! "
+      CASE 8
+        USER_MSG.MSG_TXT[]="POSITIONEN SIND BERECHNET !! "
+      CASE 9
+        USER_MSG.MSG_TXT[]="UND GESPEICHERT IN \R1\$CONFIG.DAT"
+      CASE 10
+        USER_MSG.MSG_TXT[]="SUCH GESCHWINDIGKEIT IST ZU GROSS !!"
+      CASE 11
+        OFFSET=0
+        Par[1].Par_real=SUCH_VEL
+        USER_MSG.MSG_TXT[]="GESCHWINDIGKEIT AUF  V= %1 mm/s GEAENDERT"
+      CASE 12
+        USER_MSG.MSG_TXT[]="REFERENZWERTE SIND GESPEICHERT!!"
+      CASE 13
+        USER_MSG.MSG_TXT[]="TCP WURDE KORRIGIERT!"
+      CASE 14
+        USER_MSG.MSG_TXT[]=" "
+      CASE 15
+        USER_MSG.MSG_TXT[]="TCP ABWEICHUNG   xxx mm"
+      CASE 16
+        USER_MSG.MSG_TXT[]="PUNKT -U- auf Lichtschranke mit TCP anfahren, weiter mit START+"
+      CASE 17
+        USER_MSG.MSG_TXT[]="mit TCP anfahren  ----> STOPMELDUNG Quittieren"
+      CASE 18
+        USER_MSG.MSG_TXT[]="TCP ABWEICHUNG   %1 mm"
+      CASE 19
+        USER_MSG.MSG_TXT[]="GASDUESE ABWEICHUNG   xxx mm"
+      CASE 20
+        USER_MSG.MSG_TXT[]="Abweichung lezte Messung   xxx mm"
+      CASE 21
+        USER_MSG.MSG_TXT[]="PUNKT -X- anfahren, weiter mit START+"
+      CASE 22
+        USER_MSG.MSG_TXT[]="mit TCP anfahren  ----> START"
+      CASE 23
+        USER_MSG.MSG_TXT[]=" DAS Werkzeug wurde nicht"
+      CASE 24
+        USER_MSG.MSG_TXT[]=" ABC WORLD 5D vermessen !!"
+      CASE 31
+        USER_MSG.MSG_TXT[]="Der Punkt liegt zu nahe am -U-"
+      CASE 41
+        USER_MSG.MSG_TXT[]="PUNKT -XY- auf TCP-GERAT"
+      CASE 42
+        USER_MSG.MSG_TXT[]="mit TCP anfahren  ----> START"
+      CASE 51
+        USER_MSG.MSG_TXT[]="FEHLER: Die Punkte liegen alle"
+      CASE 52
+        USER_MSG.MSG_TXT[]="fast auf einer Geraden."
+      CASE 61
+        USER_MSG.MSG_TXT[]="Position liegt zu nahe an einer alten"
+      CASE 62
+        USER_MSG.MSG_TXT[]="Position. Andere Position auswaehlen !"
+      CASE 71
+        USER_MSG.MSG_TXT[]="Vermessung erfolgreich durchgefuehrt."
+      CASE 72
+        USER_MSG.MSG_TXT[]="Daten liegen in /R1/$CONFIG.DAT."
+      CASE 80
+        USER_MSG.MSG_TXT[]="TOOL_DATA - TCP Daten der gelernten Werkzeuge"
+      CASE 81
+        USER_MSG.MSG_TXT[]="TOOL_REF - TCP Daten aus vorheriger Inbetriebnahme"
+      CASE 90
+        USER_MSG.MSG_TXT[]="Lichtschranke(n) wurden nicht unterbrochen"
+      CASE 99
+        USER_MSG.MSG_TXT[]="Programm wurde abgebrochen"
+      DEFAULT
+        USER_MSG.MSG_TXT[]="Keine Hinweismeldung programmiert !!"
+    ENDSWITCH
+    OFFSET=0
+    nHandle = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    ;***********************************************************************************************
+    ;Fehlermeldungen
+  CASE 2
+    SWITCH  MELD_NR
+      CASE 5
+        USER_MSG.MSG_TXT[]="Lichtschranken pruefen, ggf. austauschen"
+      CASE 6
+        USER_MSG.MSG_TXT[]=" "
+      CASE 7
+        USER_MSG.MSG_TXT[]="Es wurden keine Raumpunkte berechnet."
+      CASE 8
+        USER_MSG.MSG_TXT[]=" "
+      CASE 9
+        USER_MSG.MSG_TXT[]=" "
+      CASE 10
+        USER_MSG.MSG_TXT[]="Keine Lichtschranke hat geschalten !"
+      CASE 11
+        USER_MSG.MSG_TXT[]="Lichtschranke 1 hat nicht geschalten !!"
+      CASE 12
+        USER_MSG.MSG_TXT[]="Lichtschranke 2 hat nicht geschalten !!"
+      CASE 13
+        USER_MSG.MSG_TXT[]="Abweichung > BEREICH 2 !!!"
+      CASE 14
+        USER_MSG.MSG_TXT[]="Abweichung > BEREICH Z !!!"
+      CASE 15
+        USER_MSG.MSG_TXT[]="BRENNER MUSS GERICHTET WERDEN !!"
+      CASE 16
+        USER_MSG.MSG_TXT[]="WARTE AUF QUITTIERUNG  !!"
+      CASE 17
+        USER_MSG.MSG_TXT[]="WARTE AUF QUITTIERUNG Punkt U !!"
+      CASE 18
+        USER_MSG.MSG_TXT[]="Gasduese festschrauben !!"
+      CASE 20
+        USER_MSG.MSG_TXT[]="Kein GERAETETYP neu/alt vorgegeben!"
+      DEFAULT
+        USER_MSG.MSG_TXT[]="Keine Fehlermeldung programmiert !!"
+    ENDSWITCH
+    nHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    While ( Exists_KrlMsg(nHandle) )  ;Warten bis der Anwender quittiert
+      Wait Sec 0.1
+    Endwhile
+    ;***********************************************************************************************
+    ; Dialogmeldungen
+  CASE 3
+    SWITCH  MELD_NR
+      CASE 1
+        USER_MSG.MSG_TXT[]="Punkt U angefahren ?"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "WEITER" }
+      CASE 2
+        USER_MSG.MSG_TXT[]="Punkt X angefahren ?"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "WEITER" }
+      CASE 3
+        USER_MSG.MSG_TXT[]="Punkt XY angefahren ?"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "WEITER" }
+      CASE 4
+        USER_MSG.MSG_TXT[]="Spitze fuer Referenzfahrt Ebene anbauen"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "WEITER" }
+      CASE 5
+        USER_MSG.MSG_TXT[]="Spitze fuer Referenzfahrt Stossrichtung anbauen"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "WEITER" }
+      CASE 6
+        USER_MSG.MSG_TXT[]="Korrekturvorrichtung ALT - ORANGE ?"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "JA" }
+        SK[2] = { Sk_Type #Value, Sk_txt[] "NEIN" }
+      CASE 7
+        USER_MSG.MSG_TXT[]="Korrekturvorrichtung NEU - LASER ?"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "JA" }
+        SK[2] = { Sk_Type #Value, Sk_txt[] "NEIN" }
+      CASE 8
+        USER_MSG.MSG_TXT[]="Gasduese entfernen, Draht abzwicken"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "WEITER" }
+      CASE 9
+        USER_MSG.MSG_TXT[]="Draht ausfahren, Roboter auf Auto -> Korrekturfahrt Ebene"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "WEITER" }
+      CASE 10
+        USER_MSG.MSG_TXT[]="Ist brenner gerichtet worden? -> Korrekturfahrt wiederholen"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "WEITER" }
+        SK[2] = { Sk_Type #Value, Sk_txt[] "ABBRUCH" }
+      CASE 11
+        USER_MSG.MSG_TXT[]="Lichtschranken geprueft? und I.O. ?"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "WEITER" }
+        SK[2] = { Sk_Type #Value, Sk_txt[] "ABBRUCH" }
+      CASE 14
+        USER_MSG.MSG_TXT[]="Ist Gasduese festgeschraubt? -> Kontrollfahrt wiederholen oder Abbruch"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "WEITER" }
+      CASE 15
+        USER_MSG.MSG_TXT[]="Wiederholen ?"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "WEITER" }
+        SK[2] = { Sk_Type #Value, Sk_txt[] "ABBRUCH" }
+      CASE 16
+        USER_MSG.MSG_TXT[]="Zu Verwendende TCP Daten fuer Referenzwerkzeug auswaehlen ?"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "TOOL_DATA" }
+        SK[2] = { Sk_Type #Value, Sk_txt[] "TOOL_REF" }
+      CASE 99
+        USER_MSG.MSG_TXT[]="Weiter oder Abbrechen"
+        SK[1] = { Sk_Type #Value, Sk_txt[] "WEITER" }
+        SK[2] = { Sk_Type #Value, Sk_txt[] "ABBRUCH" }
+      DEFAULT
+        USER_MSG.MSG_TXT[]="Keine Dialogmeldung programmiert !!"
+    ENDSWITCH
+    nHandle = Set_KrlDlg (USER_MSG, Par[], SK[], Opt)
+    IF (nHandle > 0) Then
+      While ( Exists_KrlDlg(nHandle, Answer) )  ;Warten bis der Dialog beantwortet
+        Wait Sec 0.1
+      Endwhile
+    ENDIF
+    ANSWER=Answer
+    VW_ANTWORT=Answer
+ENDSWITCH
+END
+;ENDFOLD
+;
+;--------------------------------------------------------------------------------
+;FOLD MIG_Suchlauf
+  ;FOLD MIG_Suchlauf_IBN
+  DEF MS_IBN()
+  DECL INT I
+;
+  ;Messwerte abnullen
+  MS_MESS_P_X=0.0
+  MS_MESS_P_Y=0.0
+  MS_MESS_P_Z=0.0
+  MS_Spaltmas=0.0
+  MS_DELTA_X_P1=0.0
+  MS_DELTA_X_P2=0.0
+  MS_DELTA_X_P1P2=0.0
+  MS_DELTA_Y_P1=0.0
+  MS_DELTA_Y_P2=0.0
+  MS_DELTA_Y_P1P2=0.0
+  MS_DELTA_Z_P1=0.0
+  MS_DELTA_Z_P2=0.0
+  MS_DELTA_Z_P1P2=0.0
+  MS_DELTA_P1=0.0
+  MS_DELTA_P2=0.0
+  MS_DELTA_K_X=0.0
+  MS_DELTA_K_Y=0.0
+  MS_DELTA_K_Z=0.0
+;
+  FOR I=1 TO 250
+    MSLOG[I]={SB 0,CMon 0,CDay 0,CHour 0,CMin 0,CSec 0}
+  ENDFOR
+;
+  FOR I=1 TO 20
+    SPALT[I]={S_B 0.0}
+  ENDFOR
+;
+  MS_LCnt = 1
+  AMS_LCnt = 1
+;
+  FOR I=1 TO 6
+    MS_REF_1_P1[I]=$NULLFRAME
+    MS_REF_1_P2[I]=$NULLFRAME
+    MS_REF_1_P1P2[I]=$NULLFRAME
+    MS_REF_2_P1[I]=$NULLFRAME
+    MS_REF_2_P2[I]=$NULLFRAME
+    MS_REF_2_P1P2[I]=$NULLFRAME
+    MS_REF_3_P1[I]=$NULLFRAME
+    MS_REF_3_P2[I]=$NULLFRAME
+    MS_REF_3_P1P2[I]=$NULLFRAME
+    MS_REF_4_P1[I]=$NULLFRAME
+    MS_REF_4_P2[I]=$NULLFRAME
+    MS_REF_4_P1P2[I]=$NULLFRAME
+    MS_MESS_WERT[1,I]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+    MS_MESS_WERT[2,I]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+    MS_MESS_WERT[3,I]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+    MS_MESS_WERT[4,I]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+    MS_KORR[I]=$NULLFRAME
+  ENDFOR
+  MS_ORG_POS=$NULLFRAME
+  END
+  ;ENDFOLD
+;
+;---------------------------------------------------------------------------
+  ;FOLD MIG_Suchlauf_INIT
+  DEF MS_INIT()
+  DECL INT I
+;
+  MS_ORG_POS=$NULLFRAME
+;
+  ;Messwerte abnullen
+  FOR I=1 TO 6
+    IF (ms_errStrategy == #useOrigData) THEN
+      MS_MESS_WERT[MS_Typ,I]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+    ENDIF   
+    MS_KORR[I]=$NULLFRAME   
+  ENDFOR
+;
+  MS_MESS_P_X=0.0
+  MS_MESS_P_Y=0.0
+  MS_MESS_P_Z=0.0
+  MS_DELTA_X_P1=0.0
+  MS_DELTA_X_P2=0.0
+  MS_DELTA_X_P1P2=0.0
+  MS_DELTA_Y_P1=0.0
+  MS_DELTA_Y_P2=0.0
+  MS_DELTA_Y_P1P2=0.0
+  MS_DELTA_Z_P1=0.0
+  MS_DELTA_Z_P2=0.0
+  MS_DELTA_Z_P1P2=0.0
+  MS_DELTA_P1=0.0
+  MS_DELTA_P2=0.0
+  MS_DELTA_K_X=0.0
+  MS_DELTA_K_Y=0.0
+  MS_DELTA_K_Z=0.0
+  END
+  ;ENDFOLD
+;
+;---------------------------------------------------------------------------
+  ;FOLD MIG_Suchlauf_Anmessen 2Pkt
+  DEF MS_AnmessenP1P2 ()
+  DECL INT Z,I
+  DECL INT original_adv
+;
+  Z=0
+  I=0
+;
+  original_adv=$advance
+;
+  ;Anfangspunkt merken
+  MS_ORG_POS=$POS_ACT
+;
+  WHILE (MIG_Suchlauf_IN==TRUE)
+    O_MS_F_Such=TRUE
+    MsgQuit("Sensor ist betaetigt, bitte Pruefen", "MS",,,110)
+  ENDWHILE
+  O_MS_F_Such=FALSE
+;
+  ;Sensor aktivieren
+  MIG_Suchlauf_OUT=TRUE
+;
+  ;Interrupt initialisieren
+  INTERRUPT DECL 13 WHEN MIG_Suchlauf_IN DO MS_SavePos( )
+;
+  LABEL1:
+  INTERRUPT OFF 13
+;
+  ;Wiederholungsz‰hler
+  Z=Z+1
+;
+  ;Vorlauf stoppen
+  $ADVANCE=0
+;
+  ;Variablen fuer Fehlerauswertung setzen
+  MS_INT1_FEHLER=TRUE
+;
+  ;Messposition bestimmen
+  MS_MESS_POS=$NULLFRAME
+  SWITCH MS_Richtung
+    CASE 1
+      MS_MESS_POS.X=+ReserveInt[25]
+    CASE 2
+      MS_MESS_POS.Y=+ReserveInt[25]
+    CASE 3
+      MS_MESS_POS.Z=+ReserveInt[25]
+    CASE 4
+      MS_MESS_POS.X=-ReserveInt[25]
+    CASE 5
+      MS_MESS_POS.Y=-ReserveInt[25]
+    CASE 6
+      MS_MESS_POS.Z=-ReserveInt[25]
+    DEFAULT
+      MsgQuit("MS_AnmessenP1P2: Parameter MS_Richtung unzulaessig", "MS",,,110)  
+  ENDSWITCH
+  INTERRUPT ON 13
+  MS_Movement()
+  INTERRUPT OFF 13
+;
+  ;Zurueckpositionieren
+  $VEL.CP=0.833
+  LIN MS_ORG_POS
+;
+  IF ((MS_INT1_FEHLER==TRUE) AND (Z<2)) THEN
+    ;Wiederholung
+    GOTO LABEL1
+  ENDIF
+;
+  IF (MS_INT1_FEHLER==TRUE) THEN
+    ; MIG_Suchlauf_IN hat nicht geschaltet
+    PULSE (O_MS_F_Such,TRUE,2.0 )
+    MS_FEHLER_1=TRUE
+    MsgNotify("Sensor hat nicht geschalten!", "MS",,,110)
+  ENDIF
+;
+  IF MS_Referenzfahrt==TRUE THEN
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==1))  THEN
+      MS_REF_1_P1[MS_Messung].X=MS_MESS_P_X
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==1))  THEN
+      MS_REF_1_P1[MS_Messung].Y=MS_MESS_P_Y
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==1))  THEN
+      MS_REF_1_P1[MS_Messung].Z=MS_MESS_P_Z
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==2))  THEN
+      MS_REF_2_P1[MS_Messung].X=MS_MESS_P_X
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==2))  THEN
+      MS_REF_2_P1[MS_Messung].Y=MS_MESS_P_Y
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==2))  THEN
+      MS_REF_2_P1[MS_Messung].Z=MS_MESS_P_Z
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==3))  THEN
+      MS_REF_3_P1[MS_Messung].X=MS_MESS_P_X
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==3))  THEN
+      MS_REF_3_P1[MS_Messung].Y=MS_MESS_P_Y
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==3))  THEN
+      MS_REF_3_P1[MS_Messung].Z=MS_MESS_P_Z
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==4))  THEN
+      MS_REF_4_P1[MS_Messung].X=MS_MESS_P_X
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==4))  THEN
+      MS_REF_4_P1[MS_Messung].Y=MS_MESS_P_Y
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==4))  THEN
+      MS_REF_4_P1[MS_Messung].Z=MS_MESS_P_Z
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+  ELSE
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)))  THEN
+      MS_DELTA_X_P1=MS_MESS_P_X
+    ENDIF
+
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)))  THEN
+      MS_DELTA_Y_P1=MS_MESS_P_Y
+    ENDIF
+
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)))  THEN
+      MS_DELTA_Z_P1=MS_MESS_P_Z
+    ENDIF
+  ENDIF
+;
+  IF (MS_INT1_FEHLER==FALSE) THEN
+    Z=0
+    ;Anfangspunkt merken
+    MS_ORG_POS=$POS_ACT
+;
+    LABEL2:
+    INTERRUPT OFF 13
+;
+    ;Wiederholungsz‰hler
+    Z=Z+1
+;
+    ;Vorlauf stoppen
+    $ADVANCE=0
+;
+    ;Variablen fuer Fehlerauswertung setzen
+    MS_INT1_FEHLER=TRUE
+;
+    ;Messposition bestimmen
+
+    MS_MESS_POS=$NULLFRAME
+    SWITCH MS_Richtung
+      CASE 1
+        MS_MESS_POS.X=-ReserveInt[25]
+      CASE 2
+        MS_MESS_POS.Y=-ReserveInt[25]
+      CASE 3
+        MS_MESS_POS.Z=-ReserveInt[25]
+      CASE 4
+        MS_MESS_POS.X=+ReserveInt[25]
+      CASE 5
+        MS_MESS_POS.Y=+ReserveInt[25]
+      CASE 6
+        MS_MESS_POS.Z=+ReserveInt[25]
+      DEFAULT
+        MsgQuit("MS_AnmessenP1P2: Parameter MS_Richtung unzulaessig", "MS",,,110)  
+    ENDSWITCH
+;
+    ;Messposition anfahren
+    INTERRUPT ON 13
+    MS_Movement()
+    INTERRUPT OFF 13
+;
+    ;Zurueckpositionieren
+    $VEL.CP=0.833
+    LIN MS_ORG_POS
+;
+    IF ((MS_INT1_FEHLER==TRUE) AND (Z<2)) THEN
+      ;Wiederholung
+      GOTO LABEL2
+    ENDIF
+;
+    IF (MS_INT1_FEHLER==TRUE) THEN
+      ;MIG_Suchlauf_IN hat nicht geschaltet
+      PULSE (O_MS_F_Such,TRUE,2.0 )
+      MS_FEHLER_2=TRUE
+      MsgNotify("Sensor hat nicht geschalten!", "MS",,,110)
+    ENDIF
+  ENDIF
+;
+  IF MS_Referenzfahrt==TRUE THEN
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==1))  THEN
+      MS_REF_1_P2[MS_Messung].X=MS_MESS_P_X
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==1))  THEN
+      MS_REF_1_P2[MS_Messung].Y=MS_MESS_P_Y
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==1))  THEN
+      MS_REF_1_P2[MS_Messung].Z=MS_MESS_P_Z
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==2))  THEN
+      MS_REF_2_P2[MS_Messung].X=MS_MESS_P_X
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==2))  THEN
+      MS_REF_2_P2[MS_Messung].Y=MS_MESS_P_Y
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==2))  THEN
+      MS_REF_2_P2[MS_Messung].Z=MS_MESS_P_Z
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==3))  THEN
+      MS_REF_3_P2[MS_Messung].X=MS_MESS_P_X
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==3))  THEN
+      MS_REF_3_P2[MS_Messung].Y=MS_MESS_P_Y
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==3))  THEN
+      MS_REF_3_P2[MS_Messung].Z=MS_MESS_P_Z
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==4))  THEN
+      MS_REF_4_P2[MS_Messung].X=MS_MESS_P_X
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==4))  THEN
+      MS_REF_4_P2[MS_Messung].Y=MS_MESS_P_Y
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==4))  THEN
+      MS_REF_4_P2[MS_Messung].Z=MS_MESS_P_Z
+      MsgNotify("Referenzfahrt fuer Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+;
+  ELSE
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)))  THEN
+      MS_DELTA_X_P2=MS_MESS_P_X
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)))  THEN
+      MS_DELTA_Y_P2=MS_MESS_P_Y
+    ENDIF
+;
+    IF ((MS_INT1_FEHLER==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)))  THEN
+      MS_DELTA_Z_P2=MS_MESS_P_Z
+    ENDIF
+  ENDIF
+;
+  IF (MS_INT1_FEHLER==FALSE) THEN
+    IF ((MS_Referenzfahrt==TRUE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==1)) THEN
+      MS_REF_1_P1P2[MS_Messung].X=(ABS(MS_REF_1_P2[MS_Messung].X)+ABS(MS_REF_1_P1[MS_Messung].X))
+    ENDIF
+    IF ((MS_Referenzfahrt==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==1)) THEN
+      MS_DELTA_X_P1P2=(ABS(MS_DELTA_X_P2)+ABS(MS_DELTA_X_P1))
+      MS_DELTA_HILF=(ABS(MS_DELTA_X_P2)-ABS(MS_DELTA_X_P1))
+    IF ABS (MS_DELTA_HILF)>MS_SB_NORM_T1 THEN
+      MS_Spaltmas=ABS(MS_DELTA_HILF)-MS_SB_NORM_T1 ;Relative Spaltbreite
+    ENDIF
+    MS_DELTA_K_X=-(MS_REF_1_P1P2[MS_Messung].X-MS_DELTA_X_P1P2)/2 ;Korrekturwert
+    MS_MESS_WERT[MS_Typ, MS_Messung].X=-(MS_REF_1_P1P2[MS_Messung].X-MS_DELTA_X_P1P2)/2
+    IF ($mode_op <> #EX) THEN
+      MsgNotify("Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+  ENDIF
+;
+  IF ((MS_Referenzfahrt==TRUE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==1)) THEN
+    MS_REF_1_P1P2[MS_Messung].Y=(ABS(MS_REF_1_P2[MS_Messung].Y)+ABS(MS_REF_1_P1[MS_Messung].Y))
+  ENDIF
+  IF ((MS_Referenzfahrt==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==1)) THEN
+    MS_DELTA_Y_P1P2=(ABS(MS_DELTA_Y_P2)+ABS(MS_DELTA_Y_P1))
+    MS_DELTA_HILF=(ABS(MS_DELTA_Y_P2)-ABS(MS_DELTA_Y_P1))
+    IF ABS (MS_DELTA_HILF)>MS_SB_NORM_T1 THEN
+      MS_Spaltmas=ABS(MS_DELTA_HILF)-MS_SB_NORM_T1 ;Relative Spaltbreite
+    ENDIF
+    MS_DELTA_K_Y=-(MS_REF_1_P1P2[MS_Messung].Y-MS_DELTA_Y_P1P2)/2 ;Korrekturwert
+    MS_MESS_WERT[MS_Typ, MS_Messung].Y=-(MS_REF_1_P1P2[MS_Messung].Y-MS_DELTA_Y_P1P2)/2
+    IF ($mode_op <> #EX) THEN
+      MsgNotify("Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+  ENDIF
+;
+  IF ((MS_Referenzfahrt==TRUE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==1)) THEN
+    MS_REF_1_P1P2[MS_Messung].Z=(ABS(MS_REF_1_P2[MS_Messung].Z)+ABS(MS_REF_1_P1[MS_Messung].Z))
+  ENDIF
+  IF ((MS_Referenzfahrt==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==1)) THEN
+    MS_DELTA_Z_P1P2=(ABS(MS_DELTA_Z_P2)+ABS(MS_DELTA_Z_P1))
+    MS_DELTA_HILF=(ABS(MS_DELTA_Z_P2)-ABS(MS_DELTA_Z_P1))
+    IF ABS (MS_DELTA_HILF)>MS_SB_NORM_T1 THEN
+      MS_Spaltmas=ABS(MS_DELTA_HILF)-MS_SB_NORM_T1 ;Relative Spaltbreite
+    ENDIF
+    MS_DELTA_K_Z=-(MS_REF_1_P1P2[MS_Messung].Z-MS_DELTA_Z_P1P2)/2 ;Korrekturwert
+    MS_MESS_WERT[MS_Typ, MS_Messung].Z=-(MS_REF_1_P1P2[MS_Messung].Z-MS_DELTA_Z_P1P2)/2
+    IF ($mode_op <> #EX) THEN
+      MsgNotify("Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+  ENDIF
+;
+  IF ((MS_Referenzfahrt==TRUE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==2)) THEN
+    MS_REF_2_P1P2[MS_Messung].X=(ABS(MS_REF_2_P2[MS_Messung].X)+ABS(MS_REF_2_P1[MS_Messung].X))
+  ENDIF
+  IF ((MS_Referenzfahrt==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==2)) THEN
+    MS_DELTA_X_P1P2=(ABS(MS_DELTA_X_P2)+ABS(MS_DELTA_X_P1))
+    MS_DELTA_HILF=(ABS(MS_DELTA_X_P2)-ABS(MS_DELTA_X_P1))
+    IF ABS (MS_DELTA_HILF)>MS_SB_NORM_T2 THEN
+      MS_Spaltmas=ABS(MS_DELTA_HILF)-MS_SB_NORM_T2 ;Relative Spaltbreite
+    ENDIF
+    MS_DELTA_K_X=-(MS_REF_2_P1P2[MS_Messung].X-MS_DELTA_X_P1P2)/2 ;Korrekturwert
+    MS_MESS_WERT[MS_Typ, MS_Messung].X=-(MS_REF_2_P1P2[MS_Messung].X-MS_DELTA_X_P1P2)/2
+    IF ($mode_op <> #EX) THEN
+      MsgNotify("Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+  ENDIF
+;
+  IF ((MS_Referenzfahrt==TRUE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==2)) THEN
+    MS_REF_2_P1P2[MS_Messung].Y=(ABS(MS_REF_2_P2[MS_Messung].Y)+ABS(MS_REF_2_P1[MS_Messung].Y))
+  ENDIF
+  IF ((MS_Referenzfahrt==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==2)) THEN
+    MS_DELTA_Y_P1P2=(ABS(MS_DELTA_Y_P2)+ABS(MS_DELTA_Y_P1))
+    MS_DELTA_HILF=(ABS(MS_DELTA_Y_P2)-ABS(MS_DELTA_Y_P1))
+    IF ABS (MS_DELTA_HILF)>MS_SB_NORM_T2 THEN
+      MS_Spaltmas=ABS(MS_DELTA_HILF)-MS_SB_NORM_T2 ;Relative Spaltbreite
+    ENDIF
+    MS_DELTA_K_Y=-(MS_REF_2_P1P2[MS_Messung].Y-MS_DELTA_Y_P1P2)/2 ;Korrekturwert
+    MS_MESS_WERT[MS_Typ, MS_Messung].Y=-(MS_REF_2_P1P2[MS_Messung].Y-MS_DELTA_Y_P1P2)/2
+    IF ($mode_op <> #EX) THEN
+      MsgNotify("Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+  ENDIF
+;
+  IF ((MS_Referenzfahrt==TRUE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==2)) THEN
+    MS_REF_2_P1P2[MS_Messung].Z=(ABS(MS_REF_2_P2[MS_Messung].Z)+ABS(MS_REF_2_P1[MS_Messung].Z))
+  ENDIF
+  IF ((MS_Referenzfahrt==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==2)) THEN
+    MS_DELTA_Z_P1P2=(ABS(MS_DELTA_Z_P2)+ABS(MS_DELTA_Z_P1))
+    MS_DELTA_HILF=(ABS(MS_DELTA_Z_P2)-ABS(MS_DELTA_Z_P1))
+    IF ABS (MS_DELTA_HILF)>MS_SB_NORM_T2 THEN
+      MS_Spaltmas=ABS(MS_DELTA_HILF)-MS_SB_NORM_T2 ;Relative Spaltbreite
+    ENDIF
+    MS_DELTA_K_Z=-(MS_REF_2_P1P2[MS_Messung].Z-MS_DELTA_Z_P1P2)/2 ;Korrekturwert
+    MS_MESS_WERT[MS_Typ, MS_Messung].Z=-(MS_REF_2_P1P2[MS_Messung].Z-MS_DELTA_Z_P1P2)/2
+    IF ($mode_op <> #EX) THEN
+      MsgNotify("Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+  ENDIF
+;
+  IF ((MS_Referenzfahrt==TRUE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==3)) THEN
+    MS_REF_3_P1P2[MS_Messung].X=(ABS(MS_REF_3_P2[MS_Messung].X)+ABS(MS_REF_3_P1[MS_Messung].X))
+  ENDIF
+  IF ((MS_Referenzfahrt==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==3)) THEN
+    MS_DELTA_X_P1P2=(ABS(MS_DELTA_X_P2)+ABS(MS_DELTA_X_P1))
+    MS_DELTA_HILF=(ABS(MS_DELTA_X_P2)-ABS(MS_DELTA_X_P1))
+    IF ABS (MS_DELTA_HILF)>MS_SB_NORM_T3 THEN
+      MS_Spaltmas=ABS(MS_DELTA_HILF)-MS_SB_NORM_T3 ;Relative Spaltbreite
+    ENDIF
+    MS_DELTA_K_X=-(MS_REF_3_P1P2[MS_Messung].X-MS_DELTA_X_P1P2)/2 ;Korrekturwert
+    MS_MESS_WERT[MS_Typ,MS_Messung].X=-(MS_REF_3_P1P2[MS_Messung].X-MS_DELTA_X_P1P2)/2
+    IF ($mode_op <> #EX) THEN
+      MsgNotify("Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+  ENDIF
+;
+  IF ((MS_Referenzfahrt==TRUE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==3)) THEN
+    MS_REF_3_P1P2[MS_Messung].Y=(ABS(MS_REF_3_P2[MS_Messung].Y)+ABS(MS_REF_3_P1[MS_Messung].Y))
+  ENDIF
+  IF ((MS_Referenzfahrt==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==3)) THEN
+    MS_DELTA_Y_P1P2=(ABS(MS_DELTA_Y_P2)+ABS(MS_DELTA_Y_P1))
+    MS_DELTA_HILF=(ABS(MS_DELTA_Y_P2)-ABS(MS_DELTA_Y_P1))
+    IF ABS (MS_DELTA_HILF)>MS_SB_NORM_T3 THEN
+      MS_Spaltmas=ABS(MS_DELTA_HILF)-MS_SB_NORM_T3 ;Relative Spaltbreite
+    ENDIF
+    MS_DELTA_K_Y=-(MS_REF_3_P1P2[MS_Messung].Y-MS_DELTA_Y_P1P2)/2 ;Korrekturwert
+    MS_MESS_WERT[MS_Typ, MS_Messung].Y=-(MS_REF_3_P1P2[MS_Messung].Y-MS_DELTA_Y_P1P2)/2
+    IF ($mode_op <> #EX) THEN
+      MsgNotify("Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+  ENDIF
+;
+  IF ((MS_Referenzfahrt==TRUE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==3)) THEN
+    MS_REF_3_P1P2[MS_Messung].Z=(ABS(MS_REF_3_P2[MS_Messung].Z)+ABS(MS_REF_3_P1[MS_Messung].Z))
+  ENDIF
+  IF ((MS_Referenzfahrt==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==3)) THEN
+    MS_DELTA_Z_P1P2=(ABS(MS_DELTA_Z_P2)+ABS(MS_DELTA_Z_P1))
+    MS_DELTA_HILF=(ABS(MS_DELTA_Z_P2)-ABS(MS_DELTA_Z_P1))
+    IF ABS (MS_DELTA_HILF)>MS_SB_NORM_T3 THEN
+      MS_Spaltmas=ABS(MS_DELTA_HILF)-MS_SB_NORM_T3 ;Relative Spaltbreite
+    ENDIF
+    MS_DELTA_K_Z=-(MS_REF_3_P1P2[MS_Messung].Z-MS_DELTA_Z_P1P2)/2 ;Korrekturwert
+    MS_MESS_WERT[MS_Typ, MS_Messung].Z=-(MS_REF_3_P1P2[MS_Messung].Z-MS_DELTA_Z_P1P2)/2
+    IF ($mode_op <> #EX) THEN
+      MsgNotify("Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+  ENDIF
+;
+  IF ((MS_Referenzfahrt==TRUE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==4)) THEN
+    MS_REF_3_P1P2[MS_Messung].X=(ABS(MS_REF_3_P2[MS_Messung].X)+ABS(MS_REF_3_P1[MS_Messung].X))
+  ENDIF
+  IF ((MS_Referenzfahrt==FALSE) AND ((MS_RICHTUNG==1) OR (MS_RICHTUNG==4)) AND (MS_Typ==4)) THEN
+    MS_DELTA_X_P1P2=(ABS(MS_DELTA_X_P2)+ABS(MS_DELTA_X_P1))
+    MS_DELTA_HILF=(ABS(MS_DELTA_X_P2)-ABS(MS_DELTA_X_P1))
+    IF ABS (MS_DELTA_HILF)>MS_SB_NORM_T3 THEN
+      MS_Spaltmas=ABS(MS_DELTA_HILF)-MS_SB_NORM_T3 ;Relative Spaltbreite
+    ENDIF
+    MS_DELTA_K_X=-(MS_REF_3_P1P2[MS_Messung].X-MS_DELTA_X_P1P2)/2 ;Korrekturwert
+    MS_MESS_WERT[MS_Typ, MS_Messung].X=-(MS_REF_3_P1P2[MS_Messung].X-MS_DELTA_X_P1P2)/2
+    IF ($mode_op <> #EX) THEN
+      MsgNotify("Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+  ENDIF
+;
+  IF ((MS_Referenzfahrt==TRUE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==4)) THEN
+    MS_REF_3_P1P2[MS_Messung].Y=(ABS(MS_REF_3_P2[MS_Messung].Y)+ABS(MS_REF_3_P1[MS_Messung].Y))
+  ENDIF
+  IF ((MS_Referenzfahrt==FALSE) AND ((MS_RICHTUNG==2) OR (MS_RICHTUNG==5)) AND (MS_Typ==4)) THEN
+    MS_DELTA_Y_P1P2=(ABS(MS_DELTA_Y_P2)+ABS(MS_DELTA_Y_P1))
+    MS_DELTA_HILF=(ABS(MS_DELTA_Y_P2)-ABS(MS_DELTA_Y_P1))
+    IF ABS (MS_DELTA_HILF)>MS_SB_NORM_T3 THEN
+      MS_Spaltmas=ABS(MS_DELTA_HILF)-MS_SB_NORM_T3 ;Relative Spaltbreite
+    ENDIF
+    MS_DELTA_K_Y=-(MS_REF_3_P1P2[MS_Messung].Y-MS_DELTA_Y_P1P2)/2 ;Korrekturwert
+    MS_MESS_WERT[MS_Typ, MS_Messung].Y=-(MS_REF_3_P1P2[MS_Messung].Y-MS_DELTA_Y_P1P2)/2
+    IF ($mode_op <> #EX) THEN
+      MsgNotify("Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+  ENDIF
+;
+  IF ((MS_Referenzfahrt==TRUE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==4)) THEN
+    MS_REF_3_P1P2[MS_Messung].Z=(ABS(MS_REF_3_P2[MS_Messung].Z)+ABS(MS_REF_3_P1[MS_Messung].Z))
+  ENDIF
+  IF ((MS_Referenzfahrt==FALSE) AND ((MS_RICHTUNG==3) OR (MS_RICHTUNG==6)) AND (MS_Typ==4)) THEN
+    MS_DELTA_Z_P1P2=(ABS(MS_DELTA_Z_P2)+ABS(MS_DELTA_Z_P1))
+    MS_DELTA_HILF=(ABS(MS_DELTA_Z_P2)-ABS(MS_DELTA_Z_P1))
+    IF ABS (MS_DELTA_HILF)>MS_SB_NORM_T3 THEN
+      MS_Spaltmas=ABS(MS_DELTA_HILF)-MS_SB_NORM_T3 ;Relative Spaltbreite
+    ENDIF
+    MS_DELTA_K_Z=-(MS_REF_3_P1P2[MS_Messung].Z-MS_DELTA_Z_P1P2)/2 ;Korrekturwert
+    MS_MESS_WERT[MS_Typ,MS_Messung].Z=-(MS_REF_3_P1P2[MS_Messung].Z-MS_DELTA_Z_P1P2)/2
+    IF ($mode_op <> #EX) THEN
+      MsgNotify("Werkzeug %1", "MS",MS_TOOL_NR,,110)
+    ENDIF
+  ENDIF
+;
+  IF (MS_Referenzfahrt==FALSE) THEN
+    MyDate = $DATE
+    MSLog[MS_LCnt].SB=MS_Spaltmas
+    MSLog[MS_LCnt].CMon = MyDate.MONTH
+    MSLog[MS_LCnt].CDay = MyDate.DAY
+    MSLog[MS_LCnt].CHour = MyDate.HOUR
+    MSLog[MS_LCnt].CMin = MyDate.MIN
+    MSLog[MS_LCnt].CSec = MyDate.SEC
+    IF (MS_LCnt >= MS_MaxCnt) THEN
+      MS_LCnt = 1
+    ELSE
+      MS_LCnt = MS_LCnt+1
+    ENDIF
+      MSLog[MS_LCnt]={SB 0,CMon 0,CDay 0,CHour 0,CMin 0,CSec 0}
+;
+    Spalt[AMS_LCnt].S_B=MS_Spaltmas
+    IF (AMS_LCnt >= AMS_MaxCnt) THEN
+      AMS_LCnt = 1
+    ELSE
+      AMS_LCnt = AMS_LCnt+1
+    ENDIF
+    Spalt[AMS_LCnt]={S_B 0}
+  ENDIF
+ENDIF
+;
+;Sensor deaktivieren
+MIG_Suchlauf_OUT=FALSE
+;
+$advance=original_adv
+;
+END
+;ENDFOLD
+;
+;---------------------------------------------------------------------------
+;FOLD MIG_Suchlauf_Anmessen 1Pkt
+DEF MS_AnmessenP1 ()
+DECL INT Z,I,offset
+DECL INT original_adv
+DECL STATE_T STATE
+DECL CHAR strCorrValue[10]
+DECL FRAME MeasureValues
+;
+Z=0
+I=0
+;
+original_adv=$advance
+MeasureValues=$nullframe
+;
+;Anfangspunkt merken
+MS_ORG_POS=$POS_ACT
+;
+WHILE (MIG_Suchlauf_IN==TRUE)
+  O_MS_F_Such=TRUE
+  MsgQuit("Sensor ist betaetigt, bitte pruefen", "MS",,,110)
+ENDWHILE
+O_MS_F_Such=FALSE
+;
+;Sensor aktivieren
+MIG_Suchlauf_OUT=TRUE
+;
+;Interrupt initialisieren
+INTERRUPT DECL 13 WHEN MIG_Suchlauf_IN DO MS_SavePos( )
+;
+LABEL1:
+INTERRUPT OFF 13
+;
+;Wiederholungsz‰hler
+Z=Z+1
+;
+;Interrupt vorbereiten
+$ADVANCE=0
+;
+;Variablen fuer Fehlerauswertung setzen
+MS_INT1_FEHLER=TRUE
+;Messposition bestimmen
+MS_MESS_POS=$NULLFRAME
+SWITCH MS_Richtung
+  CASE 1
+    MS_MESS_POS.X=+ReserveInt[25]
+  CASE 2
+    MS_MESS_POS.Y=+ReserveInt[25]
+  CASE 3
+    MS_MESS_POS.Z=+ReserveInt[25]
+  CASE 4
+    MS_MESS_POS.X=-ReserveInt[25]
+  CASE 5
+    MS_MESS_POS.Y=-ReserveInt[25]
+  CASE 6
+    MS_MESS_POS.Z=-ReserveInt[25]
+  DEFAULT
+    MsgQuit("MS_AnmessenP1: Parameter MS_Richtung unzulaessig", "MS",,,110)  
+ENDSWITCH
+;
+INTERRUPT ON 13
+MS_Movement() ;Messposition anfahren
+INTERRUPT OFF 13
+;
+;Zurueckpositionieren
+$VEL.CP=0.833
+LIN MS_ORG_POS
+;
+IF ((MS_INT1_FEHLER==TRUE) AND (Z<2)) THEN
+  ; MIG_Suchlauf_IN hat nicht geschaltet
+  O_MS_F_Such=TRUE
+  MsgQuit("Sensor hat nicht geschalten, Naht: %1", "MS",MS_Messung,,110)
+  O_MS_F_Such=FALSE
+  ;Wiederholung
+  GOTO LABEL1
+ENDIF
+;
+IF  (MS_INT1_FEHLER==FALSE) THEN 
+  MeasureValues.X=MS_MESS_P_X
+  MeasureValues.Y=MS_MESS_P_Y
+  MeasureValues.Z=MS_MESS_P_Z
+  IF MS_Referenzfahrt==TRUE THEN
+    MS_SetReferenceValue(MS_Typ,MS_RICHTUNG,MS_Messung,MeasureValues)
+  ELSE
+    MS_SetMeasurmentValue(MS_Typ,MS_RICHTUNG,MS_Messung,MeasureValues)
+    IF ($mode_op <> #EX) THEN
+      offset=0
+      SWRITE(strCorrValue[],STATE,OFFSET," %2.2F",MS_DELTA_P1)
+      MsgNotify("Korrekturwert= %1", "MS",,strCorrValue[],110)
+    ENDIF
+  ENDIF
+ENDIF
+;
+;Sensor deaktivieren
+MIG_Suchlauf_OUT=FALSE
+;
+$advance=original_adv
+;
+END
+;ENDFOLD
+;
+;---------------------------------------------------------------------------
+;FOLD MS_Hilfsprogramme
+DEF MS_SetReferenceValue(Typ:IN,Richtung:IN,Naht:IN,MeasureVal:IN)
+INT Typ, Richtung,Naht
+FRAME MeasureVal
+;Hinweismeldung ueber Referenzwert
+SWITCH Richtung
+  CASE 1, 4
+    IF Typ==1 THEN
+      MS_REF_1_P1[Naht].X=MeasureVal.X
+    ENDIF
+    IF Typ==2 THEN
+      MS_REF_2_P1[Naht].X=MeasureVal.X
+    ENDIF
+    IF Typ==3 THEN
+      MS_REF_3_P1[Naht].X=MeasureVal.X
+    ENDIF
+    IF Typ==4 THEN
+      MS_REF_4_P1[Naht].X=MeasureVal.X
+    ENDIF   
+  CASE 2, 5
+    IF Typ==1 THEN
+      MS_REF_1_P1[Naht].Y=MeasureVal.Y
+    ENDIF
+    IF Typ==2 THEN
+      MS_REF_2_P1[Naht].Y=MeasureVal.Y
+    ENDIF
+    IF Typ==3 THEN
+      MS_REF_3_P1[Naht].Y=MeasureVal.Y
+    ENDIF
+    IF Typ==4 THEN
+      MS_REF_4_P1[Naht].Y=MeasureVal.Y
+    ENDIF   
+  CASE 3, 6
+    IF Typ==1 THEN
+      MS_REF_1_P1[Naht].Z=MeasureVal.Z
+    ENDIF
+    IF Typ==2 THEN
+      MS_REF_2_P1[Naht].Z=MeasureVal.Z
+    ENDIF
+    IF Typ==3 THEN
+      MS_REF_3_P1[Naht].Z=MeasureVal.Z
+    ENDIF
+    IF Typ==4 THEN
+      MS_REF_4_P1[Naht].Z=MeasureVal.Z
+    ENDIF   
+  DEFAULT
+    MsgQuit("MS_SetReferenceValue: Parameter Richtung unzulaessig", "MS",,,110)  
+ENDSWITCH
+END
+;
+;---------------------------------------------------------------------------
+DEF MS_SetMeasurmentValue(Typ:IN,Richtung:IN,Naht:IN,MeasureVal:IN)
+INT Typ, Richtung,Naht
+FRAME MeasureVal
+;
+SWITCH Richtung
+  CASE 1, 4
+    IF Typ==1 THEN
+      MS_DELTA_X_P1=-(MS_REF_1_P1[Naht].X-MeasureVal.X)
+    ENDIF
+    IF Typ==2 THEN
+      MS_DELTA_X_P1=-(MS_REF_2_P1[Naht].X-MeasureVal.X)
+    ENDIF
+    IF Typ==3 THEN
+      MS_DELTA_X_P1=-(MS_REF_3_P1[Naht].X-MeasureVal.X)
+    ENDIF
+    IF Typ==4 THEN
+      MS_DELTA_X_P1=-(MS_REF_4_P1[Naht].X-MeasureVal.X)
+    ENDIF
+    MS_DELTA_P1=ABS(MS_DELTA_X_P1)
+    MS_DELTA_K_X=MS_DELTA_P1
+    MS_MESS_WERT[Typ, Naht].X=MS_DELTA_X_P1
+  CASE 2, 5
+    IF Typ==1 THEN
+      MS_DELTA_Y_P1=-(MS_REF_1_P1[Naht].Y-MeasureVal.Y)
+    ENDIF
+    IF Typ==2 THEN
+      MS_DELTA_Y_P1=-(MS_REF_2_P1[Naht].Y-MeasureVal.Y)
+    ENDIF
+    IF Typ==3 THEN
+      MS_DELTA_Y_P1=-(MS_REF_3_P1[Naht].Y-MeasureVal.Y)
+    ENDIF
+    IF Typ==4 THEN
+      MS_DELTA_Y_P1=-(MS_REF_4_P1[Naht].Y-MeasureVal.Y)
+    ENDIF
+    MS_DELTA_P1=ABS(MS_DELTA_Y_P1)
+    MS_DELTA_K_Y=MS_DELTA_P1
+    MS_MESS_WERT[Typ, Naht].Y=MS_DELTA_Y_P1   
+  CASE 3, 6
+    IF Typ==1 THEN
+      MS_DELTA_Z_P1=-(MS_REF_1_P1[Naht].Z-MeasureVal.Z)
+    ENDIF
+    IF Typ==2 THEN
+      MS_DELTA_Z_P1=-(MS_REF_2_P1[Naht].Z-MeasureVal.Z)
+    ENDIF
+    IF Typ==3 THEN
+      MS_DELTA_Z_P1=-(MS_REF_3_P1[Naht].Z-MeasureVal.Z)
+    ENDIF
+    IF Typ==4 THEN
+      MS_DELTA_Z_P1=-(MS_REF_4_P1[Naht].Z-MeasureVal.Z)
+    ENDIF
+    MS_DELTA_P1=ABS(MS_DELTA_Z_P1)
+    MS_DELTA_K_Z=MS_DELTA_P1
+    MS_MESS_WERT[Typ, Naht].Z=MS_DELTA_Z_P1
+  DEFAULT
+    MsgQuit("MS_SetMeasurmentValue: Parameter Richtung unzulaessig", "MS",,,110)  
+ENDSWITCH
+END
+;
+;---------------------------------------------------------------------------
+DEF MS_MoveBaseOrTool31(ipoMode:IN, offsetFrame:IN)
+DECL IPO_MODE ipoMode
+DECL FRAME offsetFrame
+DECL CHAR sFrame[80], msgString[100]
+DECL INT ret
+;
+IF varState("offsetFrame.X") <> #Initialized THEN
+  offsetFrame.X=0.0
+ENDIF
+IF varState("offsetFrame.Y") <> #Initialized THEN
+  offsetFrame.Y=0.0
+ENDIF
+IF varState("offsetFrame.Z") <> #Initialized THEN
+  offsetFrame.Z=0.0
+ENDIF
+IF varState("offsetFrame.A") <> #Initialized THEN
+  offsetFrame.A=0.0
+ENDIF
+IF varState("offsetFrame.B") <> #Initialized THEN
+  offsetFrame.B=0.0
+ENDIF
+IF varState("offsetFrame.C") <> #Initialized THEN
+  offsetFrame.C=0.0
+ENDIF
+;
+SWITCH ipoMode
+  CASE #TCP
+    TOOL_DATA[31]=TOOL_DATA[MS_TOOL_NR]:offsetFrame
+    BASE_TYPE[31]=#TCP
+    msgString[]="Tool-Verschiebung, Offset: "
+  CASE #BASE
+    BASE_DATA[31]=BASE_DATA[MS_BASE_NR]:offsetFrame
+    BASE_TYPE[31]=#BASE
+    msgString[]="Base-Verschiebung, Offset: "
+ENDSWITCH
+IF ($mode_op <> #EX) THEN
+  FrameToString(offsetFrame, sFrame[])
+  ret = stradd(msgString[],sFrame[])
+  MsgNotify( msgString[], "MS",,,110)
+ENDIF
+END
+;
+;---------------------------------------------------------------------------
+DEF MS_CheckParams(P1:IN, P2:IN, P3:IN, P4:IN, P5:IN, P6:IN)
+INT P1,P2,P3,P4,P5,P6
+DECL CHAR msgstr[40]
+;   
+IF ((MS_TOOL_NR==0) OR (MS_BASE_NR==0)) THEN
+  msgstr[]="Base oder Tool = 0 nicht zulaessig"   
+ENDIF
+IF ((P2<1) OR (P2>6)) THEN
+  msgstr[]="PAR 2 falscher Wert nur 1...6 erlaubt"
+ENDIF
+IF ((P3<1) OR (P3>2)) THEN
+  msgstr[]="PAR 3 falscher Wert nur 1...2 erlaubt"
+ENDIF
+IF ((P4<1) OR (P4>4)) THEN
+  msgstr[]="PAR 4 falscher Wert nur 1...4 erlaubt"
+ENDIF
+IF ((P5<1) OR (P5>2)) THEN
+  msgstr[]="PAR 5 falscher Wert nur 1...2 erlaubt"
+ENDIF 
+IF ((P6<1) OR (P6>6)) THEN
+  msgstr[]="PAR 6 falscher Wert nur 1...6 erlaubt"
+ENDIF    
+WHILE (strlen(msgstr[]) > 0)
+  MsgQuit(msgstr[], "MS",,,110)
+ENDWHILE
+;   
+MS_Richtung=P2 ;Suchrichtung X,Y,Z
+MS_PKT_ANZ=P3  ;Anzahl der Messpunkte pro Ebene
+MS_Typ=P4	
+MS_Messung=P6	
+END
+;
+;---------------------------------------------------------------------------
+DEF FrameToString( _frame :IN, sframe[] :OUT)
+DECL FRAME _frame
+DECL CHAR sframe[]
+DECL STATE_T state
+DECL INT offset
+offset=0
+swrite(sframe[],state,offset,"{X %.2f, Y %.2f, Z %.2f, A %.2f, B %.2f, C %.2f}", _frame.X ,_frame.Y,_frame.Z, _frame.A, _frame.B, _frame.C )
+END
+;
+;---------------------------------------------------------------------------
+DEF MS_SavePos()
+MS_INT1_FEHLER=FALSE
+INTERRUPT OFF 13
+MS_MESS_P_X=$POS_INT.X
+MS_MESS_P_Y=$POS_INT.Y
+MS_MESS_P_Z=$POS_INT.Z
+BRAKE
+RESUME
+END
+;
+;---------------------------------------------------------------------------
+DEF MS_Movement()
+;Messbewegung ausfuehren
+$VEL.CP=ReserveReal[5]
+PTP $POS_ACT
+LIN_REL MS_MESS_POS ;Messposition anfahren
+END
+;ENDFOLD
+;ENDFOLD
+
+
+

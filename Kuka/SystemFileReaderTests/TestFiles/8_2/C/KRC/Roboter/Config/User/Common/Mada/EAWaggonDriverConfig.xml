@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EAWaggonDriverConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/EAWaggonDriverConfig.xsd">
+
+   <Version Label="" >
+      <Info Version="KUKA V8.1" />
+      <Schema Version="1" />
+   </Version>
+
+   <!-- 107: CEADataProvider (see: "CFDriverIDs.h") -->
+   <WaggonDriver ID="107">
+
+      <Input>
+         <!-- (CIB) CIB Status -->
+         <Offset VendorID="24776" ProductCode="1" RevisionNo="1" VarName="TxPdo 1.CIB Status" Occurrence="0" Length="5" />
+
+         <!-- (CIB) 64 Bit DC vom CIB -->
+         <Offset VendorID="24776" ProductCode="1" RevisionNo="1" VarName="DC-Time.EtherCATTime" Occurrence="0" Length="8" />
+
+         <!-- RDC3 -->
+         <Offset VendorID="24776" ProductCode="48" RevisionNo="0" VarName="FSoE-Drive In.Command" Occurrence="0" Length="75" />
+
+         <!--Safety Drives -->
+         <Offset VendorID="24776" ProductCode="80" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DI Safety.Command Safety In" Occurrence="0" Length="7" />
+         <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DI Safety.Command Safety In" Occurrence="0" Length="7" />
+         <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DI Safety.Command Safety In" Occurrence="1" Length="7" />
+      </Input>
+
+      <Output>
+         <!-- RDC3 -->
+         <Offset VendorID="24776" ProductCode="48" RevisionNo="0" VarName="FSoE-Drive Out.Command" Occurrence="0" Length="75" />
+
+         <!-- Safety Drives -->
+         <Offset VendorID="24776" ProductCode="80" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DO Safety.Command Safety Out" Occurrence="0" Length="7" />
+         <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DO Safety.Command Safety Out" Occurrence="0" Length="7" />
+         <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DO Safety.Command Safety Out" Occurrence="1" Length="7" />
+      </Output>
+
+   </WaggonDriver>
+
+   <!-- 108: 1 Bit Multiplex (see: "CFDriverIDs.h") -->
+   <WaggonDriver ID="108">
+      <Input>
+         <Offset VendorID="24776" ProductCode="1" RevisionNo="1" VarName="TxPdo 1.Input[1..8] Value" Occurrence="0" BitOffset="0" WDVarDescription="FastMeasureChannel 1" />
+         <Offset VendorID="24776" ProductCode="1" RevisionNo="1" VarName="TxPdo 1.Input[1..8] Value" Occurrence="0" BitOffset="1" WDVarDescription="FastMeasureChannel 2" />
+         <Offset VendorID="24776" ProductCode="1" RevisionNo="1" VarName="TxPdo 1.Input[1..8] Value" Occurrence="0" BitOffset="2" WDVarDescription="FastMeasureChannel 3" />
+         <Offset VendorID="24776" ProductCode="1" RevisionNo="1" VarName="TxPdo 1.Input[1..8] Value" Occurrence="0" BitOffset="3" WDVarDescription="FastMeasureChannel 4" />
+         <Offset VendorID="24776" ProductCode="1" RevisionNo="1" VarName="TxPdo 1.Input[1..8] Value" Occurrence="0" BitOffset="4" WDVarDescription="FastMeasureChannel 5" />
+         <Offset VendorID="24776" ProductCode="1" RevisionNo="1" VarName="TxPdo 1.Input[1..8] Value" Occurrence="0" BitOffset="5" WDVarDescription="FastMeasureChannel 6" />
+         <Offset VendorID="24776" ProductCode="1" RevisionNo="1" VarName="TxPdo 1.Input[1..8] Value" Occurrence="0" BitOffset="6" WDVarDescription="FastMeasureChannel 7" />
+         <Offset VendorID="24776" ProductCode="1" RevisionNo="1" VarName="TxPdo 1.Input[1..8] Value" Occurrence="0" BitOffset="7" WDVarDescription="FastMeasureChannel 8" />
+      </Input>
+   </WaggonDriver>
+
+   <!-- 110: 16 Bit EMD Analogwert. -->
+   <WaggonDriver ID="110">
+      <Input>
+         <Offset VendorID="24776" ProductCode="50" RevisionNo="1" VarName="TxPdo A/D.A/D extern" Occurrence="0" BitOffset="0" WDVarDescription ="EMD-Data" />
+      </Input>
+   </WaggonDriver>
+
+</EAWaggonDriverConfig>

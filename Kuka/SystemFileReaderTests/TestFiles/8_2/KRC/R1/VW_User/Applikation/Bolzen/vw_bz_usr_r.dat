@@ -1,0 +1,33 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Bolzen
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_bz_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Bolzenschweissen                    *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.09 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD Bolzensteuerung
+;Punktnummer an SPS
+SIGNAL BZ_PktNr_SPS $OUT[97]  TO $OUT[112]
+;Programm-Nr an Bolzensteuerung 1
+SIGNAL BZ1_P_Nr $OUT[1713]  TO $OUT[1728]
+;Programm-Nr an Bolzensteuerung 2
+SIGNAL BZ2_P_Nr $OUT[1761]  TO $OUT[1776]
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM BZR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

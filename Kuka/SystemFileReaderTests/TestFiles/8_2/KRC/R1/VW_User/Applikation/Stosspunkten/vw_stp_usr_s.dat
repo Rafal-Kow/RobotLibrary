@@ -1,0 +1,152 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Stosspunkten
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_stp_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Stosspunkten                        *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.15 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD USER_Version
+STRUC _Tech_Stosspunkten CHAR Name[20],INT Datum
+DECL _Tech_Stosspunkten Tech_Stosspunkten
+;ENDFOLD
+; 
+;FOLD Stosspunkten
+GLOBAL BOOL MIT_Stossp=FALSE
+GLOBAL BOOL LBitServoP=FALSE
+GLOBAL BOOL STP_Fe_Kappe=FALSE
+; 
+GLOBAL INT F_m_Stossp=565
+GLOBAL INT F_STP_AH_KOM=290
+; 
+GLOBAL INT Timer_Stossp=48443
+; 
+;Programm-Nr an SZ 1
+SIGNAL Prog_Nr_STP $OUT[769]  TO $OUT[776]
+SIGNAL Fzg_Typ_STP $OUT[777]  TO $OUT[784]
+;Uebergabe Zangencode
+SIGNAL STP_ZCode $OUT[761]  TO $OUT[763]
+;Programm-Nr an SK1
+SIGNAL SK1_P_Nr $OUT[801]  TO $OUT[816]
+SIGNAL SK1_Fzg_Typ $OUT[817]  TO $OUT[824]
+;Uebergabe Sollposition Stosspunkten
+SIGNAL Stos_sollPos $OUT[737]  TO $OUT[751]
+;Uebergabe Istposition Stosspunkten
+SIGNAL Stos_istPos $IN[737]  TO $IN[751]
+;STP-Drucksollwert Uebergabe
+SIGNAL STP_Kraft_Soll $OUT[721]  TO $OUT[728]
+SIGNAL SK1_Kraft_Soll $IN[793]  TO $IN[800]
+; 
+GLOBAL INT F_STP_Sammel=118
+; 
+GLOBAL INT I_STP_oh_Kra=129
+GLOBAL INT I_STP_bereit=705
+GLOBAL INT I_STP_Re_aus=707
+GLOBAL INT I_STP_EK_io=709
+GLOBAL INT I_STP_TPos_g=711
+GLOBAL INT I_STP_Auto=713
+GLOBAL INT I_STP_ref=714
+GLOBAL INT I_STP_aktiv=715
+GLOBAL INT I_STP_IPos_g=716
+GLOBAL INT I_STP_auf=717
+GLOBAL INT I_STP_zu=718
+GLOBAL INT I_STP_AR=719
+GLOBAL INT I_STP_Vorz=752
+GLOBAL INT I_STP_LBit=753
+GLOBAL INT I_STP_GCodW1=766
+GLOBAL INT I_STP_GCodW2=767
+GLOBAL INT I_STP_GCodW4=768
+GLOBAL INT I_STP_W_SZ=769
+GLOBAL INT I_STP_W_Schm=770
+GLOBAL INT I_STP_F_Kraf=771
+GLOBAL INT I_STP_F_Prog=772
+GLOBAL INT I_STP_F_Ziel=773
+GLOBAL INT I_STP_F_Baut=774
+GLOBAL INT I_STP_F_schw=775
+GLOBAL INT I_STP_F_Frae=776
+GLOBAL INT I_STP_F_Kapp=777
+GLOBAL INT I_STP_F_Geom=778
+GLOBAL INT I_STP_F_Schl=779
+GLOBAL INT I_STP_F_Ausg=780
+GLOBAL INT I_STP_F_Steu=781
+GLOBAL INT I_STP_F_Traf=782
+GLOBAL INT I_STP_F_Mot=783
+GLOBAL INT I_STP_Sammel=784
+GLOBAL INT I_STP_Kappe=861
+; 
+GLOBAL INT O_STP_F_Schl=131
+GLOBAL INT O_STP_W_SZ=132
+GLOBAL INT O_STP_W_Schm=133
+GLOBAL INT O_STP_F_Kraf=134
+GLOBAL INT O_STP_F_Prog=135
+GLOBAL INT O_STP_F_Ziel=136
+GLOBAL INT O_STP_F_Baut=137
+GLOBAL INT O_STP_F_schw=138
+GLOBAL INT O_STP_F_Frae=139
+GLOBAL INT O_STP_F_Geom=140
+GLOBAL INT O_STP_F_Ausg=141
+GLOBAL INT O_STP_F_Steu=142
+GLOBAL INT O_STP_F_Temp=143
+GLOBAL INT O_STP_Sammel=144
+GLOBAL INT O_STP_Fe_Res=705
+GLOBAL INT O_STP_E_Mode=706
+GLOBAL INT O_STP_Re_aus=707
+GLOBAL INT O_STP_oh_Kra=708
+GLOBAL INT O_STP_Mit_EK=709
+GLOBAL INT O_STP_S_TPos=710
+GLOBAL INT O_STP_TPos_u=711
+GLOBAL INT O_STP_R_Hand=712
+GLOBAL INT O_STP_R_Auto=713
+GLOBAL INT O_STP_ref=714
+GLOBAL INT O_STP_FRG=715
+GLOBAL INT O_STP_SPos_g=716
+GLOBAL INT O_STP_auf=717
+GLOBAL INT O_STP_zu=718
+GLOBAL INT O_STP_t_auf=719
+GLOBAL INT O_STP_t_zu=720
+GLOBAL INT O_STP_H_Bit=736
+GLOBAL INT O_STP_LBit=753
+GLOBAL INT O_STP_m_RKom=754
+GLOBAL INT O_STP_KW_io=755
+GLOBAL INT O_STP_MvFrae=756
+GLOBAL INT O_STP_MnFrae=757
+GLOBAL INT O_STP_FToBT=760
+GLOBAL INT O_STP_ZCodW1=761
+GLOBAL INT O_STP_ZCodW2=762
+GLOBAL INT O_STP_ZCodW4=763
+GLOBAL INT O_STP_Teach=4001
+GLOBAL INT O_STP_D_Auf=4002
+GLOBAL INT O_STP_Du_Zu=4003
+; 
+;FOLD Zangenfunktion
+BOOL B_STP_n_Ref=FALSE
+GLOBAL BOOL HA1_FKT_STP1=FALSE
+GLOBAL BOOL HA2_FKT_STP1=FALSE
+GLOBAL BOOL TA1_AKT_STP1=FALSE
+;ENDFOLD
+; 
+;FOLD Lebensbit STP
+GLOBAL BOOL LBitSTPRem=FALSE
+GLOBAL BOOL STP_LBitFeh=FALSE
+; 
+GLOBAL INT TimerNr_STP=48444
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM STPS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_STPS_Handle[100]
+GLOBAL INT n_STPR_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

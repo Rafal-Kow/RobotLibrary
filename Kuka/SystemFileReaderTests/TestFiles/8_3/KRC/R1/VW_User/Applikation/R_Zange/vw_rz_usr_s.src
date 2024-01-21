@@ -1,0 +1,336 @@
+&ACCESS  R
+&COMMENT KS_1.2
+&PARAM DISKPATH = VW_User/Applikation/R_Zange
+&PARAM TPVW_VERSION = 8.3.8
+&REL 211
+DEF VW_RZ_USR_S( )
+; 
+;*-----------------------------------------------------*
+;* Technologiepaket Docking                            *
+;*                                                     *
+;* Konzernstandard                                     *
+;*-----------------------------------------------------*
+; 
+END
+;
+;FOLD INIT RZ 
+GLOBAL DEF RZ_INIT(INITCmd :IN )
+INT i, INITCmd
+;
+SWITCH INITCmd
+  CASE 1 ; RZ_INIT von vw_usr_s 
+    ;FOLD Version Techpaket
+    Tech_RZ.Name[]="KS24.24.001_180126"
+    ;ENDFOLD
+;
+    ;FOLD Vorbesetzung Meldungsausgabe
+    FOR i = 1 TO 100
+      n_RZS_Handle[i]=-1
+      n_RZR_Handle[i]=-1
+    ENDFOR
+    ;ENDFOLD
+;
+  CASE 2 ; #RZInit von vw_usr_s
+ENDSWITCH    
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD SAW RZ 
+GLOBAL DEF RZ_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD RESET RZ 
+GLOBAL DEF RZ_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD CANCEL RZ 
+GLOBAL DEF RZ_CANCEL( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD LOOP RZ 
+GLOBAL DEF RZ_LOOP( )
+BOOL bRet
+;
+
+;Downgrade Docking
+IF Mit_RZ THEN
+;
+ if Docking==FALSE THEN
+  ;FOLD RZ asynchron - synchron
+  if $ex_kin.et1<>#ersys then
+  Switch $async_axis
+   case 'B0000'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B0001'
+     $out[RZ_1]=FALSE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B0010'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=FALSE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B0011'
+     $out[RZ_1]=FALSE
+     $out[RZ_2]=FALSE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B0110'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=FALSE
+     $out[RZ_3]=FALSE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B0101'
+     $out[RZ_1]=FALSE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=FALSE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B0111'
+     $out[RZ_1]=FALSE
+     $out[RZ_2]=FALSE
+     $out[RZ_3]=FALSE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B0100'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=FALSE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B1000'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=FALSE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B10000'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=FALSE
+     $out[RZ_6]=TRUE
+   case 'B100000'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=FALSE
+   ENDSWITCH
+   else  ; 1. externe Zusatzachse ist Verfahrachse
+  Switch $async_axis
+   case 'B0000'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B0010'
+     $out[RZ_1]=FALSE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B0110'
+     $out[RZ_1]=FALSE
+     $out[RZ_2]=FALSE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B0100'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=FALSE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B1010'
+     $out[RZ_1]=FALSE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=FALSE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B1100'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=FALSE
+     $out[RZ_3]=FALSE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B1110'
+     $out[RZ_1]=FALSE
+     $out[RZ_2]=FALSE
+     $out[RZ_3]=FALSE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B1000'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=FALSE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B10000'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=FALSE
+     $out[RZ_5]=TRUE
+     $out[RZ_6]=TRUE
+   case 'B100000'
+     $out[RZ_1]=TRUE
+     $out[RZ_2]=TRUE
+     $out[RZ_3]=TRUE
+     $out[RZ_4]=TRUE
+     $out[RZ_5]=FALSE
+     $out[RZ_6]=TRUE
+   ENDSWITCH
+   endif
+  ;ENDFOLD
+;
+ else
+  if $async_axis==0 then
+  for i=1 to 6
+    $out[RZ_1+((i-1)*32)]=true
+  endfor
+  if $ex_kin.et1<>#ersys then
+	for b=1 to ($ex_ax_num)
+	  if b==1 then
+        a=1
+	  else	
+       a=a*2
+      endif
+      c=(a B_AND $async_axis)
+	  if ((a B_AND $async_axis) > 0) then
+       if b>3 then
+       $out[RZ_4+b-1]=false
+       else
+	    $out[RZ_1+((b-1)*32)]=false
+       endif
+	  else
+       if b>3 then
+         $out[RZ_4+b-1]=true
+       else
+         $out[RZ_1+((b-1)*32)]=true
+       endif
+	  endif
+    endfor
+  else
+   ; Roboter steht auf Verfahrachse
+	for b=2 to ($ex_ax_num)
+	  if b==2 then
+        a=1
+	  else	
+       a=a*2
+      endif
+	c=(a B_AND $async_axis)
+	  if ((a B_AND $async_axis) >0) then
+       if b>4 then
+         $out[RZ_4+b-2]=false
+       else
+	    $out[RZ_1+((b-2)*32)]=false
+       endif
+	  else
+       if b>4 then
+         $out[RZ_4+b-2]=true
+       else
+	    $out[RZ_1+((b-2)*32)]=true
+       endif
+	  endif
+    endfor
+  endif
+ endif  
+endif
+;
+ENDIF
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RZ Meldungen
+DEF RZ_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr, Answer
+DECL RZS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+BOOL Result
+;
+USER_MSG = { Modul[] "RZ_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset FALSE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF ((n_RZS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]="mehrere Bahnhoefe nicht belegt"
+    CASE 2
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 3
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_RZS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_RZS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      n_RZS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_RZS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (RZ Meldungen)

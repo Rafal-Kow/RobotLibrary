@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Driver busName="IBusDrv" kukaVersion="2" xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/Interbus.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Version Label="">
+		<Info Version="KRC V8.2"/>
+		<Schema Version="100"/>
+	</Version>
+	<DriverInstance busInstanceName="IBS1">
+		<Signals>
+			<!--Signal>
+				<Type inoutType="Digital" direction="Input" byteWidth="1"/>
+				<ProcessData byteOffset="0"/>
+				<Bus byteOffset="0"/>
+			</Signal-->
+		</Signals>
+	</DriverInstance>
+</Driver>

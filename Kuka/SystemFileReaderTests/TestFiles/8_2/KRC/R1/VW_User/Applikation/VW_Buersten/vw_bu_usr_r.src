@@ -1,0 +1,963 @@
+&ACCESS  R
+&COMMENT KS 2.8
+&PARAM DISKPATH = VW_User/Applikation/VW_BU
+&PARAM TPVW_VERSION = 8.2.1
+&REL 346
+DEF vw_bu_usr_r( )
+  ; 
+  ;*-----------------------------------------------*
+  ;* Technologiepaket VW_BU & ACF                  *
+  ;*                                               *
+  ;* Markenstandard                                *
+  ;* Bearbeiter: B. Mildenberger  PEF-2/E0A        *
+  ;*                                               *
+  ;* Erstellt am:                                  *
+  ;* 2015.11.26 BM                                 *
+  ;*                                               *
+  ;* Aenderungsjournal                             *
+  ;* 2015.11.26 BM Konzept VW_BU & ACF neu         *
+  ;* 2016.05.10 BM Manuelle Standmengenerf. optim. *
+  ;*                                               *
+  ;*-----------------------------------------------*
+  ;
+END
+;
+;FOLD VW_BU Interface
+GLOBAL DEF VW_BU_Interf(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+  DECL VW_USER_CMD USER_CMD
+  INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+  INT RefWkz, MessWkz, TechMode, MessTrig, dMax, dMin ; VW_BU_MESS, CASE 307
+  INT AppNr, pLoad, kKraft, TechParMax, TechParMin ; VW_BU, CASE 308
+  INT I, VarHilf1
+  BOOL ModFail
+  ;
+  VarHilf1=0
+  ;
+  dMax=0
+  dMin=0
+  
+  SWITCH CMD_SEL
+    CASE 307 ;VW_BU_MESS
+      AppNr=PAR1 ;KopfNr
+      kNr=PAR1
+      MessWkz=PAR2 ;WKZ-Nummer Korrekturwkz
+      TechMode=PAR3 ;Technologie
+      MessTrig=PAR4 ;Messeingang (low-aktiv)
+      dMax=PAR5 ;dMax Schleifscheibe
+      dMin=PAR6 ;dMin Schleifscheibe
+    CASE 308 ;VW_BU-ACF
+      AppNr=PAR1 ;KopfNr
+      kNr=PAR1
+      pLoad=PAR2 ;Traglast ACF 
+      kKraft=PAR3 ;Kontaktkraftschwelle ACF
+      TechMode=PAR4 ;Technologie
+      TechParMax=PAR5 ;Druck-/Drehzahl neue Scheibe dMax
+      TechParMin=PAR6 ;Druck-/Drehzahl alte Scheibe dMin
+    DEFAULT
+      ;
+  ENDSWITCH
+  ;----------------------------------------------------
+  ;
+  SWITCH USER_CMD
+      ;
+;ENDFOLD
+;----------------------------------------------------
+;
+;FOLD #USR_INIT
+CASE #USR_INIT
+  ;
+  SWITCH CMD_SEL
+    CASE 307 ;VW_BU_MESS
+      
+    CASE 308 ;VW_BU-ACF
+      
+    DEFAULT
+      ;
+  ENDSWITCH
+  ;
+;ENDFOLD (#USR_INIT)
+;
+;----------------------------------------------------
+;
+;FOLD #USR_ADV
+CASE #USR_ADV
+  ;
+  SWITCH CMD_SEL
+    CASE 307 ;VW_BU_MESS
+      
+    CASE 308 ;VW_BU-ACF
+      IF (AppNr<3) THEN
+        WHILE (pLoad <> 0) OR (kKraft <> 0)
+          VW_BU_Msg(47, #QuitMsg) ; Payload und tKraftrampe muessen 0 sein!
+        ENDWHILE
+        C_AppNr=AppNr
+      ELSE
+        C_AppNr=1 ;Aktuell nur ACF1 möglich
+      ENDIF
+      SWITCH TechMode
+        CASE 11 ;Druckregelung
+          CONTINUE
+          IF (TechParMax < 0) OR (TechParMin < 0) THEN
+            VW_BU_Msg(11, #QuitMsg)  ; Druck kl 0% nicht zul.
+            u_dmax[C_AppNr]=25
+            u_dmin[C_AppNr]=25
+          ELSE
+            IF (TechParMax > TechParMin) THEN
+              VW_BU_Msg(12, #QuitMsg)  ; Pdmax nicht groesser Pdmin erlaubt
+              u_dmax[C_AppNr]=TechParMin
+              u_dmin[C_AppNr]=TechParMin
+              VW_BU_Msg(31, #NotifyMsg)
+            ELSE
+              IF NOT MIT_VwAcf OR (C_AppNr==2) THEN ; Acf wird im TRIG geschrieben
+                u_dmax[C_AppNr]=TechParMax
+                u_dmin[C_AppNr]=TechParMin
+              ENDIF
+            ENDIF
+          ENDIF
+        CASE 21, 31 ;Drehzahlregelung
+          IF (TechParMax < 0) AND (TechParMin >= 0) OR (TechParMin < 0) AND (TechParMax >= 0) THEN
+            VW_BU_Msg(21, #QuitMsg)  ; Vorzeichen gleich
+            IF (TechParMax < 0) THEN
+              v_d_max[C_AppNr]=TechParMax * (-1)
+              VW_BU_Msg(32, #NotifyMsg)
+            ENDIF
+            IF (TechParMin < 0) THEN
+              v_d_min[C_AppNr]=TechParMin * (-1)
+              VW_BU_Msg(33, #NotifyMsg)
+            ENDIF
+          ELSE
+            v_d_max[C_AppNr]=TechParMax
+            v_d_min[C_AppNr]=TechParMin
+            IF (TechMode==21) THEN
+              v_nenn[C_AppNr]=1490
+            ELSE
+              v_nenn[C_AppNr]=3000
+            ENDIF
+          ENDIF
+      ENDSWITCH 
+      CONTINUE
+    DEFAULT
+      ;
+  ENDSWITCH
+  ;
+;ENDFOLD (#USR_ADV)
+;
+;----------------------------------------------------
+;
+;FOLD #USR_TRIG
+CASE #USR_TRIG
+  ;
+  SWITCH CMD_SEL
+    CASE 307 ;VW_BU_MESS
+      
+    CASE 308 ;VW_BU-ACF
+      IF (AppNr<3) THEN
+        WHILE (pLoad <> 0) OR (kKraft <> 0)
+          VW_BU_Msg(47, #QuitMsg) ; Payload und tKraftrampe muessen 0 sein!
+        ENDWHILE
+        C_AppNr=AppNr
+        CONTINUE
+        u_dmax[C_AppNr]=TechParMax
+        u_dmin[C_AppNr]=TechParMin
+      ELSE
+        C_AppNr=1 ;Aktuell nur ACF1 möglich
+        AcfKraft_dMax=TechParMax
+        AcfKraft_dMin=TechParMin
+        CONTINUE		  
+      ENDIF
+      SWITCH AppNr
+        CASE 1
+          ;nothing
+        CASE 2
+          ;nothing
+        CASE 110 ;ACF110 10Kg
+          AcfTyp=110 ; Für Umrechnung in vw_bu_usr_s.OutVwBu.ana_p
+          CONTINUE
+          WHILE ((pLoad<0) OR (pLoad>100)) 
+            VW_BU_Msg(51,#QuitMsg) ;Wert fuer pLoad nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          $ANOUT[O_AN_ACF_Payl]=pLoad*10000/32767*0.0001
+          CONTINUE
+          ACF_Result_1=pLoad ; Darstellung config.mon
+          CONTINUE
+          WHILE ((AcfKraft_dMax<0) OR (AcfKraft_dMin>100)) 
+            VW_BU_Msg(57,#QuitMsg) ;Wert fuer KraftSoll nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          u_dmax[C_AppNr]=AcfKraft_dMax
+          u_dmin[C_AppNr]=AcfKraft_dMin
+          CONTINUE
+          WHILE ((kKraft<0) OR (kKraft>100)) 
+            VW_BU_Msg(58,#QuitMsg) ;Wert fuer kKraft nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          $ANOUT[O_AN_ACF_zero]=kKraft*10000/32767*0.0001
+          CONTINUE
+          ACF_Result_4=kKraft ; Darstellung config.mon
+          CONTINUE
+          MIT_AcfRange=FALSE ; keine sichere Zuordnung Hub
+          ACF_RANGE_H=0
+          ACF_RANGE_L=0
+        CASE 111 ;ACF111 20Kg
+          AcfTyp=111 ; Für Umrechnung in vw_bu_usr_s.OutVwBu.ana_p
+          CONTINUE
+          WHILE ((pLoad<0) OR (pLoad>200)) 
+            VW_BU_Msg(52,#QuitMsg) ;Wert fuer pLoad nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          $ANOUT[O_AN_ACF_Payl]=pLoad*10000/32767*0.0001
+          CONTINUE
+          ACF_Result_1=pLoad ; Darstellung config.mon
+          CONTINUE
+          WHILE ((AcfKraft_dMax<0) OR (AcfKraft_dMin>100))
+            VW_BU_Msg(57,#QuitMsg) ;Wert fuer KraftSoll nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          u_dmax[C_AppNr]=AcfKraft_dMax
+          u_dmin[C_AppNr]=AcfKraft_dMin
+          CONTINUE
+          WHILE ((kKraft<0) OR (kKraft>100)) 
+            VW_BU_Msg(58,#QuitMsg) ;Wert fuer kKraft nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          $ANOUT[O_AN_ACF_zero]=kKraft*10000/32767*0.0001
+          CONTINUE
+          ACF_Result_4=kKraft ; Darstellung config.mon
+          CONTINUE
+          MIT_AcfRange=TRUE
+          ACF_RANGE_H=11
+          ACF_RANGE_L=25
+        CASE 120 ;ACF120 50Kg
+          AcfTyp=120 ; Für Umrechnung in vw_bu_usr_s.OutVwBu.ana_p
+          CONTINUE
+          WHILE ((pLoad<0) OR (pLoad>500)) 
+            VW_BU_Msg(53,#QuitMsg) ;Wert fuer pLoad nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          $ANOUT[O_AN_ACF_Payl]=pLoad*10000/32767*0.0001
+          CONTINUE
+          ACF_Result_1=pLoad ; Darstellung config.mon
+          CONTINUE
+          WHILE ((AcfKraft_dMax<0) OR (AcfKraft_dMin>100)) 
+            VW_BU_Msg(57,#QuitMsg) ;Wert fuer KraftSoll nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          u_dmax[C_AppNr]=AcfKraft_dMax
+          u_dmin[C_AppNr]=AcfKraft_dMin
+          CONTINUE
+          WHILE ((kKraft<0) OR (kKraft>100)) 
+            VW_BU_Msg(58,#QuitMsg) ;Wert fuer kKraft nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          $ANOUT[O_AN_ACF_zero]=kKraft*10000/32767*0.0001
+          CONTINUE
+          ACF_Result_4=kKraft ; Darstellung config.mon
+          CONTINUE
+          MIT_AcfRange=FALSE ; keine sichere Zuordnung Hub
+          ACF_RANGE_H=0
+          ACF_RANGE_L=0
+        CASE 121 ;ACF121 50Kg
+          AcfTyp=121 ; Für Umrechnung in vw_bu_usr_s.OutVwBu.ana_p
+          CONTINUE
+          WHILE ((pLoad<0) OR (pLoad>500)) 
+            VW_BU_Msg(54,#QuitMsg) ;Wert fuer pLoad nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          $ANOUT[O_AN_ACF_Payl]=pLoad*10000/32767*0.0001
+          CONTINUE
+          ACF_Result_1=pLoad ; Darstellung config.mon
+          CONTINUE
+          WHILE ((AcfKraft_dMax<0) OR (AcfKraft_dMin>100)) 
+            VW_BU_Msg(57,#QuitMsg) ;Wert fuer KraftSoll nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          u_dmax[C_AppNr]=AcfKraft_dMax
+          u_dmin[C_AppNr]=AcfKraft_dMin
+          CONTINUE
+          WHILE ((kKraft<0) OR (kKraft>100)) 
+            VW_BU_Msg(58,#QuitMsg) ;Wert fuer kKraft nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          $ANOUT[O_AN_ACF_zero]=kKraft*10000/32767*0.0001
+          CONTINUE
+          ACF_Result_4=kKraft ; Darstellung config.mon
+          CONTINUE
+          MIT_AcfRange=TRUE
+          ACF_RANGE_H=15
+          ACF_RANGE_L=33
+        CASE 131 ;ACF131 80Kg
+          AcfTyp=131 ; Für Umrechnung in vw_bu_usr_s.OutVwBu.ana_p
+          CONTINUE
+          WHILE ((pLoad<0) OR (pLoad>800)) 
+            VW_BU_Msg(55,#QuitMsg) ;Wert fuer PAR1 nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          $ANOUT[O_AN_ACF_Payl]=pLoad*10000/32767*0.0001
+          CONTINUE
+          ACF_Result_1=pLoad ; Darstellung config.mon
+          CONTINUE
+          WHILE ((AcfKraft_dMax<0) OR (AcfKraft_dMin>100)) 
+            VW_BU_Msg(57,#QuitMsg) ;Wert fuer KraftSoll nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          u_dmax[C_AppNr]=AcfKraft_dMax
+          u_dmin[C_AppNr]=AcfKraft_dMin
+          CONTINUE
+          WHILE ((kKraft<0) OR (kKraft>100)) 
+            VW_BU_Msg(58,#QuitMsg) ;Wert fuer kKraft nicht im gueltigen Bereich
+          ENDWHILE
+          CONTINUE
+          $ANOUT[O_AN_ACF_zero]=kKraft*10000/32767*0.0001
+          CONTINUE
+          ACF_Result_4=kKraft ; Darstellung config.mon
+          CONTINUE
+          MIT_AcfRange=TRUE
+          ACF_RANGE_H=15
+          ACF_RANGE_L=33
+        DEFAULT    ;SWITCH CMD_SEL
+          VW_BU_Msg(60,#QuitMsg) ;P1 falscher Wert
+      ENDSWITCH
+    DEFAULT
+      ;
+  ENDSWITCH
+  ;
+;ENDFOLD (#USR_TRIG)
+;
+;----------------------------------------------------
+;
+;FOLD #USR_MAIN
+CASE #USR_MAIN
+  ;
+  SWITCH CMD_SEL
+    CASE 307 ;VW_BU_MESS
+;FOLD Mapping
+  ;PAR1 = Buerstkopfnummer 
+  ;PAR2 = WKZ-Nummer Korrekturwerkzeug 
+  ;PAR3 = Technologie  
+  ;PAR4 = Messeingang (low-aktiv)
+  ;PAR5 = dMax Schleifscheibe
+  ;PAR6 = dMin Schleifscheibe
+  ;F651/661 = BU1/2 im Technologiepaket aktivieren
+  ;F652/662 = BU1/2 Bürsten Motor Antrieb Start
+  ;F653     = BU1-ACF kein Fehler
+  ;F654/664 = BU1/2 98% Verschleiß (Scheibenw. wenn LOW)
+  ;F655/665 = BU1/2 Wzg Mess ist plausibel zu Referenz
+  ;F656/666 = BU1/2 Fehler im Prozess, Druckabsch. aktiv
+  ;F657/667 = BU1/2 Überwachung Arbeitskontakt ein
+  ;F658/668 = BU1/2 Zyklisches Messen steht an 
+  ;I53/58 = BU1/2 Hilfszaehler Verschleissmessung erf.
+  ;I50/55 = BU1/2 Vorgabe Drehzahl in Prozent
+  ;I51/56 = BU1/2 Vorgabe Anpressdruck in Prozent
+  ;I52/57 = BU1/2 Vorgabe minimaler Arbeitsdruck
+  ;anout13/15 = BU1/2 Ausgabe Druck
+  ;anout14/16 = BU1/2 Ausgabe Drehzahl
+  ;E193/201 BU1/2 ohne Prozess 
+  ;E195/203 BU1/2 Anwahl BU1/BU2
+  ;E196/204 BU1/2 Quitt Scheibe gewechselt
+  ;E197/205 BU1/2 Anwahl Referenzfahrt
+  ;E198/206 BU1/2 Störung quittieren
+  ;A193/201 BU1/2 Prozess aktiv
+  ;A194/202 BU1/2 Messung aktiv
+  ;A195/203 BU1/2 Vorwarnung Standzeit Werkzeug
+  ;A196/204 BU1/2 Max. Standzeit Werkzeug erreicht
+  ;A197/205 BU1/2 Quitt. Referenzfahrt
+  ;A198/206 BU1/2 Stoerung Messen
+  ;A199/207 BU1/2 Stoerung Steuerung (Frequenzumrichter)
+  ;A200/208 BU1/2 Sammelstoerung
+;ENDFOLD Mapping
+;Init
+ACT_POS=$NULLFRAME  
+NEU_POS=$NULLFRAME  
+MESS_DIRECTION=$NULLFRAME  
+MESS_weg_f=$NULLFRAME  
+VarHilf2=$NULLFRAME
+MESSUNG_BU=FALSE
+$OUT[O_MessAktBu[1]]=FALSE
+$OUT[O_MessAktBu[2]]=FALSE
+C_AppNr=AppNr
+;
+;Referenzwergzeug ermitteln
+RefWkz=VW_MPARA_ACT.TOOL_NO
+WHILE (dMax <= 0) OR (dMin <= 0) OR (Dmax < Dmin) OR (MessWkz == RefWkz) OR (MessWkz < 1) OR (Messwkz > 31) OR (RefWkz < 1) OR (Refwkz > 31)
+  IF (dMax <= 0) THEN
+    VW_BU_Msg(44, #QuitMsg) ; Dmax muss gesetzt werden!
+  ENDIF
+  IF (dMin <= 0) THEN
+    VW_BU_Msg(45, #QuitMsg) ; Dmin muss gesetzt werden!
+  ENDIF
+  IF (Dmax < Dmin) THEN
+    VW_BU_Msg(46, #QuitMsg) ; Dmin muss immer kleiner gleich Dmax sein
+  ENDIF
+  IF (MessWkz == RefWkz) THEN
+    VW_BU_Msg(15, #QuitMsg) ; MessWkz darf nicht gleich RefWkz sein
+  ENDIF
+  IF (MessWkz < 1) OR (Messwkz > 31) OR (RefWkz < 1) OR (Refwkz > 31) THEN
+    VW_BU_Msg(16, #QuitMsg) ; Parameter out of range
+  ENDIF
+  $FLAG[F_FEHLM_AUS[C_AppNr]]=FALSE
+  suchweg[C_AppNr]=0
+  Max_Verschleiss=0
+ENDWHILE
+;Prüfung anscheinend i.O.
+IF (dMax > 0) THEN
+  suchweg[C_AppNr]=dMax * 0.5
+ENDIF
+IF (dMax > 0) AND (dMin>0) AND (dMax>=dMin) THEN
+  dm_max[C_AppNr]=Dmax
+  dm_min[C_AppNr]=Dmin
+  Max_Verschleiss = ABS((dMax-dMin)*0.5)
+ENDIF
+;Maximale Suchstrecke festlegen
+MAX_WEG = suchweg[C_AppNr]*1.0 
+;Verschleissmeldungen fuer Messvorgang ausblenden
+$FLAG[F_VER_AUS[C_AppNr]]=TRUE   
+F_WARN_AUS[C_AppNr]=TRUE
+IF (Techmode==1) or (Techmode==2) THEN
+  MIT_mSTDM[C_AppNr]=FALSE
+  ;Messeingangnummer ermitteln
+  I_LichtSchr[C_AppNr]=MessTrig
+  ;Suchweg plausibel?
+  IF (suchweg[C_AppNr] < (Max_Verschleiss * 0.98)) THEN
+    $FLAG[F_FEHLM_AUS[C_AppNr]]=FALSE  
+  ENDIF
+  ;Werkzeuge gleichsetzen
+  TOOL_DATA[MessWkz]=TOOL_DATA[RefWkz]
+  IF ($MODE_OP==#T1) OR ($MODE_OP==#T2) THEN
+    VW_BU_Msg(41, #NotifyMsg)
+  ENDIF
+  ;Interrupts initialisieren (Messen oder Referenzieren)
+  $ADVANCE=3 ;Vorlaufzeiger vorbesetzen      
+  IF (Techmode==1) THEN ;TCP-Kontrolle und Korrektur		
+    IF(C_AppNr == 1) THEN  
+      INTERRUPT DECL 13 WHEN NOT $IN[I_LichtSchr[1]] DO TCP_MESS ()  
+      ;INTERRUPT DECL 13 WHEN NOT $CYCFLAG[50] DO TCP_MESS ()  
+    ELSE
+      INTERRUPT DECL 14 WHEN NOT $IN[I_LichtSchr[2]] DO TCP_MESS ()
+    ENDIF
+  ELSE
+    IF(C_AppNr == 1) THEN  
+      INTERRUPT DECL 13 WHEN NOT $IN[I_LichtSchr[1]] DO TCP_REF ()  
+      ;INTERRUPT DECL 13 WHEN NOT $CYCFLAG[50] DO TCP_REF ()  
+    ELSE
+      INTERRUPT DECL 14 WHEN NOT $IN[I_LichtSchr[2]] DO TCP_REF ()
+    ENDIF		
+  ENDIF
+  $ADVANCE=3 ;Vorlaufzeiger vorbesetzen      
+  ;Startpunkt fuer den Messlauf anfahren
+  LIN $POS_ACT
+  $TOOL=TOOL_DATA[RefWkz]
+  $BASE=$NULLFRAME
+  LIN $POS_ACT
+  ;Lichtschranke noch nicht betätigt?
+  WHILE NOT $IN[I_LichtSchr[C_AppNr]]
+    ;WHILE NOT $CYCFLAG[50]  
+    VW_BU_Msg(17, #QuitMsg); Lichtschranke bereits unterbrochen!
+  ENDWHILE		  
+  ;Messfahrt starten, Interrupt bei negativer Flanke
+  MESSFAHRT()
+  $ADVANCE=3
+  LIN $POS_ACT
+  IF (Techmode==1) AND (MESSUNG_BU==TRUE) THEN  
+    ;Berechnung der Werkzeugdaten 			
+    IF (mess_pos[C_AppNr].z>ref_pos[C_AppNr].z) THEN  
+      MESSWEG[C_AppNr]=-MESSWEG[C_AppNr]  
+    ENDIF
+    dm_akt[C_AppNr]=dm_max[C_AppNr]-(2*ABS(MESSWEG[C_AppNr]))
+    IF dm_akt[C_AppNr]>dm_max[C_AppNr] THEN
+      dm_akt[C_AppNr]=dm_max[C_AppNr] ; Scheibe kann nicht größer werden
+    ENDIF
+    IF dm_akt[C_AppNr]<0 THEN
+      dm_akt[C_AppNr]=0 ; Scheibe kann nicht kleiner Null werden
+    ENDIF
+    Mess_weg_f.x=MESSWEG[C_AppNr]  
+    Mess_weg_f=Invert_Frame(Mess_weg_f)  
+    $TOOL=$Nullframe  
+    $BASE=$Nullframe  
+    LIN $pos_ACT
+    ;Wkz-Daten ausrechnen
+    pos_int=forward(axis_INT[C_AppNr],VarHilf1)  
+    pos_int=invert_frame(pos_int)  
+    VarHilf2=Frame_mal_Frame(pos_int,mess_pos[C_AppNr]) 
+    ResTool=Frame_mal_Frame(VarHilf2,mess_weg_f)  
+    ResTool.a=Tool_DATA[RefWkz].a  
+    ResTool.b=Tool_DATA[RefWkz].b  
+    ResTool.c=Tool_DATA[RefWkz].c
+    ;Plausibilitaetspruefung des Korr-Wzg's 
+    $FLAG[F_FEHLM_AUS[C_AppNr]]=TRUE  
+    ;Abweichung X-Z von korrigiertem Werkzeug zu hoch??
+    IF (ResTool.x>tool_data[RefWkz].x+(max_verschleiss*1.25)) THEN
+      MESSUNG_BU=FALSE
+    ENDIF
+    IF (ResTool.y>tool_data[RefWkz].y+(max_verschleiss*1.25)) THEN 
+      MESSUNG_BU=FALSE
+    ENDIF
+    IF (ResTool.z>tool_data[RefWkz].z+(max_verschleiss*1.25)) THEN
+      MESSUNG_BU=FALSE
+    ENDIF
+    IF NOT MESSUNG_BU THEN ;Toleranzwerte überschritten
+      $FLAG[F_FEHLM_AUS[C_AppNr]]=FALSE
+      IF (C_AppNr==1) THEN  
+        VW_BU_Msg(1, #QuitMsg) 
+      ELSE  
+        VW_BU_Msg(2, #QuitMsg)
+      ENDIF  
+    ELSE ;Daten übernehmen
+      TOOL_DATA[MessWkz]=ResTool
+      IF ($MODE_OP==#T1) OR ($MODE_OP==#T2) THEN
+        VW_BU_Msg(40, #NotifyMsg)
+      ENDIF
+    ENDIF
+    ;Standmenge für configmon
+    BU_StdmAct[C_AppNr]=ABS(((dm_max[C_AppNr]-dm_akt[C_AppNr])*0.5/max_verschleiss)*100)
+  ELSE
+    IF (Techmode==1) THEN ;Interrupt nicht ausgelöst
+      $FLAG[F_FEHLM_AUS[C_AppNr]]=FALSE 
+      IF (C_AppNr==1) THEN  
+        VW_BU_Msg(9, #QuitMsg)    
+      ELSE    
+        VW_BU_Msg(10, #QuitMsg)    
+      ENDIF     
+    ELSE
+      VW_BU_Msg(42, #StateMsg)	
+    ENDIF
+  ENDIF
+  ;Messlauf beendet
+  $OUT[O_MessAktBu[1]]=FALSE
+  $OUT[O_MessAktBu[2]]=FALSE
+ELSE
+  MIT_mSTDM[C_AppNr]=TRUE
+  ;Manuelle Standmenge ausrechnen
+  IF PROCPAR[P_StdMax_Bu[C_AppNr]] == 0 THEN
+    PROCPAR[P_StdMax_Bu[C_AppNr]] = 1
+  ENDIF
+  IF PROCPAR[P_StdMax_Bu[C_AppNr]] < 0 THEN
+    PROCPAR[P_StdMax_Bu[C_AppNr]] = PROCPAR[P_StdMax_Bu[C_AppNr]] * (-1)
+  ENDIF
+  WHILE ($COUNT_I[Z_Zmess_bu[C_AppNr]] > PROCPAR[P_StdMax_Bu[C_AppNr]])
+    $FLAG[F_FEHLM_AUS[C_AppNr]]=FALSE
+    $COUNT_I[Z_Zmess_bu[C_AppNr]] = PROCPAR[P_StdMax_Bu[C_AppNr]] 			
+  ENDWHILE
+  IF (PROCPAR[P_StdMax_Bu[C_AppNr]] < 50) AND ($COUNT_I[Z_Zmess_bu[C_AppNr]] == 1) THEN
+    BU_StdmAct[C_AppNr]=Verschleiss[C_AppNr]
+    VW_BU_Msg(48, #NotifyMsg) ; Rasterung zu klein fuer StdmErfassung
+  ELSE
+    BU_StdmActHifu[C_AppNr]=(PROCPAR[P_StdMax_Bu[C_AppNr]]-$COUNT_I[Z_Zmess_bu[C_AppNr]])
+    BU_StdmActHifu[C_AppNr]=(BU_StdmActHifu[C_AppNr]/PROCPAR[P_StdMax_Bu[C_AppNr]]) * 100
+    BU_StdmAct[C_AppNr]=BU_StdmActHifu[C_AppNr]
+  ENDIF
+  dm_akt[C_AppNr]=dm_max[C_AppNr]-((dm_max[C_AppNr]-dm_min[C_AppNr]) * (BU_StdmAct[C_AppNr]*0.01))
+  IF dm_akt[C_AppNr]>dm_max[C_AppNr] THEN
+    dm_akt[C_AppNr]=dm_max[C_AppNr] ; Scheibe kann nicht größer werden
+  ENDIF
+  IF dm_akt[C_AppNr]<0 THEN
+    dm_akt[C_AppNr]=0 ; Scheibe kann nicht kleiner Null werden
+  ENDIF
+  $FLAG[F_FEHLM_AUS[C_AppNr]]=TRUE
+  ;###################################################
+  ;ab hier kann eine TCP-Nachstellung ergaenzt werden
+  ;als Rechengroesse sollte dm_akt[C_AppNr] herangezogen werden
+  ;als Rasterung sollte die Wiederholgenauigkeit der Mechanik herangezogen werden
+  ;VORSICHT bei der Differenzierung von #TCP unf #BASE!!!
+  ;###################################################
+ENDIF ;Techmode 1 oder 2
+C_BU_STDM=BU_StdmAct[C_AppNr]
+;maximaler Messweg ueberschritten (125%) 
+IF (BU_StdmAct[C_AppNr]>125) THEN
+  $FLAG[F_FEHLM_AUS[C_AppNr]]=FALSE
+  $FLAG[F_VER_AUS[C_AppNr]]=FALSE	
+  IF (C_AppNr==1) THEN  
+    VW_BU_Msg(7, #QuitMsg)   
+  ELSE   
+    VW_BU_Msg(8, #QuitMsg)   
+  ENDIF  			
+ELSE
+  ;Verschleisspruefung von 98% 
+  IF (BU_StdmAct[C_AppNr]>=Verschleiss[C_AppNr]) THEN
+    F_WARN_AUS[C_AppNr]=FALSE
+    $FLAG[F_VER_AUS[C_AppNr]]=FALSE
+    IF ($MODE_OP<>#EX) THEN	
+      IF (C_AppNr==1) THEN  
+        VW_BU_Msg(5, #NotifyMsg) 
+      ELSE   
+        VW_BU_Msg(6, #NotifyMsg)  
+      ENDIF
+    ENDIF
+  ELSE			
+    ;Verschleisspruefung von 90%  
+    IF (BU_StdmAct[C_AppNr]>=WarnWert[C_AppNr]) THEN
+      F_WARN_AUS[C_AppNr]=FALSE
+      IF ($MODE_OP<>#EX) THEN
+        IF (C_AppNr==1) THEN  
+          VW_BU_Msg(3, #NotifyMsg)  
+        ELSE  
+          VW_BU_Msg(4, #NotifyMsg)  
+        ENDIF
+      ENDIF
+    ENDIF;90%
+  ENDIF;98%
+ENDIF;125%
+;
+CASE 308 ;VW_BU-ACF
+  IF (AppNr<3) THEN
+    WHILE (pLoad <> 0) OR (kKraft <> 0)
+      VW_BU_Msg(47, #QuitMsg) ; Payload und tKraftrampe muessen 0 sein!
+    ENDWHILE
+    C_AppNr=AppNr
+  ELSE
+    C_AppNr=1 ;Aktuell nur ACF1 möglich
+  ENDIF
+DEFAULT
+  ;
+ENDSWITCH
+;
+;ENDFOLD (#USR_MAIN)
+;
+;----------------------------------------------------
+;
+;FOLD #USR_MAKRO
+CASE #USR_MAKRO
+  ;
+  SWITCH CMD_SEL
+    CASE 307 ;VW_BU_MESS
+      
+    CASE 308 ;VW_BU-ACF
+      
+    DEFAULT
+      ;
+  ENDSWITCH
+  ;
+  ;
+  ;----------------------------------------------------
+DEFAULT
+  ;  
+ENDSWITCH
+END
+;ENDFOLD
+;
+;----------------------------------------------------
+;
+;FOLD VW_BU Hilfsfunktionen
+;FOLD MESSFAHRT
+DEF MESSFAHRT ()
+  IF (kNr==1) THEN  
+    INTERRUPT ON 13
+    $OUT[O_MessAktBu[1]]=TRUE   
+  ELSE  
+    INTERRUPT ON 14
+    $OUT[O_MessAktBu[2]]=TRUE
+  ENDIF 
+  $VEL.CP=0.02
+  ;Startpunkt fuer den Messlauf anfahren
+  LIN $POS_ACT
+  MESS_DIRECTION.X=MAX_WEG
+  NEU_POS=$POS_ACT:MESS_DIRECTION
+  LIN NEU_POS
+  HALT
+  WAIT SEC 0.1
+  INTERRUPT OFF 13
+  INTERRUPT OFF 14
+  $ADVANCE=0
+END
+;ENDFOLD
+;
+;FOLD TCP_MESS
+DEF TCP_MESS ()
+  BRAKE
+  INTERRUPT OFF 13
+  INTERRUPT OFF 14
+  MESS_POS[kNr]=$POS_INT
+  LIN $POS_ACT
+  MESSUNG_BU=TRUE
+  MESSWEG[kNr]=SQRT((MESS_POS[kNr].X-REF_POS[kNr].X)*(MESS_POS[kNr].X-REF_POS[kNr].X)+(MESS_POS[kNr].Y-REF_POS[kNr].Y)*(MESS_POS[kNr].Y-REF_POS[kNr].Y)+(MESS_POS[kNr].Z-REF_POS[kNr].Z)*(MESS_POS[kNr].z-REF_POS[kNr].z))
+  AXIS_INT[kNr]=$AXIS_INT
+  $FLAG[F_MOT_ON[1]]=FALSE ;BU1 sicher aus
+  $FLAG[F_MOT_ON[2]]=FALSE ;BU2 sicher aus
+  ACT_POS=$POS_ACT
+  ;Zurueck zum Startpunkt, Interrupt abwerfen
+  $VEL.CP=0.5
+  ;Messfahrt abbrechen
+  RESUME
+END
+;ENDFOLD
+;
+;FOLD Referenzfahrt
+DEF TCP_REF ()
+  BRAKE
+  REF_POS[kNr]=$POS_INT
+  MESSUNG_BU=TRUE
+  LIN $POS_ACT
+  RESUME
+END
+;ENDFOLD
+;
+;FOLD ARCUSTAN2
+  ;----------------------------------------------------
+DEFFCT  REAL ARCUSTAN2(Y :IN,X :IN)
+  ; Arcustangens mit 2 Argumenten und Check, ob x und y numerisch 0 sind
+  REAL X,Y
+  REAL ATAN_EPS
+  ATAN_EPS=0.00011
+  IF ((ABS(X)<ATAN_EPS) AND (ABS(Y)<ATAN_EPS)) THEN
+    RETURN  (0)
+  ELSE
+    RETURN  (ATAN2(Y,X))
+  ENDIF
+ENDFCT
+;ENDFOLD
+;
+;FOLD FRAME_TO_MAT
+  ;----------------------------------------------------
+DEF  FRAME_TO_MAT (T[,]:OUT,A :IN,B :IN,C :IN,X :IN,Y :IN,Z :IN )
+  ; Umwandlung von FRAME RPY-Winkeln A, B, C in eine Trafo-Matrix T
+  ; T = Trans * Rot_z(A) * Rot_y(B) * Rot_x(C)
+  REAL T[,],A,B,C,X,Y,Z
+  REAL COS_A,SIN_A,COS_B,SIN_B,COS_C,SIN_C
+  COS_A=COS(A)
+  SIN_A=SIN(A)
+  COS_B=COS(B)
+  SIN_B=SIN(B)
+  COS_C=COS(C)
+  SIN_C=SIN(C)
+  T[1,1]=COS_A*COS_B
+  T[1,2]=-SIN_A*COS_C+COS_A*SIN_B*SIN_C
+  T[1,3]=SIN_A*SIN_C+COS_A*SIN_B*COS_C
+  T[1,4]=X
+  T[2,1]=SIN_A*COS_B
+  T[2,2]=COS_A*COS_C+SIN_A*SIN_B*SIN_C
+  T[2,3]=-COS_A*SIN_C+SIN_A*SIN_B*COS_C
+  T[2,4]=Y
+  T[3,1]=-SIN_B
+  T[3,2]=COS_B*SIN_C
+  T[3,3]=COS_B*COS_C
+  T[3,4]=Z
+  T[4,1]=0
+  T[4,2]=0
+  T[4,3]=0
+  T[4,4]=1
+END
+;ENDFOLD
+;
+;FOLD MAT_MAL_MAT
+  ;----------------------------------------------------
+DEF  MAT_MAL_MAT (T1[,]:OUT,T2[,]:OUT,T3[,]:OUT)
+  REAL T1[,],T2[,],T3[,],SUM
+  INT I,J,K
+  ; I=Zeile, K=Spalte von T1
+  FOR I=1 TO 4
+    FOR K=1 TO 4
+      SUM=0
+      FOR J=1 TO 4
+        SUM=SUM+T2[I,J]*T3[J,K]
+      ENDFOR
+      T1[I,K]=SUM
+    ENDFOR
+  ENDFOR
+END
+;ENDFOLD
+;
+;FOLD MAT_TO_FRAME
+  ;----------------------------------------------------
+DEF MAT_TO_FRAME (T[,]: OUT,F: OUT)
+  ; Umwandlung einer Trafo-Matrix T in ein Frame
+  ; T = Trans * Rot_z(A) * Rot_y(B) * Rot_x(C)
+  REAL T[,],A,B,C
+  FRAME F
+  REAL SIN_A,COS_A,SIN_B,ABS_COS_B,SIN_C,COS_C
+  A=ARCUSTAN2(T[2,1],T[1,1])
+  SIN_A=SIN(A)
+  COS_A=COS(A)
+  SIN_B=-T[3,1]
+  ABS_COS_B=COS_A*T[1,1]+SIN_A*T[2,1]
+  B=ARCUSTAN2(SIN_B,ABS_COS_B) ;       Hier: -90 <= B <= +90 !!
+  SIN_C=SIN_A*T[1,3]-COS_A*T[2,3]
+  COS_C=-SIN_A*T[1,2]+COS_A*T[2,2]
+  C=ARCUSTAN2(SIN_C,COS_C)
+  F.A=a
+  F.B=b
+  F.C=c
+  F.X=T[1,4]
+  F.Y=T[2,4]
+  F.Z=T[3,4]
+END
+;ENDFOLD
+;
+;FOLD INV_ORI_MAT2
+  ;----------------------------------------------------
+DEF INV_ORI_MAT2 (O[,]:OUT)
+  REAL O[,]
+  REAL TAUSCH,X,Y,Z
+  INT I,J
+  ; Translations-Vektor invertieren
+  X=O[1,1]*O[1,4]+O[2,1]*O[2,4]+O[3,1]*O[3,4]
+  Y=O[1,2]*O[1,4]+O[2,2]*O[2,4]+O[3,2]*O[3,4]
+  Z=O[1,3]*O[1,4]+O[2,3]*O[2,4]+O[3,3]*O[3,4]
+  O[1,4]=-x
+  O[2,4]=-y
+  O[3,4]=-Z
+  ; Rotationsmatrix invertieren
+  TAUSCH=O[1,2]
+  O[1,2]=O[2,1]
+  O[2,1]=TAUSCH
+  TAUSCH=O[1,3]
+  O[1,3]=O[3,1]
+  O[3,1]=TAUSCH
+  TAUSCH=O[3,2]
+  O[3,2]=O[2,3]
+  O[2,3]=TAUSCH
+END
+;ENDFOLD
+;
+;FOLD INVERT_FRAME
+  ;----------------------------------------------------
+DEFFCT FRAME  INVERT_FRAME (F1 :OUT)
+  FRAME F1,B
+  REAL O1[4,4]
+  ; FRAME -> Matrix
+  FRAME_TO_MAT(O1[,],F1.A,F1.B,F1.C,F1.X,F1.Y,F1.Z)
+  ; Invertiere Matrix
+  INV_ORI_MAT2 (O1[,])
+  ; Matrix -> Frame
+  MAT_TO_FRAME (O1[,],B)
+  RETURN(B)
+ENDFCT
+;ENDFOLD
+;
+;FOLD FRAME_MAL_FRAME
+  ;----------------------------------------------------
+DEFFCT FRAME  Frame_mal_Frame (F1:OUT,F2 :OUT )
+  FRAME F1,F2,B
+  REAL O1[4,4],O2[4,4],O3[4,4],TRA[4,4],ERG[4,4]
+  INT I,J
+  ; F1 -> Matrix
+  FRAME_TO_MAT(O1[,],F1.A,F1.B,F1.C,F1.X,F1.Y,F1.Z)
+  ; F2 -> Matrix
+  FRAME_TO_MAT(O2[,],F2.A,F2.B,F2.C,F2.X,F2.Y,F2.Z)
+  ; $pos_act:rot_vek -> Matrizen multiplizieren
+  MAT_MAL_MAT(O3[,],O1[,],O2[,])
+  ; Matrix -> Frame
+  MAT_TO_FRAME (O3[,],B)
+  RETURN(B)
+ENDFCT
+;ENDFOLD
+;ENDFOLD (VW_BU Hilfsfunktionen)
+;
+;----------------------------------------------------
+;----------------------------------------------------
+;----------------------------------------------------
+;
+;FOLD VW_BU Meldungen
+  ;
+DEF VW_BU_Msg(msg_nr :IN, MsgTyp :IN)
+  INT msg_nr, nHandle, Answer, OFFSET
+  DECL BuR_MsgType MsgTyp
+  DECL KrlMsg_T USER_MSG
+  DECL KrlMsgPar_T Par[3]
+  DECL KrlMsgOpt_T Opt
+  DECL STATE_T Stat 
+  ;
+  USER_MSG = { Modul[] "VwBu (R_Msg)", Nr -1, Msg_txt[] " "}
+  Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+  ;
+  OFFSET=0
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+      USER_MSG.MSG_TXT[]="Vermessung Scheibe 1: Werkzeug ausserhalb Toleranz!"
+    CASE 2
+      USER_MSG.MSG_TXT[]="Vermessung Scheibe 2: Werkzeug ausserhalb Toleranz!"
+    CASE 3
+      USER_MSG.MSG_TXT[]="Vermessung Scheibe 1: Vorwarnung 90% Verschleiss"
+    CASE 4
+      USER_MSG.MSG_TXT[]="Vermessung Scheibe 2: Vorwarnung 90% Verschleiss"
+    CASE 5
+      USER_MSG.MSG_TXT[]="Vermessung Scheibe 1: Alarm 98% Verschleiss"
+    CASE 6
+      USER_MSG.MSG_TXT[]="Vermessung Scheibe 2: Alarm 98% Verschleiss"
+    CASE 7
+      USER_MSG.MSG_TXT[]="Vermessung Scheibe 1: Messwert nicht plausibel"
+    CASE 8
+      USER_MSG.MSG_TXT[]="Vermessung Scheibe 2: Messwert nicht plausibel"
+    CASE 9
+      USER_MSG.MSG_TXT[]="Vermessung Scheibe 1: Keine Messung erfolgt!"
+    CASE 10
+      USER_MSG.MSG_TXT[]="Vermessung Scheibe 2: Keine Messung erfolgt!"
+    CASE 11
+      USER_MSG.MSG_TXT[]="Druck kleiner 0 mV nicht zulaessig!"
+    CASE 12
+      USER_MSG.MSG_TXT[]="Druck bei Dmax muss niedriger sein als bei Dmin!"
+    CASE 13
+      USER_MSG.MSG_TXT[]="Absolut Pmin muss zwischen 0 und 9999 (mV) liegen!"
+    CASE 15
+      USER_MSG.MSG_TXT[]="Mess-Wkz muss ungleich Ref-Wkz sein!"
+    CASE 16
+      USER_MSG.MSG_TXT[]="Nur Wkz-Nummern zwischen 1 und 31 zul.!"
+    CASE 17
+      USER_MSG.MSG_TXT[]="Lichtschranke bereits vor Start Messlauf unterbrochen!"
+    CASE 21
+      USER_MSG.MSG_TXT[]="Drehrichtung Nmax und Nmin muss gleich sein!"
+    CASE 31
+      USER_MSG.MSG_TXT[]="Vorgabe Pdmax wurde Pdmin gleichgesetzt."
+    CASE 32
+      USER_MSG.MSG_TXT[]="Vorgabe Ndmax wurde mit positivem VZ versehen."
+    CASE 33
+      USER_MSG.MSG_TXT[]="Vorgabe Ndmin wurde mit positivem VZ versehen."
+    CASE 40
+      ;USER_MSG.MSG_TXT[]="TCP-Berechnung erfolgreich."
+      USER_MSG.MSG_TXT[]="TCP-Berechnung erfolgreich."
+      ;par[1] = {par_type #value, par_real dm_akt[1]}
+    CASE 41
+      USER_MSG.MSG_TXT[]="TCP von Mess-Wkz wurde TCP Ref-Wkz gleichgesetzt."
+    CASE 42
+      USER_MSG.MSG_TXT[]="Referenzposition erfolgreich gespeichert."
+    CASE 44
+      USER_MSG.MSG_TXT[]="Wert dMax muss zwingend vergeben werden!"
+    CASE 45
+      USER_MSG.MSG_TXT[]="Wert dMin muss zwingend vergeben werden!"
+    CASE 46
+      USER_MSG.MSG_TXT[]="Die Angabe Dmin muss kleiner oder gleich Dmax sein!"
+    CASE 47
+      USER_MSG.MSG_TXT[]="Bei Nutzung von BU1 oder BU2 muss P2 und P3 Null sein!"
+    CASE 48
+      USER_MSG.MSG_TXT[]="Maximale Standmenge kleiner 50 Teile unzulaessig!"
+      ;ACF
+    CASE 51
+      USER_MSG.MSG_TXT[]="Wert fuer Traglast ungueltig (Bereich 0-100)"
+    CASE 52
+      USER_MSG.MSG_TXT[]="Wert fuer Traglast ungueltig (Bereich 0-200)"
+    CASE 53
+      USER_MSG.MSG_TXT[]="Wert fuer Traglast ungueltig (Bereich 0-500)"
+    CASE 54
+      USER_MSG.MSG_TXT[]="Wert fuer Traglast ungueltig (Bereich 0-500)"
+    CASE 55
+      USER_MSG.MSG_TXT[]="Wert fuer Traglast ungueltig (Bereich 0-800)"
+    CASE 56
+      USER_MSG.MSG_TXT[]="Wert fuer Min-Kraft ungueltig (Bereich 0-100N)"
+    CASE 57
+      USER_MSG.MSG_TXT[]="Wert fuer Max-Kraft ungueltig (Bereich 0-100N)"
+    CASE 58
+      USER_MSG.MSG_TXT[]="Wert Min-Kraft->Soll-Kraft ungueltig (Bereich 0-100 1/10s)"
+    CASE 59
+      USER_MSG.MSG_TXT[]=" "
+    CASE 60
+      USER_MSG.MSG_TXT[]="P1 falscher Wert"    
+    DEFAULT
+      USER_MSG.MSG_TXT[]="unbekannte Meldung"   
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      nHandle = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      nHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      While ( Exists_KrlMsg(nHandle) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      Endwhile
+    CASE #NotifyMsg
+      nHandle = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      nHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+END
+;
+;ENDFOLD (VW_BU Meldungen)

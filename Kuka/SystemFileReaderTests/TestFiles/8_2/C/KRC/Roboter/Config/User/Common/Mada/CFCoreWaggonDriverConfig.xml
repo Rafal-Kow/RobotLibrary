@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WaggonDriverConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/WaggonDriverConfig.xsd">
+    
+    <Version Label="" >
+        <Info Version="KUKA V8.1" />
+        <Schema Version="2" />
+    </Version>
+
+    <!-- 0: KPP-Supply Daten-Kanal 1 von KPP -->
+    <WaggonDriver ConfigFile="KPP.xml" ID="106" >
+        <Input>
+            <Offset VendorID="24776" ProductCode="80" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DI Inputs.Statuswort Versorger" Occurrence="0"/>
+        </Input>
+        <Output>
+            <Offset VendorID="24776" ProductCode="80" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DO Outputs.Steuerwort Versorger" Occurrence="0"/>
+        </Output>
+    </WaggonDriver>
+
+    <!-- 1: KSP-Daten-Kanaele von KSP -->
+    <WaggonDriver ConfigFile="KSP.xml" ID="101" >
+        <Input>
+            <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DI Inputs.Statuswort Antrieb 1" Occurrence="1"/>
+            <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DI Inputs.Statuswort Antrieb 2" Occurrence="1"/>
+            <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DI Inputs.Statuswort Antrieb 3" Occurrence="1"/>
+            <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DI Inputs.Statuswort Antrieb 1" Occurrence="0"/>
+            <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DI Inputs.Statuswort Antrieb 2" Occurrence="0"/>
+            <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DI Inputs.Statuswort Antrieb 3" Occurrence="0"/>
+
+
+        </Input>
+        <Output>
+            <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DO Outputs.Steuerwort Antrieb 1" Occurrence="1"/>
+            <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DO Outputs.Steuerwort Antrieb 2" Occurrence="1"/>
+            <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DO Outputs.Steuerwort Antrieb 3" Occurrence="1"/>
+            <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DO Outputs.Steuerwort Antrieb 1" Occurrence="0"/>
+            <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DO Outputs.Steuerwort Antrieb 2" Occurrence="0"/>
+            <Offset VendorID="24776" ProductCode="83" RevisionNo="196608" RevisionNoMask="4294901760" VarName="DO Outputs.Steuerwort Antrieb 3" Occurrence="0"/>
+
+
+        </Output>
+    </WaggonDriver>
+
+    <!-- 2: 100: CCFRDC3 Resolver Digital Converter -->
+    <WaggonDriver ConfigFile="RDC3.xml" ID="100" >
+        <Input>
+            <Offset VendorID="24776" ProductCode="48" VarName="FSoE-Drive In.Position 1" Occurrence="0"/>
+            <Offset VendorID="24776" ProductCode="48" VarName="FSoE-Drive In.Position 2" Occurrence="0"/>
+            <Offset VendorID="24776" ProductCode="48" VarName="FSoE-Drive In.Position 3" Occurrence="0"/>
+            <Offset VendorID="24776" ProductCode="48" VarName="FSoE-Drive In.Position 4" Occurrence="0"/>
+            <Offset VendorID="24776" ProductCode="48" VarName="FSoE-Drive In.Position 5" Occurrence="0"/>
+            <Offset VendorID="24776" ProductCode="48" VarName="FSoE-Drive In.Position 6" Occurrence="0"/>
+            <Offset VendorID="24776" ProductCode="48" VarName="FSoE-Drive In.Position 7" Occurrence="0"/>
+            <Offset VendorID="24776" ProductCode="48" VarName="FSoE-Drive In.Position 8" Occurrence="0"/>
+        </Input>
+      <AdditionalOffsets type="global">
+         <Input>
+            <Offset VendorID="24776" ProductCode="48" VarName="FSoE-Drive In.Command" Occurrence="0" WDVarDescription="RDC-Global-Data"/>
+         </Input>
+      </AdditionalOffsets>
+    </WaggonDriver>
+
+</WaggonDriverConfig>

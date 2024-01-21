@@ -1,0 +1,155 @@
+&ACCESS  R
+&COMMENT KS_1.1
+&PARAM DISKPATH = VW_User/Applikation/Vision/Perceptron
+&PARAM TPVW_VERSION = 8.3.0
+&REL 6
+DEF vw_prc_usr_s( )
+;
+;*---------------------------------------------*
+;* Perceptron GmbH                             *
+;*                                             *
+;* Version 1.1.7  / VKRC 4                     *
+;*                                             *
+;* Bearbeitet am:                              *
+;* 06.03.2014 MG                               *
+;*     ueberarbeitet auf Stand V1.0.0 / VKRC 4 *
+;*---------------------------------------------*
+;
+END
+;
+;-----------------------------------------------------------
+;
+;FOLD Perceptron INIT
+GLOBAL DEF PRC_INIT( )
+;USER Version
+Version_Tech_PRC=20150324
+;
+;Reset Lifebitcounter
+O_PRC_Life               = FALSE
+$timer[N_PRC_TmLNr]      = N_PRC_TmL
+$timer_stop[N_PRC_TmLNr] = FALSE
+B_PRC_NoAns0             = FALSE
+B_PRC_NoAns1             = FALSE
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD Perceptron Reset-Signals
+GLOBAL DEF PRC_ResetSig( )
+;Reset Signals
+;Source Code Perceptron
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD Perceptron LifeBit
+GLOBAL DEF PRC_LifeBit( )
+;
+IF $timer_flag[N_PRC_TmLNr] THEN
+  IF (O_PRC_Life == TRUE) AND (NOT B_PRC_NoAns0) AND (B_PRC_UseFct) THEN
+    IF (I_PRC_Life <> O_PRC_Life) THEN
+      IF NOT(B_PRC_NoAns1) THEN                  ; Perceptron not alive
+        N_PRC_MlgRet = PRC_MsgMld(#StatMsg,1)  ; Keine Antwort auf Lebensbit
+        B_PRC_NoAns1 = True        
+      ENDIF
+    ELSE
+      IF B_PRC_NoAns1 THEN
+        B_PRC_NoAns1 = FALSE                     ; Perceptron is alive
+        B_PRC_MlgRet = Clear_KrlMsg(N_PRC_MlgRet)         ; Meldung zuruecknehmen
+      ENDIF
+    ENDIF
+  ENDIF
+  IF (O_PRC_Life == FALSE) AND (NOT B_PRC_NoAns1) AND (B_PRC_UseFct) THEN
+    IF (I_PRC_Life <> O_PRC_Life) THEN
+      IF NOT(B_PRC_NoAns0) THEN                  ; Perceptron not alive
+        N_PRC_MlgRet = PRC_MsgMld(#StatMsg,1)  ; Keine Antwort auf Lebensbit
+        B_PRC_NoAns0 = True           
+      ENDIF
+    ELSE
+      IF B_PRC_NoAns0 THEN
+        B_PRC_NoAns0 = FALSE                     ; Perceptron is alive
+        B_PRC_MlgRet = Clear_KrlMsg(N_PRC_MlgRet)         ; Meldung zuruecknehmen
+      ENDIF
+    ENDIF
+  ENDIF
+  O_PRC_Life = NOT O_PRC_Life
+  $timer[N_PRC_TmLNr]=N_PRC_TmL
+  $timer_stop[N_PRC_TmLNr] = FALSE
+ENDIF
+$TIMER_STOP[N_PRC_TmM1Nr]  = TRUE
+$TIMER[N_PRC_TmM2Nr]       = $TIMER[N_PRC_TmM1Nr]
+$TIMER_STOP[N_PRC_TmM2Nr]  = TRUE
+END
+;ENDFOLD (LifeBit)
+;
+;-----------------------------------------------------------
+;
+;FOLD Perceptron Meldungen
+;*---------------------------------------------*
+;* Perceptron GmbH                             *
+;*                                             *
+;* Version 1.1.6  / VKRC 2                     *
+;*                                             *
+;* Bearbeitet am:                              *
+;* 21.12.2010 MG                               *
+;*     ueberarbeitet auf Stand V1.0.0 / VKRC 4 *
+;* 06.03.2014 MG                               *
+;*     Anpassungen wg. Vereinheitlichung KRC2  *
+;*---------------------------------------------*
+;
+DEFFCT INT PRC_MsgMld (MSG_TYP:IN, MSG_NR:IN)
+DECL INT           MSG_NR
+DECL PRC_MsgType   MSG_TYP
+DECL KRLMSG_T      USER_MSG
+DECL KRLMSGPAR_T   PAR[3]
+DECL KRLMSGOPT_T   OPT
+DECL KrlMsgDlgSK_T SK[7]
+INT                nDlgHandle
+INT                nDlgAnswer
+;
+USER_MSG    = { Modul[] "PRC_MsgMld", Nr -1, Msg_txt[] " "}
+Par[1]      = { Par_type #Value, Par_txt[] " " }
+Opt         = { VL_Stop FALSE, Clear_P_Reset FALSE, Log_To_DB TRUE }
+SK[1]       = {Sk_Type #Value,Sk_Txt[] "OK"}
+USER_MSG.Nr = MSG_NR
+nDlgAnswer  = 1
+;
+SWITCH MSG_NR
+  CASE 1
+    USER_MSG.MSG_TXT[] = "PRC: Keine Antwort auf Lebensbit"
+  DEFAULT
+    USER_MSG.MSG_TXT[] = "PRC: Unbekannte Meldung" 
+ENDSWITCH
+SWITCH MSG_TYP
+  CASE #DlgMsg
+    nDlgHandle = Set_KrlDlg(USER_MSG,Par[],SK[],Opt)      
+    REPEAT
+    UNTIL NOT Exists_KrlDlg(nDlgHandle,nDlgAnswer)      
+    SWITCH nDlgAnswer        
+      CASE 1
+        ;HALT ;Softkey 1 was hit        
+      CASE 2
+        ;HALT ;Softkey 2 was hit       
+      CASE 3
+        ;HALT ;Softkey 3 was hit        
+      DEFAULT
+        ;HALT ;Wrong softkey was hit          
+    ENDSWITCH    
+  CASE #StatMsg
+    nDlgHandle= Set_KrlMsg(#State, USER_MSG, Par[], Opt)   ;Ausgabe Statusmeldung
+  CASE #QuitMsg
+    nDlgHandle = Set_KrlMsg(#Quit, USER_MSG, Par[], Opt)   ;Ausgabe Quittierungsmeldung
+  CASE #NotifyMsg
+    nDlgHandle = Set_KrlMsg(#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+  CASE #WaitMsg
+    nDlgHandle = Set_KrlMsg(#Waiting, USER_MSG, Par[], Opt);Ausgabe Hinweismeldung  
+  DEFAULT
+    nDlgHandle = Set_KrlMsg(#Quit, USER_MSG, Par[], Opt)   ;Ausgabe Quittierungsmeldung
+ENDSWITCH
+RETURN(nDlgHandle)
+ENDFCT
+;
+;ENDFOLD (Perceptron Meldungen)
+;

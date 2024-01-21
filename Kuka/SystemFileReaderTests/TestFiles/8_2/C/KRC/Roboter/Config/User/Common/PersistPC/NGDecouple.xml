@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?><CoupleData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/CoupleData.xsd">
+<!-- /Roboter/Config/System/Common/Schemes/-->
+   <Version Label="">
+      <Info Version="KUKA V8.2"/>
+      <Schema Version="1"/>
+   </Version>
+   <Check CRC="0" Num="7"/>
+   <Data DriveID="0" Motor="0" Num="0" PosAbs="0" PosEnc="0" State="0" Valid="0"/>
+   <Data DriveID="0" Motor="0" Num="0" PosAbs="0" PosEnc="0" State="0" Valid="0"/>
+   <Data DriveID="0" Motor="0" Num="0" PosAbs="0" PosEnc="0" State="0" Valid="0"/>
+   <Data DriveID="0" Motor="0" Num="0" PosAbs="0.0" PosEnc="0" State="0" Valid="0"/>
+   <Data DriveID="0" Motor="0" Num="0" PosAbs="0.0" PosEnc="0" State="0" Valid="0"/>
+</CoupleData>

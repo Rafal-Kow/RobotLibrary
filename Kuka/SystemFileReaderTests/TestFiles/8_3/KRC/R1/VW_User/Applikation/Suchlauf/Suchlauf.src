@@ -1,0 +1,200 @@
+&ACCESS  R
+&USER AVO
+&COMMENT Suchlauf
+&PARAM DISKPATH = VW_User/Applikation/Suchlauf
+&PARAM EDITMASK = Suchlauf
+&PARAM TPVW_VERSION = 8.1.8
+&REL 60
+DEF Suchlauf(  )
+;********************************************************
+;* Programm      : Suchlauf                             *
+;* Filename      : Suchlauf.src                         *
+;* Quelle        :                                      *
+;* Zielsystem    : VKRC4                                *
+;* Zielsoftware  :                                      *
+;* Kunde         : VW                                   *
+;* Autor         : AVO_ASP                              *
+;* Telefon       :                                      *
+;* (c)           :                                      *
+;*======================================================*
+END
+;FOLD Suchlauf
+GLOBAL DEF VW_APP_Suchlauf(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN,PAR7:IN)
+  DECL VW_USER_CMD USER_CMD
+  INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6,PAR7
+  
+  SWITCH CMD_SEL
+   ;FOLD Suchlauf Stop
+   CASE 1010
+   ;
+   ;
+   ;***************************************************
+     SWITCH USER_CMD
+     ;
+     ;***************************************************
+       CASE #USR_INIT
+         ;FOLD Init
+         ;
+         ;
+         ;ENDFOLD (Init)
+     ;
+     ;***************************************************
+       CASE #USR_ADV
+         ;FOLD Advance
+   		VW_Suchl_Max_Weg = PAR1
+   		VW_Suchl_Max_Weg_T1 = PAR2
+   		VW_Suchl_F_Fehler = PAR3
+   		VW_Suchl_A_Fehler = PAR4
+   		if PAR5 == 1 THEN
+   			VW_Suchl_SPS_OFF = TRUE
+   		ELSE
+   			VW_Suchl_SPS_OFF = FALSE
+   		ENDIF
+         WHILE ($Pro_MODE1==#ISTEP)
+      		App_MLD(1,#QuitMsg)  
+   		ENDWHILE   
+		   WHILE (VW_Suchl_F_Fehler < 0) or (VW_Suchl_F_Fehler > 999)
+      		App_MLD(20,#QuitMsg)  
+   		ENDWHILE   
+         IF VW_Suchl_A_Fehler <> 0 then
+   			WHILE (VW_Suchl_A_Fehler < 121) or (VW_Suchl_A_Fehler > 224)
+      			App_MLD(21,#QuitMsg)  
+   			ENDWHILE   
+         ENDIF
+   		WHILE (VW_Suchl_Max_Weg < 0)
+      		App_MLD(22,#QuitMsg)  
+   		ENDWHILE   
+   		WHILE (VW_Suchl_Max_Weg_T1 < 0)
+      		App_MLD(23,#QuitMsg)  
+   		ENDWHILE   
+   		WAIT SEC 0.01
+   		SL_OV_PRO = $OV_PRO
+   		$OV_PRO = 0
+   		VW_Suchl_Stopp = FALSE
+   		INTERRUPT DECL 104 WHEN $PRO_MOVE DO SL_FB_Set_Dist()
+		   $advance =0
+         INTERRUPT ON 104
+         	Sl_FB_Start_ZielPunkt()
+         WAIT SEC 0   
+         INTERRUPT OFF 104
+   		$OV_PRO = SL_OV_PRO
+   		;
+         ;ENDFOLD (Advance)
+      ;
+      ;***************************************************
+       CASE #USR_TRIG
+         ;FOLD Trig
+         ;
+       	;
+         ;ENDFOLD (Trig)
+         ;
+     ;***************************************************
+       CASE #USR_MAIN
+         ;FOLD Main
+         VW_Suchl_F_Fehler = PAR3
+   		VW_Suchl_A_Fehler = PAR4
+         if VW_Suchl_F_Fehler > 0 THEN
+         	if $FLAG[VW_Suchl_F_Fehler] THEN
+         		App_MLD(10,#NotifyMsg)
+         	ENDIF
+         ENDIF
+         if VW_Suchl_A_Fehler > 0 THEN
+         	if $OUT[VW_Suchl_A_Fehler] THEN
+         		App_MLD(10,#NotifyMsg)
+         	ENDIF
+         ENDIF
+         VW_Suchl_F_Fehler = 0
+   		VW_Suchl_A_Fehler = 0
+			VW_Suchl_SPS_OFF = FALSE
+         ;
+         ;
+         ;ENDFOLD (Main)
+     ;
+     ;***************************************************
+       CASE #USR_MAKRO
+         ;FOLD Makro
+   	  ;
+   	  ;
+         ;ENDFOLD (Makro)
+     ;
+     ;***************************************************
+       DEFAULT
+       ;
+     ENDSWITCH
+     ;ENDFOLD (Suchlauf Stop)
+     ;
+     ;***************************************************
+ DEFAULT
+ENDSWITCH       
+END
+;ENDFOLD (Suchlauf)
+;-----------------------------------------
+;FOLD Distanz setzen
+DEF SL_FB_Set_Dist()
+VW_Suchl_Dist_M = $DIST_NEXT
+VW_Suchl_Ziel_Dist = VW_Suchl_Dist_M + VW_Suchl_Max_Weg
+if ($MODE_OP==#T1) and (VW_Suchl_Max_Weg_T1 > 0) THEN
+	VW_Suchl_Ziel_Dist = VW_Suchl_Dist_M + VW_Suchl_Max_Weg_T1
+ENDIF
+	 WAIT SEC 0
+    INTERRUPT OFF 104
+    BRAKE
+    $OV_PRO = SL_OV_PRO
+    LIN $POS_ACT 
+    RESUME
+END
+;ENDFOLD (Distanz setzen)
+;-----------------------------------------
+;FOLD Ziel Position
+DEF Sl_FB_Start_ZielPunkt ()
+	LIN Act_P1
+END
+;ENDFOLD (Ziel Position)
+;-----------------------------------------
+;FOLD Messages APP
+DEF  APP_MLD (MLD_NR :IN, TCP_MsgTyp :IN)
+  INT TCP_OFFSET, MLD_NR
+  DECL KrlMsg_T USER_MSG
+  DECL KrlMsgPar_T Par[3]
+  DECL KrlMsgOpt_T Opt
+  DECL STATE_T TCP_Stat 
+  DECL MsgType TCP_MsgTyp
+  
+  USER_MSG = { Modul[] "VW_Suchlauf", Nr -1, Msg_txt[] " "}
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+  USER_MSG.Nr = MLD_NR
+ 
+  TCP_OFFSET= 0
+  
+  SWITCH  MLD_NR
+    CASE 1
+      SWRITE(USER_MSG.MSG_TXT[],TCP_Stat,TCP_OFFSET,"Ungueltiger Mod! GO oder Bewegung aktivieren!")
+    CASE 10
+      SWRITE(USER_MSG.MSG_TXT[],TCP_Stat,TCP_OFFSET,"Maximal erlaubter Weg bei Fernsensor erreicht!")
+	 CASE 20
+		SWRITE(USER_MSG.MSG_TXT[],TCP_Stat,TCP_OFFSET, "Flag F ausserhalb des Bereichs! 1-999. Im Techaufruf anpassen!")
+    CASE 21
+		SWRITE(USER_MSG.MSG_TXT[],TCP_Stat,TCP_OFFSET, "Ausgang A ausserhalb des Bereichs! 121-224. Im Techaufruf anpassen!")
+    CASE 22
+		SWRITE(USER_MSG.MSG_TXT[],TCP_Stat,TCP_OFFSET, "Der Maximalweg darf nicht negativ sein! Im Techaufruf anpassen!")
+    CASE 23
+		SWRITE(USER_MSG.MSG_TXT[],TCP_Stat,TCP_OFFSET, "Der Maximalweg T1 darf nicht negativ sein! Im Techaufruf anpassen!")
+    DEFAULT
+     USER_MSG.MSG_TXT[]="Meldung nicht Deklariert?"
+   ENDSWITCH
+ 
+  SWITCH TCP_MsgTyp
+     CASE #QuitMsg
+      Opt = { VL_Stop TRUE, Clear_P_Reset TRUE, Log_To_DB FALSE }
+      App_Antw = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      WHILE ( Exists_KrlMsg(App_Antw) )  ;Warten bis der Anwender quittiert
+        WAIT Sec 0.1
+      ENDWHILE
+    CASE #NotifyMsg
+      Opt = { VL_Stop FALSE, Clear_P_Reset TRUE, Log_To_DB FALSE }
+      App_Antw = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung    
+    DEFAULT
+      App_Antw = Set_KrlMsg(#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+END
+;ENDFOLD (Messages APP )

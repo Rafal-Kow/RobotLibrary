@@ -1,0 +1,734 @@
+&ACCESS RVEO
+&REL 70
+&PARAM DISKPATH = VW_User/Applikation/Vision/SMA
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM EDITMASK = vw_cgx_user
+DEF vw_sto_cs_user( )
+;
+;*---------------------------------------------*
+;* Steinbichler Conzept Solutions GmbH             *
+;* Version 1.0.0  / VKRC 4                               *
+;* Bearbeitet am:                                          *
+;* 20130208  vw_sto_cs_user erstellt                *
+;*---------------------------------------------*
+;
+END
+;
+GLOBAL DEF STO_CS_Interface(USER_CMD :IN, CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN)
+  DECL VW_USER_CMD USER_CMD
+  INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+
+  SWITCH PAR1
+  ;;FOLD VISIO7
+  ;Start Integration VISIO7 durch CS JZ
+  ;***********************************************
+  ;
+  ;***Legende***
+	;PAR1 ==> Programmfunktion (1=Bewegung ausfuehren)
+	;PAR2 ==> 1=pruefen ob Startpos == AxisRobGst(Home) / 2=nicht pruefen (aus Cell =>2 sonst 1)
+	;PAR3 ==> Reserve
+	;PAR4 ==> Reserve
+	;PAR5 ==> Reserve
+	;PAR6 ==> Reserve
+	;**************
+	;***Interrupts***
+	; Interrupt 32 => NOT diZustimm , I_Zustimm()
+	; Interrupt 33 => giZyklusCounterIn<>OldZyklusCounterIn , I_Multiplex()
+	;**************
+
+CASE 1 ;Bewegung von VISIO7 ausfuehren
+ InitVisio () ;Variablen Initialisieren
+ PTP $Pos_Act      
+
+ OldZyklusCounterIn=giZyklusCounterIn ;auf gleichen Wert setzen um Flanke fuer Interrupt zu bekommen
+ INTERRUPT DECL 33 WHEN  giZyklusCounterIn<>OldZyklusCounterIn DO I_Multiplex()
+ INTERRUPT ON 33 ;I_Multiplex
+ WAIT FOR (OldZyklusCounterIn==giZyklusCounterIn) ; ;auf gleichen Wert warten um Flanke fuer Interrupt zu bekommen
+ WAIT SEC 0.15 ;Wartezeit wegen Signalueberschneidung (Falnke Interrupt)
+ OldZyklusCounterIn=0 ;mit 0 initialisieren
+
+ IF (PAR2==1) THEN ;pruefen ob Startpos == AxisRobGst(Home)
+  bRobGst=IN_AxPOS(AxisRobGst) ;Grundstellung Roboter pruefen Achswerte
+  IF NOT bRobGst THEN ; Roboter nicht in Grundtstellung bei Programmeinsprung
+   SetProgStatus(203) ;Programmstatus setzen (Legende im SetProgStatus)
+   HALT ;ungueltige Startposition (nicht Home)
+  ENDIF ; Roboter nicht in Grundtstellung bei Programmeinsprung
+ ENDIF ;pruefen ob Startpos == AxisRobGst(Home)
+  WAIT FOR bReadComplete ;eimal alle Daten eingelesen, da sonst kein Teachmode gesetzt ist und aus dem Programm gesprungen wird
+   REPEAT  ;Onlinefahren ende 
+      WAIT SEC 0.1 ;Wartezeit wegen CPU-Auslastung
+      SetProgStatus(0) ;Programmstatus setzen (Legende im SetProgStatus)
+      
+      IF bMoveToPos THEN
+         GetSpeed() ;Geschwindigkeitsdaten aus XML auslesen
+        IF bErrGetSpeed==FALSE THEN ;kein Fehler Speeddata
+         GetPosition() ;Positionsdaten aus XML auslesen
+        ENDIF
+        bErrGetSpeed=FALSE ;Variable ruecksetzen
+      ENDIF
+     
+    bRobGst=IN_AxPOS(AxisRobGst) ;Grundstellung Roboter pruefen Achswerte
+    IF (bTeachMode==FALSE) AND (bRobGst==FALSE) THEN;teachen beendet, Rob aber nicht in Gst
+     SetProgStatus(106) ;Programmstatus setzen (Legende im SetProgStatus)
+    ENDIF ;teachen beendet, Rob aber nicht in Gst
+   UNTIL (bTeachMode==FALSE) AND (bRobGst==TRUE) ;Onlinefahren ende 
+
+    PTP AxisRobGst ;AxisRobGst => entspricht Home in Config.dat
+   WAIT SEC 0.0 ;Dummywartezeit wegen Vorlaufstop
+
+   INTERRUPT OFF 33 ;I_Multiplex
+    InitVisio () ;Variablen Initialisieren
+
+   DEFAULT
+  ENDSWITCH ;von PAR1
+  ;***********************************************
+  ;Ende Integration VISIO7 durch CS JZ
+  ;lokale Unterprogramme am Schluss angehaengt
+  ; => DEF InitVisio () ;Variablen Initialisieren
+  ; => DEF SetProgStatus(Status :IN)
+  ; => DEF GetPosition ()
+  ; => DEF GetSpeed()
+  ; => DEF MoveToPos()
+  ; => DEF I_Zustimm()
+  ; => DEF  I_Multiplex()
+  ; => DEFFCT  BOOL IN_POS(CHECKPOS :IN)
+  ; => DEFFCT  BOOL IN_AxPOS(CHECKPOS :IN)
+  ; => DEFFCT INT ByteSwap(nInValue:IN, Lenght:IN, OutSequence:IN, DoFct:IN  )
+  ;***********************************************
+END
+;-----------------------------------------------------------
+DEF InitVisio () ;Variablen Initialisieren
+ ;Variablen auf Startzuststand Initialisieren
+ nProgStatus=0 ;Programmstatus ruecksetzen
+ OldZyklusCounterIn=0 ;Multiplexvariable initialisiere
+ goZyklusCounterOut=0 ;Ausgang Initialisieren
+ bMoveToPos=FALSE ;Auf Position von Visio fahren
+ bTeachMode=FALSE ;Teachmode aktiv
+ bErrGetSpeed=FALSE ;Fehler in Geschwindigkeitsparameter
+ $Timer[nLifeBitTimerNr]=nLifeBitTime ;Timer initialisieren
+ $Timer_Stop[nLifeBitTimerNr]=TRUE ;Timer stoppen
+ bReadComplete=FALSE ;Merker ruecksetzen
+END
+;-----------------------------------------------------------
+DEF SetProgStatus(Status :IN)
+;;FOLD SetProgStatus
+   INT Status
+   ;====== Legende  Programmstatus=======
+   ; 0 => Ready
+   ; 1 => Working
+   ; 2 => ok (Befehl ausgefuerht)
+   ; 10-99 => Zustand
+   ; 10 => Robter wird gerade Handgefuehrt
+   ;
+   ; 100-999 => Fehler
+   ; 100 => 
+   ; 106 => Teachmode  beendet Roboter aber nicht in Home1 (Teachmode aktivieren undHome1 anfahren)
+   ; 116 => anfahren des VisioPunkt durch loslassen der Zustimmtaste abgebrochen
+   ; 117 => anfahren des VisioPunkt angewaehlt ohne Zustimmtaste 
+   ;
+   ; 200 => Arbeitsraum-Fehler bei pPosVonVisio
+   ; 201 => TURN-Fehler bei pPosVonVisio
+   ; 202 => ungueltiger Geschwindigkeitsparameter
+   ; 203 => Grundstellungspruefung bei Start TeachMode aktiv => Roboter aber nicht in GST
+   ;
+   ; 999 => schwerer Fehler Roboterpanel beachten
+   ;================================
+   
+ IF bKommAktiv THEN ;wenn Kommunikation akitv ist
+  WAIT FOR nProgStatusAck==nProgStatus ;Programmstatus Rueckmeldung von Visio
+ ENDIF ;wenn Kommunikation akitv ist
+ nProgStatus = Status ;Programmstatus setzen
+
+;;ENDFOLD   
+END
+;-----------------------------------------------------------
+DEF GetPosition ()
+
+;;FOLD GetPosition
+   INTERRUPT DECL 32 WHEN NOT bZustimm DO I_Zustimm()
+   
+   IF bZustimm THEN ;wenn Zustimmtaste gedrueckt ist
+
+   SetProgStatus(1) ;Programmstatus setzen (Legende im SetProgStatus)
+   
+   ;Positionsdaten wurden bereits im Multiplex-Programm gelesen
+   ;Positionsdaten pruefen
+   ;E6AXIS  INVERSE (E6POS  POSITION: IN, E6AXIS START_AXIS: IN,				 INT ERR_STATUS: OUT)
+   ret=0 ;Variable initialisieren
+   APOS1=INVERSE(pPosVonVisio,$Axis_Act,ret)
+   IF ret<>0 THEN
+    IF ret==2 THEN ;2Arbeitsraum-Fehler bei der math. Trafo-Funktion, d.h. es gibt keine Achswinkel, mit denen die kartesische Zielposition erreicht werden kann
+     SetProgStatus(200) ;Programmstatus setzen (Legende im SetProgStatus)
+     ELSE ;2
+      IF ret==3 THEN ;3 Es gibt zwar Loesungswinkel, aber mit dem gegebenem Turn werden SW-Endschalter verletzt
+       SetProgStatus(201) ;Programmstatus setzen (Legende im SetProgStatus)
+       ELSE ;3
+         HALT ;Roboterposition nicht erreichbar
+      ENDIF ;3
+    ENDIF ;2
+   ELSE ;<>0
+   MoveToPos() ;Position anfahren
+   ENDIF ;<>0
+
+  ELSE ;wenn Zustimmtaste gedrueckt ist
+   SetProgStatus(117) ;Position anfahren gewaehlt aber Zustimmtaste nicht gedrueckt
+  ENDIF ;wenn Zustimmtaste gedrueckt ist
+
+;;ENDFOLD   
+END
+;-----------------------------------------------------------
+DEF GetSpeed()
+;   ;FOLD GetSpeed
+   INT Factor,I
+   
+   bErrGetSpeed=FALSE ;Variable ruecksetzen
+
+   ; $APO.CDIS
+   IF (TeachSpeed.ApoCdis>0) AND (TeachSpeed.ApoCdis<=200) THEN
+    IF TeachSpeed.ApoCdis>SpeedLimit.ApoCdis THEN
+     TeachSpeed.ApoCdis=SpeedLimit.ApoCdis
+    ENDIF
+    $APO.CDIS=TeachSpeed.ApoCdis
+   ELSE
+    SetProgStatus(202) ;Programmstatus setzen (Legende im SetProgStatus)
+    User_Msg(2) ;Meldungsausgabe am KCP
+    bErrGetSpeed=TRUE ;Variable setzen
+   ENDIF
+  
+   ; $VEL.CP
+   IF (TeachSpeed.VelCp>0) AND (TeachSpeed.VelCp<=2.0) THEN
+    IF TeachSpeed.VelCp>SpeedLimit.VelCp THEN
+     TeachSpeed.VelCp=SpeedLimit.VelCp
+    ENDIF
+    $VEL.CP=TeachSpeed.VelCp
+   ELSE
+    SetProgStatus(202) ;Programmstatus setzen (Legende im SetProgStatus)
+    User_Msg(3) ;Meldungsausgabe am KCP
+    bErrGetSpeed=TRUE ;Variable setzen
+   ENDIF
+
+   ; $ACC.CP
+   IF (TeachSpeed.AccCp>0) AND (TeachSpeed.AccCp<=2.3) THEN
+    IF TeachSpeed.AccCp>SpeedLimit.AccCp THEN
+     TeachSpeed.AccCp=SpeedLimit.AccCp
+    ENDIF
+    $ACC.CP=TeachSpeed.AccCp
+   ELSE
+    SetProgStatus(202) ;Programmstatus setzen (Legende im SetProgStatus)
+    User_Msg(4) ;Meldungsausgabe am KCP
+    bErrGetSpeed=TRUE ;Variable setzen
+   ENDIF
+
+   ; $VEL.ORI2
+   IF (TeachSpeed.VelOri>0) AND (TeachSpeed.VelOri<=200.0) THEN
+    IF TeachSpeed.VelOri>SpeedLimit.VelOri THEN
+     TeachSpeed.VelOri=SpeedLimit.VelOri
+    ENDIF
+    $VEL.ORI1=TeachSpeed.VelOri
+    $VEL.ORI2=TeachSpeed.VelOri
+   ELSE
+    SetProgStatus(202) ;Programmstatus setzen (Legende im SetProgStatus)
+    User_Msg(5) ;Meldungsausgabe am KCP
+    bErrGetSpeed=TRUE ;Variable setzen
+   ENDIF
+
+   ; VELPTP
+   ;Factor darf zwischen 0 und 100 liegen
+   IF TeachSpeed.VelPtp>SpeedLimit.VelPtp THEN
+      TeachSpeed.VelPtp=SpeedLimit.VelPtp
+      IF bStopOnError THEN ;bei Fehler halten
+       HALT
+      ENDIF ;bei Fehler halten
+   ENDIF
+   IF TeachSpeed.VelPtp<1 THEN ;min 1% Geschwindigkeit
+      TeachSpeed.VelPtp=1
+      IF bStopOnError THEN ;bei Fehler halten
+       HALT
+      ENDIF ;bei Fehler halten
+   ENDIF
+   ;Achsgeschwindigkeiten setzen
+   FOR I=1 TO $NUM_AX
+      $VEL_AXIS[I]=TeachSpeed.VelPtp
+   ENDFOR
+   
+   ; ACCPTP
+   ;Factor darf zwischen 0 und 100 liegen
+   IF TeachSpeed.AccPtp>SpeedLimit.AccPtp THEN
+      TeachSpeed.AccPtp=SpeedLimit.AccPtp
+   ENDIF
+   IF TeachSpeed.AccPtp<1 THEN ;min 1% Beschleunigung
+      TeachSpeed.AccPtp=1
+   ENDIF
+   ;Achsgeschwindigkeiten setzen
+   FOR I=1 TO $NUM_AX
+      $ACC_AXIS[I]=TeachSpeed.AccPtp
+   ENDFOR
+   
+   ; $VEL_EXTAX[1]
+   ;Factor darf zwischen 0 und 100 liegen
+   IF TeachSpeed.VelExtAx1>SpeedLimit.VelExtAx1 THEN
+      TeachSpeed.VelExtAx1=SpeedLimit.VelExtAx1
+   ENDIF
+   IF TeachSpeed.VelExtAx1<1 THEN ;min 1% 
+      TeachSpeed.VelExtAx1=1
+   ENDIF
+   ;Achsgeschwindigkeiten setzen
+   $VEL_EXTAX[1]=TeachSpeed.VelExtAx1
+
+   ; $VEL_EXTAX[2]
+   ;Factor darf zwischen 0 und 100 liegen
+   IF TeachSpeed.VelExtAx2>SpeedLimit.VelExtAx2 THEN
+      TeachSpeed.VelExtAx2=SpeedLimit.VelExtax2
+   ENDIF
+   IF TeachSpeed.VelExtAx2<1 THEN ;min 1% 
+      TeachSpeed.VelExtAx2=1
+   ENDIF
+   ;Achsgeschwindigkeiten setzen
+   $VEL_EXTAX[2]=TeachSpeed.VelExtAx2
+
+;;ENDFOLD   
+END
+;-----------------------------------------------------------
+DEF MoveToPos()
+   INTERRUPT ON 32 ;Bewegung abbrechen
+   WAIT FOR bZustimm ;Zustimmstaste gedrueckt
+   IF bMovePTP THEN ;Bewegung ist PTP
+      PTP pPosVonVisio ;Punkt anfahren
+   ELSE
+      LIN pPosVonVisio ;Punkt anfahren
+   ENDIF
+   Interrupt OFF 32 ;Bewegung abbrechen
+   SetProgStatus(2) ;Programmstatus setzen (Legende im SetProgStatus)  
+END
+;-----------------------------------------------------------
+DEF I_Zustimm()
+   Interrupt OFF 32 ;Bewegung abbrechen
+   Brake ;Roboter anhalten
+   SetProgStatus(116) ;Programmstatus setzen (Legende im SetProgStatus)
+   Resume ;Ruecksprung ins Hauptprogramm
+END
+;-----------------------------------------------------------
+DEF I_Multiplex()
+;20130121 JZ => erstellt
+;20130125 JZ => neue Signalliste verwendet, Shattendaten erstellt
+;29130125 JZ => in VW_USR_R integriert
+
+;bei 5 auf 0 Ruecksetzen, wegen Errorflag bei verpassten Paketen
+IF (OldZyklusCounterIn==MultiplexFaktor) OR  ($Timer_Flag[nLifeBitTimerNr]) THEN
+ OldZyklusCounterIn=0
+ IF $Timer_Flag[nLifeBitTimerNr] THEN
+  $Timer[nLifeBitTimerNr]=nLifeBitTime ;Timer initialisieren
+  $Timer_Stop[nLifeBitTimerNr]=FALSE ;Timer starten
+ ENDIF
+ENDIF
+
+IF (ErrorFlag==FALSE) AND (giZyklusCounterIn>1)  AND (giZyklusCounterIn-OldZyklusCounterIn >1) THEN ;Paketverlust
+ ErrorFlag=TRUE ;Fehler
+ ErrorCounter=ErrorCounter+1 ;Fehlerzaehler hochzaehlen
+ENDIF ;Paketverlust
+
+OldZyklusCounterIn=giZyklusCounterIn ;Merker setzen
+
+IF goZyklusCounterOut==giZyklusCounterOutAck THEN ;Im Handhakemodus auf Bestaetigung ZyklusCounterOut warten
+goZyklusCounterOut=goZyklusCounterOut+1 ;hochzaehlen
+ IF (goZyklusCounterOut>MultiplexFaktor) THEN
+  goZyklusCounterOut=1 ;ruecksetzen
+ ENDIF
+ENDIF
+
+;Am Anfang einer Runde die Schattendaten schreiben
+IF goZyklusCounterOut==1 THEN
+ ;allgemeine Daten in Schattendaten schreiben
+ bSdwDoLifeBit=bLifeBitOld ;
+ bSdwDoStopMess=$StopMess ;
+ nSdwGoProgStatus=nProgStatus
+ nSdwGoRobTimer=$Rob_Timer
+ nSdwGoFloatFaktor=nFloatFaktor*10
+ ;Positionsdaten in Schattendaten schreiben
+ pShadowPosAnVisio=$Pos_Act ;aktuelle Position in Schattendaten speichern
+ENDIF
+
+;eine Seite einlesen
+IF (giZyklusCounterIn>=1) AND (giZyklusCounterIn<= MultiplexFaktor) THEN
+ IF giZyklusCounterIn==1 THEN ;allgemeine Daten
+  bSdwDiKommAktiv=diKommAtiv ;
+  bSdwDiTeachMode=diTeachMode ;
+  bSdwDiMovePTP=diMovePTP ;
+  bSdwDiMoveToPos=diMoveToPos ;
+  bSdwDiLifeBit=diLifeBit ;
+  nSdwGiProgStatusAck=ByteSwap(giProgStatusAck, 16, 21, TRUE) ;
+  nSdwGiFloatFaktor=giFloatFaktor*10 ;
+  IF nSdwGiFloatFaktor==0 THEN ;ungueltiger Wert wegen Division durch Null
+   nSdwGiFloatFaktor=1 ;Wert initialisieren
+  ENDIF
+ ENDIF ;allgemeine Daten
+ IF giZyklusCounterIn==2 THEN ;X/Y/Z
+  IF nSdwGiFloatFaktor==0 THEN ;ungueltiger Wert wegen Division durch Null
+   nSdwGiFloatFaktor=1 ;Wert initialisieren
+  ENDIF
+  pShadowPosVonVisio.X=ByteSwap(giPosX, 32, 4321, TRUE)/nSdwGiFloatFaktor
+  pShadowPosVonVisio.Y=ByteSwap(giPosY, 32, 4321, TRUE)/nSdwGiFloatFaktor
+  pShadowPosVonVisio.Z=ByteSwap(giPosZ, 32, 4321, TRUE)/nSdwGiFloatFaktor
+ ENDIF ;X/Y/Z
+ IF giZyklusCounterIn==3 THEN ;A/B/C
+  IF nSdwGiFloatFaktor==0 THEN ;ungueltiger Wert wegen Division durch Null
+   nSdwGiFloatFaktor=1 ;Wert initialisieren
+  ENDIF
+  pShadowPosVonVisio.A=ByteSwap(giPosA, 32, 4321, TRUE)/nSdwGiFloatFaktor
+  pShadowPosVonVisio.B=ByteSwap(giPosB, 32, 4321, TRUE)/nSdwGiFloatFaktor
+  pShadowPosVonVisio.C=ByteSwap(giPosC, 32, 4321, TRUE)/nSdwGiFloatFaktor
+ ENDIF ;A/B/C
+ IF giZyklusCounterIn==4 THEN ;E1/E2/S/T
+  IF nSdwGiFloatFaktor==0 THEN ;ungueltiger Wert wegen Division durch Null
+   nSdwGiFloatFaktor=1 ;Wert initialisieren
+  ENDIF
+  pShadowPosVonVisio.E1=ByteSwap(giPosE1, 32, 4321, TRUE)/nSdwGiFloatFaktor
+  pShadowPosVonVisio.E2=ByteSwap(giPosE2, 32, 4321, TRUE)/nSdwGiFloatFaktor
+  pShadowPosVonVisio.S=giPosS
+  pShadowPosVonVisio.T=giPosT ;ByteSwap???
+ ENDIF ;E1/E2/S/T
+ IF giZyklusCounterIn==5 THEN ;Geschwindigkeitsdaten
+  IF nSdwGiFloatFaktor==0 THEN ;ungueltiger Wert wegen Division durch Null
+   nSdwGiFloatFaktor=1 ;Wert initialisieren
+  ENDIF
+  SdwTeachSpeed.ApoCdis=ByteSwap(giApoCdis, 16, 21, TRUE)/100.0
+  SdwTeachSpeed.VelCp=ByteSwap(giVelCp, 16, 21, TRUE)/1000.0
+  SdwTeachSpeed.AccCp=ByteSwap(giAccCp, 16, 21, TRUE)/100.0
+  SdwTeachSpeed.VelOri=ByteSwap(giVelOri, 16, 21, TRUE)
+  SdwTeachSpeed.VelPtp=giVelPtp
+  SdwTeachSpeed.AccPtp=giAccPtp
+  SdwTeachSpeed.VelExtAx1=giVelExtAx1
+  SdwTeachSpeed.VelExtAx2=giVelExtAx2
+ ENDIF ;Geschwindigkeitsdaten
+ENDIF
+
+;eine Seite schreiben
+IF (goZyklusCounterOut>=1) AND (goZyklusCounterOut<=MultiplexFaktor) THEN
+ IF goZyklusCounterOut==1 THEN ;allgemeine Daten
+  I4=$Rob_timer-I3 ;IBN
+  I3=$Rob_timer ;IBN
+  doLifeBit=bSdwDoLifeBit
+  doStopMess=bSdwDoStopMess
+  goProgStatus=ByteSwap(nSdwGoProgStatus, 16, 21, TRUE)
+  goRobTimer=ByteSwap(nSdwGoRobTimer, 32, 4321, TRUE)
+  goFloatFaktor=nSdwGoFloatFaktor/10
+ ENDIF ;allgemeine Daten
+ IF goZyklusCounterOut==2 THEN ;X/Y/Z
+  goPosX=ByteSwap((pShadowPosAnVisio.X*nSdwGoFloatFaktor), 32, 4321, TRUE)
+  goPosY=ByteSwap((pShadowPosAnVisio.Y*nSdwGoFloatFaktor), 32, 4321, TRUE)
+  goPosZ=ByteSwap((pShadowPosAnVisio.Z*nSdwGoFloatFaktor), 32, 4321, TRUE)
+  nGoPosX=goPosX ;IBN
+  nGoPosY=goPosY ;IBN
+  nGoPosZ=goPosZ ;IBN
+ ENDIF ;X/Y/Z
+ IF goZyklusCounterOut==3 THEN ;A/B/C
+  goPosA=ByteSwap((pShadowPosAnVisio.A*nSdwGoFloatFaktor), 32, 4321, TRUE)
+  goPosB=ByteSwap((pShadowPosAnVisio.B*nSdwGoFloatFaktor), 32, 4321, TRUE)
+  goPosC=ByteSwap((pShadowPosAnVisio.C*nSdwGoFloatFaktor), 32, 4321, TRUE)
+  nGoPosA=goPosA ;IBN
+  nGoPosB=goPosB ;IBN
+  nGoPosC=goPosC ;IBN
+ ENDIF ;A/B/C
+ IF goZyklusCounterOut==4 THEN ;E1/E2/S/T
+  goPosE1=ByteSwap((pShadowPosAnVisio.E1*nSdwGoFloatFaktor), 32, 4321, TRUE)
+  goPosE2=ByteSwap((pShadowPosAnVisio.E2*nSdwGoFloatFaktor), 32, 4321, TRUE)
+  goPosS=pShadowPosAnVisio.S
+  goPosT=pShadowPosAnVisio.T
+  goPosT2=0 ;ReserveTurn auf 0 initialisieren
+  goPosT3=0 ;ReserveTurn auf 0 initialisieren
+  nGoPosE1=goPosE1 ;IBN
+  nGoPosE2=goPosE2 ;IBN
+  nGoPosS=goPosS ;IBN
+  nGoPosT=goPosT ;IBN
+ ENDIF ;E1/E2/S/T
+ IF goZyklusCounterOut==5 THEN ;Reserve
+  ;nicht belegt
+ ENDIF ;
+ENDIF
+
+;Am Ende einer Runde die Schattendaten uebernehmen
+IF (ErrorFlag==FALSE) AND (giZyklusCounterIn==MultiplexFaktor) THEN 
+  bKommAktiv=bSdwDiKommAktiv ;
+  bTeachMode=bSdwDiTeachMode ;
+  bMovePTP=bSdwDiMovePTP ;
+  bMoveToPos=bSdwDiMoveToPos ;
+  bLifeBit=bSdwDiLifeBit ;
+  nProgStatusAck=nSdwGiProgStatusAck ;
+  ;nSdwGiFloatFaktor ;wird nur im Multiplexbereich benoetigt
+  pPosVonVisio=pShadowPosVonVisio ;Positionsdaten uebergeben
+  TeachSpeed.ApoCdis =SdwTeachSpeed.ApoCdis
+  TeachSpeed.VelCp =SdwTeachSpeed.VelCp
+  TeachSpeed.AccPtp =SdwTeachSpeed.AccPtp
+  TeachSpeed.VelOri =SdwTeachSpeed.VelOri
+  TeachSpeed.VelPtp =SdwTeachSpeed.VelPtp
+  TeachSpeed.AccPtp =SdwTeachSpeed.AccPtp
+  TeachSpeed.VelExtAx1 =SdwTeachSpeed.VelExtAx1
+  TeachSpeed.VelExtAx2 =SdwTeachSpeed.VelExtAx2
+  ;Lifebit
+  IF bLifeBit==bLifeBitOld THEN ;LifeBit vergleichen
+   bLifeBitOld=NOT bLifeBitOld ;Lifebit negieren  
+   I2=$Rob_timer-I1 ;IBN
+   I1=$Rob_timer ;IBN
+   $Timer[nLifeBitTimerNr]=nLifeBitTime ;Timer initialisieren
+   $Timer_Stop[nLifeBitTimerNr]=FALSE ;Timer starten
+  ENDIF ;LifeBit vergleichen
+ bReadComplete=TRUE ;1 Datensatz komplett gelesen
+ENDIF
+
+IF ErrorFlag AND (giZyklusCounterIn==1) THEN 
+ ErrorFlag=FALSE ;Flag ruecksetzen
+ENDIF
+
+;Spiegeln fuer die Gegenseite
+goZyklusCounterInAck=giZyklusCounterIn
+
+END
+;-----------------------------------------------------------
+;FOLD Position pruefen
+DEFFCT  BOOL IN_POS(CHECKPOS :IN)
+DECL E6POS CHECKPOS
+DECL BOOL B_IN_POS
+B_IN_POS=TRUE
+IF (CHECKPOS.X<$POS_ACT.X-TolTrans) OR (CHECKPOS.X>$POS_ACT.X+TolTrans) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.Y<$POS_ACT.Y-TolTrans) OR (CHECKPOS.Y>$POS_ACT.Y+TolTrans) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.Z<$POS_ACT.Z-TolTrans) OR (CHECKPOS.Z>$POS_ACT.Z+TolTrans) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.A<$POS_ACT.A-TolRot) OR (CHECKPOS.A>$POS_ACT.A+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.B<$POS_ACT.B-TolRot) OR (CHECKPOS.B>$POS_ACT.B+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.C<$POS_ACT.C-TolRot) OR (CHECKPOS.C>$POS_ACT.C+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.E1<$POS_ACT.E1-TolRot) OR (CHECKPOS.E1>$POS_ACT.E1+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.E2<$POS_ACT.E2-TolRot) OR (CHECKPOS.E2>$POS_ACT.E2+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+RETURN  (B_IN_POS)
+ENDFCT ;Function IN_POS
+;ENDFOLD
+;-----------------------------------------------------------
+;FOLD Achsposition pruefen
+DEFFCT  BOOL IN_AxPOS(CHECKPOS :IN)
+DECL E6AXIS CHECKPOS
+DECL BOOL B_IN_POS
+B_IN_POS=TRUE
+IF (CHECKPOS.A1<$AXIS_ACT.A1-TolRot) OR (CHECKPOS.A1>$AXIS_ACT.A1+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.A2<$AXIS_ACT.A2-TolRot) OR (CHECKPOS.A2>$AXIS_ACT.A2+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.A3<$AXIS_ACT.A3-TolRot) OR (CHECKPOS.A3>$AXIS_ACT.A3+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.A4<$AXIS_ACT.A4-TolRot) OR (CHECKPOS.A4>$AXIS_ACT.A4+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.A5<$AXIS_ACT.A5-TolRot) OR (CHECKPOS.A5>$AXIS_ACT.A5+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.A6<$AXIS_ACT.A6-TolRot) OR (CHECKPOS.A6>$AXIS_ACT.A6+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.E1<$AXIS_ACT.E1-TolRot) OR (CHECKPOS.E1>$AXIS_ACT.E1+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+IF (CHECKPOS.E2<$AXIS_ACT.E2-TolRot) OR (CHECKPOS.E2>$AXIS_ACT.E2+TolRot) THEN
+ B_IN_POS=FALSE
+ENDIF
+RETURN  (B_IN_POS)
+ENDFCT ;Function IN_POS
+;ENDFOLD
+;-----------------------------------------------------------
+DEFFCT INT ByteSwap(nInValue:IN, Lenght:IN, OutSequence:IN, DoFct:IN  )
+
+INT Result ;Ergebnis der Funktion
+INT nInValue ;Eingangswert der umgewandelt werden soll
+INT Lenght ;Bitanzahl des Eingangswertes (16 / 32)
+BOOL DoFct ;ob die Funktion ausgefuehrt werden soll
+INT SwapByte1, SwapByte2, SwapByte3, SwapByte4 ;Rechenbytes
+INT OutSequence ;Reihenfolge in der die Bytes ausgegeben werden (z.B. Eingang 1,2,3,4 => Ausgang 4,3,2,1)
+BOOL HiBit ;fuer Auswertung negative Zahl
+
+;#######################################
+;Wenn allgemein diese Funktion ausgeschaltet werden soll hier die Variable setzen
+;DoFct=FALSE
+;#######################################
+
+IF DoFct THEN ;Berechnungen ausfuehren
+ SwapByte1='B00000000' ;Initialisieren
+ SwapByte2='B00000000' ;Initialisieren
+ SwapByte3='B00000000' ;Initialisieren
+ SwapByte4='B00000000' ;Initialisieren
+ SWITCH Lenght
+ ;----------------------------------------
+  CASE 16 ;16 Bit Eingang
+   SWITCH OutSequence ;Reihenfolge der Bytes
+   ;==================================
+    CASE 21
+     SwapByte1= nInValue B_AND 'B1111111100000000'
+     SwapByte2= nInValue B_AND 'B0000000011111111'
+     SwapByte1=SwapByte1/256 ;Byte um 1 nach hinten schieben (2=>1)
+     SwapByte2=SwapByte2*256 ;Byte um 1 nach vorn schieben (1=>2)
+     Result=SwapByte1+SwapByte2 ;SwapBytes addieren
+   ;==================================
+    DEFAULT ;Reihenfolge der Bytes
+     User_Msg(6) ;Meldungsausgabe am KCP
+    ENDSWITCH ;Reihenfolge der Bytes
+ ;----------------------------------------
+  CASE 32 ;32 Bit Eingang
+   SWITCH OutSequence ;Reihenfolge der Bytes
+   ;==================================
+    CASE 4321
+     SwapByte1= nInValue B_AND 'B01111111000000000000000000000000'
+     HiBit = (nInValue B_AND 'B10000000000000000000000000000000' <>0) ;abfangen wegen Negativer Zahlen (an Ende +128 rechnen)
+     SwapByte2= nInValue B_AND 'B00000000111111110000000000000000'
+     SwapByte3= nInValue B_AND 'B00000000000000001111111100000000'
+     SwapByte4= nInValue B_AND 'B00000000000000000000000011111111'
+     SwapByte1=(((SwapByte1/256)/256)/256) ;Byte um 3 nach hinten schieben (4=>1)
+     SwapByte2=SwapByte2/256 ;Byte um 1 nach hinten schieben (3=>2)
+     SwapByte3=SwapByte3*256 ;Byte um 1 nach vorn schieben (2=>3) 
+     SwapByte4=(((SwapByte4*256)*256)*256) ;Byte um 3 nach vorn schieben (1=>4)
+     IF HiBit THEN
+      Result=SwapByte1+SwapByte2+SwapByte3+SwapByte4+128 ;SwapBytes addieren und 128 hinzuzaehlen wegen Negativzahl
+     ELSE
+      Result=SwapByte1+SwapByte2+SwapByte3+SwapByte4 ;SwapBytes addieren
+     ENDIF
+   ;==================================
+    DEFAULT ;Reihenfolge der Bytes
+     User_Msg(7) ;Meldungsausgabe am KCP
+    ENDSWITCH ;Reihenfolge der Bytes
+ ;----------------------------------------
+  DEFAULT ;BitZahl
+   User_Msg(8) ;Meldungsausgabe am KCP
+ ENDSWITCH ;BitZahl
+ 
+ELSE ;Berechnungen ausfuehren
+ Result=nInValue ;Rueckgabewert aus Eingabewert setzen bei Nichtberechnung
+ENDIF  ;Berechnungen ausfuehren
+
+RETURN(Result) ;Ergebnis von Funktion Uebergeben
+ENDFCT
+
+;-----------------------------------------------------------
+DEF User_Msg(MyMsgNr:IN )
+
+ ;FOLD Versionslegende
+
+ ;ENDFOLD
+;aktuelle Version: V1.0
+
+DECL KrlMsg_T My_Meldung
+DECL KrlMsgPar_T My_Parameter[3]
+DECL KrlMsgOpt_T My_Option
+DECL KrlMsgDlgSK_T My_SK[7]
+int Result, MyMsgNr, Answer
+;BOOL Clear_Ok ;Global in $Config.dat
+INT MsgHandle[200] ;Handle der Meldung
+
+;---------------------------------------------------
+;#notify => Hinweismeldung
+;                 -(nur mit Quitt / Alles Quitt)
+;#state => Zustandsmeldung
+;                -(von Programm aus lÃ¶schbar)
+;#quit => Quittiermeldung
+;              -(Quitt / Alles Quitt mit rueckmeldung zum Programm)
+;#waiting => Wartemeldung
+;                  -(Simuliere oder auf Programmbedingung warten)
+;---------------------------------------------------
+
+;alle Mledungen loeschen
+;Clear_OK = Clear_KrlMsg(-99) ; Meldungen im Puffer zurueck nehmen
+IF bShowUserMsg THEN ;Meldungen anzeigen
+SWITCH MyMsgNr
+;---------------------------------------------------
+ CASE 1 ;
+  My_Meldung = {Modul[] "STO-CS", Nr 000, Msg_txt[] "fehlerhafte Gruppennummer uebergeben"}
+  My_Meldung.Nr = MyMsgNr
+  My_Option = {VL_Stop True, Clear_P_Reset True, Log_To_DB True}
+  MsgHandle[MyMsgNr] = Set_KrlMsg(#state, My_Meldung, My_Parameter[], My_Option)
+;---------------------------------------------------
+ CASE 2 ;
+  My_Meldung = {Modul[] "STO-CS", Nr 000, Msg_txt[] "TeachSpeed.ApoCdis => Wert ungueltig"}
+  My_Meldung.Nr = MyMsgNr
+  My_Option = {VL_Stop True, Clear_P_Reset True, Log_To_DB True}
+  MsgHandle[MyMsgNr] = Set_KrlMsg(#state, My_Meldung, My_Parameter[], My_Option)
+;---------------------------------------------------
+ CASE 3 ;
+  My_Meldung = {Modul[] "STO-CS", Nr 000, Msg_txt[] "TeachSpeed.VelCp => Wert ungueltig"}
+  My_Meldung.Nr = MyMsgNr
+  My_Option = {VL_Stop True, Clear_P_Reset True, Log_To_DB True}
+  MsgHandle[MyMsgNr] = Set_KrlMsg(#state, My_Meldung, My_Parameter[], My_Option)
+;---------------------------------------------------
+ CASE 4 ;
+  My_Meldung = {Modul[] "STO-CS", Nr 000, Msg_txt[] "TeachSpeed.AccCp => Wert ungueltig"}
+  My_Meldung.Nr = MyMsgNr
+  My_Option = {VL_Stop True, Clear_P_Reset True, Log_To_DB True}
+  MsgHandle[MyMsgNr] = Set_KrlMsg(#state, My_Meldung, My_Parameter[], My_Option)
+;---------------------------------------------------
+ CASE 5 ;
+  My_Meldung = {Modul[] "STO-CS", Nr 000, Msg_txt[] "TeachSpeed.VelOri => Wert ungueltig"}
+  My_Meldung.Nr = MyMsgNr
+  My_Option = {VL_Stop True, Clear_P_Reset True, Log_To_DB True}
+  MsgHandle[MyMsgNr] = Set_KrlMsg(#state, My_Meldung, My_Parameter[], My_Option)
+;---------------------------------------------------
+ CASE 6 ;
+  My_Meldung = {Modul[] "STO-CS", Nr 000, Msg_txt[] "OutSequence 16Bit Eingabe ByteSwap nicht definiert!"}
+  My_Meldung.Nr = MyMsgNr
+  My_Option = {VL_Stop True, Clear_P_Reset True, Log_To_DB True}
+  MsgHandle[MyMsgNr] = Set_KrlMsg(#state, My_Meldung, My_Parameter[], My_Option)
+;---------------------------------------------------
+ CASE 7 ;
+  My_Meldung = {Modul[] "STO-CS", Nr 000, Msg_txt[] "OutSequence 32Bit Eingabe ByteSwap nicht definiert!"}
+  My_Meldung.Nr = MyMsgNr
+  My_Option = {VL_Stop True, Clear_P_Reset True, Log_To_DB True}
+  MsgHandle[MyMsgNr] = Set_KrlMsg(#state, My_Meldung, My_Parameter[], My_Option)
+;---------------------------------------------------
+ CASE 8 ;
+  My_Meldung = {Modul[] "STO-CS", Nr 000, Msg_txt[] "Eingabe Bitlaenge ByteSwap unbekannt!"}
+  My_Meldung.Nr = MyMsgNr
+  My_Option = {VL_Stop True, Clear_P_Reset True, Log_To_DB True}
+  MsgHandle[MyMsgNr] = Set_KrlMsg(#state, My_Meldung, My_Parameter[], My_Option)
+;---------------------------------------------------
+	CASE 151 ;
+		My_Meldung = {Modul[] "STO-CS", Nr 000, Msg_txt[] "Teachmode beendet, Teachmode aktivieren und Roboter in Grundstellung bringen"}
+    My_Meldung.Nr = MyMsgNr
+		My_Option = {VL_Stop True, Clear_P_Reset True, Clear_P_SAW True, Log_To_DB False}
+		MsgHandle[MyMsgNr] = Set_KrlMsg(#Quit, My_Meldung, My_Parameter[], My_Option)
+	 WHILE (Exists_KrlMsg(MsgHandle[MyMsgNr])) ;warten bis der Anwender quittiert hat
+			WAIT SEC 0.1
+		ENDWHILE  
+	;---------------------------------------------------
+DEFAULT
+  My_Meldung = {Modul[] "STO-CS", Nr 000, Msg_txt[] "kein Meldetext vorhanden"}
+  My_Meldung.Nr = MyMsgNr
+  My_Option = {VL_Stop True, Clear_P_Reset True, Log_To_DB False}
+  MsgHandle[MyMsgNr] = Set_KrlMsg(#State, My_Meldung, My_Parameter[], My_Option)
+		WHILE (Exists_KrlMsg(MsgHandle[MyMsgNr])) ;warten bis der Anwender quittiert hat
+			WAIT SEC 0.1
+		ENDWHILE  
+  ;WAIT FOR FALSE
+ENDSWITCH
+ENDIF ;Meldungen anzeigen
+
+END
+;-----------------------------------------------------------
+GLOBAL DEF STO_CS_SPS ()
+;*** Zusatz für Teachmode mit VISIO7 (CS JZ) *** 
+ IF $Timer_Flag[nLifeBitTimerNr] THEN ;Timeout Lifebit
+  bZustimm=FALSE ;Zustimmtaste ruecksetzen um Bewegung anzubrechen
+ ELSE ;kein TimeOut
+  bZustimm=diZustimm ;Uebergabe, da bei Busfehler und anstehendem Signal trotzdem gestoppt werden soll
+ ENDIF ;Timeout LifeBit
+;*** ENDE ****
+END

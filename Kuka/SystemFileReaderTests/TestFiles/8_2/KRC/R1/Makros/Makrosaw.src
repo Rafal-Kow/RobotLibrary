@@ -1,0 +1,11 @@
+&ACCESS RV
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrosawvorgabe.src
+&PARAM EDITMASK = MakroSAW
+&PARAM TPVW_VERSION=8.1.8
+DEF  MAKROSAW ( )
+; FOLD Makro Anfang;%{PSE} %MKUKATPVW
+SPS_N=-1
+; ENDFOLD
+; FOLD ;%{H}
+END
+; ENDFOLD

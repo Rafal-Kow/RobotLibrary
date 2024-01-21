@@ -1,0 +1,188 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/S_Zange
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEFDAT  vw_sz_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket S_Zangen                            *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.19 LE                                       *
+;*                                                     *
+;*-----------------------------------------------------*
+; 
+;FOLD S_Zangen
+REAL MyPos=99.0000
+REAL MyPos1=99.0000
+REAL MyPos2=0.0
+; 
+REAL Startzeit=1.82913318E+09
+; 
+INT ZeitZangeZu=640
+INT ZeitSchweissen=640
+INT ZeitZangeAuf=512
+INT QDurchbiegung=-70
+INT QAusgleich=30
+; 
+GLOBAL INT GunBalanceStartTime=0
+GLOBAL INT GunBalanceEndTime=0
+GLOBAL INT GunBalanceTime=0
+; 
+GLOBAL BOOL FRG_Referenzieren=FALSE
+GLOBAL BOOL FRG_Referenzieren2=FALSE
+GLOBAL BOOL F_Handbetrieb=FALSE
+GLOBAL REAL MyTest=4.20000029
+; 
+GLOBAL INT F_SZ_FAusgl=302
+GLOBAL INT F_SZ_AutoRef=304
+GLOBAL INT F_SZ_A_akt=309
+GLOBAL INT I_SZ_FAusgl=25
+GLOBAL INT R_SZNr=8
+; 
+;SZ1
+;Uebergabe Istposition
+SIGNAL sig1_istpos $IN[737]  TO $IN[751]
+;Programm-Nr an SZ 1
+SIGNAL Prog_Nr_SZ1 $OUT[769]  TO $OUT[776]
+SIGNAL Fzg_Typ_SZ1 $OUT[777]  TO $OUT[784]
+;Programm-Nr an Kombi 1
+SIGNAL Prog_Nr_Kb1 $OUT[785]  TO $OUT[800]
+;Programm-Nr an SK1
+SIGNAL SK1_P_Nr $OUT[801]  TO $OUT[816]
+SIGNAL SK1_Fzg_Typ $OUT[817]  TO $OUT[824]
+;Programm an BMS
+SIGNAL WPS_PktNr_SPS $OUT[97]  TO $OUT[112]
+;SZ1-Ansteuerung Ausgleich
+SIGNAL SZ1_sollaus $OUT[729]  TO $OUT[736]
+GLOBAL REAL SZ1_EK_Wert=2.70000
+GLOBAL REAL Filter_Ausgleich=1.00000
+; 
+;SZ2
+;Programm-Nr an SZ 2
+;Uebergabe Istposition
+SIGNAL sig2_istpos $IN[897]  TO $IN[911]
+SIGNAL Prog_Nr_SZ2 $OUT[929]  TO $OUT[936]
+SIGNAL Fzg_Typ_SZ2 $OUT[937]  TO $OUT[944]
+;Programm-Nr an Kombi 2
+SIGNAL Prog_Nr_Kb2 $OUT[945]  TO $OUT[960]
+;Programm-Nr an SK2
+SIGNAL SK2_P_Nr $OUT[961]  TO $OUT[976]
+SIGNAL SK2_Fzg_Typ $OUT[977]  TO $OUT[984]
+;SZ2-Ansteuerung Ausgleich
+SIGNAL SZ2_sollaus $OUT[889]  TO $OUT[896]
+GLOBAL REAL SZ2_EK_Wert=0.0
+; 
+;SZ3
+;Uebergabe Istposition
+SIGNAL sig3_istpos $IN[1057]  TO $IN[1071]
+;Programm-Nr an SZ 3
+SIGNAL Prog_Nr_SZ3 $OUT[1089]  TO $OUT[1096]
+SIGNAL Fzg_Typ_SZ3 $OUT[1097]  TO $OUT[1104]
+;Programm-Nr an Kombi 3
+SIGNAL Prog_Nr_Kb3 $OUT[1105]  TO $OUT[1120]
+;Programm-Nr an SK3
+SIGNAL SK3_P_Nr $OUT[1121]  TO $OUT[1136]
+SIGNAL SK3_Fzg_Typ $OUT[1137]  TO $OUT[1144]
+;SZ3-Ansteuerung Ausgleich
+SIGNAL SZ3_sollaus $OUT[1049]  TO $OUT[1056]
+GLOBAL REAL SZ3_EK_Wert=0.0
+;ENDFOLD
+; 
+;FOLD SZ TCP-Korrektur
+FRAME MyCorr
+FRAME MyCorrWeg
+; 
+INT Weg=0
+INT Offset=0
+; 
+GLOBAL REAL MyCorrValue=0.0
+GLOBAL REAL MyCorrVal_1=0.0
+GLOBAL REAL MyCorrVal_2=0.0
+GLOBAL REAL MyCorrOff=0.0
+GLOBAL REAL MyCorrGeo_1=0.0
+GLOBAL REAL MyCorrGeo_11=0.0
+GLOBAL REAL MyCorrGeo_12=0.0
+GLOBAL REAL MyCorrGeo_13=0.0
+GLOBAL REAL MyCorrGeo_14=0.0
+GLOBAL REAL MyCorrGeo_2=0.0
+GLOBAL REAL MyCorrGeo_3=0.0
+; 
+; SZ1 Korrektur
+GLOBAL INT Corr1_FirstBit=729
+GLOBAL INT Corr1_FBit_Kb1=753
+GLOBAL INT Corr2_FBit_Kb1=758
+; 
+;SZ2 Korrektur
+GLOBAL INT Corr2_FirstBit=889
+GLOBAL INT Corr1_FBit_Kb2=913
+GLOBAL INT Corr2_FBit_Kb2=918
+; 
+;SZ3 Korrektur
+GLOBAL INT Corr3_FirstBit=1049
+GLOBAL INT Corr1_FBit_Kb3=1073
+GLOBAL INT Corr2_FBit_Kb3=1078
+;ENDFOLD
+; 
+;FOLD SZ_SPZ
+;~~~~~~~~~VW-Teil-Anfang~~~~~~~~
+GLOBAL REAL sf_vorwarnung_tol=15.0000
+GLOBAL REAL sf_peak_tol=5.00000
+GLOBAL REAL sf_peak_time=0.500000
+SIGNAL sz1_code $in[766]  TO $in[768]
+SIGNAL sz2_code $in[926]  TO $in[928]
+SIGNAL sz3_code $in[1086]  TO $in[1088]
+;~~~~~~~~~VW-Teil-Ende~~~~~~~~
+; 
+;FOLD VectorMove
+GLOBAL BOOL LZA_MitAbbruch=TRUE
+GLOBAL BOOL LZA_Deaktiviert=FALSE
+; Rueckgabewert fuer Verwendung von VECTORMOVEON() und VECTORMOVEOFF()
+DECL GLOBAL VMERROR ERROR=#VM_OK
+; Strategie, wird bei Benutzung im Programm und Manuell gleichermassen verwendet
+DECL GLOBAL VMSTRATEGY STRATEGY={REDUNDANCY #CART_CONST_ORI,SELECTION #DRIVE_BASED,CONTROL #DETECT_PULLING}
+; Direction, wird bei Benutzung im Programm und Manuell gleichermassen verwendet
+DECL GLOBAL VMDIRECTION DIRECTION={DIRECTIONCART {X 10.0000,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}}
+; Parameter fuer Vectormove, verwendet bei Benutzung aus Programm
+DECL GLOBAL VMPARAM PARAMS_PROG={LIMIT 30.0000,PROZ_EXPECTED 30.0000,TIME_EXPECTED 0.400000,MOVE_BACK_VEL 2.00000,MAX_DURATION 1000.00}
+; Parameter fuer Vectormove, verwendet bei Benutzung manuell
+DECL GLOBAL VMPARAM PARAMS_MAN={LIMIT 15.0000,PROZ_EXPECTED 40.0000,TIME_EXPECTED 0.700000,MOVE_BACK_VEL 1.00000,MAX_DURATION 1000.00}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;; Optimierungsparameter Regelung KUKA intern ;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Anfangswert der Grenze fuer Erkennung von "Ziehen" mittels Vel-Lag. Im Normalfall negativer Wert welcher zum Endwert linear interpoliert wird.
+GLOBAL REAL _VelLagThresholdBegin=-40.0000
+;Wert der Grenze fuer Erkennung von "Ziehen" mittels Vel-Lag am Ende der aktiven Bewegung. Im Normalfall weniger negativ als der Anfangswert.
+GLOBAL REAL _VelLagThresholdEnd=-20.0000
+;Zeit fuer Entwicklung von TrqAvg -> TrqAtPull in s
+GLOBAL REAL _TrqPullTimeFactor=0.300000
+;Faktor fuer Entwicklung von TrqAvg -> TrqAtPull
+GLOBAL REAL _TrqPullDeltaFactor=1.50000
+;Zeitoffset fuer Ziehen-Erkennung nach Start in s
+GLOBAL REAL _VMVMasterDetectStart=0.150000
+;Zeitoffset fuer Bauteilberuehrung-Erkennung in s, muss kleiner sein als die eigentliche Verfahrzeit
+GLOBAL REAL _VMVContactStart=0.0
+; Faktor fuer Gewichtung des Momentenoffsets fuer die Erkennungsgrenze der Bauteilberuehrung
+GLOBAL REAL _VMVTrqContactFactor=0.0
+; Merker Konfigurationsparameter l_xxx heisst last xxx
+REAL l_VelLagThresholdBegin
+REAL l_VelLagThresholdEnd
+REAL l_TrqPullTimeFactor
+REAL l_TrqPullDeltaFactor
+REAL l_VMVMasterDetectStart
+REAL l_VMVContactStart
+REAL l_VMVTrqContactFactor
+; damit die Funktionen ohne Probleme am Office ohne NG getestet werden koennen
+BOOL VMV_Office_Sim=FALSE
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM SZR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

@@ -1,0 +1,43 @@
+&ACCESS  RV
+&COMMENT KS24.01.000
+&PARAM DISKPATH = VW_User/Applikation/SafeRobot
+&PARAM TPVW_VERSION = 8.3.8
+&REL 201
+DEFDAT  vw_srob_usr_r PUBLIC
+; 
+; FOLD ;%{H}%MKUKATPVW
+; ENDFOLD
+; 
+;*---------------------------------------------*
+;*Technologiepaket Safe_Robot                  *
+;*                                             *
+;*Konzernstandard                              *
+;*Bearbeiter: W. Lehmeier  I/PG-C61            *
+;*                                             *
+;* Erstellt am:                                *
+;* 2015.01.08 LE                               *
+;*                                             *
+;*---------------------------------------------*
+; 
+;FOLD Meldungsausgabe
+ENUM SRobR_MsgType StateMsg,QuitMsg,NotifyMsg
+;ENDFOLD
+; 
+;FOLD SafeRobot
+; 
+;UP-Deklaration
+; 
+INT U_UpNo_ToBrkTestPath=124 ; Nummer fuer Bremsentest-UP
+INT U_UpNo_ToBrkTestPark=125 ; Nummer fuer Parkposition-UP
+INT U_FlagNo_RunBrkTest=990
+INT U_FlagNo_GoToPark=991
+; 
+INT U_nLapsedTimeout=30
+INT U_FlagNo_GoToMasRefTest=989
+INT U_UpNo_ToMasRefPath=123 ; Nummer fuer Justage-Referenzfahrt-UP Schalter 1
+INT U_UpNo_ToMasRefPath2=-1 ; Nummer fuer Justage-Referenzfahrt-UP Schalter 2
+INT U_UpNo_ToMasRefPath3=-1 ; Nummer fuer Justage-Referenzfahrt-UP Schalter 3
+; 
+;ENDFOLD (SafeRobot)
+; 
+ENDDAT

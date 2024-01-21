@@ -1,0 +1,157 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/MigMag
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_ms_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket MIG/MAG                             *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.16 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD USER_Version
+STRUC _Tech_MigMag CHAR Name[20],INT Datum
+DECL _Tech_MigMag Tech_MigMag
+;ENDFOLD
+; 
+;FOLD  MIG/MAG Allgemein
+GLOBAL INT F_MS_A_Wied=577
+GLOBAL INT F_MS_N_Wied=588
+GLOBAL INT F_FRG_LB_Ein=589
+GLOBAL INT F_MS_Aufz_St=590
+GLOBAL INT F_MS_Fe_merk=591
+GLOBAL INT F_MS_Ein_Ver=592
+GLOBAL INT F_MS_TOUT_Na=593
+GLOBAL INT F_MS_FB_Wied=594
+GLOBAL INT F_MS_FB_Ein=595
+GLOBAL INT F_MS_LB_Ein=596
+GLOBAL INT F_LB_Ein_Feh=597
+GLOBAL INT F_MS_N_nio=598
+; 
+GLOBAL BOOL MIT_MIG_SUCH=FALSE
+GLOBAL BOOL MS_M_LIMIT1=FALSE
+GLOBAL BOOL MS_M_LIMIT2=FALSE
+GLOBAL BOOL MS_HSS_HILF=FALSE
+GLOBAL BOOL MS_M_WIEDER=FALSE
+GLOBAL BOOL MS_FRG_SPERR=FALSE
+GLOBAL INT MS_EKF_WERT=-3
+GLOBAL INT MS_TOUT=0
+;ENDFOLD
+; 
+;FOLD MIG 1
+GLOBAL BOOL MIT_MIG1=FALSE
+; 
+GLOBAL INT F_m_MIG1=549
+GLOBAL INT F_MS1_LB_Ein=571
+GLOBAL INT F_MS1_Re_erf=572
+GLOBAL INT F_MS1_Sammel=573
+; 
+GLOBAL INT Timer1_MS1=5000
+GLOBAL INT Timer2_MS1=5000
+GLOBAL INT Timer3_MS1=5000
+GLOBAL INT Timer4_MS1=5000
+GLOBAL INT Timer5_MS1=5000
+GLOBAL INT Timer6_MS1=5000
+; 
+GLOBAL INT I_MS1_o_Proz=209
+GLOBAL INT I_MS1_bereit=1857
+GLOBAL INT I_MS1_S_St=1858
+GLOBAL INT I_MS1_L_steh=1859
+GLOBAL INT I_MS1_H_steh=1861
+GLOBAL INT I_MS1_P_iTol=1862
+GLOBAL INT I_MS1_W_akt=1865
+GLOBAL INT I_MS1_Gas_io=1869
+GLOBAL INT I_MS1_H2O_io=1870
+GLOBAL INT I_MS1_Draht_io=1872
+GLOBAL INT I_MS1_B_Abs=1874
+; 
+GLOBAL INT O_MS1_P_akt=209
+GLOBAL INT O_MS1_W_akt=210
+GLOBAL INT O_MS1_TCP_nio=211
+GLOBAL INT O_MS1_H2O_io=212
+GLOBAL INT O_MS1_Gas_io=213
+GLOBAL INT O_MS1_Draht_io=214
+GLOBAL INT O_MS1_ST_Proz=215
+GLOBAL INT O_MS1_S_St=216
+GLOBAL INT O_MS1_LB_ein=1859
+GLOBAL INT O_MS1_o_Proz=1860
+;ENDFOLD
+; 
+;FOLD MIG 2
+GLOBAL BOOL MIT_MIG2=FALSE
+; 
+GLOBAL INT F_m_MIG2=550
+GLOBAL INT F_MS2_LB_Ein=580
+GLOBAL INT F_MS2_Re_erf=581
+GLOBAL INT F_MS2_Sammel=583
+; 
+GLOBAL INT Timer1_MS2=5000
+GLOBAL INT Timer2_MS2=5000
+GLOBAL INT Timer3_MS2=5000
+GLOBAL INT Timer4_MS2=5000
+GLOBAL INT Timer5_MS2=5000
+GLOBAL INT Timer6_MS2=5000
+; 
+GLOBAL INT I_MS2_o_Proz=201
+GLOBAL INT I_MS2_bereit=1889
+GLOBAL INT I_MS2_S_St=1890
+GLOBAL INT I_MS2_L_steh=1891
+GLOBAL INT I_MS2_H_steh=1893
+GLOBAL INT I_MS2_P_iTol=1894
+GLOBAL INT I_MS2_W_akt=1897
+GLOBAL INT I_MS2_Gas_io=1901
+GLOBAL INT I_MS2_H2O_io=1902
+GLOBAL INT I_MS2_Draht_io=1904
+GLOBAL INT I_MS2_B_Abs=1906
+; 
+GLOBAL INT O_MS2_P_akt=201
+GLOBAL INT O_MS2_W_akt=202
+GLOBAL INT O_MS2_TCP_nio=203
+GLOBAL INT O_MS2_H2O_io=204
+GLOBAL INT O_MS2_Gas_io=205
+GLOBAL INT O_MS2_Draht_io=206
+GLOBAL INT O_MS2_ST_Proz=207
+GLOBAL INT O_MS2_S_St=208
+GLOBAL INT O_MS2_LB_ein=1891
+GLOBAL INT O_MS2_o_Proz=1892
+;ENDFOLD
+; 
+;FOLD Lebensbit MS
+BOOL LBitState[2]
+LBitState[1]=FALSE
+LBitState[2]=FALSE
+BOOL MS_LBitFeh[2]
+MS_LBitFeh[1]=FALSE
+MS_LBitFeh[2]=FALSE
+; 
+;Lebensbit an MS-Steuerung --- Ausgaenge
+INT LBitToMS[2]
+LBitToMS[1]=1700
+LBitToMS[2]=1748
+; 
+;Lebensbit von MS-Steuerung --- Eingaenge
+INT LBitFromMS[2]
+LBitFromMS[1]=1700
+LBitFromMS[2]=1748
+; 
+INT LBitTimeCnt[2]
+LBitTimeCnt[1]=-1
+LBitTimeCnt[2]=-1
+INT ErrMSNr=-1
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM MSS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_MSS_Handle[100]
+GLOBAL INT n_MSR_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+
+ENDDAT

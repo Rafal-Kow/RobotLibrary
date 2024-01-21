@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?><!-- KUKA Roboter (C) 2009 --><!-- rrg, 2009-09-10 --><RobotInfo MajorVersion="0" MinorVersion="0">
+   <RobotData Timestamp="2011.09.16 10:13:17.528412483">
+      <SerialNumber Checksum="-404400139">617076</SerialNumber>
+      <RobotType Checksum="-1573955468">#KR210R3100 ULTRA C4 FLR</RobotType>
+   </RobotData>
+   <MamesOffsets Timestamp="2011.09.16 10:13:17.528412483">
+      <File Checksum="-1187814365">617076.mam</File>
+   </MamesOffsets>
+   <AbsoluteAccuracy Timestamp="2011.09.16 10:13:17.528412483">
+      <File Checksum="-1607895890">noAbsAccur</File>
+      <UsedModelVersion Checksum="-613506836">100.0</UsedModelVersion>
+   </AbsoluteAccuracy>
+</RobotInfo>

@@ -1,0 +1,300 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/S_Steuerung
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEF vw_sk_usr_s( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket S_Steuerung                         *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.20 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD INIT S_Steuerung 
+GLOBAL DEF SK_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_S_Steuerung.Name[]="KS24.01.002_150615"
+;ENDFOLD
+;
+;FOLD Vorbesetzung Meldungsausgabe
+FOR i = 1 TO 100
+  n_SK_Handle[i]=-1
+ENDFOR
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SAW S_Steuerung
+GLOBAL DEF SK_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RESET S_Steuerung
+GLOBAL DEF SK_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD CANCEL S_Steuerung
+GLOBAL DEF SK_CANCEL( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP S_Steuerung 1
+GLOBAL DEF SK1_LOOP( )
+;
+;Vorwahl mit Prozess
+$OUT[O_SK1_m_Proz]=NOT $IN[I_SK1_o_Proz] AND NOT $FLAG[F_o_Prozess]
+;
+;Start Protokoll
+$OUT[O_SK1_Protokoll]=$IN[I_SK1_Protokoll]
+;
+;Funktionstest ohne Bauteil
+$OUT[O_SK1_FT_oBT]=$IN[I_FT_o_BT] 
+;   
+;Fehlerreset
+$OUT[O_SK1_F_Res]=$IN[I_R_Quit_St]   
+;   
+;Fehlerreset mit FK
+$OUT[O_SK1_F_R_FK]=$IN[I_R_Quit_Wei]  
+;       
+;Fraesanfrage
+$OUT[O_SK1_Normfr]=$OUT[O_R_Auto] AND $IN[I_SK1_Normfr]
+;
+;Ausgabe Kappenstandzeit
+IF Mit_2SZ_an_SK1 AND ($OUT[O_SK1_Sensor]==FALSE) AND ($OUT[O_SK1_S_Schw] OR $OUT[O_SK1_Q_EKW]) THEN
+  $OUT[O_SK1_V_Stdm]=($IN[I_SK1_V_Stdm] OR B_SK1_V_Stdm) ;SZ 1 Vorwarnung Kappenstandzeit
+  $OUT[O_SK1_M_Stdm]=($IN[I_SZ1_F_Kapp] OR $IN[I_SK1_M_Stdm] OR B_SK1_M_Stdm) ;SZ 1 maximale Kappenstandzeit erreicht
+ENDIF
+IF NOT Mit_2SZ_an_SK1 THEN
+  $OUT[O_SK1_V_Stdm]=($IN[I_SK1_V_Stdm] OR B_SK1_V_Stdm) ;SZ 1 Vorwarnung Kappenstandzeit
+  $OUT[O_SK1_M_Stdm]=($IN[I_SZ1_F_Kapp] OR $IN[I_SK1_M_Stdm] OR B_SK1_M_Stdm OR $FLAG[F_SK1_max_SZ1] OR $FLAG[F_SK1_max_SZ2] OR $FLAG[F_SK1_max_SZ3] OR $FLAG[F_SK1_max_SZ4])
+ENDIF
+IF Mit_2SZ_an_SK1 AND ($OUT[O_SK1_Sensor]==TRUE) AND ($OUT[O_SK1_S_Schw] OR $OUT[O_SK1_Q_EKW]) THEN
+  $OUT[O_SK2_V_Stdm]=($IN[I_SK1_V_Stdm] OR B_SK2_V_Stdm) ;SZ 2 Vorwarnung Kappenstandzeit
+  $OUT[O_SK2_M_Stdm]=($IN[I_SZ2_F_Kapp] OR $IN[I_SK1_M_Stdm] OR B_SK2_M_Stdm) ;SZ 2 maximale Kappenstandzeit erreicht
+ENDIF
+;
+;Ausgabe Statusmeldungen an BMS
+;
+;Steuerteil nicht bereit
+$OUT[O_SK1_Bereit]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_SK1_Bereit]
+;Schweissung n.i.O
+$OUT[O_SK1_WPS_nio]=$OUT[O_R_Auto] AND $FLAG[F_SK1_S_niO]
+;Warngrenze verletzt in Folge
+$OUT[O_SK1_W_Folge]=$OUT[O_R_Auto] AND $IN[I_SK1_W_Folge]
+;Differenzstromueberwachung ausgeloest
+$OUT[O_SK1_Diff_str]=$OUT[O_R_Auto] AND $IN[I_SK1_Diff_str]
+;Phasenueberwachung
+$OUT[O_SK1_Phase_nio]=$OUT[O_R_Auto] AND $IN[I_SK1_Phase_nio]
+;Ueberstrom Primaerseite
+$OUT[O_SK1_Primaer]=$OUT[O_R_Auto] AND $IN[I_SK1_Primaer]
+;Fehler Stromsensor
+$OUT[O_SK1_F_Strom]=$OUT[O_R_Auto] AND $IN[I_SK1_F_Strom]
+;Fehler Spannungssensor
+$OUT[O_SK1_F_Spann]=$OUT[O_R_Auto] AND $IN[I_SK1_F_Spann]
+;Überstrom 24 V DC
+$OUT[O_SK1_24V]=$OUT[O_R_Auto] AND $IN[I_SK1_24V]
+;Uebertemperatur Inverter
+$OUT[O_SK1_Inverter]=$OUT[O_R_Auto] AND $IN[I_SK1_Inverter]
+;Punktanwahlfehler
+$OUT[O_SK1_F_Anw]=$OUT[O_R_Auto] AND $IN[I_SK1_F_Anw]
+;Sammelstoerung
+$OUT[O_SK1_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $IN[I_SK1_Bereit] OR $IN[I_SK1_WPS_nio] OR  $IN[I_SK1_W_Folge] OR $IN[I_SK1_Diff_str] OR $IN[I_SK1_Phase_nio] OR $IN[I_SK1_Primaer] OR $IN[I_SK1_F_Strom] OR $IN[I_SK1_F_Spann] OR $IN[I_SK1_24V] OR $IN[I_SK1_Inverter] OR $IN[I_SK1_F_Anw] OR $FLAG[F_SK1_Sammel])
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP S_Steuerung 2
+GLOBAL DEF SK2_LOOP( )
+;
+;Vorwahl mit Prozess
+$OUT[O_SK2_m_Proz]=NOT $IN[I_SK2_o_Proz] AND NOT $FLAG[F_o_Prozess]
+;
+;Start Protokoll
+$OUT[O_SK2_Protokoll]=$IN[I_SK2_Protokoll]
+;
+;Funktionstest ohne Bauteil
+$OUT[O_SK2_FT_oBT]=$IN[I_FT_o_BT] 
+;   
+;Fehlerreset
+$OUT[O_SK2_F_Res]=$IN[I_R_Quit_St] 
+;     
+;Fehlerreset mit FK
+$OUT[O_SK2_F_R_FK]=$IN[I_R_Quit_Wei] 
+;     
+;Fraesanfrage
+$OUT[O_SK2_Normfr]=$OUT[O_R_Auto] AND $IN[I_SK2_Normfr]
+;
+;Vorwarnung Kappenstandzeit
+$OUT[O_SK2_V_Stdm]=($IN[I_SK2_V_Stdm] OR B_SK2_V_Stdm)
+;
+;Maximale Standmenge erreicht
+$OUT[O_SK2_M_Stdm]=($IN[I_SZ2_F_Kapp] OR $IN[I_SK2_M_Stdm] OR B_SK2_M_Stdm)
+;
+;Ausgabe Statusmeldungen an BMS
+;
+;Steuerteil nicht bereit
+$OUT[O_SK2_Bereit]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_SK2_Bereit]
+;Schweissung n.i.O
+$OUT[O_SK2_WPS_nio]=$OUT[O_R_Auto] AND $FLAG[F_SK2_S_niO]
+;Warngrenze verletzt in Folge
+$OUT[O_SK2_W_Folge]=$OUT[O_R_Auto] AND $IN[I_SK2_W_Folge]
+;Differenzstromueberwachung ausgeloest
+$OUT[O_SK2_Diff_str]=$OUT[O_R_Auto] AND $IN[I_SK2_Diff_str]
+;Phasenueberwachung
+$OUT[O_SK2_Phase_nio]=$OUT[O_R_Auto] AND $IN[I_SK2_Phase_nio]
+;Ueberstrom Primaerseite
+$OUT[O_SK2_Primaer]=$OUT[O_R_Auto] AND $IN[I_SK2_Primaer]
+;Fehler Stromsensor
+$OUT[O_SK2_F_Strom]=$OUT[O_R_Auto] AND $IN[I_SK2_F_Strom]
+;Fehler Spannungssensor
+$OUT[O_SK2_F_Spann]=$OUT[O_R_Auto] AND $IN[I_SK2_F_Spann]
+;Überstrom 24 V DC
+$OUT[O_SK2_24V]=$OUT[O_R_Auto] AND $IN[I_SK2_24V]
+;Uebertemperatur Inverter
+$OUT[O_SK2_Inverter]=$OUT[O_R_Auto] AND $IN[I_SK2_Inverter]
+;Punktanwahlfehler
+$OUT[O_SK2_F_Anw]=$OUT[O_R_Auto] AND $IN[I_SK2_F_Anw]
+;Sammelstoerung
+$OUT[O_SK2_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $IN[I_SK2_Bereit] OR $IN[I_SK2_WPS_nio] OR $IN[I_SK2_W_Folge] OR $IN[I_SK2_Diff_str] OR $IN[I_SK2_Phase_nio] OR $IN[I_SK2_Primaer] OR $IN[I_SK2_Primaer] OR $IN[I_SK2_F_Strom] OR $IN[I_SK2_F_Spann] OR $IN[I_SK2_24V] OR $IN[I_SK2_Inverter] OR $IN[I_SK2_F_Anw] OR $FLAG[F_SK2_Sammel])
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP S_Steuerung 3
+GLOBAL DEF SK3_LOOP( )
+;
+;Vorwahl mit Prozess
+$OUT[O_SK3_m_Proz]=NOT $IN[I_SK3_o_Proz] AND NOT $FLAG[F_o_Prozess]
+;Start Protokoll
+$OUT[O_SK3_Protokoll]=$IN[I_SK3_Protokoll]
+;Funktionstest ohne Bauteil
+$OUT[O_SK3_FT_oBT]=$IN[I_FT_o_BT]    
+;Fehlerreset
+$OUT[O_SK3_F_Res]=$IN[I_R_Quit_St]      
+;Fehlerreset mit FK
+$OUT[O_SK3_F_R_FK]=$IN[I_R_Quit_Wei]      
+;Fraesanfrage
+$OUT[O_SK3_Normfr]=$OUT[O_R_Auto] AND $IN[I_SK3_Normfr]
+;Vorwarnung Kappenstandzeit
+$OUT[O_SK3_V_Stdm]=($IN[I_SK3_V_Stdm] OR B_SK3_V_Stdm)
+;Maximale Standmenge erreicht
+$OUT[O_SK3_M_Stdm]=($IN[I_SZ3_F_Kapp] OR $IN[I_SK3_M_Stdm] OR B_SK3_M_Stdm)
+;
+;Ausgabe Fehlermeldungen
+;
+;Steuerteil nicht bereit
+$OUT[O_SK3_Bereit]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_SK3_Bereit]
+;Schweissung n.i.O
+$OUT[O_SK3_WPS_nio]=$OUT[O_R_Auto] AND $FLAG[F_SK3_S_niO]
+;Warngrenze verletzt in Folge
+$OUT[O_SK3_W_Folge]=$OUT[O_R_Auto] AND $IN[I_SK3_W_Folge]
+;Differenzstromueberwachung ausgeloest
+$OUT[O_SK3_Diff_str]=$OUT[O_R_Auto] AND $IN[I_SK3_Diff_str]
+;Phasenueberwachung
+$OUT[O_SK3_Phase_nio]=$OUT[O_R_Auto] AND $IN[I_SK3_Phase_nio]
+;Ueberstrom Primaerseite
+$OUT[O_SK3_Primaer]=$OUT[O_R_Auto] AND $IN[I_SK3_Primaer]
+;Fehler Stromsensor
+$OUT[O_SK3_F_Strom]=$OUT[O_R_Auto] AND $IN[I_SK3_F_Strom]
+;Fehler Spannungssensor
+$OUT[O_SK3_F_Spann]=$OUT[O_R_Auto] AND $IN[I_SK3_F_Spann]
+;Überstrom 24 V DC
+$OUT[O_SK3_24V]=$OUT[O_R_Auto] AND $IN[I_SK3_24V]
+;Uebertemperatur Inverter
+$OUT[O_SK3_Inverter]=$OUT[O_R_Auto] AND $IN[I_SK3_Inverter]
+;Punktanwahlfehler
+$OUT[O_SK3_F_Anw]=$OUT[O_R_Auto] AND $IN[I_SK3_F_Anw]
+;Sammelstoerung
+$OUT[O_SK3_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $IN[I_SK3_Bereit] OR $IN[I_SK3_WPS_nio] OR $IN[I_SK3_W_Folge] OR $IN[I_SK3_Diff_str] OR $IN[I_SK3_Phase_nio] OR $IN[I_SK3_Primaer] OR $IN[I_SK3_Primaer] OR $IN[I_SK3_F_Strom] OR $IN[I_SK3_F_Spann] OR $IN[I_SK3_24V] OR $IN[I_SK3_Inverter] OR $IN[I_SK3_F_Anw] OR $FLAG[F_SK3_Sammel])
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SK_Meldungen
+DEF S_Steuerung_Msg(msg_nr :IN, MsgTyp :IN, SKNr :IN)
+INT msg_nr, SKNr
+DECL SKS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+;
+USER_MSG = { Modul[] "SK_S_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF Varstate("SKNr")==#initialized then
+  SWITCH SKNr
+    CASE 1
+      Par[1] = { Par_type #Value, Par_int 1 }
+    CASE 2
+      Par[1] = { Par_type #Value, Par_int 2 }
+    CASE 3
+      Par[1] = { Par_type #Value, Par_int 3 }
+    CASE 4
+      Par[1] = { Par_type #Value, Par_int 4 }
+    CASE 5
+      Par[1] = { Par_type #Value, Par_int 5 }
+    CASE 6
+      Par[1] = { Par_type #Value, Par_int 6 }
+    DEFAULT
+      Par[1] = { Par_type #Value, Par_txt[] " " }
+  ENDSWITCH
+ELSE
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+ENDIF
+;
+IF ((n_SK_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 2
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 3
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_SK_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_SK_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      n_SK_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_SK_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (SK_Meldungen)

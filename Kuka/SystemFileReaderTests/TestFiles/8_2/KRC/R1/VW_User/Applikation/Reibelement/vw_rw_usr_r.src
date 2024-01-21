@@ -1,0 +1,153 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Reibelement
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEF vw_RW_usr_r( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Reibelement                         *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.20 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+;
+END
+;
+;FOLD Reibelement_Interface
+GLOBAL DEF RW_Interfac(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+INT i
+;
+;-----------------------------------------------------------
+SWITCH USER_CMD
+;
+;-----------------------------------------------------------
+  CASE #USR_INIT
+    ;FOLD Init
+;
+    ;FOLD Vorbesetzung Meldungsausgabe
+;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------------
+  CASE #USR_ADV
+    ;FOLD Advance
+;
+    IF (PAR2==1) THEN
+      CONTINUE
+      RW1_P_Nr=PAR3
+      CONTINUE
+      RW_PktNr_SPS=PAR6
+    ENDIF 
+    IF (PAR2==2) THEN
+      CONTINUE
+      RW2_P_Nr=PAR3
+      CONTINUE
+      RW_PktNr_SPS=PAR6
+    ENDIF
+;    
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------------
+  CASE #USR_TRIG
+    ;FOLD Trig
+;
+    IF Mit_RW1 AND (PAR2==1)THEN
+      RW1_sollpos=(PAR1*10) ;Ausgabe Zangenposition
+    ENDIF
+    IF Mit_RW2 AND (PAR2==2)THEN
+      RW2_sollpos=(PAR1*10) ;Ausgabe Zangenposition
+    ENDIF
+;
+    ;ENDFOLD (TRIG)    
+;
+;-----------------------------------------------------------
+  CASE #USR_MAIN
+    ;FOLD Main
+;    
+    IF Mit_RW1 AND (PAR2==1)THEN
+      RW1_sollpos=(PAR1*10) ;Ausgabe Zangenposition
+      MyPos=ABS(RW1_istpos/10)
+      MyPos1=ABS(PAR1)
+      MyPos2=(MyPos - MyPos1)
+      WHILE (MyPos2 < -5.0) OR (MyPos2 > 5.0)
+        RW_Msg(1,#QuitMsg) ;Falsche Position  
+      ENDWHILE
+    ENDIF
+    IF Mit_RW2 AND (PAR2==2)THEN
+      RW2_sollpos=(PAR1*10) ;Ausgabe Zangenposition
+      MyPos=ABS(RW2_istpos/10)
+      MyPos1=ABS(PAR1)
+      MyPos2=(MyPos - MyPos1)
+      WHILE (MyPos2 < -5.0) OR (MyPos2 > 5.0)
+        RW_Msg(2,#QuitMsg) ;Falsche Position  
+      ENDWHILE
+    ENDIF
+;
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------------
+  DEFAULT
+;  
+  ENDSWITCH
+END
+;
+;ENDFOLD (RW_Interface)
+;
+;-----------------------------------------------------------
+;FOLD RW_Meldungen
+DEF RW_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr
+DECL RWR_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "RW_R_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF ((n_RWR_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+      USER_MSG.MSG_TXT[]="RW 1: falsche Position"
+    CASE 2
+	   USER_MSG.MSG_TXT[]="RW 2: falsche Position"
+    CASE 3
+      USER_MSG.MSG_TXT[]=" "
+    CASE 19
+	   USER_MSG.MSG_TXT[]="Falsche Gruppen-Auswahl"  
+    CASE 20
+	   USER_MSG.MSG_TXT[]="P1: Falsche Auswahl"
+    CASE 21
+	   USER_MSG.MSG_TXT[]="P2: Falsche Auswahl" 
+    CASE 22
+	   USER_MSG.MSG_TXT[]="P3: Falsche Auswahl"    
+    DEFAULT
+      USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_RWR_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_RWR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      WHILE ( Exists_KrlMsg(n_RWR_Handle[msg_nr]) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      ENDWHILE
+    CASE #NotifyMsg
+      n_RWR_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_RWR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF  
+END
+;
+;ENDFOLD (RW_Meldungen)
+

@@ -1,0 +1,409 @@
+<?xml version="1.0" standalone="yes"?>
+<KukaLoadProjectDataSet xmlns="http://tempuri.org/KukaLoadProjectDataSet.xsd">
+  <xs:schema id="KukaLoadProjectDataSet" targetNamespace="http://tempuri.org/KukaLoadProjectDataSet.xsd" xmlns:mstns="http://tempuri.org/KukaLoadProjectDataSet.xsd" xmlns="http://tempuri.org/KukaLoadProjectDataSet.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:msprop="urn:schemas-microsoft-com:xml-msprop" attributeFormDefault="qualified" elementFormDefault="qualified">
+    <xs:element name="KukaLoadProjectDataSet" msdata:IsDataSet="true" msdata:UseCurrentLocale="true" msprop:AssemblyFileVersion="Kuka.Load 4@4.0.5.2" msprop:CreationFileVersion="Kuka.Load 4@4.0.5.2">
+      <xs:complexType>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element name="Factory">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="ID" msdata:ReadOnly="true" msdata:AutoIncrement="true" type="xs:int" />
+                <xs:element name="project">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="200" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="factory">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="200" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="Information" minOccurs="0">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="2147483647" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="customer">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="100" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="Station">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="ID" msdata:ReadOnly="true" msdata:AutoIncrement="true" type="xs:int" />
+                <xs:element name="name">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="100" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="FactoryID" type="xs:int" />
+                <xs:element name="description" minOccurs="0">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="200" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="Robot">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="ID" msdata:ReadOnly="true" msdata:AutoIncrement="true" type="xs:int" />
+                <xs:element name="robottype">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="50" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="RobotID" type="xs:int" />
+                <xs:element name="StationID" type="xs:int" />
+                <xs:element name="serialnumber">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="50" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="comment" minOccurs="0">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="2147483647" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="application">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="100" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="krcRelease" minOccurs="0">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="50" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="LoadingCase">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="ID" msdata:ReadOnly="true" msdata:AutoIncrement="true" type="xs:int" />
+                <xs:element name="description" minOccurs="0">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="100" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="RobotID" type="xs:int" />
+                <xs:element name="loadID">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="100" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="tool">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="50" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="date" type="xs:dateTime" />
+                <xs:element name="engineer">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="50" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="m" type="xs:decimal" />
+                <xs:element name="cx" type="xs:decimal" />
+                <xs:element name="cy" type="xs:decimal" />
+                <xs:element name="cz" type="xs:decimal" />
+                <xs:element name="Ix" type="xs:decimal" />
+                <xs:element name="Iy" type="xs:decimal" />
+                <xs:element name="Iz" type="xs:decimal" />
+                <xs:element name="A" type="xs:decimal" />
+                <xs:element name="B" type="xs:decimal" />
+                <xs:element name="C" type="xs:decimal" />
+                <xs:element name="mA1" type="xs:decimal" />
+                <xs:element name="cxA1" type="xs:int" />
+                <xs:element name="cyA1" type="xs:int" />
+                <xs:element name="czA1" type="xs:int" />
+                <xs:element name="IxA1" type="xs:decimal" />
+                <xs:element name="IyA1" type="xs:decimal" />
+                <xs:element name="IzA1" type="xs:decimal" />
+                <xs:element name="mA2" type="xs:decimal" />
+                <xs:element name="cxA2" type="xs:int" />
+                <xs:element name="cyA2" type="xs:int" />
+                <xs:element name="czA2" type="xs:int" />
+                <xs:element name="IxA2" type="xs:decimal" />
+                <xs:element name="IyA2" type="xs:decimal" />
+                <xs:element name="IzA2" type="xs:decimal" />
+                <xs:element name="mA3" type="xs:decimal" />
+                <xs:element name="cxA3" type="xs:int" />
+                <xs:element name="cyA3" type="xs:int" />
+                <xs:element name="czA3" type="xs:int" />
+                <xs:element name="IxA3" type="xs:decimal" />
+                <xs:element name="IyA3" type="xs:decimal" />
+                <xs:element name="IzA3" type="xs:decimal" />
+                <xs:element name="DeterminationID" type="xs:int" />
+                <xs:element name="calibration_with_tool" type="xs:int" />
+                <xs:element name="determinationInfo" minOccurs="0">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="30" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="valuation">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="200" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+                <xs:element name="toolNr" type="xs:int" minOccurs="0" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="Determination">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="ID" type="xs:int" />
+                <xs:element name="determination">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:maxLength value="50" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+      </xs:complexType>
+      <xs:unique name="Constraint1" msdata:PrimaryKey="true">
+        <xs:selector xpath=".//mstns:Factory" />
+        <xs:field xpath="mstns:ID" />
+      </xs:unique>
+      <xs:unique name="Station_Constraint1" msdata:ConstraintName="Constraint1" msdata:PrimaryKey="true">
+        <xs:selector xpath=".//mstns:Station" />
+        <xs:field xpath="mstns:ID" />
+      </xs:unique>
+      <xs:unique name="Robot_Constraint1" msdata:ConstraintName="Constraint1" msdata:PrimaryKey="true">
+        <xs:selector xpath=".//mstns:Robot" />
+        <xs:field xpath="mstns:ID" />
+      </xs:unique>
+      <xs:unique name="LoadingCase_Constraint1" msdata:ConstraintName="Constraint1" msdata:PrimaryKey="true">
+        <xs:selector xpath=".//mstns:LoadingCase" />
+        <xs:field xpath="mstns:ID" />
+      </xs:unique>
+      <xs:unique name="Determination_Constraint1" msdata:ConstraintName="Constraint1" msdata:PrimaryKey="true">
+        <xs:selector xpath=".//mstns:Determination" />
+        <xs:field xpath="mstns:ID" />
+      </xs:unique>
+    </xs:element>
+    <xs:annotation>
+      <xs:appinfo>
+        <msdata:Relationship name="FK_Factory_Station" msdata:parent="Factory" msdata:child="Station" msdata:parentkey="ID" msdata:childkey="FactoryID" />
+        <msdata:Relationship name="FK_Station_Robot" msdata:parent="Station" msdata:child="Robot" msdata:parentkey="ID" msdata:childkey="StationID" />
+        <msdata:Relationship name="FK_Robot_LoadingCase" msdata:parent="Robot" msdata:child="LoadingCase" msdata:parentkey="ID" msdata:childkey="RobotID" />
+        <msdata:Relationship name="FK_Determination_LoadingCase" msdata:parent="Determination" msdata:child="LoadingCase" msdata:parentkey="ID" msdata:childkey="DeterminationID" />
+      </xs:appinfo>
+    </xs:annotation>
+  </xs:schema>
+  <Factory>
+    <ID>1</ID>
+    <project>P 01</project>
+    <factory />
+    <Information />
+    <customer />
+  </Factory>
+  <Station>
+    <ID>1</ID>
+    <name>Station 1</name>
+    <FactoryID>1</FactoryID>
+    <description />
+  </Station>
+  <Robot>
+    <ID>1</ID>
+    <robottype>KR 210 R3100 ultra</robottype>
+    <RobotID>115</RobotID>
+    <StationID>1</StationID>
+    <serialnumber>617076</serialnumber>
+    <comment />
+    <application />
+    <krcRelease>VKR C@V8.2.17@#110</krcRelease>
+  </Robot>
+  <LoadingCase>
+    <ID>1</ID>
+    <description />
+    <RobotID>1</RobotID>
+    <loadID>20120525_111240_586</loadID>
+    <tool>klebeduese</tool>
+    <date>2012-05-25T11:12:40.5867029+02:00</date>
+    <engineer />
+    <m>56.2943916320801</m>
+    <cx>11.3832101821899</cx>
+    <cy>-1.59974801540375</cy>
+    <cz>121.705001831055</cz>
+    <Ix>5.25</Ix>
+    <Iy>5.25</Iy>
+    <Iz>5.25</Iz>
+    <A>-0.000191</A>
+    <B>4.152215</B>
+    <C>-90.080193</C>
+    <mA1>0</mA1>
+    <cxA1>0</cxA1>
+    <cyA1>0</cyA1>
+    <czA1>0</czA1>
+    <IxA1>0</IxA1>
+    <IyA1>0</IyA1>
+    <IzA1>0</IzA1>
+    <mA2>0</mA2>
+    <cxA2>0</cxA2>
+    <cyA2>0</cyA2>
+    <czA2>0</czA2>
+    <IxA2>0</IxA2>
+    <IyA2>0</IyA2>
+    <IzA2>0</IzA2>
+    <mA3>0</mA3>
+    <cxA3>0</cxA3>
+    <cyA3>0</cyA3>
+    <czA3>0</czA3>
+    <IxA3>0</IxA3>
+    <IyA3>0</IyA3>
+    <IzA3>0</IzA3>
+    <DeterminationID>3</DeterminationID>
+    <calibration_with_tool>128</calibration_with_tool>
+    <determinationInfo>V6.1.5 B14</determinationInfo>
+    <valuation>Freigabe des Robotertyps</valuation>
+    <toolNr>1</toolNr>
+  </LoadingCase>
+  <LoadingCase>
+    <ID>2</ID>
+    <description />
+    <RobotID>1</RobotID>
+    <loadID>20190422_131554_336</loadID>
+    <tool>Greifer VW370 TCP</tool>
+    <date>2019-04-22T13:15:54.3365342+02:00</date>
+    <engineer />
+    <m>98.8301544189453</m>
+    <cx>2.52601408958435</cx>
+    <cy>-127.194778442383</cy>
+    <cz>193.697006225586</cz>
+    <Ix>8.96645641326904</Ix>
+    <Iy>8.98251247406006</Iy>
+    <Iz>9.65313720703125</Iz>
+    <A>116.196205</A>
+    <B>-59.098034</B>
+    <C>157.587769</C>
+    <mA1>0</mA1>
+    <cxA1>0</cxA1>
+    <cyA1>0</cyA1>
+    <czA1>0</czA1>
+    <IxA1>0</IxA1>
+    <IyA1>0</IyA1>
+    <IzA1>0</IzA1>
+    <mA2>0</mA2>
+    <cxA2>0</cxA2>
+    <cyA2>0</cyA2>
+    <czA2>0</czA2>
+    <IxA2>0</IxA2>
+    <IyA2>0</IyA2>
+    <IzA2>0</IzA2>
+    <mA3>0</mA3>
+    <cxA3>0</cxA3>
+    <cyA3>0</cyA3>
+    <czA3>0</czA3>
+    <IxA3>0</IxA3>
+    <IyA3>0</IyA3>
+    <IzA3>0</IzA3>
+    <DeterminationID>3</DeterminationID>
+    <calibration_with_tool>128</calibration_with_tool>
+    <determinationInfo>V6.1.5 B14</determinationInfo>
+    <valuation>Freigabe des Robotertyps</valuation>
+    <toolNr>7</toolNr>
+  </LoadingCase>
+  <LoadingCase>
+    <ID>3</ID>
+    <description />
+    <RobotID>1</RobotID>
+    <loadID>20190422_134246_904</loadID>
+    <tool>Ref. TCP VW379</tool>
+    <date>2019-04-22T13:42:46.9049222+02:00</date>
+    <engineer />
+    <m>97.4487152099609</m>
+    <cx>-2.70170092582703</cx>
+    <cy>61.2772636413574</cy>
+    <cz>201.289001464844</cz>
+    <Ix>5.25</Ix>
+    <Iy>7.33952188491821</Iy>
+    <Iz>9.02359771728516</Iz>
+    <A>-90.017532</A>
+    <B>-3.886023</B>
+    <C>89.784538</C>
+    <mA1>0</mA1>
+    <cxA1>0</cxA1>
+    <cyA1>0</cyA1>
+    <czA1>0</czA1>
+    <IxA1>0</IxA1>
+    <IyA1>0</IyA1>
+    <IzA1>0</IzA1>
+    <mA2>0</mA2>
+    <cxA2>0</cxA2>
+    <cyA2>0</cyA2>
+    <czA2>0</czA2>
+    <IxA2>0</IxA2>
+    <IyA2>0</IyA2>
+    <IzA2>0</IzA2>
+    <mA3>0</mA3>
+    <cxA3>0</cxA3>
+    <cyA3>0</cyA3>
+    <czA3>0</czA3>
+    <IxA3>0</IxA3>
+    <IyA3>0</IyA3>
+    <IzA3>0</IzA3>
+    <DeterminationID>3</DeterminationID>
+    <calibration_with_tool>128</calibration_with_tool>
+    <determinationInfo>V6.1.5 B14</determinationInfo>
+    <valuation>Freigabe des Robotertyps</valuation>
+    <toolNr>14</toolNr>
+  </LoadingCase>
+  <Determination>
+    <ID>1</ID>
+    <determination>CAD</determination>
+  </Determination>
+  <Determination>
+    <ID>2</ID>
+    <determination>Manuell</determination>
+  </Determination>
+  <Determination>
+    <ID>3</ID>
+    <determination>Lastdatenermittlung</determination>
+  </Determination>
+</KukaLoadProjectDataSet>

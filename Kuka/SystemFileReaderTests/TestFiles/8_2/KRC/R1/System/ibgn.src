@@ -1,0 +1,182 @@
+&ACCESS RP3
+&PARAM TPVW_VERSION=8.1.8
+DEF  IBGN (COMMAND :IN,COND :IN,P1 :IN,P2 :IN,B1 :IN, POINT :OUT )
+   ; FOLD ;%{H} %MKUKATPVW
+   ; standard routines VW-IBGN
+   DECL IBGN_COMMAND COMMAND
+   BOOL COND
+   REAL P1,P2
+   BOOL B1
+   DECL E6POS POINT
+   IF  NOT COND THEN
+      GOTO PEXIT
+   ENDIF
+   SWITCH  COMMAND
+   CASE #IBGN_RECORD_START
+      IBGN_RECORD_START (P1)
+   CASE #IBGN_RECORD_STOP
+      IBGN_RECORD_STOP (P1)
+     CASE #IBGN_MOVE
+      IBGN_MOVE (B1,P1,POINT)
+   DEFAULT
+   ENDSWITCH
+   PEXIT:
+END
+
+DEF IBGN_MOVE  (PLAY :IN,ASCII_NR :IN,ACT_POINT :OUT)
+  ;ASCII Datei abspielen
+  BOOL  PLAY,DELTAX,DELTAY,DELTAZ
+  INT ASCII_NR,OFFSET,RESULT,N,ANSWER
+  DECL E6POS ACT_POINT
+  DECL E6POS START_POS
+  DECL E6AXIS START_AXIS
+  DECL CHAR CommandString[10]
+  DECL STATE_T STATE
+    START_POS=$POS_ACT
+    START_AXIS={a1 0.0}
+    IBGN_PLAY=FALSE
+    SKIP_FLAG=PLAY
+    IF PLAY THEN
+      CommandString[]="IBGN00.IBG"
+      IF ASCII_NR > 9 THEN
+        OFFSET=4
+      ELSE
+        OFFSET=5
+      ENDIF
+      SWRITE(CommandString[],STATE,OFFSET,"%d",ASCII_NR)
+      ;Abfrage der Anfangsposition
+      RESULT=EMI_STARTPOS("VW_ASCII",CommandString[],START_POS,START_AXIS)
+      IF (RESULT == -1) OR  (RESULT == -3) THEN
+        DELTAX=(ABS(START_POS.X-ACT_POINT.X))>0.01
+        DELTAY=(ABS(START_POS.Y-ACT_POINT.Y))>0.01
+        DELTAZ=(ABS(START_POS.Z-ACT_POINT.Z))>0.01
+        IF DELTAX OR DELTAY OR DELTAZ THEN
+          ;Dialog fuer Uebernahme der Anfangsposition nur in T1 oder T2
+          REPEAT
+            IF (($MODE_OP==#EX) OR ($MODE_OP==#AUT)) THEN
+			  MsgQuit("CoordinatesUnequallyStartNeedT1orT2", "IBGN", , , 101)
+            ENDIF
+          UNTIL (($MODE_OP<>#EX) AND ($MODE_OP<>#AUT))
+		  MsgNotify("CoordinatesUnequallyStart", "IBGN", , , 105)
+		  MsgDialog(ANSWER,"ApplyCoordinatesFromFile","IBGN",,"Cancel",,,,,,"OK",, 100)
+          IF (ANSWER==1) THEN
+		    ACT_POINT=START_POS
+		  ENDIF
+          LOOP
+			MsgQuit("ResetOrBlockSelectRequired", "IBGN", , , 102)
+          ENDLOOP
+			MsgQuit("FileDoesNotRun", "IBGN", , , 103)
+        ELSE
+          ;Datei abspielen
+          IBGN_PLAY=PLAY
+        ENDIF
+      ELSE
+		MsgNotify("CheckStartNotSuccessful", "IBGN", , , 106)
+      ENDIF
+   ENDIF
+ PMOVE_EXIT:
+END
+
+DEF  IBGN_RECORD_START (ASCII_NR :IN)
+  ; Aufzeichnung starten
+  DECL CHAR CommandString[64]
+  DECL CHAR RecordString[12]
+  DECL CHAR MessageString[128]
+  DECL STATE_T STATE
+  INT ASCII_NR,OFFSET,RESULT,N,LEN
+  BOOL RES_STR_FCT
+    ;Aufzeichnung nur im Automatikbetrieb
+    REPEAT
+      IF (($MODE_OP==#T1) OR ($MODE_OP==#T2)) THEN
+		MsgQuit("RecordingOnlyInEXTMode", "IBGN", , , 104)
+      ENDIF
+    UNTIL (($MODE_OP<>#T1) AND ($MODE_OP<>#T2))
+    ;Daten fr Binaerausgabe
+    FOR N=1 TO 20  
+      IF ($BIN_OUT[N].LEN > 0) THEN
+        CommandString[]="CONFIG_BOUT              "
+        OFFSET=12
+        SWRITE(CommandString[],STATE,OFFSET,"%d",N)
+        OFFSET=StrFind (1,CommandString[], "  ",#NOT_CASE_SENS)
+        SWRITE(CommandString[],STATE,OFFSET,"%d",$BIN_OUT[N].F_BIT)
+        OFFSET=StrFind (1,CommandString[], "  ",#NOT_CASE_SENS)
+        SWRITE(CommandString[],STATE,OFFSET,"%d",$BIN_OUT[N].LEN)
+        RESULT=MD_CMD("VW_ASCII",CommandString[],IBGN_RES_INT[],IBGN_RES_REAL[])
+      ENDIF
+    ENDFOR
+    RES_STR_FCT=StrClear (CommandString[])
+    RecordString[]="RECORD00.IBG"
+    IF ASCII_NR > 9 THEN
+      OFFSET=6
+    ELSE
+      OFFSET=7
+    ENDIF
+    SWRITE(RecordString[],STATE,OFFSET,"%d",ASCII_NR)
+    CommandString[]="RECORD "
+    RESULT=StrAdd(CommandString[],RecordString[])
+    RESULT = MD_CMD("VW_ASCII",CommandString[],IBGN_RES_INT[],IBGN_RES_REAL[])
+    IF RESULT <> 0 THEN
+	  MsgNotify("FileCouldNotBeRecorded", "IBGN", , , 107)
+    ENDIF
+    RESULT = EMI_RECSTATE("VW_ASCII", RecordString[])
+    IF ((RESULT==9) OR (RESULT==10))THEN 
+       ;Programminformation
+       RES_STR_FCT=StrClear (CommandString[])
+       CommandString[]="PROG_NAME "
+       RESULT=StrAdd(CommandString[],RecordString[])
+       RESULT=StrAdd(CommandString[],"                              ")
+       RES_STR_FCT=StrCopy(MessageString[],$PRO_IP.NAME[])
+       LEN=StrLen (MessageString[])
+       OFFSET=StrFind (1,MessageString[],"R1/",#NOT_CASE_SENS)
+       IF OFFSET>0 THEN
+         OFFSET=OFFSET+3
+         K=24
+         FOR N=OFFSET TO LEN
+           CommandString[K]=MessageString[N]
+           K=K+1
+         ENDFOR 
+         RESULT = MD_CMD("VW_ASCII",CommandString[],IBGN_RES_INT[],IBGN_RES_REAL[])
+       ENDIF
+       ;Filter
+       RES_STR_FCT=StrClear(CommandString[])
+       CommandString[]="FILTER_REC "
+       RESULT=StrAdd(CommandString[],RecordString[])
+       RESULT=StrAdd(CommandString[]," ")
+       OFFSET=24
+       SWRITE(CommandString[],STATE,OFFSET,"%d",$FILTER)
+       RESULT=MD_CMD("VW_ASCII",CommandString[],IBGN_RES_INT[],IBGN_RES_REAL[])
+    ENDIF
+END
+
+DEF  IBGN_RECORD_STOP (ASCII_NR :IN)
+  ; Aufzeichnung beenden
+
+  DECL CHAR CommandString[20]
+  DECL STATE_T STATE
+  INT ASCII_NR,OFFSET,RESULT,N
+    CommandString[]="RECORD00.IBG"
+    RESULT=0
+    IF ASCII_NR > 9 THEN
+      OFFSET=6
+    ELSE
+      OFFSET=7
+    ENDIF
+    SWRITE(CommandString[],STATE,OFFSET,"%d",ASCII_NR)
+    RESULT = EMI_RECSTATE("VW_ASCII", CommandString[])
+    IF RESULT > -1 THEN 
+      CommandString[]="FINISH RECORD00.IBG "
+      RESULT=0
+      IF ASCII_NR > 9 THEN
+        OFFSET=13
+      ELSE
+        OFFSET=14
+      ENDIF
+      SWRITE(CommandString[],STATE,OFFSET,"%d",ASCII_NR)
+      RESULT = MD_CMD("VW_ASCII",CommandString[],IBGN_RES_INT[],IBGN_RES_REAL[])
+      IF RESULT <> 0 THEN 
+		MsgNotify("ErrorSavingFile", "IBGN", , , 108)
+        HALT
+      ENDIF
+    ENDIF
+END
+;ENDFOLD

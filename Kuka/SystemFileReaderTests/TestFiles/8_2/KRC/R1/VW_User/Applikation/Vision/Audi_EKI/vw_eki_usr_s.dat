@@ -1,0 +1,83 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Vision/Audi_EKI
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_eki_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Audi_EKI                            *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.17 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD USER_Version
+STRUC _Tech_AudiEKI CHAR Name[20],INT Datum
+DECL _Tech_AudiEKI Tech_AudiEKI
+;ENDFOLD
+; 
+;FOLD Audi_EKI
+GLOBAL INT F_m_EKI=235
+; 
+GLOBAL BOOL MIT_EKI=FALSE
+GLOBAL BOOL B_EKI_z_gr=FALSE
+GLOBAL BOOL B_EKI_k_Ve=FALSE
+GLOBAL BOOL B_EKI_f_OP=FALSE
+GLOBAL BOOL B_EKI_f_Ty=FALSE
+GLOBAL BOOL B_EKI_k_BT=FALSE
+GLOBAL BOOL B_EKI_T_Ou=FALSE
+; 
+GLOBAL INT AuftragsNr=0
+GLOBAL INT Out_Typ=0
+GLOBAL INT Out_OP_A=0
+GLOBAL INT Out_Status=0
+GLOBAL INT In_Typ=-1
+GLOBAL INT In_OP_A=-1
+GLOBAL INT In_Status=-1
+; 
+GLOBAL INT O_EKI_z_gr=218
+GLOBAL INT O_EKI_k_Ve=219
+GLOBAL INT O_EKI_f_OP=220
+GLOBAL INT O_EKI_f_Ty=221
+GLOBAL INT O_EKI_k_BT=222
+GLOBAL INT O_EKI_T_Ou=223
+GLOBAL INT O_EKI_Samm=224
+;ENDFOLD
+; 
+;FOLD Lebensbit EKI
+BOOL LBitState[2]
+LBitState[1]=FALSE
+LBitState[2]=FALSE
+BOOL EKI_LBitFeh[2]
+EKI_LBitFeh[1]=FALSE
+EKI_LBitFeh[2]=FALSE
+; 
+;Lebensbit an EKI-Steuerung --- Ausgaenge
+INT LBitToEKI[2]
+LBitToEKI[1]=-1
+LBitToEKI[2]=-1
+; 
+;Lebensbit von EKI-Steuerung --- Eingaenge
+INT LBitFromEKI[2]
+LBitFromEKI[1]=-1
+LBitFromEKI[2]=-1
+; 
+INT LBitTimeCnt[2]
+LBitTimeCnt[1]=-1
+LBitTimeCnt[2]=-1
+INT ErrEKINr=-1
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM EKIS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_EKIS_Handle[100]
+GLOBAL INT n_EKIR_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+
+ENDDAT

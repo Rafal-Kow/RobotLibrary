@@ -1,0 +1,192 @@
+&ACCESS  RV
+&COMMENT KS24.01.000
+&PARAM DISKPATH = VW_User/Applikation/SafeRobot
+&PARAM TPVW_VERSION = 8.3.8
+&REL 201
+DEF VW_SROB_USR_R( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket SafeRobot                           *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier  I/PG-C61                    *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.01.08 LE                                       *
+;*                                                     *
+;* 2015.01.19 LE SafeRobot UP-Deklaration angepasst    *
+;* 2015.11.10 BM SafeRobot Init ergaenzt               *
+;*-----------------------------------------------------*
+;
+END
+;
+;FOLD SafeRobot Interface
+GLOBAL DEF SROB_Interf(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+INT I,Ret,nDrvRet,IntArray[5]
+REAL RealArray[1]
+;
+;-----------------------------------------------------------
+;
+SWITCH USER_CMD
+;
+;-----------------------------------------------------------
+;
+  CASE #USR_INIT
+    ;FOLD Init
+    ;
+    ;BremsenTest
+    UpNo_ToBrkTestPath = U_UpNo_ToBrkTestPath
+    UpNo_ToBrkTestPark = U_UpNo_ToBrkTestPark
+    FlagNo_RunBrkTest  = U_FlagNo_RunBrkTest
+    FlagNo_GoToPark = U_FlagNo_GoToPark
+    ;
+    ;JustageReferenzierung
+    nLapsedTimeout = U_nLapsedTimeout
+    FlagNo_GoToMasRefTest  = U_FlagNo_GoToMasRefTest
+    UpNo_ToMasRefPath = U_UpNo_ToMasRefPath
+    UpNo_ToMasRefPath2 = U_UpNo_ToMasRefPath2
+    UpNo_ToMasRefPath3 = U_UpNo_ToMasRefPath3
+    ;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------------
+;
+  CASE #USR_ADV
+    ;FOLD Advance
+    ;Vorbereitung Justagereferenzierung
+    IF ((PAR1==31) OR (PAR1==32)OR (PAR1==33)) THEN
+      IF NOT CALLBYSELECT THEN
+        MasRefBefore()
+      ENDIF
+      PAR1 = 0
+      MasRefGroup(PAR1)    ; Justage-Gruppe auf 0 setzen
+    ENDIF 
+;    
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------------
+;
+  CASE #USR_TRIG
+    ;FOLD Trig
+    SWITCH PAR1
+      CASE 34    ;Justageschalter deaktivieren
+        MasRefEnd()
+;
+      DEFAULT
+;      
+    ENDSWITCH
+;    
+    ;ENDFOLD (Trig)
+;
+;-----------------------------------------------------------
+;
+  CASE #USR_MAIN
+    ;FOLD Main
+    SWITCH PAR1
+      CASE 11    ;Bremsentestanforderung pruefen
+        BrakeTestReq()
+; 
+      CASE 12    ;Justageanforderung pruefen
+        MasRefReq()
+;    
+      CASE 21    ;Bremsentest aller Achsen
+        Ret = MD_CMD(brakeTestDevName[], "START_TEST", IntArray[], RealArray[]) ; Die Achsmasken aus der INI-Datei auslesen
+        IF Ret==1 THEN
+          MD_SETSTATE(brakeTestDevName[], #INITIALIZED) ; Bremsentestanforderung initialisieren
+        ENDIF
+        BrakeTestRun()
+;  
+      CASE 22    ;Parkposition erreicht
+        ParkPosReached()
+;  
+      CASE 31    ;Justageschalter Gruppe 1 aktivieren
+        PAR1=1
+        MasRefGroup(PAR1)
+;  
+      CASE 32    ;Justageschalter Gruppe 2 aktivieren
+        PAR1=2
+        MasRefGroup(PAR1)
+;  
+      CASE 33    ;Justageschalter Gruppe 3 aktivieren
+        PAR1=3
+        MasRefGroup(PAR1)
+;
+      DEFAULT
+;
+    ENDSWITCH
+;     
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------------
+;
+  CASE #USR_MAKRO
+    ;FOLD Makro
+    
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------------
+;
+  DEFAULT
+;  
+ENDSWITCH
+END
+;
+;ENDFOLD (SafeRobot Interface)
+;
+;-------------------------------------------------------
+;
+;FOLD SafeRobot Meldungen
+;
+DEF SRob_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr, nHandle, Answer, OFFSET
+DECL SRobR_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "SRob (R_Msg)", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+OFFSET=0
+USER_MSG.Nr = msg_nr
+SWITCH msg_nr
+  CASE 1
+    USER_MSG.MSG_TXT[]=" "
+  CASE 2
+    USER_MSG.MSG_TXT[]=" "
+  CASE 3
+    USER_MSG.MSG_TXT[]=" "
+  CASE 4
+    USER_MSG.MSG_TXT[]=" "
+  CASE 5
+    USER_MSG.MSG_TXT[]=" "
+  CASE 6
+	 USER_MSG.MSG_TXT[]=" "
+  CASE 7
+    USER_MSG.MSG_TXT[]=" "
+  CASE 8
+	 USER_MSG.MSG_TXT[]=" "
+  DEFAULT
+    USER_MSG.MSG_TXT[]="unbekannte Meldung"
+ENDSWITCH
+SWITCH MsgTyp
+  CASE #StateMsg
+    nHandle = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+  CASE #QuitMsg
+    nHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    While ( Exists_KrlMsg(nHandle) )  ;Warten bis der Anwender quittiert
+      Wait Sec 0.1
+    Endwhile
+  CASE #NotifyMsg
+    nHandle = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+  DEFAULT
+    nHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+ENDSWITCH
+END
+;
+;ENDFOLD (SafeRobot Meldungen)
+

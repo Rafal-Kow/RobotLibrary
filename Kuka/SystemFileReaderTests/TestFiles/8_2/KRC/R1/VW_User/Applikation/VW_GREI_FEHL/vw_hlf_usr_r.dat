@@ -1,0 +1,16 @@
+&ACCESS RVP1
+&REL 202
+&COMMENT KS24.24.000_VW
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM DISKPATH = VW_User / Applikation / VW_Grei_Fehl
+DEFDAT vw_hlf_usr_r PUBLIC
+   ; 
+;*-----------------------------------------------------*
+;* Erstellt am:                                        *
+;* 2017.11.03                                          *
+;*------------------------------------------------------
+   ; 
+   ; 
+   ; 
+   ; 
+ENDDAT

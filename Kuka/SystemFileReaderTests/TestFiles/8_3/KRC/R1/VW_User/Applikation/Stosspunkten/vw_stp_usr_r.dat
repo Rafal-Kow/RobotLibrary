@@ -1,0 +1,53 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Stosspunkten
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEFDAT  vw_stp_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Stosspunkten                        *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.15 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD Stosspunkten
+; 
+;Punktnummer an SPS
+SIGNAL STP_PktNr_SPS $OUT[97]  TO $OUT[112]
+;Programm-Nr an STP
+SIGNAL Prog_Nr_STP $OUT[769]  TO $OUT[776]
+SIGNAL Fzg_Typ_STP $OUT[777]  TO $OUT[784]
+;Programm-Nr an SK1
+SIGNAL SK1_P_Nr $OUT[801]  TO $OUT[816]
+SIGNAL SK1_Fzg_Typ $OUT[817]  TO $OUT[824]
+;Uebergabe Sollposition Stosspunkten
+SIGNAL Stos_sollPos $OUT[737]  TO $OUT[751]
+;Uebergabe Istposition Stosspunkten
+SIGNAL Stos_istPos $IN[737]  TO $IN[751]
+; 
+GLOBAL BOOL b_Stoss_akt=FALSE
+; 
+REAL MyPos=99.0000
+REAL MyPos1=99.0000
+REAL MyPos2=0.0
+;ENDFOLD
+; 
+;TCP-Korrektur
+INT Weg=0
+INT Offset=0
+FRAME MyCorr
+FRAME MyCorrWeg
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM STPR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

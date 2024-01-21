@@ -1,0 +1,1565 @@
+&ACCESS  R
+&COMMENT KS_1.1
+&PARAM DISKPATH = VW_User/Applikation/Vision/GOM
+&PARAM TPVW_VERSION = 8.1.8
+&REL 70
+DEF vw_gom_usr_s( )
+;
+;*--------------------------------------------*
+;* GOM mbH                                    *
+;* 02.12.2014 Frank Sowinski, Volker Masemann *
+;*     Version 7.9                            *
+;*--------------------------------------------*
+;
+END
+;
+;FOLD GOM
+;
+GLOBAL DEF GOM_INT_INIT()
+  gom_init_fb()
+END
+;
+GLOBAL DEF GOM_INT_LOOP()
+  gom_loop_fb()
+END
+;
+;USER Version
+;Version_Tech_GOM=20141202
+;
+;FOLD GOM Meldungen
+DEFFCT INT GOM_MsgMld (MSG_TYP:IN, MSG_NR:IN)
+DECL INT           MSG_NR
+DECL GOM_MsgType   MSG_TYP
+DECL KRLMSG_T      USER_MSG
+DECL KRLMSGPAR_T   PAR[3]
+DECL KRLMSGOPT_T   OPT
+DECL KrlMsgDlgSK_T SK[7]
+INT                nDlgHandle
+INT                nDlgAnswer
+USER_MSG    = { Modul[] "GOM_MsgMld", Nr -1, Msg_txt[] " "}
+Par[1]      = { Par_type #Value, Par_txt[] " " }
+Opt         = { VL_Stop FALSE, Clear_P_Reset FALSE, Log_To_DB TRUE }
+SK[1]       = {Sk_Type #Value,Sk_Txt[] "OK"}
+USER_MSG.Nr = MSG_NR
+nDlgAnswer  = 1
+SWITCH MSG_NR
+CASE 1
+USER_MSG.MSG_TXT[] = "GOM: Keine Antwort auf Lebensbit"
+DEFAULT
+USER_MSG.MSG_TXT[] = "GOM: Unbekannte Meldung"
+ENDSWITCH
+SWITCH MSG_TYP
+CASE #DlgMsg
+nDlgHandle = Set_KrlDlg(USER_MSG,Par[],SK[],Opt)
+REPEAT
+UNTIL NOT Exists_KrlDlg(nDlgHandle,nDlgAnswer)
+SWITCH nDlgAnswer
+CASE 1
+;HALT ;Softkey 1 was hit
+CASE 2
+;HALT ;Softkey 2 was hit
+CASE 3
+;HALT ;Softkey 3 was hit
+DEFAULT
+;HALT ;Wrong softkey was hit
+ENDSWITCH
+CASE #StatMsg
+nDlgHandle= Set_KrlMsg(#State, USER_MSG, Par[], Opt)   ;Ausgabe Statusmeldung
+CASE #QuitMsg
+nDlgHandle = Set_KrlMsg(#Quit, USER_MSG, Par[], Opt)   ;Ausgabe Quittierungsmeldung
+CASE #NotifyMsg
+nDlgHandle = Set_KrlMsg(#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+CASE #WaitMsg
+nDlgHandle = Set_KrlMsg(#Waiting, USER_MSG, Par[], Opt);Ausgabe Hinweismeldung
+DEFAULT
+nDlgHandle = Set_KrlMsg(#Quit, USER_MSG, Par[], Opt)   ;Ausgabe Quittierungsmeldung
+ENDSWITCH
+RETURN(nDlgHandle)
+ENDFCT
+;ENDFOLD (GOM Meldungen)
+;
+DEF GOM_ResetSignals()
+; Source Code GOM
+END
+;ENDFOLD (GOM)
+;
+;
+;
+;FOLD GOM_SPS
+DEF gom_sps_fb(cmd:in)
+;V1 29.05.2012 Frank Sowinski, Juergen Herrmann
+
+decl gomcmd_fb cmd
+
+
+switch cmd
+case #gominit_fb
+  gom_init_fb()
+case #gomloop_fb
+  gom_loop_fb()
+endswitch
+
+END
+
+
+DEF gom_init_fb()
+  DECL INT index
+  ; if an external turntable exist
+  TT_INIT()
+  GOM_IS_MING = false
+  GOM_MOVE_AB = false
+  GOM_MOVING = false ; output signal
+  GOM_SET_OPOS = false
+  GOM_DATA0_RD = false ; output signal (sub command)
+  GOM_DATA1_RD = false ; output signal (sub command)
+  GOM_DATA2_RD = false ; output signal (sub command)
+  GOM_GETTING = false ; output signal
+  GOM_SETTING = false ; output signal
+  GOM_INIT_O = false ; output signal
+  posAxisTemp = $AXIS_ACT
+  ; atos seeks the bit order
+  GOM_BITORD1 = false
+  GOM_BITORD2 = false
+  
+  ; initializes all factors to zero
+  for index = 1 to 12
+     GOM_ACT_FACT[index] = 0
+  endfor
+  
+  ; sets count of axes to transmit to zero
+  GOM_A_TRA_O = 0
+  ; sets the endian flag to zero
+  GOM_ENDIAN = 0
+  GOM_OK = true ; output signal
+END
+
+
+DEF gom_loop_fb()
+DECL INT index
+
+  if (TEACH_ACT == FALSE) then
+     O_GOM_R_NOF = $OUT[9] and $IN[10] and $OUT[12] and not $OUT[13] and not $OUT[19] and not $OUT[20] and $IN[23]
+  endif
+
+  if ($POWER_FAIL) then
+     GOM_ERR_CODE = 1 ; ERO ROBOT IS IN AN INOPERABLE STATE, old: POWER FAIL
+     GOM_OK = false
+
+     ; initializes all factors to zero
+     for index = 1 to 12
+        GOM_ACT_FACT[index] = 0
+     endfor
+
+     ; if an external turntable exist
+     TT_RESET()
+     ; if an door exists
+     DOOR_RESET()
+     GOM_IS_MING = false
+     GOM_MOVING = false
+     GOM_SET_OPOS = false
+     GOM_MOVE_AB = false
+     GOM_DATA0_RD = false
+     GOM_DATA1_RD = false
+     GOM_DATA2_RD = false
+     GOM_GETTING = false
+     GOM_SETTING = false
+     GOM_INIT_O = false
+  endif
+
+  if (NOT $POWER_FAIL) then
+     ; all command bits are deactivated
+     if (GOM_COMMANDS == 0) then
+        GOM_OK = true
+        GOM_MOVING = false
+        GOM_DATA0_RD = false
+        GOM_DATA1_RD = false
+        GOM_DATA2_RD = false
+        GOM_GETTING = false
+        GOM_SETTING = false
+        GOM_INIT_O = false
+        ; atos seeks the bit order
+        GOM_BITORD1 = true
+        GOM_BITORD2 = true
+        ; write the count of axes per transmission to output
+        GOM_A_TRA_O = GOM_AX_TRANS
+        ; write the value 1 as byte order flag to output
+        GOM_ENDIAN = 1
+     endif
+
+     ;FOLD RESET
+     ; start of init
+     if (GOM_INIT == true) and (GOM_INIT_O == false) then
+        GOM_OK = true
+        GOM_IS_MING = false
+        GOM_MOVING = false
+        GOM_SET_OPOS = false
+        GOM_MOVE_AB = false
+        GOM_DATA0_RD = false
+        GOM_DATA1_RD = false
+        GOM_DATA2_RD = false
+        GOM_SETTING = false
+        GOM_GETTING = false
+        GOM_INIT_O = true
+
+        ; Fuer Safety Bremsentest benoetig wenn Rob nicht in Home position
+        if ($IN_HOME == true) then
+           H_SAFE_REQ = false
+        endif
+     endif
+
+     if (GOM_INIT == true) and (GOM_DATA0 == true) and (GOM_DATA0_RD == false) and (GOM_INIT_O == true) then
+        ; reads current workspace from input
+        GOM_WOSP_V = GOM_WORKSP_I
+        ; reads the atos version from input
+        GOM_V_ATOS_V = GOM_V_ATOS_I
+        ;------------------------------------------------------------
+        ; Attention: always before S_AX_COUNT and S_AX_TYPES!
+        ;------------------------------------------------------------
+        TT_INIT()
+        ; fills the temp robot values with init values
+        posAxisTemp = $AXIS_ACT
+        ; sets count of all used axes
+        S_AX_COUNT()
+        ; sets the type of each axis
+        S_AX_TYPES()
+        ; writes robot version to output
+        GOM_V_ROB_O = GOM_V_ROB
+        GOM_DATA0_RD = true
+     endif
+
+     if (GOM_INIT == true) and (GOM_DATA1 == true) and (GOM_DATA1_RD == false) and (GOM_INIT_O == true) then
+        GOM_DATA0_RD = false
+        
+        ; use the active factors for calculation
+        for index = 1 to 12
+           GOM_ACT_FACT[index] = GOM_FACTORS[index]
+        endfor
+                
+        ; first factors
+        SET_FACT_VAL(0, GOM_AX_TRANS)
+        GOM_DATA1_RD = true
+     endif
+
+     if (GOM_INIT == true) and (GOM_DATA2 == true) and (GOM_DATA2_RD == false) and (GOM_INIT_O == true) then
+        GOM_DATA1_RD = false
+        ; last factors
+        SET_FACT_VAL(GOM_AX_TRANS, GOM_AX_COUNT - GOM_AX_TRANS)
+        GOM_DATA2_RD = true
+     endif
+
+     ; end of init
+     if (GOM_INIT == false) and (GOM_INIT_O == true) then
+        GOM_OK = true
+        GOM_DATA0_RD = false
+        GOM_DATA1_RD = false
+        GOM_DATA2_RD = false
+        GOM_INIT_O = false
+     endif
+     ;ENDFOLD RESET
+
+     ;FOLD GET_POS_AXIS
+     ; start of get position
+     if (GOM_GET_POS == true) and (GOM_GETTING == false) and (GOM_SET_POS == false) and (GOM_SETTING == false) and (GOM_INIT == false) and (GOM_INIT_O == false) and (GOM_MOVING == false) then
+        GOM_OK = true
+        GOM_DATA1_RD = false
+        GOM_DATA2_RD = false
+        GOM_DATA0_RD = false
+
+        if (GOM_ACT_FACT[1] <> 0) and (GOM_ENABLED == true) then
+           GOM_GETTING = true
+        else
+           GOM_ERR_CODE = 4 ; ERO NEW INITIALIZING NECESSARY
+           GOM_OK = false        
+        endif
+     endif
+
+     if (GOM_GET_POS == true) and (GOM_GETTING == true) and (GOM_SET_POS == false) and (GOM_DATA1 == true) and (GOM_DATA1_RD == false) and (GOM_INIT == false) and (GOM_INIT_O == false) and (GOM_MOVING == false) then
+        GOM_DATA0_RD = false
+        
+        if (GOM_ENABLED == true) then
+           ; first axes, multiplies axis value with factor
+           SET_OUT_VAL(0, GOM_AX_TRANS)
+           GOM_DATA1_RD = true
+        else
+           GOM_ERR_CODE = 4 ; ERO NEW INITIALIZING NECESSARY
+           GOM_OK = false                
+        endif
+     endif
+
+     if (GOM_GET_POS == true) and (GOM_GETTING == true) and (GOM_SET_POS == false) and (GOM_DATA2 == true) and (GOM_DATA2_RD == false) and (GOM_INIT == false) and (GOM_INIT_O == false) and (GOM_MOVING == false) then
+        GOM_DATA1_RD = false
+        
+        if (GOM_ENABLED == true) then
+           ; last axes, multiplies axis value with factor
+           SET_OUT_VAL(GOM_AX_TRANS, GOM_AX_COUNT - GOM_AX_TRANS)
+           GOM_DATA2_RD = true
+        else
+           GOM_ERR_CODE = 4 ; ERO NEW INITIALIZING NECESSARY
+           GOM_OK = false                
+        endif        
+     endif
+
+     ; end of get position
+     if (GOM_GET_POS == false) and (GOM_GETTING == true) then
+        GOM_DATA0_RD = false
+        GOM_DATA1_RD = false
+        GOM_DATA2_RD = false
+        GOM_GETTING = false
+     endif
+
+     ; no get or set position is active
+     if (GOM_GET_POS == false) and (GOM_OK == false) and (GOM_SET_POS == false) then
+        GOM_GETTING = false
+        GOM_SETTING = false
+        GOM_OK = true
+     endif 
+     ;ENDFOLD GET_POS_AXIS
+
+     ;FOLD SET_POS_AXIS
+     ; start of set position
+     if (GOM_SET_POS == true) and (GOM_SETTING == false) and (GOM_GET_POS == false) and (GOM_GETTING == false) and (GOM_INIT == false) and (GOM_INIT == false) and (GOM_INIT_O == false) and (GOM_MOVING == false) and (GOM_ST_MOVE == false) and (GOM_SET_OPOS == false) and (GOM_IS_MING == false) and (TT_IS_TURING == false) and (GOM_MOVE_AB == false) then
+        GOM_OK = true
+        GOM_DATA1_RD = false
+        GOM_DATA2_RD = false
+        GOM_DATA0_RD = false
+
+        if (GOM_ACT_FACT[1] <> 0) and (GOM_ENABLED == true) then
+           GOM_SETTING = true
+        else
+           GOM_ERR_CODE =  4 ; ERO NEW INITIALIZING NECESSARY
+           GOM_OK = false        
+        endif
+     endif
+
+     if (GOM_SET_POS == true) and (GOM_SETTING == true) and (GOM_GET_POS == false) and (GOM_DATA0 == true) and (GOM_DATA0_RD == false) and (GOM_INIT == false) and (GOM_INIT_O == false) and (GOM_MOVING == false) and (GOM_ST_MOVE == false) and (GOM_SET_OPOS == false) and (GOM_IS_MING == false) and (TT_IS_TURING == false) and (GOM_MOVE_AB == false) then
+        if (GOM_ENABLED == true) then
+           ; acceleration and speed
+           if (GOM_ACCEL >= 1) and (GOM_ACCEL <= 100) and (GOM_SPEED >= 1) and (GOM_SPEED <= 100) then
+              gom_acc_fb = GOM_ACCEL
+              gom_vel_fb = GOM_SPEED
+           else
+              GOM_ERR_CODE = 7 ; ERO WRONG PARAMETERS GIVEN old: 2 ERO ACC OR VEL PARAMETERS OUT OF RANGE
+              GOM_OK = false
+           endif
+        
+           GOM_DATA0_RD = true
+        else
+           GOM_ERR_CODE =  4 ; ERO NEW INITIALIZING NECESSARY
+           GOM_OK = false        
+        endif
+     endif
+     
+     if (GOM_SET_POS == true) and (GOM_SETTING == true) and (GOM_GET_POS == false) and (GOM_DATA1 == true) and (GOM_DATA1_RD == false) and (GOM_INIT == false) and (GOM_INIT_O == false) and (GOM_MOVING == false) and (GOM_ST_MOVE == false) and (GOM_SET_OPOS == false) and (GOM_IS_MING == false) and (TT_IS_TURING == false) and (GOM_MOVE_AB == false) then
+        GOM_DATA0_RD = false
+     
+        if (GOM_ENABLED == true) then   
+           ; first axes
+           SET_TEMP_VAS(0, GOM_AX_TRANS)
+           GOM_DATA1_RD = true
+        else
+           GOM_ERR_CODE =  4 ; ERO NEW INITIALIZING NECESSARY
+           GOM_OK = false        
+        endif
+     endif
+
+     if (GOM_SET_POS == true) and (GOM_SETTING == true) and (GOM_GET_POS == false) and (GOM_DATA2 == true) and (GOM_DATA2_RD == false) and (GOM_INIT == false) and (GOM_INIT_O == false) and (GOM_MOVING == false) and (GOM_ST_MOVE == false) and (GOM_SET_OPOS == false) and (GOM_IS_MING == false) and (TT_IS_TURING == false) and (GOM_MOVE_AB == false) then
+        GOM_DATA1_RD = false
+        
+        if (GOM_ENABLED == true) then
+           ; last axes
+           SET_TEMP_VAS(GOM_AX_TRANS, GOM_AX_COUNT - GOM_AX_TRANS)
+           GOM_DATA2_RD = true
+        else
+           GOM_ERR_CODE =  4 ; ERO NEW INITIALIZING NECESSARY
+           GOM_OK = false        
+        endif
+     endif
+
+     ; end of set position
+     if (GOM_SET_POS == false) and (GOM_SETTING == true) then
+        GOM_DATA0_RD = false
+        GOM_DATA1_RD = false
+        GOM_DATA2_RD = false
+        GOM_SET_OPOS = false
+        GOM_SETTING = false
+     endif
+     ;ENDFOLD SET_POS_AXIS
+
+     ;FOLD MOVE_AXIS
+     ; start of move after set position
+     if (GOM_ST_MOVE == true) and (GOM_SET_POS == true) and (GOM_SETTING == true) and (GOM_GET_POS == false) and (GOM_INIT == false) and (GOM_INIT_O == false) and (GOM_MOVING == false) and (GOM_IS_MING == false) and (TT_IS_TURING == false) then
+        GOM_DATA0_RD = false
+        GOM_DATA1_RD = false
+        GOM_DATA2_RD = false
+
+        if (GOM_ENABLED == true) then
+           ; error code is set in function
+           if (ready_to_run()) then
+              if POS_IN_WSP(posAxisTemp) and EX_P_IN_WSP(posAxisTemp) and TT_IN_WSP() then
+                 ;-------------------------------------------------------------------------
+                 ; Attention: if needed configure value TT_ENABLED in gom_sps_fb.dat!
+				 ; Attention: if needed configure value IL_TT_ENABLE in gom_sps_fb.dat!  
+                 ;-------------------------------------------------------------------------
+                 if (TT_ENABLED == true) or (IL_TT_ENABLE == true) then ; external turntable exists
+                    ; move of robot?
+                    GOM_MOVE_ROB = move_robot_axes()
+                    ; move of turntable?
+                    MOVE_TT = MOVE_TT_AX()
+
+                    if (MOVE_TT) AND (NOT GOM_MOVE_ROB) then ; only turntable move needed
+                       if (TT_READY_RUN()) then
+                          GOM_MOVING = true
+                          GOM_MOVE_AB = false
+                          MOVE_TT_F()
+                       endif
+                    endif
+
+                    if (NOT MOVE_TT) then ; robot move or no move
+                       GOM_P_AX_FB = posAxisTemp
+                       GOM_MOVING = true
+                       ; needed by gom_prog_fb.src
+                       GOM_MOVE_AB = false
+                       GOM_IS_MING = true
+                    endif
+
+                    if (MOVE_TT) AND (GOM_MOVE_ROB) then ; move of both forbidden
+                       GOM_ERR_CODE = 103 ;ERO MOVE OF BOTH FORBIDDEN, old: 10
+                       GOM_OK = false
+                    endif
+                 else
+                    GOM_P_AX_FB = posAxisTemp
+                    GOM_MOVING = true
+                    ; needed by gom_prog_fb.src
+                    GOM_MOVE_AB = false
+                    GOM_IS_MING = true
+                 endif
+              else
+                 GOM_ERR_CODE = 8 ;ERO POSITION OUTSIDE WORKSPACE, old: 3
+                 GOM_OK = false
+              endif
+           endif
+        else
+           GOM_ERR_CODE =  4 ; ERO NEW INITIALIZING NECESSARY
+           GOM_OK = false        
+        endif        
+     endif
+
+     ; error and move abort
+     if (GOM_IS_MING == true) then
+        if (NOT ready_to_run()) then
+           GOM_IS_MING = false
+           GOM_SET_OPOS = false
+           GOM_MOVE_AB = true
+           GOM_MOVING = false
+        endif
+     endif
+
+     ; GOM_SET_OPOS set by gom_prog_fb.src
+     if (GOM_SET_OPOS == true) and (GOM_ST_MOVE == false) then
+        GOM_SET_OPOS = false
+        GOM_MOVING = false
+     endif
+
+     ; resets error and abort after move abort
+     if (GOM_SET_POS == false) and (GOM_MOVE_AB == true) then
+        GOM_MOVE_AB = false
+        GOM_OK = true
+     endif
+     ;ENDFOLD MOVE_AXIS
+
+     ; turntable handling
+     TT_LOOP()
+     ; door handling
+     DOOR_LOOP()
+  endif
+END
+
+
+DEF S_AX_COUNT()
+  ;-------------------------------------------------------------------------
+  ; Attention: if needed configure value TT_ENABLED in gom_sps_fb.dat!
+  ; Attention: if needed configure value IL_TT_ENABLE in gom_sps_fb.dat!  
+  ;-------------------------------------------------------------------------
+  if ((TT_ENABLED == true) OR (IL_TT_ENABLE == true)) then ; external turntable exists
+     GOM_AX_COUNT = 6 + $EX_AX_NUM + 1
+  else
+     ; with external axes
+     if ($EX_AX_NUM <> 0) then
+        GOM_AX_COUNT = 6 + $EX_AX_NUM
+     else
+        GOM_AX_COUNT = $NUM_AX
+     endif
+  endif
+END
+
+
+DEF S_AX_TYPES()
+  int a,b,axisindex
+  int axiscfg1,axiscfg2
+
+  ; sets the type of each axis (12 + 4 unused)
+  for axisindex = 1 to 16
+     ; starts with 1985, offset 1952
+     axiscfg1 = GOM_ADDR_OFS + 31 + 2 * axisindex
+     axiscfg2 = GOM_ADDR_OFS + 32 + 2 * axisindex
+
+        if (axisindex > 6) and (axisindex - 6 > $EX_AX_NUM) then
+           $OUT[axiscfg1] = false
+           $OUT[axiscfg2] = false
+        else
+           switch $AXIS_TYPE[axisindex]
+           case 1 ;linear B01
+              $OUT[axiscfg1] = true
+              $OUT[axiscfg2] = false
+           case 3 ; rotatorisch B10
+              $OUT[axiscfg1] = false
+              $OUT[axiscfg2] = true
+           default
+              $OUT[axiscfg1] = false
+              $OUT[axiscfg2] = false
+           endswitch
+        endif
+
+        ;-------------------------------------------------------------------------
+        ; Attention: if needed configure value TT_ENABLED in gom_sps_fb.dat!
+		; Attention: if needed configure value IL_TT_ENABLE in gom_sps_fb.dat! 
+        ;-------------------------------------------------------------------------
+        ; an external turntable exists and it is the corresponding axis number  
+        if ((TT_ENABLED == true) OR (IL_TT_ENABLE == true)) and (axisindex == SPS_TT_AXIS) then
+           $OUT[axiscfg1] = false
+           $OUT[axiscfg2] = true
+        endif	 
+  endfor
+END
+
+
+DEFFCT BOOL EX_P_IN_WSP(pos_test:IN)
+DECL E6AXIS pos_test
+
+  if ($EX_AX_NUM > 0) then
+     if (pos_test.E1 < $SOFTN_END[7]) then
+        RETURN (FALSE)
+     endif
+
+     if (pos_test.E1 > $SOFTP_END[7]) then
+        RETURN (FALSE)
+     endif
+  endif
+
+  if ($EX_AX_NUM > 1) then
+     if (pos_test.E2 < $SOFTN_END[8]) then
+        RETURN (FALSE)
+     endif
+
+     if (pos_test.E2 > $SOFTP_END[8]) then
+        RETURN (FALSE)
+     endif
+  endif
+
+  if ($EX_AX_NUM > 2) then
+     if (pos_test.E3 < $SOFTN_END[9]) then
+        RETURN (FALSE)
+     endif
+
+     if (pos_test.E3 > $SOFTP_END[9]) then
+        RETURN (FALSE)
+     endif
+  endif
+
+  if ($EX_AX_NUM > 3) then
+     if (pos_test.E4 < $SOFTN_END[10]) then
+        RETURN (FALSE)
+     endif
+
+     if (pos_test.E4 > $SOFTP_END[10]) then
+        RETURN (FALSE)
+     endif
+  endif
+
+  if ($EX_AX_NUM > 4) then
+     if (pos_test.E5 < $SOFTN_END[11]) then
+        RETURN (FALSE)
+     endif
+
+     if (pos_test.E5 > $SOFTP_END[11]) then
+        RETURN (FALSE)
+     endif
+  endif
+
+  if ($EX_AX_NUM > 5) then
+     if (pos_test.E6 < $SOFTN_END[12]) then
+        RETURN (FALSE)
+     endif
+
+     if (pos_test.E6 > $SOFTP_END[12]) then
+        RETURN (FALSE)
+     endif
+  endif
+
+  RETURN (TRUE)
+ENDFCT
+
+
+DEFFCT BOOL POS_IN_WSP(pos_test:IN)
+  DECL AXIS pos_test
+
+  if DOOR_AX_LIM(pos_test) then
+     RETURN (FALSE)
+  ENDIF
+
+  if (pos_test.A1 < $SOFTN_END[1]) then
+     RETURN (FALSE)
+  endif
+
+  if (pos_test.A2 < $SOFTN_END[2]) then
+     RETURN (FALSE)
+  endif
+
+  if (pos_test.A3 < $SOFTN_END[3]) then
+     RETURN (FALSE)
+  endif
+
+  if (pos_test.A4 < $SOFTN_END[4]) then
+     RETURN (FALSE)
+  endif
+
+  if (pos_test.A5 < $SOFTN_END[5]) then
+     RETURN (FALSE)
+  endif
+
+  if (pos_test.A6 < $SOFTN_END[6]) then
+     RETURN (FALSE)
+  endif
+
+  if (pos_test.A1 > $SOFTP_END[1]) then
+     RETURN (FALSE)
+  endif
+
+  if (pos_test.A2 > $SOFTP_END[2]) then
+     RETURN (FALSE)
+  endif
+
+  if (pos_test.A3 > $SOFTP_END[3]) then
+     RETURN (FALSE)
+  endif
+
+  if (pos_test.A4 > $SOFTP_END[4]) then
+     RETURN (FALSE)
+  endif
+
+  if (pos_test.A5 > $SOFTP_END[5]) then
+     RETURN (FALSE)
+  endif
+
+  if (pos_test.A6 > $SOFTP_END[6]) then
+     RETURN (FALSE)
+  endif
+
+  RETURN (TRUE)
+ENDFCT
+
+
+DEFFCT BOOL ready_to_run()
+  ;--------------------------------------------------------------------------
+  ; Attention: if needed configure value DOOR_ENABLED in gom_sps_fb.dat!
+  ;--------------------------------------------------------------------------
+  if WSP_VIOLAT() then
+     ; wrong workspace active
+     GOM_ERR_CODE = 104 ; ERO WRONG WORKSPACE old: 13
+     GOM_OK = false
+     RETURN (FAlSE)
+  endif
+
+  if ($ALARM_STOP <> TRUE) then
+     GOM_ERR_CODE = 6 ; emergency stop
+     GOM_OK = false
+     RETURN (FALSE)
+  endif
+  
+  if ($USER_SAF <> TRUE) then
+     GOM_ERR_CODE = 5 ; ERO SAFTYFENCE / LIGHT CURTAIN OPEN, old: 4  ERO SAFTYFENCE OPEN 
+     GOM_OK = false
+     RETURN (FALSE)
+  endif
+  
+  if ($PRO_ACT <> TRUE) then
+     GOM_ERR_CODE = 3 ; ERO PROGRAM NOT ACTIVATED old: 5
+     GOM_OK = false
+     RETURN (FALSE)
+  endif
+
+  if ($PRO_MODE <> #GO) then
+     GOM_ERR_CODE =  2 ; ERO WRONG OPERATION MODE, old: 6  ERO PROGRAMM IN SINGLESTEP MODE
+     GOM_OK = false
+     RETURN (FAlSE)
+  endif
+
+  if (GOM_AUTO == #EX) AND ($MODE_OP <> #EX) then
+     GOM_ERR_CODE = 2 ; ERO WRONG OPERATION MODE, old: 7 ERO NOT IN AUTO MODE EXTERN
+     GOM_OK = false
+     RETURN (FAlSE)
+  endif
+
+  if (GOM_AUTO == #AUTO) AND ($MODE_OP <> #AUT) then
+     GOM_ERR_CODE = 2 ; ERO WRONG OPERATION MODE, old: 8  ERO NOT IN AUTO MODE
+     GOM_OK = false
+     RETURN (FAlSE)
+  endif
+
+  ;-------------------------------------------------------------------------
+  ; Attention: if needed configure value TT_ENABLED in gom_sps_fb.dat!
+  ;-------------------------------------------------------------------------
+  if (TT_ENABLED == true) then ; external turntable exists
+     ; SPS not ready 
+     if (SPS_READY == false) then 
+        GOM_ERR_CODE = 100 ; ERO SPS NOT READY, old: 9
+        GOM_OK = false
+        RETURN (FALSE)
+     endif
+  endif
+
+  ;-------------------------------------------------------------------------
+  ; Attention: if safe operation and robot brake test needed!
+  ;-------------------------------------------------------------------------
+  ; If Safe Operation is active
+  if SAFE_OPS then
+     ; robot is in home position -> no execution of measurement series possible
+     if (($BRAKETEST_REQ_INT == true) OR ($MASTERINGTEST_REQ_INT == true)) AND ($IN_HOME == true) then
+        GOM_ERR_CODE = 120 ; ERO Robot not ready brake test needed
+        GOM_OK = false
+        RETURN (FALSE)
+     endif
+
+     ; robot is not in home position and safe request is false -> continue of measurement series execution not possible
+     if (($BRAKETEST_REQ_INT == true) OR ($MASTERINGTEST_REQ_INT == true)) AND ($IN_HOME == false) AND (H_SAFE_REQ == false) then
+        GOM_ERR_CODE = 121 ; ERO Robot not ready brake test needed, move to home position
+        GOM_OK = false
+        H_SAFE_REQ = true
+        RETURN (FALSE)
+     endif
+  endif
+  ;-------------------------------------------------------------------------
+
+  RETURN (TRUE)
+ENDFCT
+
+
+; Erfordert Sollposition eine Roboterbewegung?
+DEFFCT BOOL move_robot_axes()
+  if (abs(posAxisTemp.A1 - $AXIS_ACT.A1) > 0.1) then
+     RETURN (TRUE)
+  endif
+
+  if (abs(posAxisTemp.A2 - $AXIS_ACT.A2) > 0.1) then
+     RETURN (TRUE)
+  endif
+
+  if (abs(posAxisTemp.A3 - $AXIS_ACT.A3) > 0.1) then
+     RETURN (TRUE)
+  endif
+
+  if (abs(posAxisTemp.A4 - $AXIS_ACT.A4) > 0.1) then
+     RETURN (TRUE)
+  endif
+
+  if (abs(posAxisTemp.A5 - $AXIS_ACT.A5) > 0.1) then
+     RETURN (TRUE)
+  endif
+
+  if (abs(posAxisTemp.A6 - $AXIS_ACT.A6) > 0.1) then
+     RETURN (TRUE)
+  endif
+
+  if (abs(posAxisTemp.E1 - $AXIS_ACT.E1) > 0.1) then
+     RETURN (TRUE)
+  endif
+
+  if (abs(posAxisTemp.E2 - $AXIS_ACT.E2) > 0.1) then
+     RETURN (TRUE)
+  endif
+
+  if (abs(posAxisTemp.E3 - $AXIS_ACT.E3) > 0.1) then
+     RETURN (TRUE)
+  endif
+
+  if (abs(posAxisTemp.E4 - $AXIS_ACT.E4) > 0.1) then
+     RETURN (TRUE)
+  endif
+
+  if (abs(posAxisTemp.E5 - $AXIS_ACT.E5) > 0.1) then
+     RETURN (TRUE)
+  endif
+
+  if (abs(posAxisTemp.E6 - $AXIS_ACT.E6) > 0.1) then
+     RETURN (TRUE)
+  endif
+
+  RETURN (FALSE)
+ENDFCT
+
+
+; returns the actual axis value of the given index
+DEFFCT REAL GET_AX_VALUE(index: IN)
+DECL INT index
+
+  switch index
+     case 1
+        return $AXIS_ACT.A1
+     case 2
+        return $AXIS_ACT.A2
+     case 3
+        return $AXIS_ACT.A3
+     case 4
+        return $AXIS_ACT.A4
+     case 5
+        return $AXIS_ACT.A5
+     case 6
+        return $AXIS_ACT.A6
+     case 7
+        return $AXIS_ACT.E1
+     case 8
+        return $AXIS_ACT.E2
+     case 9
+        return $AXIS_ACT.E3
+     case 10
+        return $AXIS_ACT.E4
+     case 11
+        return $AXIS_ACT.E5
+     case 12
+        return $AXIS_ACT.E6
+  endswitch
+
+  return 0.0
+ENDFCT
+
+
+; sets the temporary axis value of the given index
+DEF SET_TEMP_VA(index: IN, value: IN)
+DECL INT index
+DECL REAL value
+
+  switch index
+     case 1
+        posAxisTemp.A1 = value
+     case 2
+        posAxisTemp.A2 = value
+     case 3
+        posAxisTemp.A3 = value
+     case 4
+        posAxisTemp.A4 = value
+     case 5
+        posAxisTemp.A5 = value
+     case 6
+        posAxisTemp.A6 = value
+     case 7
+        posAxisTemp.E1 = value
+     case 8
+        posAxisTemp.E2 = value
+     case 9
+        posAxisTemp.E3 = value
+     case 10
+        posAxisTemp.E4 = value
+     case 11
+        posAxisTemp.E5 = value
+     case 12
+        posAxisTemp.E6 = value
+  endswitch
+END
+
+
+; writes the axis value of the given index to output
+DEF SET_OUT_VA(index: IN, value: IN)
+DECL INT index
+DECL REAL value
+DECL INT int_value
+
+  int_value = value
+
+  ; axis value multiplied by factor is to large or small
+  if (int_value > 32767) OR (int_value < -32767) then
+     GOM_ERR_CODE = 9 ;ERO OVERFLOW DETECTED(USE SMALLER GOM_FACTORS), old: 14 ERO VALUE TO LARGE OR SMALL
+     GOM_OK = false
+     return
+  endif
+
+  ; makes it positive
+  if (int_value < 0) then
+     int_value = int_value + 'H10000'
+  endif
+
+  switch index
+     case 1
+        GOM_OUT01 = int_value
+     case 2
+        GOM_OUT02 = int_value
+     case 3
+        GOM_OUT03 = int_value
+     case 4
+        GOM_OUT04 = int_value
+     case 5
+        GOM_OUT05 = int_value
+     case 6
+        GOM_OUT06 = int_value
+     case 7
+        GOM_OUT07 = int_value
+     case 8
+        GOM_OUT08 = int_value
+     case 9
+        GOM_OUT09 = int_value
+     case 10
+        GOM_OUT10 = int_value
+     case 11
+        GOM_OUT11 = int_value
+     case 12
+        GOM_OUT12 = int_value
+  endswitch
+END
+
+
+; writes the factor values to output
+DEF SET_FACT_VAL(offset: IN, index_end: IN)
+  DECL INT index
+  DECL INT index_end
+  DECL INT offset
+
+  for index = 1 to index_end
+     SET_OUT_VA(index, GOM_ACT_FACT[index + offset])
+  endfor
+END
+
+
+; writes the axis values to output                     .  
+DEF SET_OUT_VAL(offset: IN, index_end: IN)
+  DECL INT index
+  DECL INT index_end
+  DECL INT offset
+
+  for index = 1 to index_end
+     ;-------------------------------------------------------------------------
+     ; Attention: if needed configure value TT_ENABLED in gom_sps_fb.dat!
+	 ; Attention: if needed configure value IL_TT_ENABLE in gom_sps_fb.dat ?
+     ;-------------------------------------------------------------------------
+     ; external turntable exists and it is the corresponding axis number
+     if ((TT_ENABLED == true) or (IL_TT_ENABLE == true)) and (index + offset == SPS_TT_AXIS) then
+        SET_OUT_VA(index, TT_OUT_POS()) ; sets external turntable position to output
+     else
+        SET_OUT_VA(index, (GET_AX_VALUE(index + offset) * GOM_ACT_FACT[index + offset]))
+     endif
+  endfor
+END
+
+
+; sets the temporary values
+DEF SET_TEMP_VAS(offset: IN, index_end: IN)
+  DECL INT index
+  DECL INT index_end
+  DECL INT offset
+  DECL REAL real_value
+
+  for index = 1 to index_end
+     ; gets the input as real value diveded by factor
+     real_value = GET_INPUT_VA(index, offset)
+
+     ;-------------------------------------------------------------------------
+     ; Attention: if needed configure value TT_ENABLED in gom_sps_fb.dat!
+	 ; Attention: if needed configure value IL_TT_ENABLE in gom_sps_fb.dat! 
+     ;-------------------------------------------------------------------------
+     ; external turntable exists and it is the corresponding axis number
+     if ((TT_ENABLED == true) or (IL_TT_ENABLE == true)) and (index + offset == SPS_TT_AXIS) then
+        TT_IN_POS(index + offset) ; sets external turntable position from Input
+     else
+       SET_TEMP_VA(index + offset, real_value)
+     endif
+  endfor
+END
+
+
+; mirrors and returns the calculated input value of the given index
+DEFFCT REAL GET_INPUT_VA(index: IN, offset: IN)
+DECL INT index
+DECL INT offset
+DECL INT output_value
+DECL REAL input_value
+
+  input_value = 0.0
+
+  switch index
+     case 1
+        CALC_VALUES(GOM_IN01, index + offset, input_value, output_value)
+        GOM_OUT01 = output_value
+     case 2
+        CALC_VALUES(GOM_IN02, index + offset, input_value, output_value)
+        GOM_OUT02 = output_value
+     case 3
+        CALC_VALUES(GOM_IN03, index + offset, input_value, output_value)
+        GOM_OUT03 = output_value
+     case 4
+        CALC_VALUES(GOM_IN04, index + offset, input_value, output_value)
+        GOM_OUT04 = output_value
+     case 5
+        CALC_VALUES(GOM_IN05, index + offset, input_value, output_value)
+        GOM_OUT05 = output_value
+     case 6
+        CALC_VALUES(GOM_IN06, index + offset, input_value, output_value)
+        GOM_OUT06 = output_value
+     case 7
+        CALC_VALUES(GOM_IN07, index + offset, input_value, output_value)
+        GOM_OUT07 = output_value
+     case 8
+        CALC_VALUES(GOM_IN08, index + offset, input_value, output_value)
+        GOM_OUT08 = output_value
+     case 9
+        CALC_VALUES(GOM_IN09, index + offset, input_value, output_value)
+        GOM_OUT09 = output_value
+     case 10
+        CALC_VALUES(GOM_IN10, index + offset, input_value, output_value)
+        GOM_OUT10 = output_value
+     case 11
+        CALC_VALUES(GOM_IN11, index + offset, input_value, output_value)
+        GOM_OUT11 = output_value
+     case 12
+        CALC_VALUES(GOM_IN12, index + offset, input_value, output_value)
+        GOM_OUT12 = output_value
+  endswitch
+
+  return input_value
+ENDFCT
+
+
+; calculates the input value and mirrored value
+DEF CALC_VALUES(value: IN, index: IN, input_value: OUT, output_value: OUT)
+DECL INT value
+DECL INT index
+DECL INT output_value
+DECL REAL input_value
+
+  ; negative 16 bit -> negative 32 bit
+  if ((value B_AND 'H8000') == 'H8000') then
+     value = value B_OR 'HFFFF0000'
+  endif
+
+  input_value = value
+  input_value = input_value / GOM_ACT_FACT[index]
+  output_value = input_value
+
+  ; negative 32 bit -> negative 16 bit
+  if (output_value < 0) then
+     output_value = output_value + 'H10000'
+  endif
+END
+;ENDFOLD GOM_SPS
+
+
+
+;FOLD VW_TURNTABLE_TEST_FUNCTIONALITY_PROTOTYPE
+;----------------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------------
+; Attention: if an external turntable exist, set TT_ENABLED=TRUE or IL_TT_ENABLE=True in gom_sps_fb.dat!
+; Attention: all turntable parameters are in gom_sps_fb.dat
+; Attention: all turntable signals are in gom_sps_fb.dat / gom_prog_fb.dat
+;----------------------------------------------------------------------------------------
+
+; initializes the external turntable values  
+DEF TT_INIT()
+  ; no external turntable
+  if (TT_ENABLED == false) and (IL_TT_ENABLE == false) then
+     TT_IS_TURING = false
+     ; axis number not valid
+     SPS_TT_AXIS = -1
+  else
+     ; no turntable move
+     TT_IS_TURING = false
+     ; external turntable is the first free external axis
+     SPS_TT_AXIS = 6 + $EX_AX_NUM + 1
+     ; we always have 1 decimal place for external turn tables!
+     GOM_ACT_FACT[SPS_TT_AXIS] = 10
+		if (TT_ENABLED == true) then
+			; sets temp value to current position
+			SPS_TT_TEMP = convert_val(TT_POS_ACT)	
+     endif
+      if (IL_TT_ENABLE == true) then
+			SPS_TT_TEMP = R_G_INL_TT_V
+		endif
+	endif
+END
+
+
+; resets the external turntable
+DEF TT_RESET()
+  ; external turntable exists
+  if (TT_ENABLED == true) or (IL_TT_ENABLE == true) then
+     ; no turntable move
+     TT_IS_TURING = false
+  endif
+END
+
+
+; writes turntable position to ATOS 
+DEFFCT INT TT_OUT_POS()
+DECL INT index
+decl int ret
+
+  if (TT_ENABLED == true) then
+    ; required position not reached
+    if (NOT (TT_IN_REQ and (TT_POS_ACT == TT_POS_REQ))) then
+      GOM_ERR_CODE = 101 ; ERO SPS CONTROLLED TURNTABLE NOT IN REQUIRED POSITION, old: 11
+      GOM_OK = false
+    endif
+  
+    RETURN convert_val(TT_POS_ACT)
+  else
+      ret = GET_IL_TT_VA()
+		
+      if ret == -1 THEN
+        GOM_ERR_CODE = 101 ; ERO SPS CONTROLLED TURNTABLE NOT IN REQUIRED POSITION, old: 11
+        GOM_OK = false
+      endif
+		
+      RETURN ret
+  endif
+ENDFCT
+
+
+; reads turntable position from ATOS
+DEF TT_IN_POS(index: IN)
+  DECL INT index
+
+  ; copies value in test buffer
+  switch index ; external axis
+  case 7
+     if (GOM_IN07 > TT_MAX_UE) then
+        GOM_ERR_CODE = 9 ; OVERFLOW DETECTED (SMALLER FACTORS), old: 4  ERO VALUE TO LARGE OR SMALL
+     endif
+
+     GOM_OUT07 = GOM_IN07 / GOM_ACT_FACT[index]
+     SPS_TT_TEMP = GOM_IN07
+  case 8
+     if (GOM_IN08 > TT_MAX_UE) then
+        GOM_ERR_CODE = 9
+     endif
+
+     GOM_OUT08 = GOM_IN08 / GOM_ACT_FACT[index]
+     SPS_TT_TEMP = GOM_IN08
+  case 9
+     if (GOM_IN09 > TT_MAX_UE) then
+        GOM_ERR_CODE = 9
+     endif
+
+     GOM_OUT09 = GOM_IN09 / GOM_ACT_FACT[index]
+     SPS_TT_TEMP = GOM_IN09
+  case 10
+     if (GOM_IN10 > TT_MAX_UE) then
+        GOM_ERR_CODE = 9
+     endif
+
+     GOM_OUT10 = GOM_IN10 / GOM_ACT_FACT[index]
+     SPS_TT_TEMP = GOM_IN10
+  case 11
+     if (GOM_IN11 > TT_MAX_UE) then
+        GOM_ERR_CODE = 9
+     endif
+
+     GOM_OUT11 = GOM_IN11 / GOM_ACT_FACT[index]
+
+     SPS_TT_TEMP = GOM_IN11
+  case 12
+     if (GOM_IN12 > TT_MAX_UE) then
+        GOM_ERR_CODE = 9
+     endif
+
+     GOM_OUT12 = GOM_IN12 / GOM_ACT_FACT[index]
+     SPS_TT_TEMP = GOM_IN12
+  endswitch
+END
+
+
+; Erfordert Sollposition eine Drehtischbewegung?
+DEFFCT BOOL MOVE_TT_AX()
+  ; no external turntable
+  if (TT_ENABLED == false) AND (IL_TT_ENABLE == False) then
+     RETURN (FALSE)
+  endif
+
+  ; required position is different from current position
+  if (TT_ENABLED == true) and (SPS_TT_TEMP <> convert_val(TT_POS_ACT)) then 
+     RETURN (TRUE)
+  endif
+    if (IL_TT_ENABLE) THEN 
+		if (SPS_TT_TEMP <> R_G_INL_TT_V) then 
+			RETURN (TRUE)
+		endif
+  endif
+  
+  RETURN (FALSE)
+ENDFCT
+
+
+; Ist Sollposition im Drehtischarbeitsraum? 
+DEFFCT BOOL TT_IN_WSP()
+  ; no external turntable
+  if (TT_ENABLED == false) AND (IL_TT_ENABLE == False) then
+     RETURN (TRUE)
+  endif
+
+  ; wrong axis value set
+  if (SPS_TT_TEMP < TT_MIN_UE) OR (SPS_TT_TEMP > TT_MAX_UE) then
+     RETURN (FALSE)
+  endif
+
+  RETURN (TRUE)
+ENDFCT
+
+
+; Drehtischbewegung fuer Vordergrundprogramm starten ! 
+DEF MOVE_TT_F()
+  ; no external turntable
+  if (TT_ENABLED == false) AND (IL_TT_ENABLE == False) then
+    RETURN
+  endif
+
+  ; transfers the required position from buffer to SPS
+  if (TT_ENABLED == true) then 
+			 if (TT_ENABLED == TRUE ) and (IN_FR_TT_P == IN_FR_TT_P_H ) Then
+				TT_POS_REQ = convert_val(SPS_TT_TEMP)
+				; starts turntable move
+				TT_IS_TURING = true
+			endif
+         if (TT_ENABLED == TRUE ) and (NOT(IN_FR_TT_P == IN_FR_TT_P_H )) Then
+				GOM_ERR_CODE = 111   ;ERO ROT NOT IN POSITION, old: 11
+				GOM_OK = false
+         ;   RETURN (FALSE)
+			endif
+  endif
+  if (IL_TT_ENABLE == true) then 
+     SET_IL_TT_VA() 
+     ; starts turntable move
+     TT_IS_TURING = true
+  endif
+END
+
+
+; handling of the external turntable at end of sps loop .
+DEF TT_LOOP()
+  ; no external turntable
+  if (TT_ENABLED == false) AND (IL_TT_ENABLE == False) then
+     RETURN
+  endif
+
+  ; robot is not in a safe position
+  if (teach_act) and (NOT ROB_OUTS_TT()) then
+     ; Profilfrei reset
+     ROB_TT_PF = false
+  endif
+
+  ; required position reached  
+  if (TT_ENABLED) and (TT_IN_REQ and (TT_POS_ACT == TT_POS_REQ)) then
+     ; Profilfrei reset
+     ROB_TT_PF = false
+  endif
+    if (IL_TT_ENABLE)  THEN
+		if (TEACH_ACT) and (TT_INL_IN_RQ and (R_G_INL_TT_V == R_S_INL_TT_V) and (R_G_INL_TT_V == SPS_TT_TEMP)) then
+			; Profilfrei reset
+			ROB_TT_PF = false
+			INL_S_TT_POS=0
+		endif  
+  endif
+
+  ; Profilfrei Drehtisch erneut geben, wenn Drehtisch nicht in Position aber Roboter ausserhalb des Gefahrenbereichs
+  ; Wiederanlauf Drehtisch nach SPS.SUB Neustart  
+  if (TT_ENABLED) and (ROB_OUTS_TT() and (NOT (TT_IN_REQ and (TT_POS_ACT == TT_POS_REQ)))) then
+     ; Profilfrei set
+     ROB_TT_PF = true
+  endif
+  if (IL_TT_ENABLE) THEN
+ 
+  if ((TEACH_ACT) and (ROB_OUTS_TT() and (NOT (TT_INL_IN_RQ and (R_G_INL_TT_V == R_S_INL_TT_V))))) then
+     ; Profilfrei set
+     ROB_TT_PF = true
+  endif
+  endif
+  
+  ; Fehler und Abbruch bei nicht erfolgreicher Drehtischbewegung
+  if (TT_IS_TURING == true) then
+     if (NOT ready_to_run()) then
+        TT_IS_TURING = false
+        GOM_SET_OPOS = false
+        GOM_MOVE_AB = true
+        GOM_MOVING = false
+     endif
+    if (TT_ENABLED == TRUE ) and (NOT(IN_FR_TT_P == IN_FR_TT_P_H )) Then
+		 TT_IS_TURING = false
+        GOM_SET_OPOS = false
+        GOM_MOVE_AB = true
+        GOM_MOVING = false
+	endif	
+  endif
+END
+
+
+; Drehtisch Bewegung kann gestartet werden .
+DEFFCT BOOL TT_READY_RUN()
+  ; no sps controlled VW turntable
+  if (TT_ENABLED == false) AND (IL_TT_ENABLE == False) then
+     RETURN (TRUE)
+  endif
+
+  ; required position not reached  --
+  if (TT_ENABLED) and (NOT (TT_IN_REQ and (TT_POS_ACT == TT_POS_REQ))) then
+     GOM_ERR_CODE = 101   ;ERO ROT NOT IN POSITION, old: 11
+     GOM_OK = false
+     RETURN (FALSE)
+  endif
+  if (IL_TT_ENABLE)  THEN
+		if ((TT_INL_IN_RQ==TRUE) and (NOT(R_G_INL_TT_V == R_S_INL_TT_V))) or ((TT_INL_IN_RQ==FALSE) and (R_G_INL_TT_V == R_S_INL_TT_V)) THEN
+			GOM_ERR_CODE = 101   ;ERO ROT NOT IN POSITION, old: 11
+			GOM_OK = false
+			RETURN (FALSE)
+		endif
+	endif
+  
+  ; robot is not in a safe position
+  if (NOT ROB_OUTS_TT()) then
+     GOM_ERR_CODE = 102 ; ERO NO ROT CLEARANCE, old: 12
+     GOM_OK = false
+     RETURN (FALSE)
+  endif
+
+  RETURN (TRUE)
+ENDFCT
+
+
+; converts the position of the external turntable .
+DEFFCT INT convert_val(value: IN)
+  DECL INT value ; here only 16 bits used
+
+  ; value has one decimal place
+  ; swaps the low with the high byte
+  value = ((value B_AND 65280) / 256) + ((value B_AND 255) * 256)
+
+  RETURN (value)
+ENDFCT
+
+
+; is robot in a safe position?
+; if axis value is in an safe position -> return TRUE
+DEFFCT BOOL ROB_OUTS_TT()
+  ; safe or unsafe position?
+  if ($AXIS_ACT.A1 > ROB_A_TT_MIN) and ($AXIS_ACT.A1 < ROB_A_TT_MAX) then
+     ; returns the bool value from dat file
+     RETURN (ROB_PF_TT)
+  else
+     ; returns the negated bool value from dat file
+     RETURN (NOT ROB_PF_TT)
+  endif
+
+  RETURN (TRUE)
+ENDFCT
+
+
+DEFFCT int GET_IL_TT_VA()
+  SWITCH INL_TT_POS
+    CASE 1 ; BIT 201 ON --> POS 16
+      R_G_INL_TT_V=INL_TT_V_16
+    CASE 2 ; BIT 202 ON --> POS 15
+      R_G_INL_TT_V=INL_TT_V_15
+    CASE 4 ; BIT 203 ON --> POS 14
+      R_G_INL_TT_V=INL_TT_V_14
+    CASE 8 ; BIT 204 ON --> POS 13
+      R_G_INL_TT_V=INL_TT_V_13
+    CASE 16 ; BIT 205 ON --> POS 12
+      R_G_INL_TT_V=INL_TT_V_12
+    CASE 32 ; BIT 206 ON --> POS 11
+      R_G_INL_TT_V=INL_TT_V_11
+    CASE 64 ; BIT 207 ON --> POS 10
+      R_G_INL_TT_V=INL_TT_V_10
+    CASE 128 ; BIT 208 ON --> POS 9
+      R_G_INL_TT_V=INL_TT_V_9
+    CASE 256 ; BIT 209 ON --> POS 8
+      R_G_INL_TT_V=INL_TT_V_8
+    CASE 512 ; BIT 210 ON --> POS 7
+      R_G_INL_TT_V=INL_TT_V_7
+    CASE 1024 ; BIT 211 ON --> POS 6
+      R_G_INL_TT_V=INL_TT_V_6
+    CASE 2048 ; BIT 212 ON --> POS 5
+      R_G_INL_TT_V=INL_TT_V_5
+    CASE 4096 ; BIT 213 ON --> POS 4
+      R_G_INL_TT_V=INL_TT_V_4
+    CASE 8192 ; BIT 214 ON --> POS 3
+      R_G_INL_TT_V=INL_TT_V_3
+    CASE 16384 ; BIT 215 ON --> POS 2
+      R_G_INL_TT_V=INL_TT_V_2
+    CASE 32768 ; BIT 216 ON --> POS 1
+      R_G_INL_TT_V=INL_TT_V_1
+    DEFAULT
+      R_G_INL_TT_V = -1
+  ENDSWITCH
+	
+  RETURN R_G_INL_TT_V
+ENDFCT
+
+
+DEF SET_IL_TT_VA()
+DECL INT old_value
+
+IF (IL_TT_ENABLE == TRUE ) and (TEACH_ACT) THEN
+   ; alten Wert merken
+   old_value = R_S_INL_TT_V
+   R_S_INL_TT_V = SPS_TT_TEMP
+   
+   SWITCH R_S_INL_TT_V
+      CASE INL_TT_V_16
+	     INL_S_TT_POS=1
+      CASE INL_TT_V_15
+	     INL_S_TT_POS=2
+      CASE INL_TT_V_14
+	     INL_S_TT_POS=4
+      CASE INL_TT_V_13
+	     INL_S_TT_POS=8
+      CASE INL_TT_V_12
+	     INL_S_TT_POS=16
+      CASE INL_TT_V_11
+	     INL_S_TT_POS=32
+      CASE INL_TT_V_10
+	     INL_S_TT_POS=64
+      CASE INL_TT_V_9
+	     INL_S_TT_POS=128
+      CASE INL_TT_V_8
+	     INL_S_TT_POS=256
+      CASE INL_TT_V_7
+	     INL_S_TT_POS=512
+      CASE INL_TT_V_6
+	     INL_S_TT_POS=1024
+      CASE INL_TT_V_5
+	     INL_S_TT_POS=2048
+      CASE INL_TT_V_4
+	     INL_S_TT_POS=4096
+      CASE INL_TT_V_3
+	     INL_S_TT_POS=8192
+      CASE INL_TT_V_2
+	     INL_S_TT_POS=16384
+      CASE INL_TT_V_1
+	     INL_S_TT_POS=32768
+      DEFAULT
+	     R_S_INL_TT_V = old_value
+	     GOM_ERR_CODE = 101
+		 GOM_OK = FALSE
+   ENDSWITCH
+ENDIF
+END
+;----------------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------------
+;ENDFOLD VW_TURNTABLE_TEST_FUNCTIONALITY_PROTOTYPE
+
+
+
+;FOLD VW_DOOR_TEST_FUNCTIONALITY_PROTOTYPE
+;----------------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------------
+; Attention: if a door exists, set DOOR_ENABLED=TRUE in gom_sps_fb.dat!
+; Attention: all door parameters and signals are in gom_sps_fb.dat
+;----------------------------------------------------------------------------------------
+
+; handling of the door at end of sps loop
+; if axis A1 position is safe -> PF_DOOR is TRUE
+DEF DOOR_LOOP()
+
+  ; no door exists or not teach mode
+  if (NOT DOOR_ENABLED) or (NOT TEACH_ACT) then
+     RETURN
+  endif
+
+  ; A1 position safe or not safe (inside of door)?
+  if ($AXIS_ACT.A1 > ROB_PF_D_MIN) and ($AXIS_ACT.A1 < ROB_PF_D_MAX) then
+     ; Profilfrei door, sets the bool value from dat file
+     PF_DOOR = PF_ROB_IN_D
+  else
+     ; Profilfrei door, sets the negated bool value from dat file
+     PF_DOOR = (NOT PF_ROB_IN_D)
+  endif
+
+  ; defined workspace: the door must always be closed
+  if ((PF_DOOR == true) and (GOM_WOSP_V == VW_WS)) then
+     OPEN_DOOR_O = false
+
+     if (DOOR_CLOSED) then
+        CLOSE_DOOR_O = false
+     else
+        CLOSE_DOOR_O = true
+     endif
+  endif
+
+  ; all other workspaces: door must always be open 
+  if (GOM_WOSP_V <> VW_WS) then
+     CLOSE_DOOR_O = false
+
+     if (DOOR_OPEN) then
+        OPEN_DOOR_O = false
+     else
+        OPEN_DOOR_O = true
+     endif
+  endif
+END
+
+
+; resets Profilfrei 
+DEF DOOR_RESET()
+  ; no door exists
+  if (NOT DOOR_ENABLED) then
+     RETURN
+  endif
+
+  ; Profilfrei reset
+  PF_DOOR = false
+END
+
+
+; Darf der aktuelle Workspace freigeschaltet werden?
+DEFFCT BOOL WSP_VIOLAT()
+  ; no door exists
+  if (NOT DOOR_ENABLED) then
+     RETURN (FALSE)
+  endif
+
+  ; Definierter Workspace ist ohne Drehtischbereich, die Tuer ist also uninteressant
+  if (GOM_WOSP_V == VW_WS) then 
+     RETURN (FALSE)
+  endif
+
+  ; is the door closed?
+  if ((NOT DOOR_OPEN) or DOOR_CLOSED) then
+     RETURN (TRUE)
+  endif
+
+  RETURN (FALSE)
+ENDFCT
+
+
+; Ueberpruefung eingeschraenkter Arbeitsbereich bei geschlossener Tuer
+; If axis value is allowed -> return FALSE
+DEFFCT BOOL DOOR_AX_LIM(pos_test:IN)
+DECL E6AXIS pos_test
+
+  ; no door exists
+  if (NOT DOOR_ENABLED) then
+     RETURN (FALSE)
+  endif
+
+  ; is the door open?
+  if (DOOR_OPEN and (NOT DOOR_CLOSED)) then ; Tuer offen -> kein Problem
+     RETURN (FALSE)
+  endif
+
+  ; Tuer geschlossen und Sollposition der Achse 1 (A1) > min. Limit und < max. Limit 
+  if (pos_test.A1 > D_AX_LIM_MIN) and (pos_test.A1 < D_AX_LIM_MAX) then
+     ; returns the bool value from dat file
+     RETURN (PF_D_AX_LIM)
+  else
+     ; returns the negated bool value from dat file
+     RETURN (NOT PF_D_AX_LIM)     
+  endif
+
+RETURN (FALSE)
+ENDFCT
+;----------------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------------
+;ENDFOLD VW_DOOR_TEST_FUNCTIONALITY_PROTOTYPE

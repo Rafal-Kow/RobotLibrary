@@ -1,0 +1,8 @@
+&ACCESS RV
+&REL 57
+&PARAM TPVW_VERSION = 8.3.18
+&PARAM SUPPRESS = UnusedFunctionParameter AssignmentLoosesPrecision Unu
+&PARAM DISKPATH = System
+DEFDAT  SELECT
+INT T_NR=0
+ENDDAT

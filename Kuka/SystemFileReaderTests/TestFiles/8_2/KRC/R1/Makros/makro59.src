@@ -1,0 +1,182 @@
+&ACCESS RV1
+&REL 2
+&COMMENT PNet_Alternatieven
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrovorgabe.src
+&PARAM EDITMASK = Makro999[0-999]
+&PARAM TPVW_VERSION = 8.1.8
+DEFFCT INT MAKRO59(ADV :IN)
+   ;FOLD Makro Anfang ;%{PSE}%MKUKATPVW
+      BOOL ADV
+      ; interface to basic routines
+      EXT  BAS (BAS_COMMAND  :IN,REAL  :IN )
+      ; interface to VW-standard routines
+      EXT VW (VW_COMMAND:IN, BOOL: IN, REAL:IN, REAL:IN, REAL:IN, REAL:IN, BOOL :IN, E6POS :IN )
+      ; interface select routine
+      EXTFCT INT  SELECT (SUBTYPE  :IN,INT  :IN,BOOL  :IN,ARI_TYP  :IN,INT  :IN,BOOL_TYP  :IN,INT  :IN,BOOL  :IN)
+      SPS_N=-1
+      ;FOLD ;%{H} %MKUKATPVW
+      IF VARSTATE ("ADV") <> #INITIALIZED THEN
+         ADV=FALSE
+      ENDIF
+      IF (NOT ADV) THEN
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- DB1 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- DB1 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD GOTO Label 1 = F512 ;%{E}%MKUKATPVW,%CCONTROL,%VJUMP,%P 1:GOTO Label, 2:1, 3:=, 4:6, 5:512
+      ;FOLD  ;%{H}
+         CONTINUE
+         IF $FLAG[512] THEN
+            CONTINUE
+            GOTO Label1
+         ENDIF
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KUKA PN-Docken ID-Nr=122 Zuschalten EIN ;%{E}%MKUKATPVW %CVW_SPS %VUSER %P 2:KUKA.PN-Docken P1= 122 P2= 50 P3= 0 P4= 0 P5= 0 P6= 0 P7=EIN P8=102, 3: USER
+      VW_USR_R (#USR_MAKRO,102,122,50,0,0,0,0,TRUE)
+   ;ENDFOLD
+   ;FOLD Label 1 ;%{E}%MKUKATPVW,%CCONTROL,%VLABEL,%P 1:Label, 2:Label 1
+      ;FOLD  ;%{H}
+         Label1:
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- DB2 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- DB2 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD GOTO Label 2 = F513 ;%{E}%MKUKATPVW,%CCONTROL,%VJUMP,%P 1:GOTO Label, 2:2, 3:=, 4:6, 5:513
+      ;FOLD  ;%{H}
+         CONTINUE
+         IF $FLAG[513] THEN
+            CONTINUE
+            GOTO Label2
+         ENDIF
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KUKA PN-Docken ID-Nr=122 Zuschalten EIN ;%{E}%MKUKATPVW %CVW_SPS %VUSER %P 2:KUKA.PN-Docken P1= 122 P2= 50 P3= 0 P4= 0 P5= 0 P6= 0 P7=EIN P8=102, 3: USER
+      VW_USR_R (#USR_MAKRO,102,122,50,0,0,0,0,TRUE)
+   ;ENDFOLD
+   ;FOLD Label 2 ;%{E}%MKUKATPVW,%CCONTROL,%VLABEL,%P 1:Label, 2:Label 2
+      ;FOLD  ;%{H}
+         Label2:
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- DB3 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- DB3 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD GOTO Label 3 = F514 ;%{E}%MKUKATPVW,%CCONTROL,%VJUMP,%P 1:GOTO Label, 2:3, 3:=, 4:6, 5:514
+      ;FOLD  ;%{H}
+         CONTINUE
+         IF $FLAG[514] THEN
+            CONTINUE
+            GOTO Label3
+         ENDIF
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KUKA PN-Docken ID-Nr=999 Zuschalten EIN ;%{E}%MKUKATPVW %CVW_SPS %VUSER %P 2:KUKA.PN-Docken P1= 999 P2= 50 P3= 1 P4= 1 P5= 1 P6= 1 P7=EIN P8=102, 3: USER
+      VW_USR_R (#USR_MAKRO,102,999,50,1,1,1,1,TRUE)
+   ;ENDFOLD
+   ;FOLD Label 3 ;%{E}%MKUKATPVW,%CCONTROL,%VLABEL,%P 1:Label, 2:Label 3
+      ;FOLD  ;%{H}
+         Label3:
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- DB4 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- DB4 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD GOTO Label 4 = F515 ;%{E}%MKUKATPVW,%CCONTROL,%VJUMP,%P 1:GOTO Label, 2:4, 3:=, 4:6, 5:515
+      ;FOLD  ;%{H}
+         CONTINUE
+         IF $FLAG[515] THEN
+            CONTINUE
+            GOTO Label4
+         ENDIF
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KUKA PN-Docken ID-Nr=999 Zuschalten EIN ;%{E}%MKUKATPVW %CVW_SPS %VUSER %P 2:KUKA.PN-Docken P1= 999 P2= 50 P3= 1 P4= 1 P5= 1 P6= 1 P7=EIN P8=102, 3: USER
+      VW_USR_R (#USR_MAKRO,102,999,50,1,1,1,1,TRUE)
+   ;ENDFOLD
+   ;FOLD Label 4 ;%{E}%MKUKATPVW,%CCONTROL,%VLABEL,%P 1:Label, 2:Label 4
+      ;FOLD  ;%{H}
+         Label4:
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- DB5 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- DB5 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD GOTO Label 5 = F516 ;%{E}%MKUKATPVW,%CCONTROL,%VJUMP,%P 1:GOTO Label, 2:5, 3:=, 4:6, 5:516
+      ;FOLD  ;%{H}
+         CONTINUE
+         IF $FLAG[516] THEN
+            CONTINUE
+            GOTO Label5
+         ENDIF
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KUKA PN-Docken ID-Nr=999 Zuschalten EIN ;%{E}%MKUKATPVW %CVW_SPS %VUSER %P 2:KUKA.PN-Docken P1= 999 P2= 50 P3= 1 P4= 1 P5= 1 P6= 1 P7=EIN P8=102, 3: USER
+      VW_USR_R (#USR_MAKRO,102,999,50,1,1,1,1,TRUE)
+   ;ENDFOLD
+   ;FOLD Label 5 ;%{E}%MKUKATPVW,%CCONTROL,%VLABEL,%P 1:Label, 2:Label 5
+      ;FOLD  ;%{H}
+         Label5:
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- DB6 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- DB6 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD GOTO Label 6 = F517 ;%{E}%MKUKATPVW,%CCONTROL,%VJUMP,%P 1:GOTO Label, 2:6, 3:=, 4:6, 5:517
+      ;FOLD  ;%{H}
+         CONTINUE
+         IF $FLAG[517] THEN
+            CONTINUE
+            GOTO Label6
+         ENDIF
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KUKA PN-Docken ID-Nr=999 Zuschalten EIN ;%{E}%MKUKATPVW %CVW_SPS %VUSER %P 2:KUKA.PN-Docken P1= 999 P2= 50 P3= 1 P4= 1 P5= 1 P6= 1 P7=EIN P8=102, 3: USER
+      VW_USR_R (#USR_MAKRO,102,999,50,1,1,1,1,TRUE)
+   ;ENDFOLD
+   ;FOLD Label 6 ;%{E}%MKUKATPVW,%CCONTROL,%VLABEL,%P 1:Label, 2:Label 6
+      ;FOLD  ;%{H}
+         Label6:
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- DB7 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- DB7 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD GOTO Label 7 = F518 ;%{E}%MKUKATPVW,%CCONTROL,%VJUMP,%P 1:GOTO Label, 2:7, 3:=, 4:6, 5:518
+      ;FOLD  ;%{H}
+         CONTINUE
+         IF $FLAG[518] THEN
+            CONTINUE
+            GOTO Label7
+         ENDIF
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KUKA PN-Docken ID-Nr=999 Zuschalten EIN ;%{E}%MKUKATPVW %CVW_SPS %VUSER %P 2:KUKA.PN-Docken P1= 999 P2= 50 P3= 1 P4= 1 P5= 1 P6= 1 P7=EIN P8=102, 3: USER
+      VW_USR_R (#USR_MAKRO,102,999,50,1,1,1,1,TRUE)
+   ;ENDFOLD
+   ;FOLD Label 7 ;%{E}%MKUKATPVW,%CCONTROL,%VLABEL,%P 1:Label, 2:Label 7
+      ;FOLD  ;%{H}
+         Label7:
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- DB8 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- DB8 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD GOTO Label 8 = F519 ;%{E}%MKUKATPVW,%CCONTROL,%VJUMP,%P 1:GOTO Label, 2:8, 3:=, 4:6, 5:519
+      ;FOLD  ;%{H}
+         CONTINUE
+         IF $FLAG[519] THEN
+            CONTINUE
+            GOTO Label8
+         ENDIF
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KUKA PN-Docken ID-Nr=999 Zuschalten EIN ;%{E}%MKUKATPVW %CVW_SPS %VUSER %P 2:KUKA.PN-Docken P1= 999 P2= 50 P3= 1 P4= 1 P5= 1 P6= 1 P7=EIN P8=102, 3: USER
+      VW_USR_R (#USR_MAKRO,102,999,50,1,1,1,1,TRUE)
+   ;ENDFOLD
+   ;FOLD Label 8 ;%{E}%MKUKATPVW,%CCONTROL,%VLABEL,%P 1:Label, 2:Label 8
+      ;FOLD  ;%{H}
+         Label8:
+      ;ENDFOLD
+   ;ENDFOLD
+   ; FOLD ;%{H}
+   RETURN 1
+   ELSE
+   RETURN 0
+   ENDIF
+ENDFCT
+; ENDFOLD

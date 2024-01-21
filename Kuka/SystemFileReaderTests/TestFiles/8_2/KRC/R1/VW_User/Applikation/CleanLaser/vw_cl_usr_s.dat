@@ -1,0 +1,87 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/CleanLaser
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_cl_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket CleanLaser                          *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.17 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD USER_Version
+STRUC _Tech_CleanLaser CHAR Name[20],INT Datum
+DECL _Tech_CleanLaser Tech_CleanLaser
+;ENDFOLD
+; 
+;FOLD CleanLaser
+GLOBAL BOOL MIT_CL=FALSE
+GLOBAL BOOL CL_Fehler=FALSE
+GLOBAL BOOL L_UEBW_FLAG[100]
+; 
+GLOBAL INT F_CL_Ueb_Ein=694
+GLOBAL INT F_L_Naht_IO=697
+GLOBAL INT F_L_Naht_NIO=698
+GLOBAL INT F_L_Naht_Pru=699
+GLOBAL INT F_m_CL=704
+; 
+GLOBAL INT I_CL_C_Ein=146
+GLOBAL INT I_CL_C_i_Ein=2785
+GLOBAL INT I_CL_C_hoch=2786
+GLOBAL INT I_CL_Warn_L=2788
+GLOBAL INT I_CL_Stoe_L=2795
+; 
+GLOBAL INT O_CL_P_aktiv=145
+GLOBAL INT O_CL_Warnung=147
+GLOBAL INT O_CL_Stoe_L=151
+GLOBAL INT O_CL_Sammel=152
+GLOBAL INT O_CL_C_Ein=2669
+GLOBAL INT O_CL_L_hoch=2771
+GLOBAL INT O_CL_L_Ein=2772
+GLOBAL INT O_CL_Q_Warn=2795
+;ENDFOLD
+; 
+;FOLD Timer
+GLOBAL INT Timer1_CL=5000
+GLOBAL INT Timer2_CL=5000
+;ENDFOLD
+; 
+;FOLD Lebensbit CL
+BOOL LBitState[2]
+LBitState[1]=FALSE
+LBitState[2]=FALSE
+BOOL CL_LBitFeh[2]
+CL_LBitFeh[1]=FALSE
+CL_LBitFeh[2]=FALSE
+; 
+;Lebensbit an CL-Steuerung --- Ausgaenge
+INT LBitToCL[2]
+LBitToCL[1]=-1
+LBitToCL[2]=-1
+; 
+;Lebensbit von CL-Steuerung --- Eingaenge
+INT LBitFromCL[2]
+LBitFromCL[1]=-1
+LBitFromCL[2]=-1
+; 
+INT LBitTimeCnt[2]
+LBitTimeCnt[1]=-1
+LBitTimeCnt[2]=-1
+INT ErrCLNr=-1
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM CLS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_CLS_Handle[100]
+GLOBAL INT n_CLR_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+
+ENDDAT

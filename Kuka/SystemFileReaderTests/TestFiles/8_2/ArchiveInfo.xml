@@ -1,0 +1,134 @@
+<ArchiveInformation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="KUKARoboter.Contracts.Archive">
+  <Archive>
+    <Date>2023-10-15T17:37:54.8834487+02:00</Date>
+    <Id>c63690b4-1904-450e-afef-eb25007ccf0e</Id>
+    <ArchivePath>\\172.19.184.74\KukaRob\K1TUHR115425R01.zip</ArchivePath>
+    <Configuration>
+      <Name>All</Name>
+      <Description>Configuration "All" from registry. Converted at 10/15/2023 5:37:45 PM.</Description>
+      <EmbeddedLogFile>true</EmbeddedLogFile>
+      <FileConfig>
+        <DefaultExcludeFilters />
+        <FileSources>
+          <FileSource>
+            <Path>KRC:\</Path>
+          </FileSource>
+          <FileSource>
+            <Path>\Roboter\Config\User\</Path>
+          </FileSource>
+          <FileSource>
+            <Path>\Roboter\Config\System\Common\Mada\</Path>
+          </FileSource>
+          <FileSource>
+            <Path>\Roboter\Init\</Path>
+          </FileSource>
+          <FileSource>
+            <Path>\Roboter\Ir_Spec\</Path>
+          </FileSource>
+          <FileSource>
+            <Path>\Roboter\Rdc\</Path>
+          </FileSource>
+          <FileSource>
+            <Path>\User\</Path>
+          </FileSource>
+          <FileSource>
+            <Path>\Roboter\log\Mastery.log</Path>
+          </FileSource>
+          <FileSource>
+            <Path>C:\KRC\ROBOTER\ProConOS\*.pro</Path>
+          </FileSource>
+          <FileSource>
+            <Path>C:\KRC\ROBOTER\ProConOS\*.zwt</Path>
+          </FileSource>
+          <FileSource>
+            <Path>C:\PROGRAM FILES\KUKA.CPC\apccache\</Path>
+          </FileSource>
+          <FileSource>
+            <Path>\Roboter\log\KrcInfo.log</Path>
+          </FileSource>
+          <FileSource>
+            <Path>\Roboter\log\Err_ECAT-CTRLBUS_1.log</Path>
+          </FileSource>
+          <FileSource>
+            <Path>\Roboter\log\EcatDiag_ECAT-CTRLBUS.log</Path>
+          </FileSource>
+        </FileSources>
+      </FileConfig>
+      <LogConfig>
+        <ProtokollNames>
+          <string>KrcLog</string>
+          <string>KrcLogI</string>
+          <string>KrcLogU</string>
+          <string>KrcLogS</string>
+          <string>KrcLogP</string>
+          <string>KrcLogB</string>
+          <string>KrcLogC</string>
+        </ProtokollNames>
+      </LogConfig>
+      <RegistryConfig>
+        <RegistryKeys>
+          <string>HKEY_LOCAL_MACHINE\SOFTWARE\KUKA ROBOTER GMBH\WorkVisual</string>
+          <string>HKEY_LOCAL_MACHINE\Software\KUKA Roboter GmbH\Cross3\Manager\Archive\Config\All\RegistrySource</string>
+          <string>HKEY_LOCAL_MACHINE\SOFTWARE\KUKA Roboter GmbH\Performance\</string>
+        </RegistryKeys>
+      </RegistryConfig>
+      <StoreIncremental>false</StoreIncremental>
+      <IsComplete>true</IsComplete>
+    </Configuration>
+  </Archive>
+  <Roboter>
+    <Name>K1TUHR115425R01</Name>
+    <Serialnumber>617076</Serialnumber>
+    <Runtime>1585111</Runtime>
+    <Type>#KR210R3100 ULTRA C4 FLR</Type>
+    <IsPrecisionRobot>false</IsPrecisionRobot>
+  </Roboter>
+  <System>
+    <Description />
+    <DeviceID>S-1-5-21-2926590032-2068710329-3933364279</DeviceID>
+    <InstallationType>Cabinet</InstallationType>
+    <InstallationDate>Date(MMDDYYYY): 4-3-2015    Time: 09:04:07</InstallationDate>
+    <Version>V8.2.20 HF04</Version>
+    <Build>118</Build>
+    <Type>VKR C</Type>
+  </System>
+  <Options>
+    <OptionData>
+      <Name>KRC4 Interbus</Name>
+      <Version>
+        <Build>6</Build>
+        <Major>1</Major>
+        <Minor>0</Minor>
+        <Revision>22</Revision>
+      </Version>
+      <VersionAppendix>CPC2</VersionAppendix>
+    </OptionData>
+    <OptionData>
+      <Name>LoadDataDetermination</Name>
+      <Version>
+        <Build>5</Build>
+        <Major>6</Major>
+        <Minor>1</Minor>
+        <Revision>14</Revision>
+      </Version>
+    </OptionData>
+    <OptionData>
+      <Name>ProConOS 4-1</Name>
+      <Version>
+        <Build>2</Build>
+        <Major>4</Major>
+        <Minor>0</Minor>
+        <Revision>-1</Revision>
+      </Version>
+    </OptionData>
+    <OptionData>
+      <Name>Profinet KRC-Nexxt</Name>
+      <Version>
+        <Build>4</Build>
+        <Major>2</Major>
+        <Minor>2</Minor>
+        <Revision>8</Revision>
+      </Version>
+    </OptionData>
+  </Options>
+</ArchiveInformation>

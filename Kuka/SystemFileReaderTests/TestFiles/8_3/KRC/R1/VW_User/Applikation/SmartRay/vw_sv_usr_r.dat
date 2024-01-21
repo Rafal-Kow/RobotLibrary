@@ -1,0 +1,31 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/SmartRay
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEFDAT  vw_sv_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket SmartRay                            *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.17 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+; 
+; 
+;FOLD SmartRay
+;SmartRay Programmnummer fuer SV1 und SV2
+SIGNAL SV_P_Nr $OUT[2593]  TO $OUT[2600]
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM SVR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

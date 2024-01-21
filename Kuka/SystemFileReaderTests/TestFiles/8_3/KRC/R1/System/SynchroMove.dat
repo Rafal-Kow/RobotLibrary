@@ -1,0 +1,24 @@
+&ACCESS RV
+&COMMENT AddOnVKR Info Zuordnung AS zu externen Achsen
+&REL 1
+DEFDAT SYNCHROMOVE PUBLIC
+;FOLD SYNCHROMOVE code generation
+GLOBAL INT ExtServoPLC[7]
+ ExtServoPLC[1]=0
+ ExtServoPLC[2]=0
+ ExtServoPLC[3]=0
+ ExtServoPLC[4]=0
+ ExtServoPLC[5]=0
+ ExtServoPLC[6]=0
+ ExtServoPLC[7]=0
+GLOBAL INT SysBusDelay[7]
+ SysBusDelay[1]=0
+ SysBusDelay[2]=0
+ SysBusDelay[3]=0
+ SysBusDelay[4]=0
+ SysBusDelay[5]=0
+ SysBusDelay[6]=0
+ SysBusDelay[7]=0
+GLOBAL BOOL ExtServoDev=FALSE
+;ENDFOLD SYNCHROMOVE code generation
+ENDDAT

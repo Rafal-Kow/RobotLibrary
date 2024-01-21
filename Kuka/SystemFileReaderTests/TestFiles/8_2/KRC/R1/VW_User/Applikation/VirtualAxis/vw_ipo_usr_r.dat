@@ -1,0 +1,102 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/VirtualAxis
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_ipo_usr_r PUBLIC
+; FOLD ;%{H}%MKUKATPVW
+; ENDFOLD
+; 
+;*--------------------------------------------------------*
+;*Technologiepaket Totzeitermittlung (Ipo-Taktermittlung) *
+;*                 SynchroMove                            *
+;*                                                        *
+;*Konzernstandard                                         *
+;*Bearbeiter: Chr. Eisenknappl I/PG-C61                   *
+;*                                                        *
+;* Erstellt am:                                           *
+;* 10.12.2014 CE                                          *
+;*                                                        *
+;*--------------------------------------------------------*
+; 
+;FOLD Ipo
+; 
+;SZ1-Positionsuebergabe
+SIGNAL sig1_sollpos $out[737]  TO $out[751]
+SIGNAL sig1_istpos $in[737]  TO $in[751]
+;SZ2-Positionsuebergabe
+SIGNAL sig2_sollpos $out[897]  TO $out[911]
+SIGNAL sig2_istpos $in[897]  TO $in[911]
+;SZ3-Positionsuebergabe
+SIGNAL sig3_sollpos $out[1057]  TO $out[1071]
+SIGNAL sig3_istpos $in[1057]  TO $in[1071]
+;SZ4-Positionsuebergabe
+SIGNAL sig4_sollpos $out[1217]  TO $out[1231]
+SIGNAL sig4_istpos $in[1217]  TO $in[1231]
+;SZ5-Positionsuebergabe
+SIGNAL sig5_sollpos $out[1297]  TO $out[1311]
+SIGNAL sig5_istpos $in[1297]  TO $in[1311]
+;SZ6-Positionsuebergabe
+SIGNAL sig6_sollpos $out[1377]  TO $out[1391]
+SIGNAL sig6_istpos $in[1377]  TO $in[1391]
+;SZ7-Positionsuebergabe
+SIGNAL sig7_sollpos $out[1457]  TO $out[1471]
+SIGNAL sig7_istpos $in[1457]  TO $in[1471]
+; 
+;Vorzeichen
+INT Sign[7]
+Sign[1]=752
+Sign[2]=912
+Sign[3]=1072
+Sign[4]=1232
+Sign[5]=1312
+Sign[6]=1392
+Sign[7]=1472
+; 
+;Hilfsmerker
+INT MerkOvPro=-1
+INT TotzeitAlt=0
+INT TotzeitNeu=0
+INT co
+INT DiNum=0
+INT EaxNum=0
+INT OffsetPos_p=0
+INT OffsetPos_n=0
+INT PosClose=0
+REAL ActPos
+; 
+;IpoVerteilung
+INT IpoVerteilung[20]
+IpoVerteilung[1]=0 ;Feld[1] - wird nicht ausgewertet
+IpoVerteilung[2]=0
+IpoVerteilung[3]=0
+IpoVerteilung[4]=0
+IpoVerteilung[5]=0
+IpoVerteilung[6]=0
+IpoVerteilung[7]=0
+IpoVerteilung[8]=0
+IpoVerteilung[9]=0
+IpoVerteilung[10]=0
+IpoVerteilung[11]=0
+IpoVerteilung[12]=0
+IpoVerteilung[13]=0
+IpoVerteilung[14]=0
+IpoVerteilung[15]=0
+IpoVerteilung[16]=0
+IpoVerteilung[17]=0
+IpoVerteilung[18]=0
+IpoVerteilung[19]=0
+IpoVerteilung[20]=0
+; 
+STRUC _TraceTime INT YEAR,MONTH,DAY,HOUR,MIN,SEC
+DECL _TraceTime TraceTime={YEAR 0,MONTH 0,DAY 0,HOUR 0,MIN 0,SEC 0}
+INT RobSn=-1
+INT VerBootfile=0
+INT TraceLength=0
+; 
+;FOLD Meldungsausgabe
+ENUM IPOR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

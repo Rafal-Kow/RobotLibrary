@@ -1,0 +1,118 @@
+&ACCESS  R
+&COMMENT KS_1.1
+&PARAM DISKPATH = VW_User/Applikation/Vision/GOM
+&PARAM TPVW_VERSION = 8.3.8
+&REL 97
+DEFDAT  vw_gom_usr_r PUBLIC
+; 
+;FOLD GOM
+;*--------------------------------------------*
+;* GOM mbH                                    *
+;* 02.12.2014 Frank Sowinski, Volker Masemann *
+;*     Version 7.9                            *
+;*--------------------------------------------*
+; 
+ENUM GOM_MsgType StatMsg,QuitMsg,NotifyMsg,WaitMsg,DlgMsg
+;DECL GOM_MsgType MLD_TYP=#DlgMsg
+; 
+;FOLD IN-Signals
+;Kommando Byte16, Byte17
+;Achtung in der vw_usr_s.dat weitere Signale definiert
+SIGNAL GOM_ENABLED $IN[1953] ; flag: ATOS is initialized (GOM_ADDR_OFS+1)
+SIGNAL I_GOM_ScanA $IN[2081] ;16.0 GOM im Scanzyklus
+SIGNAL I_GOM_MESTOK $IN[2082] ;16.1 Antwort Messdurchlauf gestartet
+SIGNAL I_GOM_SEND $IN[2083] ;16.2 Antwort Messreihe Beendet
+SIGNAL I_GOM_FIN $IN[2084] ;16.3 Antwort Messdurchlauf Beendet
+SIGNAL I_GOM_MOK $IN[2085] ;16.4 GOM Messdurchlauf ist Aktive
+;SIGNAL I_GOM_XXX $IN[2086] ;16.5
+;SIGNAL I_GOM_XXX $IN[2087] ;16.6
+;SIGNAL I_GOM_XXX $IN[2088] ;16.7
+;SIGNAL I_GOM_XXX $IN[2089] ;17.0
+;SIGNAL I_GOM_XXX $IN[2090] ;17.1
+;SIGNAL I_GOM_XXX $IN[2091] ;17.2
+;SIGNAL I_GOM_XXX $IN[2092] ;17.3
+;SIGNAL I_GOM_XXX $IN[2093] ;17.4
+SIGNAL I_GOM_ME $IN[2094] ;17.5 GOM messen Kein Fehler
+SIGNAL I_GOM_OK $IN[2095] ;17.6 GOM keine Stoerung
+;Achtung in der vw_usr_s.dat definiert
+;SIGNAL I_GOM_Life $IN[2096]  ; 17.7 Lebensbit
+;ENDFOLD (IN-Signals)
+; 
+;FOLD OUT-Signals
+;Kommando Byte16, Byte17
+;Achtung in der vw_usr_s.dat weitere Signale definiert
+SIGNAL O_GOM_N_SCAN $OUT[2081] ;16.0 Scan starten
+SIGNAL O_GOM_MEST $OUT[2082] ;16.1 Messdurchlauf Starten
+SIGNAL O_GOM_SEND $OUT[2083] ;16.2 Messreihe Beenden
+SIGNAL O_GOM_FINISH $OUT[2084] ;16.3 Messdurchlauf Beenden
+;SIGNAL O_GOM_XXX $OUT[2085] ;16.4
+;SIGNAL O_GOM_XXX $OUT[2086] ;16.5
+;SIGNAL O_GOM_XXX $OUT[2087] ;16.6
+;SIGNAL O_GOM_XXX $OUT[2088] ;16.7
+SIGNAL O_GOM_NOEVAL $OUT[2089] ;17.0 Ohne Auswertung
+SIGNAL O_GOM_NRESUL $OUT[2090] ;17.1 Mit Auswertung ohne Ergebnis Abfrage
+SIGNAL O_GOM_AMRES $OUT[2091] ;17.2 Mit Auswertung Ergebnis von Pre-Check M-FIN
+;SIGNAL O_GOM_XXX $OUT[2092] ;17.3
+;SIGNAL O_GOM_XXX $OUT[2093] ;17.4
+;SIGNAL O_GOM_XXX $OUT[2094] ;17.5
+;Achtung in der vw_usr_s.dat definiert
+;SIGNAL O_GOM_R_NOF $OUT[2095] ; 17.6 Robot No Fault
+;SIGNAL O_GOM_Life $OUT[2096]  ; 17.7 Life-Bit
+;Punktnummer Byte18, Byte19
+SIGNAL O_GOM_SCANID $OUT[2097]  TO $OUT[2112] ;Punktnummer
+;ENDFOLD (OUT-Signals)
+; 
+;FOLD Variable
+INT N_GOM_Fkt=810
+SIGNAL TEACH_ANG $IN[58] ; Teach Mode ist angewaehlt an der SPS
+GLOBAL BOOL TEACH_ACT=FALSE
+GLOBAL BOOL TEACH_ANG_H=TRUE
+;ENDFOLD (Variable)
+; 
+;FOLD Fehler-Flags
+INT N_GOM_FiErr=495 ; Erstes Fehler Flag
+INT N_GOM_LgErr=11 ; Anzahl der Flags
+INT F_GOM_NoErr=495 ; Kein Fehler
+INT F_GOM_Err=496 ; Fehler
+INT F_GOM_GeStr=497 ; Sammel Stoerung
+INT F_GOM_TmOut=498 ; TimeOut
+INT F_GOM_NoVal=499 ; Kein Auftrag
+INT F_GOM_SyIna=500 ; System Inaktiv
+INT F_GOM_SyAkt=501 ; System Aktiv
+INT F_GOM_NoStr=502 ; Kein Messstart von SPS
+INT F_GOM_ModID=503 ; Falsche Modell ID
+INT F_GOM_VFMax=504 ; Maximale Korrekturwerte erreicht
+INT F_GOM_VFErr=505 ; Korrekturwerte nicht vorhanden
+;ENDFOLD (Fehler-Flags)
+; 
+;--------------------------------------------------------------------
+;--------------------------------------------------------------------
+; Priority of the interrupt, allowed values: 1, 2, 4-39 and 81-128 
+;--------------------------------------------------------------------
+
+DECL CONST INT GOM_PRIO=21
+;--------------------------------------------------------------------
+;--------------------------------------------------------------------
+;ENDFOLD GOM
+; 
+;FOLD VW_TURNTABLE_TEST_FUNCTIONALITY_PROTOTYPE
+;--------------------------------------------------------------------
+;--------------------------------------------------------------------
+; Attention: prototype functionality only, do not use it unless you are ask to do so by GOM
+; All signals for communication between robot and PLC turntable
+;--------------------------------------------------------------------
+GLOBAL INT R_G_INL_TT_V=0
+GLOBAL INT R_S_INL_TT_V=0
+
+SIGNAL TT_IN_REQ $IN[79] ; turntable in required position
+SIGNAL ROB_TT_PF $OUT[80] ; Profilfrei turntable
+SIGNAL TT_POS_ACT $IN[225]  TO $IN[240] ; current position
+SIGNAL TT_POS_REQ $OUT[225]  TO $OUT[240] ; required position
+;--------------------------------------------------------------------
+SIGNAL INL_TT_POS $IN[201]  TO $IN[216]
+SIGNAL TT_INL_IN_RQ $IN[80] ; turntable in required position
+;--------------------------------------------------------------------
+
+;ENDFOLD VW_TURNTABLE_TEST_FUNCTIONALITY_PROTOTYPE
+
+ENDDAT

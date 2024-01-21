@@ -1,0 +1,44 @@
+&ACCESS  RV
+&COMMENT KS_1.0
+&PARAM DISKPATH = VW_User/Applikation/Blindnietmuttern
+&PARAM TPVW_VERSION = 8.3.8
+&REL 3
+DEFDAT  vw_bn_usr_r PUBLIC
+; FOLD ;%{H}%MKUKATPVW
+; ENDFOLD
+; 
+;*----------------------------------------------------*
+;*Technologiepaket Blindnietmuttern                   *
+;*                                                    *
+;*Konzernstandard                                     *
+;*Bearbeiter: B.Mildenberger PEF-2/E0A                *
+;*                                                    *
+;* Erstellt am:                                       *
+;* 2016.02.19 BM                                      *
+;*                                                    *
+;* Aenderungsjournal                                  *
+;*                                                    *
+;*----------------------------------------------------*
+; 
+;FOLD Frames
+FRAME MyCorrWeg
+;ENDFOLD Frames
+; 
+;FOLD Integer
+GLOBAL INT BN_CORR_WEG_X=0 ;Vorspannung
+;ENDFOLD Integer
+; 
+;FOLD SIGNALS
+;Fehlercode
+SIGNAL BN1_ErrorCode $IN[1217]  TO $IN[1232]
+;Programm-Nr an BN1
+SIGNAL Prog_Nr_BN1 $OUT[1217]  TO $OUT[1232]
+;Punkt- und Fzg-Typ-Nr an SPS
+SIGNAL P_PktNr_SPS $OUT[97]  TO $OUT[112]
+;ENDFOLD SIGNALS
+; 
+;FOLD Meldungsausgabe
+ENUM BN_MsgType StateMsg,QuitMsg,NotifyMsg
+;ENDFOLD
+; 
+ENDDAT

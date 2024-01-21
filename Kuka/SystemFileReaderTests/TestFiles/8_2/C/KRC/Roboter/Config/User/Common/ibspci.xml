@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--XML-Beispieldatei von XMLSpy generiert v2007 sp1 (http://www.altova.com)-->
+<Driver busName="IBusDrv" kukaVersion="4" xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/ibspci.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Version Label="">
+		<Info Version=""/>
+		<Schema Version="100"/>
+	</Version>
+	<DriverInstance busInstanceName="IBS1" kukaVersion="1">
+		<INTERBUS BOARDNUMBER="1"/>
+		<SLAVE CONTINUE_BY_ERR="true" SLAVE_CR="0" SWAP_SLAVE_BYTES="true" SLAVE_ID="0x0403" SLAVE_USED="false" MASTER2SLAVE_OK_BIT="-1"/>
+		<CMD_CONFIGURATION EXTERN_START="false" BAUDRATE="9600" BRK_IB_ERR="false" USEBLOCKID="true" TIMEOUT="60000" CMD_FILE="config.svc" MSG_DELAY="10" COM_DLL_PORT="15001"/>
+		<CONFIGURATION SWAP_MASTER_BYTES="true" CONTINUE_WITH_WARN="true" DUMPFILE="" MASTER_USED="true" ERR_AUTO_QUIT_PF="false" ERR_CLEAR_MPM_OUT="true" WATCHDOG="0" ERR_RETRY_TIME="5" RESET="0"/>
+		<DIAGNOSTIC_REGISTERS SLAVE_STATUS="-1" STATUS="-1" PARAMETER1="-1" PARAMETER2="-1" SLAVE_PARAMETER="-1"/>
+		<TASK AUTORESTART="0"/>
+	</DriverInstance>
+</Driver>

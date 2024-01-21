@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Kuka", "Kuka", "{CF1975E3-23E0-44A7-8FB0-9C7A40BB0903}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Kuka", "Kuka", "{A3777DB0-E2A2-40D9-93A2-945CEE4D8D74}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SystemFileReaderTests", "Kuka\SystemFileReaderTests\SystemFileReaderTests.csproj", "{22003831-53AE-460E-B760-62CED6B5781D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SystemFileReaderTests", "Kuka\SystemFileReaderTests\SystemFileReaderTests.csproj", "{0CFBC3CE-A05E-4E5D-B049-D0AE6A056942}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SystemFileReader", "Kuka\SystemFileReader\SystemFileReader.csproj", "{92FD40BA-83B2-4606-AAED-ACFF41035390}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SystemFileReader", "Kuka\SystemFileReader\SystemFileReader.csproj", "{B58BCDEF-6946-4246-800A-57460A3CABF7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,23 +15,23 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{22003831-53AE-460E-B760-62CED6B5781D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{22003831-53AE-460E-B760-62CED6B5781D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{22003831-53AE-460E-B760-62CED6B5781D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{22003831-53AE-460E-B760-62CED6B5781D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{92FD40BA-83B2-4606-AAED-ACFF41035390}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{92FD40BA-83B2-4606-AAED-ACFF41035390}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{92FD40BA-83B2-4606-AAED-ACFF41035390}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{92FD40BA-83B2-4606-AAED-ACFF41035390}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CFBC3CE-A05E-4E5D-B049-D0AE6A056942}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CFBC3CE-A05E-4E5D-B049-D0AE6A056942}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CFBC3CE-A05E-4E5D-B049-D0AE6A056942}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CFBC3CE-A05E-4E5D-B049-D0AE6A056942}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B58BCDEF-6946-4246-800A-57460A3CABF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B58BCDEF-6946-4246-800A-57460A3CABF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B58BCDEF-6946-4246-800A-57460A3CABF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B58BCDEF-6946-4246-800A-57460A3CABF7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{22003831-53AE-460E-B760-62CED6B5781D} = {CF1975E3-23E0-44A7-8FB0-9C7A40BB0903}
-		{92FD40BA-83B2-4606-AAED-ACFF41035390} = {CF1975E3-23E0-44A7-8FB0-9C7A40BB0903}
+		{0CFBC3CE-A05E-4E5D-B049-D0AE6A056942} = {A3777DB0-E2A2-40D9-93A2-945CEE4D8D74}
+		{B58BCDEF-6946-4246-800A-57460A3CABF7} = {A3777DB0-E2A2-40D9-93A2-945CEE4D8D74}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {082D9423-DD82-471B-9CEF-2664C33607D1}
+		SolutionGuid = {56CDFD78-116F-4DF4-8D1B-50264D3F4B28}
 	EndGlobalSection
 EndGlobal

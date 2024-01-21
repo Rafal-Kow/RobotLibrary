@@ -1,0 +1,201 @@
+&ACCESS  R
+&COMMENT KS24.25.001_VW
+&PARAM DISKPATH = VW_User
+&PARAM EDITMASK = vw_usr_r
+&PARAM TPVW_VERSION=8.3.8
+&PARAM SUPPRESS = LoosOfPrecision UnusedFunctionParameter UnswitchedEnu
+&PARAM SUPPRESS = LoosOfPrecision UnusedFunctionParameter UnswitchedEnu
+&REL 441
+DEFDAT  vw_usr_r PUBLIC
+; FOLD ;%{H}%MKUKATPVW
+; ENDFOLD
+; 
+;*-----------------------------------------------------
+;FOLD Projekt Variablen
+; 
+GLOBAL INT Index
+GLOBAL INT F_IBS_Altern=511
+; 
+;Punktnummer an SPS
+SIGNAL BM_PktNr_SPS $OUT[97]  TO $OUT[112]
+;ENDFOLD
+; 
+;FOLD TCP-Korrektur
+FRAME MyCorr
+FRAME MyCorrWeg
+;ENDFOLD
+; 
+;FOLD Momentenbetrieb
+DECL TORQLIMITPARAM mytorqlim_A1
+DECL TORQLIMITPARAM mytorqlim_A2
+DECL TORQLIMITPARAM mytorqlim_A3
+DECL TORQLIMITPARAM mytorqlim_A4
+DECL TORQLIMITPARAM mytorqlim_A5
+DECL TORQLIMITPARAM mytorqlim_A6
+GLOBAL INT Lower=0
+GLOBAL INT Upper=0
+; 
+;Diagnose Momentenbetrieb
+GLOBAL BOOL trq_debugMsg=FALSE
+REAL trq_dist
+DECL FRAME trq_startFrame,trq_stopFrame
+DECL AXIS trqon_Axis={A1 -0.0668612793,A2 -7.96412086,A3 101.048790,A4 0.782539189,A5 -11.0664091,A6 -90.6951828}
+DECL AXIS trqoff_Axis={A1 -0.0655175,A2 -7.94284105,A3 101.042870,A4 0.781585753,A5 -11.0650606,A6 -90.6908417}
+DECL POS trqon_Pos={X 2060.77710,Y 734.591370,Z 2167.21289,A 109.106400,B 89.4267426,C 108.995697,S 'B0110',T 'B00110011'}
+DECL POS trqoff_Pos={X 2061.07227,Y 734.634094,Z 2166.72095,A 107.501541,B 89.4316101,C 107.388878,S 'B0110',T 'B00110011'}
+; 
+;logging 
+INT co=6
+STRUC _time INT date,time
+STRUC _logdata _time time,CHAR name[8],REAL r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14
+DECL _logdata logdata[100]
+logdata[1]={time {date 20120719,time 185058},name[] "trq_on",r1 -127.920334,r2 4465.69629,r3 -317.130,r4 50.0388565,r5 -283.474274,r6 -77.5122681,r7 46.8212318,r8 986.837341,r9 -481.588867,r10 1.39485824,r11 -40.2552910,r12 0.113872200,r13 16.0000,r14 1.00000}
+logdata[2]={time {date 20120719,time 185126},name[] "trq_axis",r1 -0.0668612793,r2 -7.96412134,r3 101.048790,r4 0.782539189,r5 -11.0664091,r6 -90.6951828,r7 0.0,r8 0.0,r9 -0.0648646802,r10 -7.97684765,r11 101.021172,r12 0.775647223,r13 -11.0644846,r14 -90.6936722}
+logdata[3]={time {date 20120719,time 185126},name[] "trq_pos",r1 2060.77710,r2 734.591370,r3 2167.21289,r4 109.106400,r5 89.4267426,r6 108.995697,r7 2060.03809,r8 734.676514,r9 2167.54492,r10 112.594330,r11 89.4115601,r12 112.490562,r13 0.0,r14 0.814638257}
+logdata[4]={time {date 20121004,time 84613},name[] "trq_on",r1 -251.334671,r2 4103.46387,r3 -137.835785,r4 40.9171906,r5 -284.986145,r6 -99.5645905,r7 41.7676620,r8 -93.5880432,r9 -18.8347359,r10 6.98528099,r11 -20.5345154,r12 0.0672332272,r13 16.0000,r14 1.00000}
+logdata[5]={time {date 20121004,time 84712},name[] "trq_axis",r1 -0.0668612793,r2 -7.96412086,r3 101.048790,r4 0.782539189,r5 -11.0664091,r6 -90.6951828,r7 0.0,r8 0.0,r9 -0.0655175,r10 -7.94284105,r11 101.042870,r12 0.781585753,r13 -11.0650606,r14 -90.6908417}
+logdata[6]={time {date 20121004,time 84712},name[] "trq_pos",r1 2060.77710,r2 734.591370,r3 2167.21289,r4 109.106400,r5 89.4267426,r6 108.995697,r7 2061.07227,r8 734.634094,r9 2166.72095,r10 107.501541,r11 89.4316101,r12 107.388878,r13 0.0,r14 0.575288296}
+logdata[7]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[8]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[9]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[10]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+; 
+logdata[11]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[12]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[13]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[14]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[15]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[16]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[17]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[18]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[19]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[20]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+; 
+logdata[21]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[22]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[23]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[24]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[25]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[26]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[27]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[28]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[29]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[30]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+; 
+logdata[31]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[32]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[33]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[34]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[35]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[36]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[37]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[38]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[39]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[40]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+; 
+logdata[41]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[42]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[43]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[44]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[45]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[46]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[47]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[48]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[49]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[50]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+; 
+logdata[51]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[52]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[53]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[54]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[55]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[56]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[57]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[58]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[59]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[60]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+; 
+logdata[61]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[62]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[63]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[64]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[65]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[66]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[67]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[68]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[69]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[70]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+; 
+logdata[71]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[72]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[73]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[74]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[75]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[76]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[77]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[78]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[79]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[80]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+; 
+logdata[81]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[82]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[83]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[84]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[85]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[86]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[87]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[88]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[89]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[90]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+; 
+logdata[91]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[92]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[93]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[94]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[95]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[96]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[97]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[98]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[99]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+logdata[100]={time {date 0,time 0},name[] " ",r1 0.0,r2 0.0,r3 0.0,r4 0.0,r5 0.0,r6 0.0,r7 0.0,r8 0.0,r9 0.0,r10 0.0,r11 0.0,r12 0.0,r13 0.0,r14 0.0}
+; 
+;ENDFOLD
+; 
+;FOLD Relativ-Bewegung
+DECL E6POS P_REL={X -5.00000,Y -2.00000,Z 5.00000,A 0.0,B 0.0,C 0.0,S 'H0',T 'H0',E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+;ENDFOLD
+; 
+;FOLD Relativbewegung X,Y,Z mit Orienierungsuebernahme aus geteachten Pkt
+GLOBAL FRAME Orient_Frame={X 1640.71631,Y -1538.57678,Z 862.697937,A 1.09512055,B 10.5592518,C -177.773254}
+GLOBAL FRAME Or_old_Frame={X 1128.77527,Y -2040.80542,Z -229.087738,A 4.15357399,B -88.9585114,C -6.97373867}
+GLOBAL BOOL Ori_frameset=FALSE
+GLOBAL INT Ori_frame_Nr=1
+;ENDFOLD
+; 
+;FOLD Suchlauf
+GLOBAL FRAME Frame_Temp={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+INT Fehler_Suchlauf=533 ; 
+;ENDFOLD
+; 
+;FOLD T_Speicher
+GLOBAL INT i_T_Speicher=31
+GLOBAL INT HM_i_T_Speicher=0
+GLOBAL INT Binin1_T_Sp=20
+GLOBAL INT Binin2_T_Sp=30
+GLOBAL INT Binout1_T_Sp=20
+GLOBAL INT Binout2_T_Sp=30
+;ENDFOLD
+; 
+;FOLD Dehnfuge
+GLOBAL FRAME Dehnfuge={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+GLOBAL REAL Dehn_HILF=0.0
+GLOBAL REAL Dehn_HILF2=0.0
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM AU_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

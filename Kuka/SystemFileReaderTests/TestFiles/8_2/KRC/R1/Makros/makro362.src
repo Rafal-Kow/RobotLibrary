@@ -1,0 +1,89 @@
+&ACCESS RVO
+&COMMENT SAUGKREIS 3 EIN/AUS
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrovorgabe.src
+&PARAM EDITMASK = Makro999[0-999]
+&PARAM TPVW_VERSION = 8.1.8
+DEFFCT INT MAKRO362(ADV :IN)
+   ;FOLD Makro Anfang ;%{PSE}%MKUKATPVW
+      BOOL ADV
+      ; interface to basic routines
+      EXT  BAS (BAS_COMMAND  :IN,REAL  :IN )
+      ; interface to VW-standard routines
+      EXT VW (VW_COMMAND:IN, BOOL: IN, REAL:IN, REAL:IN, REAL:IN, REAL:IN, BOOL :IN, E6POS :IN )
+      ; interface select routine
+      EXTFCT INT  SELECT (SUBTYPE  :IN,INT  :IN,BOOL  :IN,ARI_TYP  :IN,INT  :IN,BOOL_TYP  :IN,INT  :IN,BOOL  :IN)
+      SPS_N=-1
+      ;FOLD ;%{H} %MKUKATPVW
+      IF VARSTATE ("ADV") <> #INITIALIZED THEN
+         ADV=FALSE
+      ENDIF
+      IF (NOT ADV) THEN
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Saugkreis 3 EIN/AUS -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Saugkreis 3 EIN/AUS --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- KS24 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KS24 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Version: 01 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Version: 01 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Stand: 001 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Stand: 001 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- letzte Aenderung 11.06.2014 PK -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- letzte Aenderung 11.06.2014 PK --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Saugkreis Saugen EIN -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Saugkreis Saugen EIN --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD WARTE BIS !A622 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !A622, 3: WBOASG
+      $LOOP_MSG[]="!A622"
+      $LOOP_CONT=TRUE
+      WAIT FOR (NOT $OUT[622]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD A621 = !F23 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A621 = !F23, 3: BOASG
+      $OUT[621] = NOT $FLAG[23]
+   ;ENDFOLD
+   ;FOLD -- Saugkreis Saugen AUS / Abblasen EIN -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Saugkreis Saugen AUS / Abblasen EIN --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD GOTO Label 1 = F54 ;%{E}%MKUKATPVW,%CCONTROL,%VJUMP,%P 1:GOTO Label, 2:1, 3:=, 4:6, 5:54
+      ;FOLD  ;%{H}
+         CONTINUE
+         IF $FLAG[54] THEN
+            CONTINUE
+            GOTO Label1
+         ENDIF
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD Puls A622 = Pegel:F23 Zeit:30[1/10Sek] ;%{E}%MKUKATPVW %CVW_SPS %VPULS %P 2:Puls A622 = Pegel:F23 Zeit:30[1/10Sek], 3: PULS
+      VW(#VW_PULSE, TRUE, 6, 23, 30, 622, TRUE)
+   ;ENDFOLD
+   ;FOLD GOTO Label 2 = A622 ;%{E}%MKUKATPVW,%CCONTROL,%VJUMP,%P 1:GOTO Label, 2:2, 3:=, 4:4, 5:622
+      ;FOLD  ;%{H}
+         CONTINUE
+         IF $OUT[622] THEN
+            CONTINUE
+            GOTO Label2
+         ENDIF
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD Label 1 ;%{E}%MKUKATPVW,%CCONTROL,%VLABEL,%P 1:Label, 2:Label 1
+      ;FOLD  ;%{H}
+         Label1:
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD A622 = F23 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A622 = F23, 3: BOASG
+      $OUT[622] = $FLAG[23]
+   ;ENDFOLD
+   ;FOLD Label 2 ;%{E}%MKUKATPVW,%CCONTROL,%VLABEL,%P 1:Label, 2:Label 2
+      ;FOLD  ;%{H}
+         Label2:
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD F42 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F42 = EIN, 3: BOASG
+      $FLAG[42] = TRUE
+   ;ENDFOLD
+   ; FOLD ;%{H}
+   RETURN 1
+   ELSE
+   RETURN 0
+   ENDIF
+ENDFCT
+; ENDFOLD

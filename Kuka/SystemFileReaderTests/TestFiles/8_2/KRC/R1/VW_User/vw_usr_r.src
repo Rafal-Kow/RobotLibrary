@@ -1,0 +1,1773 @@
+&ACCESS R
+&REL 441
+&COMMENT KS24.24.001_VW
+&PARAM DISKPATH = VW_User
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM EDITMASK = vw_usr_r
+DEF VW_USR_R(USER_CMD :IN, CMD_SEL :IN, PARA1 :IN,PARA2 :IN,PARA3 :IN,PARA4 :IN,PARA5 :IN,PARA6 :IN,PARA7 :IN )
+;
+;FOLD ;%{H}%MKUKATPVW
+;VW_USER Call
+DECL VW_USER_CMD USER_CMD
+REAL PARA1,PARA2,PARA3,PARA4,PARA5,PARA6
+BOOL PARA7
+INT CMD_SEL
+SWITCH  USER_CMD
+CASE #USR_INIT
+USER_INIT ()
+CASE #USR_ADV
+USER_ADV (CMD_SEL,PARA1,PARA2,PARA3,PARA4,PARA5,PARA6,PARA7)
+CASE #USR_TRIG
+USER_TRIG (CMD_SEL,PARA1,PARA2,PARA3,PARA4,PARA5,PARA6,PARA7)
+CASE #USR_MAIN
+USER_MAIN (CMD_SEL,PARA1,PARA2,PARA3,PARA4,PARA5,PARA6,PARA7)
+CASE #USR_MAKRO
+USER_MAKRO (CMD_SEL,PARA1,PARA2,PARA3,PARA4,PARA5,PARA6,PARA7)
+DEFAULT
+ENDSWITCH
+END
+;XENDFOLD hidden fold ueber ganzen user MUE 18.2
+;-----------------------------------------------------------
+;FOLD USER_INIT
+DEF  USER_INIT ()
+;Aufruf am Programmanfang
+;
+INT I
+BOOL bRet
+;
+;FOLD Folgenummer spiegeln in Hand
+IF ($MODE_OP<>#EX) THEN
+  PRG_NR_REFL=P_SELECT
+ENDIF
+;ENDFOLD
+;
+;FOLD Arbeitspunktzaehler ruecksetzen
+IF ($COUNT_I[I_Arbpkt_Nr]<>0) THEN
+  $COUNT_I[I_Arbpkt_Nr]=0
+ENDIF 
+;ENDFOLD
+;
+;FOLD Merker Initialisierung
+SEL_RES=SELECT(#MAKRO,50,TRUE,,,,,FALSE)
+;ENDFOLD
+;
+;FOLD Feldbus-Teilnehmer zuschalten
+GLOBAL INTERRUPT DECL 30 WHEN $FLAG[F_IBS_Altern] DO IBS_ZU()
+INTERRUPT ON 30
+;ENDFOLD
+;
+;FOLD Vorbesetzung POT Timer und Anlaufinit
+IF B_Anlauf THEN
+  WAIT SEC 0.5
+  $TIMER_STOP[12]=TRUE
+  $TIMER[12]=0
+  $TIMER_STOP[12]=FALSE
+  B_Anlauf=FALSE
+ENDIF
+;ENDFOLD
+;
+;FOLD Greiferstatus an BMS melden
+B_Grei_Stat=FALSE
+GLOBAL INTERRUPT DECL 29 WHEN B_Grei_Stat DO Greifer_Stat()
+INTERRUPT ON 29
+;ENDFOLD
+;
+;FOLD Kollisionspruefung deaktivieren
+FOR i=1 to 6
+  $TORQMON[i]=(200-KOLL_RED)
+ENDFOR
+;ENDFOLD
+;
+;FOLD Pruefung Koll-Bereiche gelernt
+FOR i=1 to 24
+  IF  (Koll_dat[i].A1<>0) AND (Koll_dat[i].A2<>0) AND (Koll_dat[i].A3<>0) AND (Koll_dat[i].A4<>0) AND (Koll_dat[i].A5<>0) AND (Koll_dat[i].A6<>0) THEN
+    Koll_Teach[i]=TRUE
+  ELSE
+    Koll_Teach[i]=FALSE
+  ENDIF
+ENDFOR
+;ENDFOLD
+;
+;FOLD Abfrage Tool_Corr und Base_Corr vorhanden
+IF Varstate("TOOL_CORR")<>#Initialized THEN
+  Basic_R_Msg(2,#QuitMsg) ; Tool_Corr nicht vorhanden
+ENDIF
+IF Varstate("BASE_CORR")<>#Initialized THEN
+  Basic_R_Msg(3,#QuitMsg) ; BASE_Corr nicht vorhanden
+ENDIF
+Tool_Corr=$NULLFRAME
+Base_Corr=$NULLFRAME
+;ENDFOLD
+;
+;FOLD Virtuelle Achsen
+IF SZ_VORHANDEN THEN
+  VA_Interfac(#USR_INIT,,,,,,,)
+ENDIF
+;ENDFOLD
+;
+;FOLD Zangenausgleich
+IF SZ_VORHANDEN THEN
+  SZ_Interfac(#USR_INIT,,,,,,,)
+ENDIF
+;ENDFOLD
+;
+;FOLD Produktion ohne Bauteil
+POT_Interfac(#USR_INIT,,,,,,,)
+;ENDFOLD
+
+;FOLD Stosspunkten
+IF MIT_Stossp THEN
+  STP_Interfac(#USR_INIT,,,,,,,)
+ENDIF
+;ENDFOLD
+;
+;FOLD SafeRobot
+IF Mit_Safe_Rob THEN 
+  SROB_Interf(#USR_INIT,,,,,,,)
+ENDIF  
+;ENDFOLD  
+;
+;FOLD Audi_EKI-Schnittstelle
+IF MIT_EKI THEN
+  EKI_Interfac(#USR_INIT,,,,,,,)
+ENDIF
+;ENDFOLD
+;
+;FOLD externe Achsen asynchron schalten
+IF MIT_1ExtAchse THEN
+  $ASYNC_AXIS= 'B0001'
+ENDIF
+;
+IF MIT_2ExtAchse THEN
+  $ASYNC_AXIS= 'B0011'
+ENDIF
+;
+IF MIT_2ExtAchse_A7 THEN
+  $ASYNC_AXIS= 'B0110'
+ENDIF
+;ENDFOLD
+;
+;FOLD Perceptron
+IF B_MIT_PRC THEN
+  PRC_Interface(#USR_INIT,,,,,,,)
+ENDIF
+;ENDFOLD
+;
+;FOLD INOS
+IF B_MIT_INOS THEN
+  INOS_ResetSignals()
+  INOS_Intrfc(#USR_INIT,,,,,,,)
+ENDIF
+;ENDFOLD
+;
+;FOLD HGV
+IF B_MIT_HGV THEN
+  HGV_ResetSignals()
+  HGV_ResetVariables()
+  HGV_IMTInt(#USR_INIT,,,,,,,)
+ENDIF
+;ENDFOLD
+;
+;FOLD BN_INIT 
+IF MIT_BN[1] THEN
+ BN_Interface(#USR_INIT,,,,,,,)
+ENDIF
+;ENDFOLD
+;
+;FOLD VW_XYZ_SCAN
+vw_xyz_scan(#USR_INIT,,,,,,,)
+;ENDFOLD
+;~~~~~~~~~VW-Teil-Anfang~~~~~~~~
+;
+;FOLD GOM INIT
+;System synchronisieren
+IF B_MIT_GOM THEN
+  GOM_Interface(#USR_INIT,,,,,,,)
+ENDIF
+;ENDFOLD (GOM INIT)
+;*-----------------------------------------------------*
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD USER_ADV
+;
+DEF  USER_ADV (CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN,PAR7 :IN)
+;Aufruf im Vorlauf
+;
+INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+BOOL PAR7, bRet
+; 
+;*-----------------------------------------------------*
+;* Basis-Technologiepaket                              *
+;*                                                     *
+;* Konzernstandard                                     *
+;* Bearbeiter: W. Lehmeier I/PG-C61                    *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2011.12.08 LE                                       *
+;*                                                     *
+;-------------------------------------------------------
+;
+IF (PAR7==FALSE) THEN
+  RETURN
+ENDIF  
+;---------------------------------------------------
+;
+SWITCH CMD_SEL
+  CASE 101 ; Hauptgruppe 0, Untergruppe 1
+    ;FOLD S_Zangen
+      ;Meldungsausgabe, falls mit WZ 0 geteacht wurde
+      IF VW_MPARA_ACT.TOOL_NO < 1 THEN
+        Basic_R_Msg(1,#QuitMsg)
+      ENDIF
+      SZ_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+  CASE 102 ; Hauptgruppe 0, Untergruppe 2
+    ;FOLD S_Zangen (PSZ)
+      ;Meldungsausgabe, falls mit WZ 0 geteacht wurde
+      IF VW_MPARA_ACT.TOOL_NO < 1 THEN
+        Basic_R_Msg(1,#QuitMsg)
+      ENDIF
+      SZ_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD      
+;
+  CASE 103 ; Hauptgruppe 0, Untergruppe 3
+    ;FOLD Clinchen
+      CZ_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 104 ; Hauptgruppe 0, Untergruppe 4
+    ;FOLD  MIG/MAG
+      MS_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 105 ; Hauptgruppe 0, Untergruppe 5
+    ;FOLD Sensor fuer Dehnfuge
+      SWITCH PAR1
+        CASE 1
+          CONTINUE
+          Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+        CASE 2
+          CONTINUE
+          WHILE ((PAR2<1) OR (PAR2>13))
+            Basic_R_Msg(4,#QuitMsg) ;PAR2 Wert ungueltig
+          ENDWHILE
+          IF ((PAR2>0) AND (PAR2<20)) THEN
+            CONTINUE
+            WHILE (($anin[8]*10)<1.0)
+              Basic_R_Msg(5,#QuitMsg) ;Sensor 1 defekt
+            ENDWHILE
+            CONTINUE
+            WHILE (($anin[8]*10)>9.5)
+              Basic_R_Msg(5,#QuitMsg) ;Sensor 1 defekt
+            ENDWHILE
+          ENDIF
+          IF ((PAR4>0) AND (PAR4<20)) THEN
+            CONTINUE
+            WHILE (($anin[7]*10)<1.0)
+              Basic_R_Msg(6,#QuitMsg) ;Sensor 2 defekt
+            ENDWHILE
+            CONTINUE
+            WHILE (($anin[7]*10)>9.5)
+              Basic_R_Msg(6,#QuitMsg) ;Sensor 2 defekt
+            ENDWHILE
+          ENDIF
+;
+          Dehnfuge=$NULLFRAME
+          Dehn_HILF=($anin[8]*10)
+          Dehn_HILF2=($anin[7]*10)
+;      
+          IF (PAR2==1) THEN
+            Dehnfuge.X=-Dehn_HILF
+          ENDIF
+;
+          IF (PAR2==2) THEN
+            Dehnfuge.Y=-Dehn_HILF
+          ENDIF
+;
+          IF (PAR2==3) THEN
+            Dehnfuge.Z=-Dehn_HILF
+          ENDIF
+;
+          IF (PAR2==11) THEN
+            Dehnfuge.X=Dehn_HILF
+          ENDIF
+;
+          IF (PAR2==12) THEN
+            Dehnfuge.Y=Dehn_HILF
+          ENDIF
+;
+          IF (PAR2==13) THEN
+            Dehnfuge.Z=Dehn_HILF
+          ENDIF
+;      
+          IF (PAR4==1) THEN
+            Dehnfuge.X=-Dehn_HILF2
+          ENDIF
+;      
+          IF (PAR4==2) THEN
+            Dehnfuge.Y=-Dehn_HILF2
+          ENDIF
+;      
+          IF (PAR4==3) THEN
+            Dehnfuge.Z=-Dehn_HILF2
+          ENDIF
+;      
+          IF (PAR4==11) THEN
+            Dehnfuge.X=Dehn_HILF2
+          ENDIF
+;      
+          IF (PAR4==12) THEN
+            Dehnfuge.Y=Dehn_HILF2
+          ENDIF
+;      
+          IF (PAR4==13) THEN
+            Dehnfuge.Z=Dehn_HILF2
+          ENDIF
+          CONTINUE
+          BASE_DATA[31]=BASE_DATA[VW_MPARA_ACT.BASE_NO]:Dehnfuge
+    ;ENDFOLD
+;
+    ;FOLD Suchlauf 
+        CASE 3; Nur TRIG
+;   
+        CASE 11
+          CONTINUE
+          WHILE ($CYCFLAG[PAR6]==TRUE)
+            Basic_R_Msg(7,#QuitMsg) ;Suchlauf Nahsensor defekt
+          ENDWHILE
+;
+        DEFAULT
+          Basic_R_Msg(20,#QuitMsg) ;P1 Falschr Wert
+     ENDSWITCH ;von PAR1
+    ;ENDFOLD
+;
+  CASE 106 ; Hauptgruppe 0, Untergruppe 6
+    ;FOLD SafeRobot
+    IF (PAR7==TRUE) THEN   
+      SROB_Interf(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ENDIF
+    ;ENDFOLD SafeRobot
+;
+  CASE 107 ; Hauptgruppe 0, Untergruppe 7
+    ;FOLD Teile-Speicher
+    CONTINUE
+    IF (PAR5>0) THEN
+      IF NOT $IN[PAR5] THEN
+        CONTINUE
+        $OUT[PAR5] = TRUE
+        WHILE NOT $IN[PAR5]
+          IF (n_USRR_Handle[8]<0) THEN
+            Basic_R_Msg(8,#StateMsg) ;Teilespeicher-Nr. von SPS fehlt
+          ENDIF  
+        ENDWHILE 
+        bRet=Clear_KrlMsg(n_USRR_Handle[8])
+        n_USRR_Handle[8]=-1   ; Zustandsmeldung zuruecknehmen    
+      ENDIF
+    ENDIF  
+    CONTINUE
+    HM_i_T_Speicher=$B_IN[Binin1_T_Sp]
+    IF ($B_IN[Binin1_T_Sp]==255) AND ($B_IN[Binin2_T_Sp]<>0) THEN
+      HM_i_T_Speicher=HM_i_T_Speicher+$B_IN[Binin2_T_Sp]
+    ENDIF
+    $COUNT_I[i_T_Speicher]=HM_i_T_Speicher
+    CONTINUE
+    WHILE ($COUNT_I[i_T_Speicher]<1) OR ($COUNT_I[i_T_Speicher]>300)
+      Basic_R_Msg(9,#QuitMsg) ;SPS Speicherposition ungueltig
+	   HM_i_T_Speicher=$B_IN[Binin1_T_Sp]
+      IF ($B_IN[Binin1_T_Sp]==255) AND ($B_IN[Binin2_T_Sp]<>0) THEN
+        HM_i_T_Speicher=HM_i_T_Speicher+$B_IN[Binin2_T_Sp]
+      ENDIF
+      $COUNT_I[i_T_Speicher]=HM_i_T_Speicher
+    ENDWHILE
+    $B_OUT[Binout1_T_Sp]=$B_IN[Binin1_T_Sp]
+    $B_OUT[Binout2_T_Sp]=$B_IN[Binin2_T_Sp]
+;  
+    ;Teile-Speicher-Position 1-300 setzen
+    CONTINUE
+    IF (BASE_TYPE[VW_MPARA_ACT.BASE_NO]==#BASE) THEN
+      CONTINUE
+      WHILE (T_Speicher[$COUNT_I[i_T_Speicher]].Z==0.0)
+        Basic_R_Msg(10,#QuitMsg) ;Koordinaten fuer Speicherposition ungueltig
+      ENDWHILE
+	   SWITCH Par1
+	     CASE 1
+          CONTINUE
+          BASE_DATA[31]=T_Speicher[$COUNT_I[i_T_Speicher]]
+	     CASE 2
+          CONTINUE
+          WHILE (VW_MPARA_ACT.BASE_NO<1)
+            Basic_R_Msg(15,#QuitMsg) ; Base-Nr falsch
+          ENDWHILE
+          CONTINUE
+          BASE_DATA[31]=BASE_DATA[VW_MPARA_ACT.BASE_NO]:T_Speicher[$COUNT_I[i_T_Speicher]]
+	     DEFAULT
+          Basic_R_Msg(20,#QuitMsg) ;P1 Falschr Wert
+	   ENDSWITCH
+    ELSE
+      Basic_R_Msg(11,#QuitMsg) ;Base-Type ungueltig
+    ENDIF
+    ;ENDFOLD
+;
+  CASE 108 ; Hauptgruppe 0, Untergruppe 8
+;
+  CASE 109 ; Hauptgruppe 0, Untergruppe 9
+;
+  CASE 110 ; Hauptgruppe 0, Untergruppe 10
+    ;FOLD Schrauben
+      SR_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+  CASE 201 ; Hauptgruppe 1, Untergruppe 1
+;
+  CASE 202 ; Hauptgruppe 1, Untergruppe 2
+    ;FOLD Bolzenschweissen
+      BZ_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+  CASE 203 ; Hauptgruppe 1, Untergruppe 3  
+    ;FOLD Nieten
+      NZ_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 204 ; Hauptgruppe 1, Untergruppe 4
+    ;FOLD Kollisionsueberwachung
+      WHILE ((PAR4<1) OR (PAR4>40))
+        Basic_R_Msg(12,#QuitMsg) ; unzulaessiger Wert
+      ENDWHILE
+    ;ENDFOLD
+;
+  CASE 205 ; Hauptgruppe 1, Untergruppe 5
+    ;FOLD MIG-Suchlauf
+      MS_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD
+;
+  CASE 206 ; Hauptgruppe 1, Untergruppe 6
+    ;FOLD StanzMutter
+      SM_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 207 ; Hauptgruppe 1, Untergruppe 7
+    ;FOLD Buckelpraegen
+      CONTINUE
+      BM_PktNr_SPS=PAR5
+      IF (PAR5==$COUNT_I[I_Arbpkt_Nr]) THEN
+        Basic_R_Msg(13,#QuitMsg) ; Punkt schon gepraegt
+      ENDIF
+    ;ENDFOLD
+;
+  CASE 208 ; Hauptgruppe 1, Untergruppe 8
+    ;FOLD Stosspunkten
+      CONTINUE
+      STP_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD
+;
+  CASE 209 ; Hauptgruppe 1, Untergruppe 9
+    ;FOLD Mutternbuckeln
+      CONTINUE
+      MB_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD
+;
+  CASE 210 ; Hauptgruppe 1, Untergruppe 10 
+    ;FOLD Reibelement
+      RW_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 301 ; Hauptgruppe 2, Untergruppe 1 nur im TRIG
+;
+  CASE 302 ; Hauptgruppe 2, Untergruppe 2 
+;
+  CASE 303 ; Hauptgruppe 2, Untergruppe 3 
+    ;FOLD Kleben
+      KL_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 304 ; Hauptgruppe 2, Untergruppe 4 
+    ;FOLD FDS
+      FDS_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 305 ; Hauptgruppe 2, Untergruppe 5 
+;
+  CASE 306 ; Hauptgruppe 2, Untergruppe 6 
+    ;FOLD Blindnietmuttern ADV
+    IF MIT_BN[1]==TRUE THEN
+      BN_Interface(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ENDIF
+    ;ENDFOLD Blindnietmuttern MAIN
+;
+  CASE 307 ; Hauptgruppe 2, Untergruppe 7
+    ;FOLD VW_BU_ACF
+    ; 
+    ;ENDFOLD VW_BU_ACF
+;
+  CASE 308 ; Hauptgruppe 2, Untergruppe 8
+    ;FOLD VW_BU-ACF
+    IF ((PAR7==FALSE) OR (NOT MIT_VwBu[1] AND NOT MIT_VwBu[2])) THEN
+      RETURN
+    ELSE
+      VW_BU_Interf(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ENDIF
+    ;ENDFOLD VW_BU-ACF
+;
+  CASE 309 ; Hauptgruppe 2, Untergruppe 9
+;
+  CASE 310 ; Hauptgruppe 2, Untergruppe 10
+    ;FOLD Servo_NZ Sollwert Zangenoeffnung
+    ; nur TRIG
+    ;ENDFOLD Servo_NZ Sollwert Zangenoeffnung
+;
+  CASE 401 ; Hauptgruppe 3, Untergruppe 1
+    ;FOLD CleanLaser
+      CL_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 402 ; Hauptgruppe 3, Untergruppe 2
+    ;FOLD SmartRay
+      SV_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 403 ; Hauptgruppe 3, Untergruppe 3
+    ;FOLD Auswertung Greifer
+      HLG_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+	CASE 404 ; Hauptgruppe 3, Untergruppe 4
+    ;FOLD Auswertung Teilkontrolle
+      HLG_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;	
+  CASE 405 ; Hauptgruppe 3, Untergruppe 5
+    ;FOLD Steuern Auswertung Greifer
+      HLF_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD;
+;
+  CASE 406 ; Hauptgruppe 3, Untergruppe 6
+    ;FOLD Steuern Auswertung Greifer
+      HLF_Interfac(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;	
+  CASE 410 ; Hauptgruppe 3, Untergruppe 10
+    ;FOLD Relativ-Bewegung mit Orientierungsuebernahme
+    ;ENDFOLD
+;
+	
+;------------------------------------------------------
+  CASE 501 ; Hauptgruppe 4, Untergruppe 1  
+    ;FOLD Zangenausgleich
+      GunForceParamDefine(PAR1,PAR2,PAR3)
+    ;ENDFOLD
+;------------------------------------------------------
+  CASE 510 ; Hauptgruppe 4, Untergruppe 10 nur im TRIG	
+;
+  CASE 801 ; Hauptgruppe 7, Untergruppe 1
+  
+  CASE 802,803 ; Hauptgruppe 7, Untergruppe 2,3
+  ;FOLD CONV ADV
+  IF (B_MIT_CONV==TRUE) THEN
+    VW_CONV_USR_R(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6,PAR7)
+  ENDIF
+;
+  CASE 806 ; Hauptgruppe 7, Untergruppe 6
+    ;FOLD INOS HPPOS ADV
+      INOS_Intrfc(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD (INOS HPPOS ADV)
+;
+  CASE 807 ; Hauptgruppe 7, Untergruppe 7
+    ;FOLD INOS HPFit ADV
+      INOS_Intrfc(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD (INOS HPFit ADV)  
+;
+  CASE 901 ; Hauptgruppe 8, Untergruppe 1 
+    ;FOLD HGV_IMTInt
+      HGV_IMTInt(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+  CASE 902 ; Hauptgruppe 8, Untergruppe 2
+    ;FOLD HGV_IMTInt
+      HGV_IMTInt(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD  
+;
+  CASE 903 ; Hauptgruppe 8, Untergruppe 3
+    ;FOLD HGV_IMTInt
+      HGV_IMTInt(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD 
+;  
+  CASE 1001 ; Hauptgruppe 9, Untergruppe 1
+    ;FOLD Perceptron
+      PRC_Interface(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)  
+    ;ENDFOLD  
+;
+  CASE 1002 ; Hauptgruppe 9, Untergruppe 2
+    ;FOLD Perceptron
+      PRC_Interface(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)  
+    ;ENDFOLD  
+;
+  CASE 1003 ; Hauptgruppe 9, Untergruppe 3
+    ;FOLD Perceptron
+      PRC_Interface(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)  
+    ;ENDFOLD (Perceptron ADV)
+;
+  DEFAULT    ;SWITCH CMD_SEL
+    Basic_R_Msg(19,#QuitMsg)   ;fehlerhafte Gruppennummer uebergeben
+ENDSWITCH  ;SWITCH CMD_SEL
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD USER_TRIG
+;
+DEF  USER_TRIG (CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN,PAR7 :IN)
+;Aufruf im Trigger der Punkt-SPS
+;
+INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+BOOL PAR7
+INT ret, i
+;
+IF (PAR7==FALSE) THEN
+  RETURN
+ENDIF  
+;
+SWITCH CMD_SEL
+;
+  CASE 101 ; Hauptgruppe 0, Untergruppe 1
+    ;FOLD S_Zangen
+      SZ_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+  CASE 103 ; Hauptgruppe 0, Untergruppe 3  
+    ;FOLD Clinchen
+      CZ_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 104 ; Hauptgruppe 0, Untergruppe 4
+    ;FOLD  MIG/MAG
+      MS_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 105 ; Hauptgruppe 0, Untergruppe 5
+    ;FOLD Suchlauf
+      SWITCH PAR1
+        CASE 3    ;Stromwert fuer Spreizmagnet
+          WHILE ((PAR5<0) OR (PAR5>80))
+            Basic_R_Msg(14,#QuitMsg) ; Spreizmagnete Stromwert zu hoch, Soll 0-80 
+          ENDWHILE
+          r_SPM_S_Vorg=(PAR5*0.1)
+          $ANOUT[12]=r_SPM_S_Vorg ;Stromvorgabe fuer Spreizmagnet
+          r_SPM_Z_Vorg=(PAR3*0.1) ;Pulszeitvorgabe
+;
+        DEFAULT
+      ENDSWITCH
+    ;ENDFOLD Suchlauf
+;
+  CASE 106 ; Hauptgruppe 0, Untergruppe 6
+    ;FOLD SafeRobot
+    IF (PAR7==TRUE) THEN   
+      SROB_Interf(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ENDIF
+    ;ENDFOLD SafeRobot
+;
+  CASE 108 ; Hauptgruppe 0, Untergruppe 8
+    ;FOLD Momentenbetrieb
+      IF (PAR1>0) THEN
+        TRQ_MomentenbetriebEin(PAR1)
+      ENDIF
+      IF (PAR1==0) THEN
+        LIN $POS_RET
+      ENDIF
+    ;ENDFOLD Momentenbetrieb
+;
+  CASE 110 ; Hauptgruppe 0, Untergruppe 10
+    ;FOLD Schrauben
+      SR_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 202 ; Hauptgruppe 1, Untergruppe 2
+    ;FOLD Bolzenschweissen
+      BZ_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+  CASE 203 ; Hauptgruppe 1, Untergruppe 3  
+    ;FOLD Nieten 
+      NZ_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 204 ; Hauptgruppe 1, Untergruppe 4    
+    ;FOLD Kollisionsueberwachung
+    ; nur ADV und MAIN
+    ;ENDFOLD
+  
+  CASE 206 ; Hauptgruppe 1, Untergruppe 6
+    ;FOLD StanzMutter
+      SM_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+  CASE 208 ; Hauptgruppe 1, Untergruppe 8
+    ;FOLD Stosspunkten
+      STP_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD
+;
+  CASE 209 ; Hauptgruppe 1, Untergruppe 9
+;
+  CASE 210 ; Hauptgruppe 1, Untergruppe 10
+    ;FOLD Reibelement
+      RW_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 301 ; Hauptgruppe 2, Untergruppe 1
+    ;FOLD Docking bei Profinet
+      DK_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 302 ; Hauptgruppe 2, Untergruppe 2
+    ;FOLD Audi_EKI-Schnittstelle
+      EKI_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD
+;
+  CASE 303 ; Hauptgruppe 2, Untergruppe 3
+    ;FOLD Kleben
+      KL_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 304 ; Hauptgruppe 2, Untergruppe 4
+    ;FOLD FDS
+      FDS_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 305 ; Hauptgruppe 2, Untergruppe 5 
+;
+  CASE 306 ; Hauptgruppe 2, Untergruppe 6 
+;
+  CASE 307 ; Hauptgruppe 2, Untergruppe 7
+    ;FOLD VW_BU_ACF
+    ; 
+    ;ENDFOLD VW_BU_ACF
+;
+  CASE 308 ; Hauptgruppe 2, Untergruppe 8
+    ;FOLD VW_BU_ACF
+    IF ((PAR7==FALSE) OR (NOT MIT_VwBu[1] AND NOT MIT_VwBu[2])) THEN
+      RETURN
+    ELSE
+      VW_BU_Interf(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ENDIF 
+    ;ENDFOLD VW_BU_ACF
+;
+  CASE 309 ; Hauptgruppe 2, Untergruppe 9
+;
+  CASE 310 ; Hauptgruppe 2, Untergruppe 10
+    ;FOLD Servo_NZ Sollwert Zangenoeffnung
+      NZ_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 401 ; Hauptgruppe 3, Untergruppe 1
+    ;FOLD CleanLaser
+      CL_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 402 ; Hauptgruppe 3, Untergruppe 2
+    ;FOLD SmartRay
+      SV_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 403 ; Hauptgruppe 3, Untergruppe 3
+    ;FOLD Auswertung Greifer
+      HLG_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 404 ; Hauptgruppe 3, Untergruppe 4
+    ;FOLD Auswertung Teilkontrolle
+      HLG_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 405 ; Hauptgruppe 3, Untergruppe 5
+    ;FOLD Auswertung Greifer
+      HLF_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 406 ; Hauptgruppe 3, Untergruppe 6
+    ;FOLD Auswertung Greifer
+      HLF_Interfac(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 410 ; Hauptgruppe 3, Untergruppe 10
+    ;FOLD Relativ-Bewegung mit Orientierungsuebernahme
+    ;ENDFOLD
+;
+;------------------------------------------------------
+  CASE 501 ; Hauptgruppe 4, Untergruppe 1
+;------------------------------------------------------
+  CASE 510 ; Hauptgruppe 4, Untergruppe 10
+;------------------------------------------------------
+;
+  CASE 801 ; Hauptgruppe 7, Untergruppe 1
+;
+  CASE 806 ; Hauptgruppe 7, Untergruppe 6
+    ;FOLD INOS HPPos TRIG
+      INOS_Intrfc(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)  
+    ;ENDFOLD
+;
+  CASE 807 ; Hauptgruppe 7, Untergruppe 7
+    ;FOLD INOS HPFit TRIG
+      INOS_Intrfc(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)  
+    ;ENDFOLD
+;
+  CASE 901 ; Hauptgruppe 8, Untergruppe 1
+    ;FOLD HGV_IMTInt
+      HGV_IMTInt(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)  
+    ;ENDFOLD  
+;  
+  CASE 902 ; Hauptgruppe 8, Untergruppe 2
+    ;FOLD HGV_IMTInt
+      HGV_IMTInt(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD  
+;  
+  CASE 903 ; Hauptgruppe 8, Untergruppe 3
+    ;FOLD HGV_IMTInt
+      HGV_IMTInt(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD  
+;
+  CASE 1001 ; Hauptgruppe 9, Untergruppe 1
+    ;FOLD Perceptron
+      PRC_Interface(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)  
+    ;ENDFOLD  
+;
+  CASE 1002 ; Hauptgruppe 9, Untergruppe 2
+    ;FOLD Perceptron
+      PRC_Interface(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD  
+;
+  CASE 1003 ; Hauptgruppe 9, Untergruppe 3
+    ;FOLD Perceptron
+      PRC_Interface(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD Perceptron
+;
+ENDSWITCH  ;SWITCH CMD_SEL
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD USER_MAIN
+;
+DEF  USER_MAIN (CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN,PAR7 :IN)
+;Aufruf im Hauptlauf
+;
+INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+BOOL PAR7
+INT P[5], R[5]
+INT I, N, ret,IntArray[5]
+REAL RealArray[1]
+;
+$FLAG[F_SZ_AH_KOMP]=FALSE
+USER_AKTIV=FALSE
+;
+;FOLD Tool_corr + Base_corr ruecksetzen
+Tool_Corr=$NULLFRAME 
+Base_Corr=$NULLFRAME
+;ENDFOLD
+;
+IF (PAR7==FALSE) THEN
+  RETURN
+ENDIF  
+;
+SWITCH CMD_SEL
+;
+  CASE 101 ; Hauptgruppe 0, Untergruppe 1
+    ;FOLD S_Zangen
+      SZ_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+  CASE 102 ; Hauptgruppe 0, Untergruppe 2
+    ;FOLD S_Zangen (PSZ)
+      SZ_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+  CASE 103 ; Hauptgruppe 0, Untergruppe 3
+    ;FOLD Clinchen
+      IF (PAR7==TRUE) THEN
+        CZ_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+      ENDIF
+    ;ENDFOLD   
+;
+  CASE 104 ; Hauptgruppe 0, Untergruppe 4
+    ;FOLD  MIG/MAG
+      MS_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 105 ; Hauptgruppe 0, Untergruppe 5
+    ;FOLD Suchlauf Base Setzen
+      SWITCH PAR1
+        CASE 1; Nur ADV
+;
+        CASE 3; Nur TRIG  
+;
+        CASE 11; Base nach erfolgreichem Suchlauf setzen
+          CONTINUE
+          WHILE (VW_MPARA_ACT.BASE_NO<1)
+            Basic_R_Msg(15,#QuitMsg) ; Base-Nr falsch
+          ENDWHILE
+          IF $FLAG[Fehler_Suchlauf]==TRUE THEN
+            Basic_R_Msg(16,#QuitMsg) ; Suchlauf fehlerhaft
+          ENDIF
+          ;Base 31 setzen
+          IF (BASE_TYPE[VW_MPARA_ACT.BASE_NO]==#BASE) THEN
+            IF MIT_erw_B_Ve THEN
+              CONTINUE
+              BASE_DATA[31]=BASE_DATA[VW_MPARA_ACT.BASE_NO]:$pos_act
+              $BASE=BASE_DATA[31]
+            ELSE
+              CONTINUE
+              $BASE=$NULLFRAME
+	           $BASE=$pos_act
+              BASE_DATA[31]=$BASE
+            ENDIF
+            IF NOT $EXT THEN
+	           Basic_R_Msg(18,#NotifyMsg)   ;Neue Base wurde gesetzt
+	           HALT
+	         ENDIF
+          ENDIF
+;
+          CASE 20; VW_XYZ-Scan
+            vw_xyz_scan(#USR_MAIN, CMD_SEL, PAR1, PAR2, PAR3, PAR4, PAR5, PAR6, PAR7)
+;
+        DEFAULT
+          Basic_R_Msg(20,#QuitMsg) ;P1 Falscher Wert
+      ENDSWITCH ;von PAR1
+    ;ENDFOLD
+;
+  CASE 106 ; Hauptgruppe 0, Untergruppe 6
+    ;FOLD SafeRobot
+    IF (PAR7==TRUE) THEN   
+      SROB_Interf(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ENDIF
+    ;ENDFOLD SafeRobot
+;
+  CASE 107 ; Hauptgruppe 0, Untergruppe 7
+;
+  CASE 108 ; Hauptgruppe 0, Untergruppe 8
+    ;FOLD Momentenbetrieb
+      IF (PAR1==0) THEN ;Momentenbetrieb ausschalten
+        FOR I = 1 TO 6
+          Reset_Torque_Limits(I)
+        ENDFOR
+        trqoff_Axis = $AXIS_ACT
+        trqoff_Pos = $POS_ACT
+;    
+        trq_startFrame.X = trqon_Pos.X
+        trq_startFrame.Y = trqon_Pos.Y
+        trq_startFrame.Z = trqon_Pos.Z
+        trq_startFrame.A = trqon_Pos.A
+        trq_startFrame.B = trqon_Pos.B
+        trq_startFrame.C = trqon_Pos.C
+;       
+        trq_stopFrame.X = trqoff_Pos.X
+        trq_stopFrame.Y = trqoff_Pos.Y
+        trq_stopFrame.Z = trqoff_Pos.Z
+        trq_stopFrame.A = trqoff_Pos.A
+        trq_stopFrame.B = trqoff_Pos.B
+        trq_stopFrame.C = trqoff_Pos.C    
+;      
+        trq_dist = DIST_FRAME(trq_startFrame, trq_stopFrame)
+        vw_logging("trq_axis", trqon_Axis.A1, trqon_Axis.A2, trqon_Axis.A3, trqon_Axis.A4, trqon_Axis.A5,trqon_Axis.A6,,,trqoff_Axis.A1, trqoff_Axis.A2, trqoff_Axis.A3, trqoff_Axis.A4, trqoff_Axis.A5, trqoff_Axis.A6)
+        vw_logging("trq_pos", trqon_Pos.X, trqon_Pos.Y, trqon_Pos.Z, trqon_Pos.A, trqon_Pos.B,trqon_Pos.C,trqoff_Pos.X, trqoff_Pos.Y, trqoff_Pos.Z, trqoff_Pos.A, trqoff_Pos.B, trqoff_Pos.C,,trq_dist)
+        IF NOT $EXT OR trq_debugMsg THEN
+          MsgNotify("Momentenbetrieb ausgeschaltet, Abweichung=%1 *0,1mm", "TORQ",(trq_dist*10),,110)
+        ENDIF 
+      ENDIF  
+    ;ENDFOLD Momentenbetrieb
+;
+  CASE 109 ; Hauptgruppe 0, Untergruppe 9
+    ;FOLD Relativ-Bewegung
+      P_REL.X=(PAR1*0.1)
+      P_REL.Y=(PAR2*0.1)
+      P_REL.Z=(PAR3*0.1)
+      P_REL.A=(PAR4*0.1)
+      P_REL.B=(PAR5*0.1)
+      P_REL.C=(PAR6*0.1)
+      LIN_REL P_REL C_VEL
+    ;ENDFOLD
+;
+  CASE 110 ; Hauptgruppe 0, Untergruppe 10
+    ;FOLD Schrauben
+      SR_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 201 ; Hauptgruppe 1, Untergruppe 1
+    ;FOLD Ext-Achsen synchron- asynchron schalten
+      SWITCH PAR1
+        CASE 7
+          SWITCH PAR2
+            CASE 1
+              $ASYNC_AXIS= 'B0000'
+            CASE 2
+              $ASYNC_AXIS= 'B0001'
+            DEFAULT
+              Basic_R_Msg(21,#QuitMsg) ;P2 Falscher Wert
+          ENDSWITCH ;von PAR2
+;
+        CASE 8
+          SWITCH PAR2
+            CASE 1
+              $ASYNC_AXIS= 'B0000'
+            CASE 2
+              $ASYNC_AXIS= 'B0010'
+            DEFAULT
+              Basic_R_Msg(21,#QuitMsg) ;P2 Falscher Wert
+          ENDSWITCH ;von PAR2
+;
+        CASE 9
+          SWITCH PAR2
+            CASE 1
+              $ASYNC_AXIS= 'B0000'
+            CASE 2
+              $ASYNC_AXIS= 'B0100'
+            DEFAULT
+              Basic_R_Msg(21,#QuitMsg) ;P2 Falscher Wert
+          ENDSWITCH ;von PAR2
+;
+        CASE 78
+          SWITCH PAR2
+            CASE 1
+              $ASYNC_AXIS= 'B0000'
+            CASE 2
+              $ASYNC_AXIS= 'B0011'
+            DEFAULT
+              Basic_R_Msg(21,#QuitMsg) ;P2 Falscher Wert
+          ENDSWITCH ;von PAR2
+;
+        CASE 89
+          SWITCH PAR2
+            CASE 1
+              $ASYNC_AXIS= 'B0000'
+            CASE 2
+              $ASYNC_AXIS= 'B0110'
+            DEFAULT
+              Basic_R_Msg(21,#QuitMsg) ;P2 Falscher Wert
+          ENDSWITCH ;von PAR2
+;
+        DEFAULT
+          Basic_R_Msg(20,#QuitMsg) ;P1 Falscher Wert
+      ENDSWITCH ;von PAR1
+    ;ENDFOLD
+;
+  CASE 202 ; Hauptgruppe 1, Untergruppe 2
+    ;FOLD Bolzenschweissen
+      BZ_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+  CASE 203 ; Hauptgruppe 1, Untergruppe 3
+    ;FOLD Nieten
+      NZ_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD   
+;
+  CASE 204 ; Hauptgruppe 1, Untergruppe 4
+    ;FOLD Kollisionsueberwachung
+      Index=PAR3
+      WHILE (PAR2<1) OR (PAR2>2)
+        Basic_R_Msg(17,#QuitMsg) ;P2 Falscher Wert
+      ENDWHILE
+      SWITCH PAR1
+        CASE 1
+          ;Kollisionsdaten lernen START
+          IF PAR2==1 THEN
+            ;Torq_diff auf 0 setzen
+            FOR i=1 to 6
+              $TORQ_DIFF[i]=0
+            ENDFOR
+            ;Koll_dat auf 0 setzen
+            Koll_dat[Index].A1=0
+            Koll_dat[Index].A2=0
+            Koll_dat[Index].A3=0
+            Koll_dat[Index].A4=0
+            Koll_dat[Index].A5=0
+            Koll_dat[Index].A6=0
+          ENDIF
+          ;Kollisionsdaten lernen STOP
+          IF PAR2==2 THEN
+            IF ($TORQ_DIFF[1]) > (Koll_dat[Index].A1) THEN
+              Koll_dat[Index].A1=$TORQ_DIFF[1]+PAR4
+            ENDIF
+            IF ($TORQ_DIFF[2]) > (Koll_dat[Index].A2) THEN
+              Koll_dat[Index].A2=$TORQ_DIFF[2]+PAR4
+            ENDIF
+            IF ($TORQ_DIFF[3]) > (Koll_dat[Index].A3) THEN
+              Koll_dat[Index].A3=$TORQ_DIFF[3]+PAR4
+            ENDIF
+            IF ($TORQ_DIFF[4]) > (Koll_dat[Index].A4) THEN
+              Koll_dat[Index].A4=$TORQ_DIFF[4]+PAR4
+            ENDIF
+            IF ($TORQ_DIFF[5]) > (Koll_dat[Index].A5) THEN
+              Koll_dat[Index].A5=$TORQ_DIFF[5]+PAR4
+            ENDIF
+            IF ($TORQ_DIFF[6]) > (Koll_dat[Index].A6) THEN
+              Koll_dat[Index].A6=$TORQ_DIFF[6]+PAR4
+            ENDIF
+            IF  (Koll_dat[Index].A1<>0) AND (Koll_dat[Index].A2<>0) AND (Koll_dat[Index].A3<>0) AND (Koll_dat[Index].A4<>0) AND (Koll_dat[Index].A5<>0) AND (Koll_dat[Index].A6<>0) THEN
+              Koll_Teach[Index]=TRUE
+              Basic_R_Msg(26,#NotifyMsg) ;Kollisionsueberwachung gelernt
+            ELSE
+              Koll_Teach[Index]=FALSE
+            ENDIF  
+          ENDIF
+        CASE 2
+          ;Kollisionspruefung aktivieren
+          IF PAR2==1 THEN
+            ; Ueberwachung parametrieren
+            $TORQMON[1]=Koll_dat[Index].A1
+            $TORQMON[2]=Koll_dat[Index].A2
+            $TORQMON[3]=Koll_dat[Index].A3
+            $TORQMON[4]=Koll_dat[Index].A4
+            $TORQMON[5]=Koll_dat[Index].A5
+            $TORQMON[6]=Koll_dat[Index].A6
+          ENDIF
+          ;Kollisionspruefung deaktivieren
+          IF PAR2==2 THEN
+            FOR i=1 to 6
+              $TORQMON[i]=(200-KOLL_RED)
+            ENDFOR
+          ENDIF
+;
+        DEFAULT
+          Basic_R_Msg(20,#QuitMsg) ;P1 Falscher Wert
+      ENDSWITCH ;von PAR1
+    ;ENDFOLD
+;
+  CASE 205 ; Hauptgruppe 1, Untergruppe 5
+    ;FOLD MIG-Suchlauf
+      MS_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD
+;
+  CASE 206 ; Hauptgruppe 1, Untergruppe 6
+    ;FOLD StanzMutter
+      SM_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 207 ; Hauptgruppe 1, Untergruppe 7
+    ;FOLD Buckelpraegen
+      $COUNT_I[I_Arbpkt_Nr]=PAR6
+    ;ENDFOLD
+;
+  CASE 208 ; Hauptgruppe 1, Untergruppe 8
+    ;FOLD Stosspunkten
+      STP_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD
+;
+  CASE 209 ; Hauptgruppe 1, Untergruppe 9
+;
+  CASE 210 ; Hauptgruppe 1, Untergruppe 10
+    ;FOLD Reibelement
+      RW_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 301 ; Hauptgruppe 2, Untergruppe 1 nur im TRIG
+;
+  CASE 302 ; Hauptgruppe 2, Untergruppe 2 nur im TRIG
+    ;FOLD Audi_EKI-Schnittstelle
+      EKI_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD
+;
+  CASE 303 ; Hauptgruppe 2, Untergruppe 3 
+;
+  CASE 304 ; Hauptgruppe 2, Untergruppe 4 
+    ;FOLD FDS
+      FDS_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 305 ; Hauptgruppe 2, Untergruppe 5
+;
+  CASE 306 ; Hauptgruppe 2, Untergruppe 6
+  ;FOLD Blindnietmuttern MAIN
+   IF MIT_BN[1]==TRUE THEN
+      BN_Interface(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+   ENDIF
+;ENDFOLD Blindnietmuttern ADV
+;  
+;~~~~~~~~~VW-Teil-Anfang~~~~~~~~
+;
+;------------------------------------------------------
+  CASE 307 ; Hauptgruppe 2, Untergruppe 7
+    ;FOLD VW_BU_ACF
+    IF ((PAR7==FALSE) OR (NOT MIT_VwBu[1] AND NOT MIT_VwBu[2])) THEN
+      RETURN
+    ELSE
+      VW_BU_Interf(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ENDIF
+    ;ENDFOLD VW_BU_ACF
+;
+;------------------------------------------------------
+  CASE 308 ; Hauptgruppe 2, Untergruppe 8
+    ;FOLD VW_BU_ACF
+    IF ((PAR7==FALSE) OR (NOT MIT_VwBu[1] AND NOT MIT_VwBu[2])) THEN
+      RETURN
+    ELSE
+      VW_BU_Interf(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ENDIF
+    ;ENDFOLD VW_BU_ACF
+;
+;~~~~~~~~~VW-Teil-Ende~~~~~~~~
+;    
+  CASE 309 ; Hauptgruppe 2, Untergruppe 9
+    ;FOLD Ipo-Taktermittlung
+      Ipo_Interfac(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)  
+    ;ENDFOLD
+;
+  CASE 310 ; Hauptgruppe 2, Untergruppe 10 
+;
+  CASE 401 ; Hauptgruppe 3, Untergruppe 1
+;
+  CASE 402 ; Hauptgruppe 3, Untergruppe 2
+;
+;Begin Greiferfehler
+  CASE 403;  Hauptgruppe 3, Untergruppe 3
+;
+  CASE 404;  Hauptgruppe 3, Untergruppe 4  
+;
+  CASE 405;  Hauptgruppe 3, Untergruppe 5
+;
+  CASE 406;  Hauptgruppe 3, Untergruppe 6  
+;End Greiferfehler
+;
+;
+  CASE 410 ; Hauptgruppe 3, Untergruppe 10
+    ;FOLD Relativ-Bewegung mit Orientierungsuebernahme
+;
+SWITCH Par1
+  CASE 1
+    Or_old_Frame = $BASE
+    $BASE = $WORLD
+    ; P1 = 1 Orientierungswerte aufnehmen
+    Orient_Frame = $Pos_Act
+    Ori_frameset = TRUE
+    Ori_frame_Nr = Par2
+    $BASE = Or_old_Frame
+  CASE 2
+    IF (Ori_frameset == TRUE) THEN
+      ; Frame Nr pruefen
+      IF (Ori_frame_Nr == Par2) THEN
+        $ADVANCE = 0
+        Or_old_Frame = $BASE
+        $BASE = $WORLD
+        ; P1 = 2 Relativverschiebung X=PAR4, Y=PAR5, Z=PAR6 Orientierung aus Fremdpunkt
+        P_REL.X = PAR4
+        P_REL.Y =PAR5
+        P_REL.Z = PAR6
+        P_REL.A = (Orient_Frame.A - $Pos_Act.A)
+        P_REL.B = (Orient_Frame.B - $Pos_Act.B)
+        P_REL.C = (Orient_Frame.C - $Pos_Act.C)
+        IF (PAR7==TRUE) THEN
+          LIN_REL P_REL C_VEL
+        ELSE
+          LIN_REL P_REL
+        ENDIF ;Von P7
+        $BASE = Or_old_Frame
+        $ADVANCE = 1
+      ELSE
+        Basic_R_Msg(95,#QuitMsg)
+      ENDIF
+    ELSE
+      Basic_R_Msg(94,#QuitMsg)
+    ENDIF
+    Ori_frameset = FALSE
+  DEFAULT
+    Basic_R_Msg(20,#QuitMsg) ;P1 Falscher Wert
+ENDSWITCH
+;
+    ;ENDFOLD
+;
+;------------------------------------------------------
+  CASE 501 ; Hauptgruppe 4, Untergruppe 1
+;------------------------------------------------------
+  CASE 510 ; Hauptgruppe 4, Untergruppe 10 nur im TRIG  
+;
+  CASE 801 ; Hauptgruppe 7, Untergruppe 1
+    ;FOLD CGX
+      CGX_Intrface(#USR_MAIN, CMD_SEL, PAR1, PAR2, PAR3, PAR4, PAR5, PAR6) ;EKI KUKA--COGNEX
+    ;ENDFOLD  
+    
+  CASE 802,803 ; Hauptgruppe 7, Untergruppe 2,3
+  ;FOLD CONV MAIN
+  IF (B_MIT_CONV==TRUE) THEN
+    VW_CONV_USR_R(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6,PAR7)
+  ENDIF
+;
+  CASE 806 ; Hauptgruppe 7, Untergruppe 6
+    ;FOLD INOS HPPos MAIN
+      INOS_Intrfc(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD
+;
+  CASE 807 ; Hauptgruppe 7, Untergruppe 7
+    ;FOLD INOS HPFit MAIN
+      INOS_Intrfc(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD
+;
+;~~~~~~~~~VW-Teil-Anfang~~~~~~~~
+  CASE 809 ; Hauptgruppe 7, Untergruppe 9 
+    ;FOLD GOM MAIN
+      IF (PAR7==TRUE) AND (B_MIT_GOM==TRUE) THEN   
+        GOM_Interface(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+      ENDIF
+;
+;------------------------------------------------------
+  CASE 810 ; Hauptgruppe 7, Untergruppe 10
+      IF (PAR7==TRUE) AND (B_MIT_GOM==TRUE) THEN 
+        GOM_Interface(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+      ENDIF
+    ;ENDFOLD (GOM MAIN)
+;~~~~~~~~~VW-Teil-Ende~~~~~~~~
+;
+  CASE 901 ; Hauptgruppe 8, Untergruppe 1 
+    ;FOLD HGV_IMTInt
+      HGV_IMTInt(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD  
+;  
+  CASE 902 ; Hauptgruppe 8, Untergruppe 2
+    ;FOLD HGV_IMTInt
+      HGV_IMTInt(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD  
+;  
+  CASE 903 ; Hauptgruppe 8, Untergruppe 3
+    ;FOLD HGV_IMTInt
+      HGV_IMTInt(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 1001 ; Hauptgruppe 9, Untergruppe 1 
+    ;FOLD Perceptron
+      PRC_Interface(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD
+;
+  CASE 1002 ; Hauptgruppe 9, Untergruppe 2
+    ;FOLD Perceptron
+      PRC_Interface(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  CASE 1003 ; Hauptgruppe 9, Untergruppe 3
+    ;FOLD Perceptron
+      PRC_Interface(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6) 
+    ;ENDFOLD
+;
+  DEFAULT    ;SWITCH CMD_SEL
+    Basic_R_Msg(19,#QuitMsg)   ;fehlerhafte Gruppennummer uebergeben
+ENDSWITCH  ;SWITCH CMD_SEL
+;
+END
+;ENDFOLD
+;
+;------------------------------------------------------
+;FOLD USER_MAKRO
+DEF  USER_MAKRO (CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN,PAR7 :IN)
+;Aufruf im Vorlauf
+INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+BOOL PAR7
+INT ret
+;
+IF (PAR7==FALSE) THEN
+  RETURN
+ENDIF  
+;
+SWITCH CMD_SEL
+;
+  CASE 101 ; Hauptgruppe 0, Untergruppe 1
+    ;FOLD Zangenausgleich
+      SZ_Interfac(#USR_MAKRO,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD  
+;
+  CASE 102 ; Hauptgruppe 0, Untergruppe 2
+    ;FOLD Docking bei Profinet
+      DK_Interfac(#USR_MAKRO,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD  
+;
+  CASE 103 ; Hauptgruppe 0, Untergruppe 3
+    ;FOLD Konfiguration-Docking
+      DK_Interfac(#USR_MAKRO,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+  CASE 104 ; Hauptgruppe 0, Untergruppe 4
+    ;FOLD Totzeitermittlung
+      Ipo_Interfac(#USR_MAKRO,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+  CASE 105 ; Hauptgruppe 1, Untergruppe 1
+    ;FOLD Produktion ohne Bauteil
+      POT_Interfac(#USR_MAKRO,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)   
+    ;ENDFOLD
+;
+	CASE 106 ; Hauptgruppe 0, Untergruppe 1
+    ;FOLD Zangenausgleich
+      SZ_Interfac(#USR_MAKRO,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD  
+;
+;----------------FEHLERAUSWERTUNG Spanngruppen Greifer--------------------------------
+    CASE 107 ; Hauptgruppe 0, Untergruppe 7
+    ;FOLD Fehler Auswertung Greifer
+      HLG_Interfac(#USR_MAKRO,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD  
+;----------------FEHLERAUSWERTUNG Teilkontrolle Greifer--------------------------------
+    CASE 108 ; Hauptgruppe 0, Untergruppe 8
+    ;FOLD Fehler Auswertung Greifer
+      HLG_Interfac(#USR_MAKRO,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD  
+;-------------------------------------------------------------------------------------
+    CASE 109 ; Hauptgruppe 0, Untergruppe 9
+    ;FOLD Handling Funktionsbaustein
+      HLF_Interfac(#USR_MAKRO,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD  
+;-------------------------------------------------------------------------------------
+    CASE 110 ; Hauptgruppe 0, Untergruppe 10
+    ;FOLD Handling Funktionsbaustein
+      HLF_Interfac(#USR_MAKRO,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    ;ENDFOLD  
+;
+  DEFAULT    ;SWITCH CMD_SEL
+    Basic_R_Msg(19,#QuitMsg)   ;fehlerhafte Gruppennummer uebergeben
+ENDSWITCH  ;SWITCH CMD_SEL
+;
+END
+;ENDFOLD
+;
+;------------------------------------------------------
+;FOLD Momentenbetrieb
+DEF TRQ_MomentenbetriebEin(param1:IN)
+BOOL TypA, TypB
+INT param1, axnum, modeOp
+real max_vel, max_lag
+decl torqlimitparam torqlim
+;
+WHILE ($LOAD.M <=0)
+  MsgQuit("Lastdaten ungueltig", "TORQ",,,110)
+ENDWHILE
+;
+WAIT FOR NOT $PRO_MOVE
+;
+SWITCH $mode_op
+CASE #T1
+   modeOp=1
+CASE #T2
+   modeOp=2
+CASE #AUT
+   modeOp=3
+CASE #EX
+   modeOp=4
+DEFAULT
+   modeOp=-1
+ENDSWITCH
+;
+vw_logging("trq_on", $TORQUE_AXIS_ACT[1], $TORQUE_AXIS_ACT[2], $TORQUE_AXIS_ACT[3], $TORQUE_AXIS_ACT[4], $TORQUE_AXIS_ACT[5],$TORQUE_AXIS_ACT[6], $HOLDING_TORQUE[1], $HOLDING_TORQUE[2], $HOLDING_TORQUE[3], $HOLDING_TORQUE[4], $HOLDING_TORQUE[5], $HOLDING_TORQUE[6],VW_MPARA_ACT.TOOL_NO,modeOp)
+trqon_Axis = $AXIS_ACT
+trqoff_Axis={A1 0.0,A2 0.0,A3 0.0,A4 0.0,A5 0.0,A6 0.0}
+trqon_Pos = $POS_ACT
+trqoff_Pos={X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0} 
+;
+TypA=StrComp($TRAFONAME[], "#KR500_3 C4 FLR ZH500_3", #NOT_CASE_SENS)
+TypB=StrComp($TRAFONAME[], "#KR500_2 H C4 FLR ZH500", #NOT_CASE_SENS) 
+FOR axnum = 1 to 6
+  IF TRQ_AxisIsSelected(param1, axnum) THEN
+    IF (($LOAD.M >= 240) and ((TypA==TRUE) or (TypB==TRUE))) THEN       ;Abfrage Last und Robotertyp! 
+      IF axnum == 2  THEN
+        $Holding_torque_mand[2] = false
+        torqlim.lower = ($Torque_axis_act[2]*1.1)-10
+        torqlim.upper = ($Torque_axis_act[2]*1.1)+10
+        torqlim.max_lag = 0.5
+        torqlim.max_vel = 10  
+        torqlim.monitor = #off
+        SET_TORQUE_LIMITS(2, torqlim)             
+      ELSE          
+        torqlim.lower = $holding_torque[axnum]-10
+        torqlim.upper = $holding_torque[axnum]+10
+        torqlim.max_lag = 0.5
+        torqlim.max_vel = 10  
+        torqlim.monitor = #off
+        SET_TORQUE_LIMITS(axnum, torqlim)
+      ENDIF
+    ELSE
+      IF axnum == 2  THEN
+        $Holding_torque_mand[2] = false
+        torqlim.lower = $Torque_axis_act[2]-10
+        torqlim.upper = $Torque_axis_act[2]+10
+        torqlim.max_lag = 0.5
+        torqlim.max_vel = 10  
+        torqlim.monitor = #off
+        SET_TORQUE_LIMITS(2, torqlim)               
+      ELSE          
+        torqlim.lower = $holding_torque[axnum]-10
+        torqlim.upper = $holding_torque[axnum]+10
+        torqlim.max_lag = 0.5
+        torqlim.max_vel = 10  
+        torqlim.monitor = #off
+        SET_TORQUE_LIMITS(axnum, torqlim)
+      ENDIF
+    ENDIF
+  ENDIF
+ENDFOR
+; einmaliges Aktivieren der Momentenbegrenzung
+PTP $AXIS_ACT
+;
+IF NOT $EXT OR trq_debugMsg THEN 
+  MsgNotify("Momentenbetrieb eingeschaltet", "TORQ",,,110)
+ENDIF
+END
+;
+;------------------------------------------------------
+DEFFCT BOOL TRQ_AxisIsSelected(param1:IN, axisnum:IN)
+INT i,param1, axisnum, axval
+BOOL axisSelected
+;
+axval=1
+for i=1 TO (axisnum-1)
+  axval = axval * 2
+endfor
+;
+IF (param1 B_AND axval > 0) THEN
+  axisSelected=TRUE
+ELSE 
+  axisSelected=FALSE
+ENDIF
+;
+RETURN(axisSelected)
+ENDFCT
+;
+;------------------------------------------------------
+DEF vw_logging(sSender[]:IN, _r1:IN, _r2:IN, _r3:IN, _r4:IN, _r5:IN, _r6:IN, _r7:IN, _r8:IN, _r9:IN, _r10:IN, _r11:IN, _r12:IN, _r13:IN, _r14:IN)
+DECL CHAR sSender[]
+DECL REAL _r1,_r2,_r3,_r4,_r5,_r6,_r7,_r8,_r9,_r10,_r11,_r12,_r13,_r14
+DECL INT len, count
+;
+IF ((co < 1) OR (co > 99)) THEN
+  co=1
+ELSE
+  co = co + 1
+ENDIF
+logdata[co]={time {date 0,time 0},name[] " ", r1 0.0, r2 0.0, r3 0.0, r4 0.0, r5 0.0, r6 0.0, r7 0.0, r8 0.0, r9 0.0, r10 0.0, r11 0.0, r12 0.0, r13 0.0, r14 0.0}
+logdata[co].time.date=logDate()
+logdata[co].time.time=logTime()
+;
+Err_Clear($Err)
+On_Error_Proceed
+len=Strlen(sSender[])
+IF $Err.Number==0 THEN
+  IF len>0 THEN
+    IF len>8 THEN
+      len=8
+    ENDIF
+    FOR count = 1 to len
+      logdata[co].name[count] =sSender[count]
+    ENDFOR
+  ENDIF   
+ELSE
+  logdata[co].name[]="unknown"
+ENDIF
+;
+On_Error_Proceed
+logdata[co].r1 = _r1
+On_Error_Proceed
+logdata[co].r2 = _r2
+On_Error_Proceed
+logdata[co].r3 = _r3
+On_Error_Proceed
+logdata[co].r4 = _r4
+On_Error_Proceed
+logdata[co].r5 = _r5
+On_Error_Proceed
+logdata[co].r6 = _r6
+On_Error_Proceed
+logdata[co].r7 = _r7
+On_Error_Proceed
+logdata[co].r8 = _r8
+On_Error_Proceed
+logdata[co].r9 = _r9
+On_Error_Proceed
+logdata[co].r10 = _r10
+On_Error_Proceed
+logdata[co].r11 = _r11
+On_Error_Proceed
+logdata[co].r12 = _r12
+On_Error_Proceed
+logdata[co].r13 = _r13
+On_Error_Proceed
+logdata[co].r14 = _r14
+;
+END
+;
+;------------------------------------------------------
+DEFFCT INT logDate()
+INT logDate
+DECL DATE actDate
+actDate=$DATE
+logDate = actDate.year * 10000
+logDate = logDate + actDate.month * 100
+logDate = logDate + actDate.day
+RETURN(logDate)
+ENDFCT
+;
+;------------------------------------------------------
+DEFFCT INT logTime()
+INT logTime
+DECL DATE actTime
+actTime=$DATE
+logTime = actTime.hour * 10000
+logTime = logTime + actTime.min * 100
+logTime = logTime + actTime.sec
+RETURN(logTime)
+ENDFCT
+;
+;ENDFOLD Momentenbetrieb
+;
+;------------------------------------------------------
+;FOLD Feldbus-Teilnehmer zuschalten
+DEF IBS_ZU()
+IF IBS_T THEN
+  SEL_RES=SELECT(#MAKRO,59,TRUE,,,,,FALSE)
+  $FLAG[F_IBS_Altern]=FALSE
+ENDIF
+END
+;ENDFOLD
+;
+;------------------------------------------------------
+;FOLD Greiferstatus an BMS melden
+DEF Greifer_Stat()
+IF Mit_Greif_St THEN
+  SEL_RES=SELECT(#MAKRO,341,TRUE,,,,,FALSE)
+  Greif_Timer=$ROB_TIMER
+  B_Grei_Stat=FALSE
+ENDIF
+END
+;ENDFOLD
+;
+;-------------------------------------------------------
+GLOBAL DEFFCT  REAL DIST_FRAME(P1:OUT,P2:OUT)
+; Berechnung des Abstandes zwischen 2 Positionen
+FRAME P1,P2
+REAL DIST_VEC[3]
+DIST_VEC[1]=P2.X-P1.X
+DIST_VEC[2]=P2.Y-P1.Y
+DIST_VEC[3]=P2.Z-P1.Z
+RETURN  (VEK_LAENGE(DIST_VEC[],3))
+ENDFCT
+;
+;-------------------------------------------------------
+GLOBAL DEFFCT  REAL VEK_LAENGE(V[]:OUT,N :IN)
+; Berechnung der euklidischen Laenge des N-dimensionalen Vektors V
+REAL V[]
+INT N
+RETURN  (SQRT(SKAL_PROD(V[],V[],N)))
+ENDFCT
+;
+;------------------------------------------------------
+GLOBAL DEFFCT  REAL SKAL_PROD(V[]:OUT,W[]:OUT,N :IN)
+; Berechnung des Skalarprodukts der beiden N-dimensionalen Vektoren
+; V und W
+REAL V[],W[]
+INT N
+REAL SK_PROD
+INT I
+SK_PROD=0
+FOR I=1 TO  N
+  SK_PROD=SK_PROD+V[I]*W[I]
+ENDFOR
+RETURN  (SK_PROD)
+ENDFCT
+;
+;------------------------------------------------------
+;FOLD Message
+DEF  Basic_R_Msg(Msg_nr :IN, MsgTyp :IN)
+INT Msg_nr, OFFSET
+DECL AU_MsgType MsgTyp
+Decl KrlMsg_T USER_Msg
+Decl KrlMsgPar_T Par[3]
+Decl KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "VW_USR_R", Nr -1, Msg_txt[] " "}
+Par[1] = { Par_type #Value, Par_txt[] " " }
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+;
+OFFSET=0
+IF ((n_USRR_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = Msg_nr
+  SWITCH  Msg_nr
+    CASE 1
+      USER_MSG.MSG_TXT[]="Fehler: Base 0 geteacht"
+    CASE 2
+      USER_MSG.MSG_TXT[]="TOOL_CORR fehlt"
+    CASE 3
+      USER_MSG.MSG_TXT[]="BASE_CORR fehlt"
+    CASE 4
+      USER_MSG.MSG_TXT[]="P2 Werte nur 1 - 13 zulaessig"
+    CASE 5
+      USER_MSG.MSG_TXT[]="Sensor 1 defekt/Sensor 1 pruefen"
+    CASE 6
+      USER_MSG.MSG_TXT[]="Sensor 2 defekt/Sensor 2 pruefen"
+    CASE 7
+      USER_MSG.MSG_TXT[]="Suchlauf Nahsensor defekt"
+    CASE 8
+      USER_MSG.MSG_TXT[]="Teilespeicher-Nr. von SPS fehlt"
+    CASE 9
+      USER_MSG.MSG_TXT[]="SPS Speicherposition ungueltig"
+    CASE 10
+      USER_MSG.MSG_TXT[]="Koordinaten fuer Speicherposition ungueltig"
+    CASE 11
+      USER_MSG.MSG_TXT[]="Base Type ungueltig"
+    CASE 12
+      USER_MSG.MSG_TXT[]="P4 Werte nur 1 - 40 zulaessig"
+    CASE 13
+      USER_MSG.MSG_TXT[]="Punkt schon gepraegt"
+    CASE 14
+      USER_MSG.MSG_TXT[]="Spreizmagnete Stromwert zu hoch, Soll 0-80"
+    CASE 15
+      USER_MSG.MSG_TXT[]="Base-Nr falsch"
+    CASE 16
+      USER_MSG.MSG_TXT[]="Suchlauf fehlerhaft"
+    CASE 17
+      USER_MSG.MSG_TXT[]="P2 Werte nur 1 - 2 zulaessig"
+    CASE 18
+      USER_MSG.MSG_TXT[]="Suchl. Neue Base wurde gesetzt"
+    CASE 19
+      USER_MSG.MSG_TXT[]="falsche Gruppennummer "
+    CASE 20
+      USER_MSG.MSG_TXT[]="P1 Falscher Wert"
+    CASE 21
+      USER_MSG.MSG_TXT[]="P2 Falscher Wert"
+    CASE 22
+      USER_MSG.MSG_TXT[]="P3 Falscher Wert"  
+    CASE 23
+      USER_MSG.MSG_TXT[]="P4 Falscher Wert" 
+    CASE 24
+      USER_MSG.MSG_TXT[]="P5 Falscher Wert" 
+    CASE 25
+      USER_MSG.MSG_TXT[]="P6 Falscher Wert" 
+    CASE 26
+      USER_MSG.MSG_TXT[]="Kollisionsueberwachung gelernt" 
+    CASE 27
+      USER_MSG.MSG_TXT[]=" " 
+    CASE 28
+      USER_MSG.MSG_TXT[]=" "       
+    CASE 94
+      USER_MSG.MSG_TXT[]="Fehler Orinetierungs-USER:Orientierungsdaten fehlen" 
+    CASE 95
+      USER_MSG.MSG_TXT[]="Fehler Orinetierungs-USER:falsche Framenummer" 
+    DEFAULT
+      USER_MSG.MSG_TXT[]="Meldung nicht Deklariert" ; Meldungsnummer nicht programmiert
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #QuitMsg
+      n_USRR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      WHILE ( Exists_KrlMsg(n_USRR_Handle[msg_nr]) )  ;Warten bis der Anwender quittiert
+        WAIT Sec 0.1
+      ENDWHILE
+    CASE #NotifyMsg
+      n_USRR_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    CASE #StateMsg  
+      n_USRR_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Zustandsmeldung
+    DEFAULT
+      n_USRR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF  
+END
+;ENDFOLD
+;
+;------------------------------------------------------
+;
+;ENDFOLD hidden fold ueber ganzen user MUE 18.2
+

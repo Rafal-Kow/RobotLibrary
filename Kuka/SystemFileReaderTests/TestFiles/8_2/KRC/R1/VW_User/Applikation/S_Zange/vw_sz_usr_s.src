@@ -1,0 +1,2369 @@
+&ACCESS RV
+&REL 203
+&PARAM DISKPATH = VW_User/Applikation/S_Zange
+&PARAM TPVW_VERSION = 8.3.0
+DEF vw_sz_usr_s( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket S_Zangen                            *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.19 LE                                       *
+;* 2017.01.26 MBA Anpassung Teachfunktion KE           *
+;* 2017.02.03 MBA Mit_BM1 bei BM2 korrigiert           *
+;*            Zangenfkt. bei BM2 korrigiert            *
+;* 2017.09.26 LZ "F_SZ_POT_Fra=838" bei POT gegen      *
+;*            "Prog_Nr_SZ#>98" getauscht               * 
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD INIT S_Zangen
+GLOBAL DEF SZ_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_S_Zangen.Name[]="KS24.01.008_170926"
+;ENDFOLD
+;
+;FOLD Vorbesetzung Meldungsausgabe
+FOR i = 1 TO 100
+  n_SZS_Handle[i]=-1
+  n_SZR_Handle[i]=-1
+ENDFOR
+;ENDFOLD
+;
+;FOLD TimerInit
+FOR i = 1 TO 3
+  LBitTimeCnt[i] = $Rob_Timer
+ENDFOR  
+;ENDFOLD
+;
+; Zaehle Flags fuer q-Tool
+;SZ1
+IF $Flag[F_QT_SZ1_VW] THEN
+  Q_T_SZ1_VW=Q_T_SZ1_VW+1
+ENDIF
+IF $Flag[F_QT_SZ1_Fe] THEN
+  Q_T_SZ1_Fe=Q_T_SZ1_Fe+1
+ENDIF
+IF $Flag[F_QT_SZ1_kD] THEN
+  Q_T_SZ1_kD=Q_T_SZ1_kD+1
+ELSE
+  Q_T_SZ1_kD=0
+ENDIF
+;
+;SZ2
+IF $Flag[F_QT_SZ2_VW] THEN
+  Q_T_SZ2_VW=Q_T_SZ2_VW+1
+ENDIF
+IF $Flag[F_QT_SZ2_Fe] THEN
+  Q_T_SZ2_Fe=Q_T_SZ2_Fe+1
+ENDIF
+IF $Flag[F_QT_SZ2_kD] THEN
+  Q_T_SZ2_kD=Q_T_SZ2_kD+1
+ELSE
+  Q_T_SZ2_kD=0
+ENDIF
+;SZ3
+;
+IF $Flag[F_QT_SZ3_VW] THEN
+  Q_T_SZ3_VW=Q_T_SZ3_VW+1
+ENDIF
+IF $Flag[F_QT_SZ3_Fe] THEN
+  Q_T_SZ3_Fe=Q_T_SZ3_Fe+1
+ENDIF
+IF $Flag[F_QT_SZ3_kD] THEN
+  Q_T_SZ3_kD=Q_T_SZ3_kD+1
+ELSE
+  Q_T_SZ3_kD=0
+ENDIF
+;
+; Zaehlergrenze damit kein ueberlauf entsteht
+IF Q_T_SZ1_VW>1000000 THEN
+  Q_T_SZ1_VW=0
+ENDIF
+IF Q_T_SZ1_Fe>1000000 THEN
+  Q_T_SZ1_Fe=0
+ENDIF
+IF Q_T_SZ1_kD>1000000 THEN
+  Q_T_SZ1_kD=0
+ENDIF
+IF Q_T_SZ2_VW>1000000 THEN
+  Q_T_SZ2_VW=0
+ENDIF
+IF Q_T_SZ2_Fe>1000000 THEN
+  Q_T_SZ2_Fe=0
+ENDIF
+IF Q_T_SZ2_kD>1000000 THEN
+  Q_T_SZ2_kD=0
+ENDIF
+IF Q_T_SZ3_VW>1000000 THEN
+  Q_T_SZ3_VW=0
+ENDIF
+IF Q_T_SZ3_Fe>1000000 THEN
+  Q_T_SZ3_Fe=0
+ENDIF
+IF Q_T_SZ3_kD>1000000 THEN
+  Q_T_SZ3_kD=0
+ENDIF
+;
+$FLAG[F_QT_SZ1_VW]=FALSE
+$FLAG[F_QT_SZ1_Fe]=FALSE
+$FLAG[F_QT_SZ1_kD]=FALSE
+$FLAG[F_QT_SZ2_VW]=FALSE
+$FLAG[F_QT_SZ2_Fe]=FALSE
+$FLAG[F_QT_SZ2_kD]=FALSE
+$FLAG[F_QT_SZ3_VW]=FALSE
+$FLAG[F_QT_SZ3_Fe]=FALSE
+$FLAG[F_QT_SZ3_kD]=FALSE
+;
+;FOLD Vorbesetzung SZ1-3
+IF $PRO_STATE1==#P_FREE THEN
+  IF ($softplcint[2]>0) AND (NOT Docking OR DKSZ_stat_SZ) THEN
+    I_SZ2_bereit=865
+    O_SZ2_FRG=875
+    I_SZ2_aktiv=875
+    O_SZ2_SPos_g=876
+    I_SZ2_IPos_g=876
+    I_SZ2_F_Ziel=933
+    ;Docking Downgrade
+    bhf3_belegt=4081
+    bhf4_belegt=4081
+  ENDIF
+  IF ($softplcint[3]>0) AND (NOT Docking OR DKSZ_stat_SZ) THEN
+    I_SZ3_bereit=1025
+    O_SZ3_FRG=1035
+    I_SZ3_aktiv=1035
+    O_SZ3_SPos_g=1036
+    I_SZ3_IPos_g=1036
+    I_SZ3_F_Ziel=1093
+    ;Docking Downgrade
+    bhf3_belegt=559
+    bhf4_belegt=4081
+  ENDIF
+  IF Docking AND NOT DOCK_SP AND NOT DKSZ_stat_SZ THEN
+    I_SZ2_bereit=4081
+    O_SZ2_FRG=3658
+    I_SZ2_aktiv=4082
+    O_SZ2_SPos_g=3658
+    I_SZ2_IPos_g=4081
+    I_SZ2_F_Ziel=4082
+    I_SZ3_bereit=4081
+    O_SZ3_FRG=3658
+    I_SZ3_aktiv=4082
+    O_SZ3_SPos_g=3658
+    I_SZ3_IPos_g=4081
+    I_SZ3_F_Ziel=4082
+    ;Docking Downgrade
+    IF (AX_SIM_ON=='B000111000000') OR (AX_SIM_ON=='B001110000000') THEN
+      bhf3_belegt=559
+    ENDIF
+    IF (AX_SIM_ON=='B001111000000') OR (AX_SIM_ON=='B011110000000') THEN
+      bhf4_belegt=560
+    ENDIF
+  ENDIF
+ENDIF
+;ENDFOLD (Vorbesetzung SZ1-3)
+;  
+;Ausgleichsfunktion initialisieren
+R1AusgleichFunktion=0
+GunBal_Halt=FALSE
+;
+;Hilfsflag fuer SZ-AH-Kompensation ausschalten
+$FLAG[F_SZ_AH_KOMP]=FALSE
+;Hilfsflag fuer SZ_Schliessen ausschalten
+$FLAG[F_SZ1_Schliess]=FALSE
+$FLAG[F_SZ2_Schliess]=FALSE
+$FLAG[F_SZ3_Schliess]=FALSE
+;
+;Initiallisierung Kappenstandzeit Z1-3
+FOR i = 1 TO 10
+  IF (ReserveReal[i]==0.0) THEN
+    ReserveReal[i]=28.0
+  ENDIF
+ENDFOR 
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SAW S_Zangen
+GLOBAL DEF SZ_SAW( )
+INT i
+;
+;FOLD S_Zangen 1-3
+IF ($softplcint[1]>0) AND NOT ($OUT[O_SZ1_Re_aus] OR $OUT[O_SZ1_MnFrae] OR $OUT[O_Kb1_MnFrae] OR $FLAG[F_SZ1_FRG_FR]) THEN
+  $OUT[O_SZ1_S_TPos]=FALSE
+  $OUT[O_SZ1_ref]=FALSE
+  $OUT[O_SZ1_FRG]=FALSE
+  $OUT[O_SZ1_auf]=FALSE
+  $OUT[O_SZ1_zu]=FALSE
+  $OUT[O_SZ1_t_auf]=FALSE
+  $OUT[O_SZ1_t_zu]=FALSE
+  IF Mit_Komb_ST1 THEN 
+    $OUT[O_Kb1_t_auf]=FALSE
+    $OUT[O_Kb1_t_zu]=FALSE
+  ENDIF  
+ENDIF
+IF ($softplcint[2]>0) AND NOT ($OUT[O_SZ2_Re_aus] OR $OUT[O_SZ2_MnFrae] OR $OUT[O_Kb2_MnFrae] OR $FLAG[F_SZ2_FRG_FR]) THEN
+  $OUT[O_SZ2_S_TPos]=FALSE
+  $OUT[O_SZ2_ref]=FALSE
+  $OUT[O_SZ2_FRG]=FALSE
+  $OUT[O_SZ2_auf]=FALSE
+  $OUT[O_SZ2_zu]=FALSE
+  $OUT[O_SZ2_t_auf]=FALSE
+  $OUT[O_SZ2_t_zu]=FALSE
+  IF Mit_Komb_ST2 THEN 
+    $OUT[O_Kb2_t_auf]=FALSE
+    $OUT[O_Kb2_t_zu]=FALSE
+  ENDIF
+ENDIF
+IF ($softplcint[3]>0) AND NOT ($OUT[O_SZ3_Re_aus] OR $OUT[O_SZ3_MnFrae] OR $OUT[O_Kb3_MnFrae] OR $FLAG[F_SZ3_FRG_FR]) THEN
+  $OUT[O_SZ3_S_TPos]=FALSE
+  $OUT[O_SZ3_ref]=FALSE
+  $OUT[O_SZ3_FRG]=FALSE
+  $OUT[O_SZ3_auf]=FALSE
+  $OUT[O_SZ3_zu]=FALSE
+  $OUT[O_SZ3_t_auf]=FALSE
+  $OUT[O_SZ3_t_zu]=FALSE
+  IF Mit_Komb_ST3 THEN 
+    $OUT[O_Kb3_t_auf]=FALSE
+    $OUT[O_Kb3_t_zu]=FALSE
+  ENDIF
+ENDIF
+HAND_FKT1=FALSE
+HAND_FKT2=FALSE
+;
+;SZ Ausgleich durch Roboter
+IF R1AusgleichFunktion>0 THEN
+  R1AusgleichFunktion=0
+  S_Zangen_Msg(20,#NotifyMsg)
+ENDIF
+GunBal_Halt=FALSE
+;
+;Hilfsflag fuer SZ-AH-Kompensation ausschalten
+$FLAG[F_SZ_AH_KOMP]=FALSE
+;Hilfsflag fuer SZ_Schliessen ausschalten
+$FLAG[F_SZ1_Schliess]=FALSE
+$FLAG[F_SZ2_Schliess]=FALSE
+$FLAG[F_SZ3_Schliess]=FALSE 
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RESET S_Zangen
+GLOBAL DEF SZ_RESET( )
+INT i
+;
+;FOLD S_Zangen 1-3
+IF (($mode_op==#T1) OR ($mode_op==#T2)) THEN
+  $softplcint[20]=0
+  IF ($softplcint[1]>0) THEN
+    $FLAG[F_SZ_AH_KOMP]=FALSE
+    $OUT[O_SZ1_FRG]=FALSE
+    $OUT[O_SZ1_S_TPos]=FALSE
+    $OUT[O_SZ1_ref]=FALSE
+    $OUT[O_SZ1_auf]=FALSE
+    $OUT[O_SZ1_zu]=FALSE
+    $OUT[O_SZ1_t_auf]=FALSE
+    $OUT[O_SZ1_t_zu]=FALSE
+    $OUT[O_SZ1_MvFrae]=FALSE
+    $OUT[O_SZ1_MnFrae]=FALSE
+    IF Mit_Komb_ST1 THEN 
+      $OUT[O_Kb1_t_auf]=FALSE
+      $OUT[O_Kb1_t_zu]=FALSE
+    ENDIF
+  ENDIF
+;
+  IF ($softplcint[2]>0) THEN
+    $OUT[O_SZ2_FRG]=FALSE
+    $OUT[O_SZ2_S_TPos]=FALSE
+    $OUT[O_SZ2_ref]=FALSE
+    $OUT[O_SZ2_auf]=FALSE
+    $OUT[O_SZ2_zu]=FALSE
+    $OUT[O_SZ2_t_auf]=FALSE
+    $OUT[O_SZ2_t_zu]=FALSE
+    $OUT[O_SZ2_MvFrae]=FALSE
+    $OUT[O_SZ2_MnFrae]=FALSE
+    IF Mit_Komb_ST2 THEN 
+      $OUT[O_Kb2_t_auf]=FALSE
+      $OUT[O_Kb2_t_zu]=FALSE
+    ENDIF
+  ENDIF
+;
+  IF ($softplcint[3]>0) THEN
+    $OUT[O_SZ3_FRG]=FALSE
+    $OUT[O_SZ3_S_TPos]=FALSE
+    $OUT[O_SZ3_ref]=FALSE
+    $OUT[O_SZ3_auf]=FALSE
+    $OUT[O_SZ3_zu]=FALSE
+    $OUT[O_SZ3_t_auf]=FALSE
+    $OUT[O_SZ3_t_zu]=FALSE
+    $OUT[O_SZ3_MvFrae]=FALSE
+    $OUT[O_SZ3_MnFrae]=FALSE
+    IF Mit_Komb_ST3 THEN 
+      $OUT[O_Kb3_t_auf]=FALSE
+      $OUT[O_Kb3_t_zu]=FALSE
+    ENDIF
+  ENDIF
+;
+  ;SZ Ausgleich durch Roboter
+  R1AusgleichFunktion=0
+  GunBal_Halt=FALSE
+;
+  ;Hilfsflag fuer SZ-AH-Kompensation ausschalten
+  $FLAG[F_SZ_AH_KOMP]=FALSE
+  ;Hilfsflag fuer SZ_Schliessen ausschalten
+  $FLAG[F_SZ1_Schliess]=FALSE
+  $FLAG[F_SZ2_Schliess]=FALSE
+  $FLAG[F_SZ3_Schliess]=FALSE
+ENDIF ;(SZ_VORHANDEN)
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD CANCEL S_Zangen 
+GLOBAL DEF SZ_CANCEL( )
+INT i
+;
+;FOLD S_Zangen 1-3
+IF (($mode_op==#T1) OR ($mode_op==#T2)) THEN
+  $softplcint[20]=0
+  IF ($softplcint[1]>0) THEN
+    $FLAG[F_SZ_AH_KOMP]=FALSE
+    $OUT[O_SZ1_FRG]=FALSE
+    $OUT[O_SZ1_S_TPos]=FALSE
+    $OUT[O_SZ1_ref]=FALSE
+    $OUT[O_SZ1_auf]=FALSE
+    $OUT[O_SZ1_zu]=FALSE
+    $OUT[O_SZ1_t_auf]=FALSE
+    $OUT[O_SZ1_t_zu]=FALSE
+    $OUT[O_SZ1_MvFrae]=FALSE
+    $OUT[O_SZ1_MnFrae]=FALSE
+    IF Mit_Komb_ST1 THEN 
+      $OUT[O_Kb1_t_auf]=FALSE
+      $OUT[O_Kb1_t_zu]=FALSE
+    ENDIF
+  ENDIF
+;
+  IF ($softplcint[2]>0) THEN
+    $OUT[O_SZ2_FRG]=FALSE
+    $OUT[O_SZ2_S_TPos]=FALSE
+    $OUT[O_SZ2_ref]=FALSE
+    $OUT[O_SZ2_auf]=FALSE
+    $OUT[O_SZ2_zu]=FALSE
+    $OUT[O_SZ2_t_auf]=FALSE
+    $OUT[O_SZ2_t_zu]=FALSE
+    $OUT[O_SZ2_MvFrae]=FALSE
+    $OUT[O_SZ2_MnFrae]=FALSE
+    IF Mit_Komb_ST2 THEN 
+      $OUT[O_Kb2_t_auf]=FALSE
+      $OUT[O_Kb2_t_zu]=FALSE
+    ENDIF
+  ENDIF
+;
+  IF ($softplcint[3]>0) THEN
+    $OUT[O_SZ3_FRG]=FALSE
+    $OUT[O_SZ3_S_TPos]=FALSE
+    $OUT[O_SZ3_ref]=FALSE
+    $OUT[O_SZ3_auf]=FALSE
+    $OUT[O_SZ3_zu]=FALSE
+    $OUT[O_SZ3_t_auf]=FALSE
+    $OUT[O_SZ3_t_zu]=FALSE
+    $OUT[O_SZ3_MvFrae]=FALSE
+    $OUT[O_SZ3_MnFrae]=FALSE
+    IF Mit_Komb_ST3 THEN 
+      $OUT[O_Kb3_t_auf]=FALSE
+      $OUT[O_Kb3_t_zu]=FALSE
+    ENDIF
+  ENDIF
+;
+  ;SZ Ausgleich durch Roboter
+  R1AusgleichFunktion=0
+  GunBal_Halt=FALSE
+;
+  ;Hilfsflag fuer SZ-AH-Kompensation ausschalten
+  $FLAG[F_SZ_AH_KOMP]=FALSE
+  ;Hilfsflag fuer SZ_Schliessen ausschalten
+  $FLAG[F_SZ1_Schliess]=FALSE
+  $FLAG[F_SZ2_Schliess]=FALSE
+  $FLAG[F_SZ3_Schliess]=FALSE
+ENDIF ;(SZ_VORHANDEN)
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP S_Zange 1 
+GLOBAL DEF SZ1_LOOP( )
+;
+;SZ 1 Funktionstest ohne Bauteil
+IF Mit_Komb_ST1 THEN 
+  $OUT[O_Kb1_FToBT]=$IN[I_FT_o_BT]
+  IF (Prog_Nr_Kb1<99) AND ($FLAG[F_SZ1_FRG_FR] OR $OUT[O_R_Wart] OR $OUT[O_R_WartB]) THEN
+    Fzg_Typ_SZ1=0
+  ENDIF
+ELSE
+  $OUT[O_SZ1_FToBT]=$IN[I_FT_o_BT] AND (Prog_Nr_SZ1>98) 
+  IF (Prog_Nr_SZ1<99) AND ($FLAG[F_SZ1_FRG_FR] OR $OUT[O_R_Wart] OR $OUT[O_R_WartB]) THEN
+    Fzg_Typ_SZ1=0
+	 SK1_Fzg_Typ=0
+  ENDIF
+ENDIF
+;  
+;SZ 1 Anwahl Energiesparmodus
+$OUT[O_SZ1_E_Mode] = (($Brake_Sig==0) AND $timer_flag[TimerNr_E_Mo] AND e_Mode_Hilf2)
+;
+;FOLD SZ Betriebsarten
+;BA-Hand an SZ 1 setzen
+IF $OUT[O_R_Hand] AND (NOT $COULD_START_MOTION OR HAND_FKT2) THEN
+  $OUT[O_SZ1_R_Hand]=TRUE
+  $OUT[O_SZ1_R_Auto]=FALSE
+ENDIF
+;
+;BA-AUTO an SZ 1 setzen
+IF $OUT[O_R_Hand] AND NOT HAND_FKT2 AND ($OUT[O_R_Proz_akt] OR $OUT[O_R_bewegt] OR TAST_AKTIV_1 OR TAST_AKTIV_2 OR TAST_AKTIV_3 OR HAND_FKT1) AND (R1AusgleichFunktion==0) OR $OUT[O_R_Auto] THEN
+  $OUT[O_SZ1_R_Hand]=FALSE
+  $OUT[O_SZ1_R_Auto]=TRUE
+ENDIF
+;ENDFOLD
+;
+;SZ 1 mit EK-Verschleisswert
+$OUT[O_SZ1_Mit_EK]=TRUE
+;
+;SZ 1 ohne Kraft      
+IF $IN[I_SZ1_oh_Kra] THEN
+  $OUT[O_SZ1_oh_Kra]=TRUE 
+ELSE
+  $OUT[O_SZ1_oh_Kra]=FALSE
+ENDIF
+;
+;SZ Kraftvorgabe in Hand
+IF NOT Mit_Komb_ST1  THEN  
+  IF $OUT[O_R_Hand] AND $FLAG[F_o_Prozess] THEN
+    SZ1_Kraft_Soll = M_Kraft_Soll
+  ELSE  
+    SZ1_Kraft_Soll = SK1_Kraft_Soll
+  ENDIF
+ENDIF      
+;ENDFOLD
+;
+;Kompensation der EK durch Roboter
+IF AH_Komp AND NOT $FLAG[F_SZ1_m_Komp] AND NOT Mit_Komb_ST1 THEN 
+  $OUT[O_SZ1_m_RKom]=TRUE
+ELSE
+  $OUT[O_SZ1_m_RKom]=FALSE
+ENDIF
+;  
+;Quittierung Stoerung
+IF Mit_Komb_ST1 THEN
+  $OUT[O_Kb1_Fe_Res]=($IN[I_Kb1_Sammel] AND $IN[I_R_Quit_St]) OR (($IN[I_R_Quit_Wei] OR $FLAG[F_SZ_Fe_Res]) AND $IN[I_Kb1_Sammel])
+ELSE  
+  $OUT[O_SZ1_Fe_Res]=($IN[I_SZ1_Sammel] AND $IN[I_R_Quit_St]) OR (($IN[I_R_Quit_Wei] OR $FLAG[F_SZ_Fe_Res]) AND $IN[I_SZ1_Sammel])      
+ENDIF        
+;
+;Ausgabe Statusmeldungen an BMS
+IF Mit_Komb_ST1 THEN
+  ;Vorwahl mit Strom
+  $OUT[O_Kb1_m_Stro]=NOT $IN[I_Kb1_o_Schw] AND NOT $FLAG[F_o_Prozess]
+  ;Start Protokoll
+  $OUT[O_Kb1_Protok]=$IN[I_Kb1_Protok]
+  ;Vorwarnung Zange
+  $OUT[O_Kb1_W_SZ]=($IN[I_SZ1_W_SZ] OR (Q_T_SZ1_VW>3) OR (Q_T_SZ1_kD>50))
+  ;Warnung Schmierung
+  $OUT[O_Kb1_W_Schm]=$IN[I_SZ1_W_Schm]
+  ;Fraesanfrage
+  $OUT[O_Kb1_FrAnf]=$OUT[O_R_Auto] AND $IN[I_Kb1_FrAnf]
+  ;Vorwarnung Kappenstandzeit
+  $OUT[O_Kb1_V_Stdm]=($IN[I_Kb1_V_Stdm] OR B_SK1_V_Stdm)
+  ;Maximale Kappenstandzeit
+  $OUT[O_Kb1_M_Stdm]=($IN[I_SZ1_F_Geom] OR $IN[I_Kb1_M_Stdm] OR B_SK1_M_Stdm OR $FLAG[F_SK1_max_SZ1] OR $FLAG[F_SK1_max_SZ2] OR $FLAG[F_SK1_max_SZ3] OR $FLAG[F_SK1_max_SZ4])
+  ;Kraftaufbau zu lange
+  $OUT[O_Kb1_F_Kraf]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Kraf]
+  ;Punktanwahlfehler
+  $OUT[O_Kb1_F_Prog]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Prog]
+  ;Zielposition ungueltig
+  $OUT[O_Kb1_F_Ziel]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Ziel]
+  ;Bauteilfehler
+  $OUT[O_Kb1_F_Baut]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Baut]
+  ;Zange geht schwer
+  $OUT[O_Kb1_F_schw]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_schw]
+  ;Fraesen n.i.O.
+  $OUT[O_Kb1_F_Frae]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Frae]
+  ;Fehler Kappenverschleiss
+  $OUT[O_Kb1_F_KaVe]=$OUT[O_R_Auto] AND ($IN[I_SZ1_F_Kapp] OR $FLAG[F_SZ1_Kapp1] OR $FLAG[F_SZ1_Kapp2] OR $FLAG[F_SZ1_Kapp3] OR $FLAG[F_SZ1_Kapp4])
+  ;Fehler Geometrie
+  $OUT[O_Kb1_F_Geom]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Geom]
+  ;Schleppfehler
+  $OUT[O_Kb1_Schlep]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Schl]
+  ;Fehler Ausgleichssystem
+  $OUT[O_Kb1_F_Ausg]=$OUT[O_R_Auto] AND ($IN[I_SZ1_F_Ausg] OR (Q_T_SZ1_Fe>3))
+  ;Fehler Steuerung/Regler
+  $OUT[O_Kb1_F_Steu]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND $IN[I_SZ1_F_Steu]
+  ;Fehler Temperatur Trafo
+  $OUT[O_Kb1_FT_Tra]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Traf]
+  ;Fehler Temperatur Motor
+  $OUT[O_Kb1_FT_Mot]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Mot]
+  ;Schweissung i.O
+  $OUT[O_Kb1_WPS_io]=$OUT[O_R_Auto] AND NOT $FLAG[F_SK1_S_niO]
+  ;Schweissung n.i.O
+  $OUT[O_Kb1_WP_nio]=$OUT[O_R_Auto] AND $FLAG[F_SK1_S_niO]
+  ;Warngrenze verletzt in Folge
+  $OUT[O_Kb1_W_Folg]=$OUT[O_R_Auto] AND $IN[I_Kb1_W_Folg]
+  ;Phasenueberwachung
+  $OUT[O_Kb1_Ph_nio]=$OUT[O_R_Auto] AND $IN[I_Kb1_Ph_nio]
+  ;Ueberstrom Primaerseite
+  $OUT[O_Kb1_Primae]=$OUT[O_R_Auto] AND $IN[I_Kb1_Primae]
+  ;Fehler Stromsensor
+  $OUT[O_Kb1_F_Stro]=$OUT[O_R_Auto] AND $IN[I_Kb1_F_Stro]
+  ;Fehler Spannungssensor
+  $OUT[O_Kb1_F_Span]=$OUT[O_R_Auto] AND $IN[I_Kb1_F_Span]
+  ;Überstrom 24 V DC
+  $OUT[O_Kb1_24V]=$OUT[O_R_Auto] AND $IN[I_Kb1_24V]
+  ;Uebertemperatur Inverter
+  $OUT[O_Kb1_Invert]=$OUT[O_R_Auto] AND $IN[I_Kb1_Invert]
+  ;Sammelstoerung
+  $OUT[O_Kb1_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($IN[I_Kb1_Sammel] OR $FLAG[F_SZ1_Sammel] OR $FLAG[F_SK1_Sammel] OR SZ_LBitFeh[1]) AND $timer_flag[TimerNr_Ein]
+ELSE  
+  ;Vorwarnung Zange
+  $OUT[O_SZ1_W_SZ]=($IN[I_SZ1_W_SZ] OR (Q_T_SZ1_VW>3) OR (Q_T_SZ1_kD>50))
+  ;Warnung Schmierung
+  $OUT[O_SZ1_W_Schm]=$IN[I_SZ1_W_Schm]
+  ;Kraftaufbau zu lange
+  $OUT[O_SZ1_F_Kraf]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Kraf]
+  ;Programmfehler/falsche Kraftvorgabe
+  $OUT[O_SZ1_F_Prog]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Prog]
+  ;Zielposition ungueltig
+  $OUT[O_SZ1_F_Ziel]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Ziel]
+  ;Bauteilfehler
+  $OUT[O_SZ1_F_Baut]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Baut]
+  ;Zange geht schwer
+  $OUT[O_SZ1_F_schw]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_schw]
+  ;Fraesen n.i.O.
+  $OUT[O_SZ1_F_Frae]=$OUT[O_R_Auto] AND $IN[I_SZ1_F_Frae]
+  ;Fehler Kappenverschleiss/Geometrie
+  $OUT[O_SZ1_F_Geom]=$OUT[O_R_Auto] AND ($IN[I_SZ1_F_Kapp] OR $IN[I_SZ1_F_Geom] OR $FLAG[F_SZ1_Kapp1] OR $FLAG[F_SZ1_Kapp2] OR $FLAG[F_SZ1_Kapp3] OR $FLAG[F_SZ1_Kapp4])
+  ;Fehler Ausgleichssystem
+  $OUT[O_SZ1_F_Ausg]=$OUT[O_R_Auto] AND ($IN[I_SZ1_F_Ausg] OR (Q_T_SZ1_Fe>3))
+  ;Fehler Steuerung/Regler
+  $OUT[O_SZ1_F_Steu]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND $IN[I_SZ1_F_Steu]
+  ;Fehler Temperatur Motor/Trafo
+  $OUT[O_SZ1_F_Temp]=$OUT[O_R_Auto] AND ($IN[I_SZ1_F_Traf] OR $IN[I_SZ1_F_Mot])
+  ;Sammelstoerung
+  $OUT[O_SZ1_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($IN[I_SZ1_Sammel] OR $FLAG[F_SZ1_Sammel] OR SZ_LBitFeh[1]) AND $timer_flag[TimerNr_Ein]
+ENDIF 
+; 
+;Ausgabe Zangencode
+IF NOT Docking OR (Docking AND NOT Dock_SZ) THEN
+  IF Mit_Komb_ST THEN
+    Kb1_ZCode=1
+  ELSE
+    EZ1_ZCode=1
+  ENDIF  
+ENDIF  
+;
+;FOLD SZ-Tastbetrieb ruecksetzen
+IF Mit_Komb_ST1 THEN 
+  Temp_Komb_1=($OUT[O_Kb1_t_zu] OR $OUT[O_Kb1_t_auf])
+ENDIF
+IF $OUT[O_R_Hand] AND TAST_AKTIV_1 AND NOT $OUT[O_SZ1_t_auf] AND NOT $OUT[O_SZ1_t_zu] AND NOT Temp_Komb_1 THEN
+  TAST_AKTIV_1=FALSE
+  $OUT[O_SZ1_FRG]=FALSE
+  schleppfehler=TRUE
+  sf_prog_status=#user_act
+  $OUT[O_SZ1_SPos_g]=FALSE
+ENDIF
+;ENDFOLD
+;
+;FOLD SZ INIT Zangenfunktion
+IF $OUT[O_R_Hand] AND NOT $OUT[O_R_Auto] AND $COULD_START_MOTION AND ((NOT $OUT[O_R_Proz_akt] AND NOT $OUT[O_R_bewegt]) OR (R1AusgleichFunktion>0)) THEN
+  IF Mit_Komb_ST1 THEN 
+    Temp_Komb_1=$OUT[O_Kb1_t_zu]
+  ENDIF
+  IF ($OUT[O_SZ1_S_TPos] OR $OUT[O_SZ1_ref] OR $OUT[O_SZ1_auf] OR $OUT[O_SZ1_zu] OR Temp_Komb_1 OR $OUT[O_SZ1_t_auf] OR $OUT[O_SZ1_t_zu] OR $OUT[O_SZ1_Teach] OR $OUT[O_SZ1_D_Auf] OR $OUT[O_SZ1_Du_Zu]) THEN
+    CheckZangenFunktion()
+    Zangenfunktion()
+  ENDIF
+ELSE
+  IF $OUT[O_SZ1_Teach] OR $OUT[O_SZ1_D_Auf] OR $OUT[O_SZ1_Du_Zu] THEN
+    $OUT[O_SZ1_Teach]=FALSE
+    $OUT[O_SZ1_D_Auf]=FALSE
+    $OUT[O_SZ1_Du_Zu]=FALSE
+    S_Zangen_Msg(34,#NotifyMsg)
+  ENDIF
+ENDIF
+;ENDFOLD
+;
+;FOLD Ruecksetzen Zangenfunktion
+IF ($OUT[O_R_Hand] AND ($PRO_MODE1==#BSTEP)) OR ($OUT[O_R_Hand] AND NOT $FLAG[F_SZ_AH_KOMP] AND $OUT[O_R_bewegt] AND (R1AusgleichFunktion==0)) OR ($OUT[O_R_Hand] AND NOT $COULD_START_MOTION AND (HAND_FKT1 OR HAND_FKT2)) THEN
+  IF NOT ($OUT[O_SZ1_Re_aus] OR $OUT[O_SZ1_MnFrae] OR $OUT[O_Kb1_MnFrae] OR $FLAG[F_SZ1_FRG_FR]) THEN
+    $OUT[O_SZ1_S_TPos]=FALSE
+    $OUT[O_SZ1_ref]=FALSE
+    $OUT[O_SZ1_FRG]=FALSE
+    $OUT[O_SZ1_auf]=FALSE
+    $OUT[O_SZ1_zu]=FALSE
+    $OUT[O_SZ1_t_auf]=FALSE
+    $OUT[O_SZ1_t_zu]=FALSE
+    IF Mit_Komb_ST1 THEN 
+      $OUT[O_Kb1_t_auf]=FALSE
+      $OUT[O_Kb1_t_zu]=FALSE
+    ENDIF 
+  ENDIF
+  HAND_FKT1=FALSE
+  HAND_FKT2=FALSE
+ENDIF
+;ENDFOLD
+;
+;FOLD EZ Oeffnungsmass beim Schwenken pruefen
+;EZ/SP1
+IF ($softplcint[1]>0) AND $OUT[O_SZ1_FRG] AND (Varstate("act_P1")==#initialized) THEN
+  IF ($softplcint[1]==7) THEN
+    $FLAG[F_SZ1_Oeff_iO]=(act_P1.E1>=$COUNT_I[60])
+  ENDIF
+  IF ($softplcint[1]==8) THEN
+    $FLAG[F_SZ1_Oeff_iO]=(act_P1.E2>=$COUNT_I[60])
+  ENDIF
+ELSE
+  $FLAG[F_SZ1_Oeff_iO]=FALSE
+ENDIF 
+;ENDFOLD
+;
+;FOLD EZ Position nach Messen und Fraesen pruefen
+$FLAG[Mit_Anf_Pos]=TRUE
+;EZ/SP1
+IF ($softplcint[1]>0) AND $FLAG[F_SZ_Anf_Pos] AND $OUT[O_SZ1_FRG] AND (Varstate("act_P1")==#initialized) THEN
+  $FLAG[F_SZ_Anf_Pos]=FALSE
+  IF ($softplcint[1]==7) THEN
+    $FLAG[F_SZ1_Pos_iO]=((sig1_istpos>=((act_P1.E1*10)-140)) AND (sig1_istpos<=((act_P1.E1*10)+140)))
+  ENDIF
+  IF ($softplcint[1]==8) THEN
+    $FLAG[F_SZ1_Pos_iO]=((sig1_istpos>=((act_P1.E2*10)-140)) AND (sig1_istpos<=((act_P1.E2*10)+140)))
+  ENDIF
+  IF ($softplcint[1]==9) THEN
+    $FLAG[F_SZ1_Pos_iO]=((sig1_istpos>=((act_P1.E3*10)-140)) AND (sig1_istpos<=((act_P1.E3*10)+140)))
+  ENDIF
+  IF ($softplcint[1]==10) THEN
+    $FLAG[F_SZ1_Pos_iO]=((sig1_istpos>=((act_P1.E4*10)-140)) AND (sig1_istpos<=((act_P1.E4*10)+140)))
+  ENDIF
+  IF ($softplcint[1]==11) THEN
+    $FLAG[F_SZ1_Pos_iO]=((sig1_istpos>=((act_P1.E5*10)-140)) AND (sig1_istpos<=((act_P1.E5*10)+140)))
+  ENDIF
+ENDIF 
+;ENDFOLD  
+;
+;FOLD Ruecksetzen Ausgabe max. Kappenverschleiss
+IF $OUT[O_SZ1_KW_io] THEN
+  B_SK1_M_Stdm = FALSE
+  B_SK1_V_Stdm = FALSE
+  B_SK1_FRG_Ge = TRUE
+  IF (($softplcint[1]==7) OR ($softplcint[1]==8)) AND (Dock_Z1==TRUE) THEN
+    B_SK1_FRG_G1 = TRUE
+  ENDIF  
+  IF (($softplcint[1]==8) OR ($softplcint[1]==9)) AND (Dock_Z2==TRUE) THEN
+    B_SK1_FRG_G2 = TRUE
+  ENDIF  
+  IF (($softplcint[1]==9) OR ($softplcint[1]==10)) AND (Dock_Z3==TRUE) THEN
+    B_SK1_FRG_G3 = TRUE
+  ENDIF
+  IF (($softplcint[1]==10) OR ($softplcint[1]==11)) AND (Dock_Z4==TRUE) THEN      
+    B_SK1_FRG_G4 = TRUE
+  ENDIF  
+ENDIF
+;ENDFOLD
+;
+;FOLD Lebensbit
+IF Mit_Komb_ST1 THEN 
+  L_Bit_Kombi(1)
+ELSE
+  L_Bit_SZ(1)
+ENDIF
+;ENDFOLD 
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP S_Zange 2 
+GLOBAL DEF SZ2_LOOP( )
+;
+;SZ 2 Funktionstest ohne Bauteil
+IF Mit_Komb_ST2 THEN 
+  $OUT[O_Kb2_FToBT]=$IN[I_FT_o_BT]
+  IF (Prog_Nr_Kb2<99) AND ($FLAG[F_SZ2_FRG_FR] OR $OUT[O_R_Wart] OR $OUT[O_R_WartB]) THEN
+    Fzg_Typ_SZ2=0
+  ENDIF
+ELSE
+  $OUT[O_SZ2_FToBT]=$IN[I_FT_o_BT] AND (Prog_Nr_SZ2>98) 
+  IF (Prog_Nr_SZ2<99) AND ($FLAG[F_SZ2_FRG_FR] OR $OUT[O_R_Wart] OR $OUT[O_R_WartB]) THEN
+    Fzg_Typ_SZ2=0
+    SK2_Fzg_Typ=0
+  ENDIF
+ENDIF  
+;      
+;SZ 2 Anwahl Energiesparmodus
+$OUT[O_SZ2_E_Mode] = (($Brake_Sig==0) AND $timer_flag[TimerNr_E_Mo] AND e_Mode_Hilf2)
+;
+;FOLD SZ Betriebsarten
+;BA-Hand an SZ 2 setzen
+IF $OUT[O_R_Hand] AND (NOT $COULD_START_MOTION OR HAND_FKT2) THEN
+  $OUT[O_SZ2_R_Hand]=TRUE
+  $OUT[O_SZ2_R_Auto]=FALSE
+ENDIF
+;
+;BA-AUTO an SZ 2 setzen
+IF $OUT[O_R_Hand] AND NOT HAND_FKT2 AND ($OUT[O_R_Proz_akt] OR $OUT[O_R_bewegt] OR TAST_AKTIV_1 OR TAST_AKTIV_2 OR TAST_AKTIV_3 OR HAND_FKT1) AND (R1AusgleichFunktion==0) OR $OUT[O_R_Auto] THEN
+  $OUT[O_SZ2_R_Hand]=FALSE
+  $OUT[O_SZ2_R_Auto]=TRUE
+ENDIF
+;ENDFOLD
+;
+;SZ 2 mit EK-Verschleisswert
+$OUT[O_SZ2_Mit_EK]=TRUE
+;
+;SZ 2 ohne Kraft      
+IF $IN[I_SZ2_oh_Kra] THEN
+  $OUT[O_SZ2_oh_Kra]=TRUE 
+ELSE
+  $OUT[O_SZ2_oh_Kra]=FALSE
+ENDIF
+;
+;SZ Kraftvorgabe in Hand
+IF NOT Mit_Komb_ST2  THEN  
+  IF $OUT[O_R_Hand] AND $FLAG[F_o_Prozess] THEN
+    SZ2_Kraft_Soll = M_Kraft_Soll
+  ELSE  
+    IF Mit_2SZ_an_SK1 THEN
+      SZ2_Kraft_Soll = SK1_Kraft_Soll
+      $FLAG[F_2SZ_an_SK1]=TRUE
+    ELSE
+      SZ2_Kraft_Soll = SK2_Kraft_Soll
+      $FLAG[F_2SZ_an_SK1]=FALSE
+    ENDIF
+  ENDIF
+ENDIF      
+;
+;Kompensation der EK durch Roboter
+IF AH_Komp AND NOT $FLAG[F_SZ2_m_Komp] AND NOT Mit_Komb_ST2 THEN 
+  $OUT[O_SZ2_m_RKom]=TRUE
+ELSE
+  $OUT[O_SZ2_m_RKom]=FALSE
+ENDIF
+;  
+;Quittierung Stoerung
+IF Mit_Komb_ST2 THEN
+  $OUT[O_Kb2_Fe_Res]=($IN[I_Kb2_Sammel] AND $IN[I_R_Quit_St]) OR (($IN[I_R_Quit_Wei] OR $FLAG[F_SZ_Fe_Res]) AND $IN[I_Kb2_Sammel])
+ELSE  
+  $OUT[O_SZ2_Fe_Res]=($IN[I_SZ2_Sammel] AND $IN[I_R_Quit_St]) OR (($IN[I_R_Quit_Wei] OR $FLAG[F_SZ_Fe_Res]) AND $IN[I_SZ2_Sammel])      
+ENDIF        
+;
+;Ausgabe Statusmeldungen an BMS
+IF Mit_Komb_ST2 THEN
+  ;Vorwahl mit Strom
+  $OUT[O_Kb2_m_Stro]=NOT $IN[I_Kb2_o_Schw] AND NOT $FLAG[F_o_Prozess]
+  ;Start Protokoll
+  $OUT[O_Kb2_Protok]=$IN[I_Kb2_Protok]
+  ;Vorwarnung Zange
+  $OUT[O_Kb2_W_SZ]=($IN[I_SZ2_W_SZ] OR (Q_T_SZ2_VW>3) OR (Q_T_SZ2_kD>50))
+  ;Warnung Schmierung
+  $OUT[O_Kb2_W_Schm]=$IN[I_SZ2_W_Schm]
+  ;Fraesanfrage
+  $OUT[O_Kb2_FrAnf]=$OUT[O_R_Auto] AND $IN[I_Kb2_FrAnf]
+  ;Vorwarnung Kappenstandzeit
+  $OUT[O_Kb2_V_Stdm]=($IN[I_Kb2_V_Stdm] OR B_SK2_V_Stdm)
+  ;Maximale Kappenstandzeit
+  $OUT[O_Kb2_M_Stdm]=($IN[I_SZ2_F_Geom] OR $IN[I_Kb2_M_Stdm] OR B_SK2_M_Stdm)
+  ;Kraftaufbau zu lange
+  $OUT[O_Kb2_F_Kraf]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Kraf]
+  ;Punktanwahlfehler
+  $OUT[O_Kb2_F_Prog]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Prog]
+  ;Zielposition ungueltig
+  $OUT[O_Kb2_F_Ziel]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Ziel]
+  ;Bauteilfehler
+  $OUT[O_Kb2_F_Baut]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Baut]
+  ;Zange geht schwer
+  $OUT[O_Kb2_F_schw]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_schw]
+  ;Fraesen n.i.O.
+  $OUT[O_Kb2_F_Frae]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Frae]
+  ;Fehler Kappenverschleiss
+  $OUT[O_Kb2_F_KaVe]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Kapp]
+  ;Fehler Geometrie
+  $OUT[O_Kb2_F_Geom]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Geom]
+  ;Schleppfehler
+  $OUT[O_Kb2_Schlep]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Schl]
+  ;Fehler Ausgleichssystem
+  $OUT[O_Kb2_F_Ausg]=$OUT[O_R_Auto] AND ($IN[I_SZ2_F_Ausg] OR (Q_T_SZ2_VW>3))
+  ;Fehler Steuerung/Regler
+  $OUT[O_Kb2_F_Steu]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND $IN[I_SZ2_F_Steu]
+  ;Fehler Temperatur Trafo
+  $OUT[O_Kb2_FT_Tra]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Traf]
+  ;Fehler Temperatur Motor
+  $OUT[O_Kb2_FT_Mot]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Mot]
+  ;Schweissung i.O
+  $OUT[O_Kb2_WPS_io]=$OUT[O_R_Auto] AND NOT $FLAG[F_SK2_S_niO]
+  ;Schweissung n.i.O
+  $OUT[O_Kb2_WP_nio]=$OUT[O_R_Auto] AND $FLAG[F_SK2_S_niO]
+  ;Warngrenze verletzt in Folge
+  $OUT[O_Kb2_W_Folg]=$OUT[O_R_Auto] AND $IN[I_Kb2_W_Folg]
+  ;Phasenueberwachung
+  $OUT[O_Kb2_Ph_nio]=$OUT[O_R_Auto] AND $IN[I_Kb2_Ph_nio]
+  ;Ueberstrom Primaerseite
+  $OUT[O_Kb2_Primae]=$OUT[O_R_Auto] AND $IN[I_Kb2_Primae]
+  ;Fehler Stromsensor
+  $OUT[O_Kb2_F_Stro]=$OUT[O_R_Auto] AND $IN[I_Kb2_F_Stro]
+  ;Fehler Spannungssensor
+  $OUT[O_Kb2_F_Span]=$OUT[O_R_Auto] AND $IN[I_Kb2_F_Span]
+  ;Überstrom 24 V DC
+  $OUT[O_Kb2_24V]=$OUT[O_R_Auto] AND $IN[I_Kb2_24V]
+  ;Uebertemperatur Inverter
+  $OUT[O_Kb2_Invert]=$OUT[O_R_Auto] AND $IN[I_Kb2_Invert]
+  ;Sammelstoerung
+  $OUT[O_Kb2_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($IN[I_Kb2_Sammel] OR $FLAG[F_SZ2_Sammel] OR $FLAG[F_SK2_Sammel] OR SZ_LBitFeh[2]) AND $timer_flag[TimerNr_Ein]
+ELSE
+  ;Vorwarnung Zange
+  $OUT[O_SZ2_W_SZ]=($OUT[O_R_Auto] AND $IN[I_SZ2_W_SZ] OR (Q_T_SZ2_VW>3) OR (Q_T_SZ2_kD>50))
+  ;Warnung Schmierung
+  $OUT[O_SZ2_W_Schm]=$OUT[O_R_Auto] AND $IN[I_SZ2_W_Schm]
+  ;Kraftaufbau zu lange
+  $OUT[O_SZ2_F_Kraf]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Kraf]
+  ;Programmfehler/falsche Kraftvorgabe
+  $OUT[O_SZ2_F_Prog]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Prog]
+  ;Zielposition ungueltig
+  $OUT[O_SZ2_F_Ziel]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Ziel]
+  ;Bauteilfehler
+  $OUT[O_SZ2_F_Baut]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Baut]
+  ;Zange geht schwer
+  $OUT[O_SZ2_F_schw]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_schw]
+  ;Fraesen n.i.O.
+  $OUT[O_SZ2_F_Frae]=$OUT[O_R_Auto] AND $IN[I_SZ2_F_Frae]
+  ;Fehler Kappenverschleiss/Geometrie
+  $OUT[O_SZ2_F_Geom]=$OUT[O_R_Auto] AND ($IN[I_SZ2_F_Kapp] OR $IN[I_SZ2_F_Geom] OR $FLAG[F_SZ2_Kapp])
+  ;Fehler Ausgleichssystem
+  $OUT[O_SZ2_F_Ausg]=($OUT[O_R_Auto] AND $IN[I_SZ2_F_Ausg] OR (Q_T_SZ2_Fe>3))
+  ;Fehler Steuerung/Regler
+  $OUT[O_SZ2_F_Steu]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND $IN[I_SZ2_F_Steu]
+  ;Fehler Temperatur Motor/Trafo
+  $OUT[O_SZ2_F_Temp]=$OUT[O_R_Auto] AND ($IN[I_SZ2_F_Traf] OR $IN[I_SZ2_F_Mot]) 
+  ;Sammelstoerung
+  $OUT[O_SZ2_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($IN[I_SZ2_Sammel] OR $FLAG[F_SZ2_Sammel] OR SZ_LBitFeh[2]) AND $timer_flag[TimerNr_Ein]
+ENDIF     
+;Ausgabe Zangencode
+IF Mit_Komb_ST THEN
+  Kb2_ZCode=1
+ELSE
+  EZ2_ZCode=1
+ENDIF
+;
+;FOLD SZ-Tastbetrieb ruecksetzen
+IF Mit_Komb_ST2 THEN 
+  Temp_Komb_2=($OUT[O_Kb2_t_zu] OR $OUT[O_Kb2_t_auf])
+ENDIF
+IF $OUT[O_R_Hand] AND TAST_AKTIV_2 AND NOT $OUT[O_SZ2_t_auf] AND NOT $OUT[O_SZ2_t_zu] AND NOT Temp_Komb_2 THEN
+  TAST_AKTIV_2=FALSE
+  $OUT[O_SZ2_FRG]=FALSE
+  schleppfehler=TRUE
+  sf_prog_status=#user_act
+  $OUT[O_SZ2_SPos_g]=FALSE
+ENDIF
+;ENDFOLD
+;
+;FOLD SZ INIT Zangenfunktion
+IF $OUT[O_R_Hand] AND NOT $OUT[O_R_Auto] AND $COULD_START_MOTION AND ((NOT $OUT[O_R_Proz_akt] AND NOT $OUT[O_R_bewegt]) OR (R1AusgleichFunktion>0)) THEN
+  IF Mit_Komb_ST2 THEN 
+    Temp_Komb_2=$OUT[O_Kb2_t_zu]
+  ENDIF
+  IF ($OUT[O_SZ2_S_TPos] OR $OUT[O_SZ2_ref] OR $OUT[O_SZ2_auf] OR $OUT[O_SZ2_zu] OR Temp_Komb_2 OR $OUT[O_SZ2_t_auf] OR $OUT[O_SZ2_t_zu] OR $OUT[O_SZ2_Teach] OR $OUT[O_SZ2_D_Auf] OR $OUT[O_SZ2_Du_Zu]) THEN
+    CheckZangenFunktion()
+    Zangenfunktion()
+  ENDIF
+ELSE
+  IF $OUT[O_SZ2_Teach] OR $OUT[O_SZ2_D_Auf] OR $OUT[O_SZ2_Du_Zu] THEN
+    $OUT[O_SZ2_Teach]=FALSE
+    $OUT[O_SZ2_D_Auf]=FALSE
+    $OUT[O_SZ2_Du_Zu]=FALSE
+    S_Zangen_Msg(44,#NotifyMsg)
+  ENDIF
+ENDIF
+;ENDFOLD
+;
+;FOLD Ruecksetzen Zangenfunktion
+IF ($OUT[O_R_Hand] AND ($PRO_MODE1==#BSTEP)) OR ($OUT[O_R_Hand] AND NOT $FLAG[F_SZ_AH_KOMP] AND $OUT[O_R_bewegt] AND (R1AusgleichFunktion==0)) OR ($OUT[O_R_Hand] AND NOT $COULD_START_MOTION AND (HAND_FKT1 OR HAND_FKT2)) THEN
+  IF NOT ($OUT[O_SZ2_Re_aus] OR $OUT[O_SZ2_MnFrae] OR $OUT[O_Kb2_MnFrae] OR $FLAG[F_SZ2_FRG_FR]) THEN
+    $OUT[O_SZ2_S_TPos]=FALSE
+    $OUT[O_SZ2_ref]=FALSE
+    $OUT[O_SZ2_FRG]=FALSE
+    $OUT[O_SZ2_auf]=FALSE
+    $OUT[O_SZ2_zu]=FALSE
+    $OUT[O_SZ2_t_auf]=FALSE
+    $OUT[O_SZ2_t_zu]=FALSE
+    IF Mit_Komb_ST2 THEN 
+      $OUT[O_Kb2_t_auf]=FALSE
+      $OUT[O_Kb2_t_zu]=FALSE
+    ENDIF
+  ENDIF
+  HAND_FKT1=FALSE
+  HAND_FKT2=FALSE
+ENDIF
+;ENDFOLD
+;
+;FOLD EZ Oeffnungsmass beim Schwenken pruefen
+;EZ/SP2
+IF ($softplcint[2]>0) AND $OUT[O_SZ2_FRG] AND (Varstate("act_P1")==#initialized) THEN
+  IF ($softplcint[2]==8) THEN
+    $FLAG[F_SZ2_Oeff_iO]=(act_P1.E2>=$COUNT_I[60])
+  ENDIF
+  IF ($softplcint[2]==9) THEN
+    $FLAG[F_SZ2_Oeff_iO]=(act_P1.E3>=$COUNT_I[60])
+  ENDIF
+  IF ($softplcint[2]==10) THEN
+    $FLAG[F_SZ2_Oeff_iO]=(act_P1.E4>=$COUNT_I[60])
+  ENDIF
+  IF ($softplcint[2]==11) THEN
+    $FLAG[F_SZ2_Oeff_iO]=(act_P1.E5>=$COUNT_I[60])
+  ENDIF
+  IF ($softplcint[2]==12) THEN
+    $FLAG[F_SZ2_Oeff_iO]=(act_P1.E6>=$COUNT_I[60])
+  ENDIF
+ELSE
+  $FLAG[F_SZ2_Oeff_iO]=FALSE
+ENDIF
+;ENDFOLD
+;
+;FOLD EZ Position nach Messen und Fraesen pruefen
+;EZ/SP2
+IF ($softplcint[2]>0) AND $FLAG[F_SZ_Anf_Pos] AND $OUT[O_SZ2_FRG] AND (Varstate("act_P1")==#initialized) THEN
+  $FLAG[F_SZ_Anf_Pos]=FALSE
+  IF ($softplcint[2]==8)  THEN
+    $FLAG[F_SZ2_Pos_iO]=((sig2_istpos>=((act_P1.E2*10)-140)) AND (sig2_istpos<=((act_P1.E2*10)+140)))
+  ENDIF
+  IF ($softplcint[2]==9) THEN
+    $FLAG[F_SZ2_Pos_iO]=((sig2_istpos>=((act_P1.E3*10)-140)) AND (sig2_istpos<=((act_P1.E3*10)+140)))
+  ENDIF
+  IF ($softplcint[2]==10) THEN
+    $FLAG[F_SZ2_Pos_iO]=((sig2_istpos>=((act_P1.E4*10)-140)) AND (sig2_istpos<=((act_P1.E4*10)+140)))
+  ENDIF
+  IF ($softplcint[2]==11) THEN
+    $FLAG[F_SZ2_Pos_iO]=((sig2_istpos>=((act_P1.E5*10)-140)) AND (sig2_istpos<=((act_P1.E5*10)+140)))
+  ENDIF
+  IF ($softplcint[2]==12) THEN
+    $FLAG[F_SZ2_Pos_iO]=((sig2_istpos>=((act_P1.E6*10)-140)) AND (sig2_istpos<=((act_P1.E6*10)+140)))
+  ENDIF
+ENDIF 
+;ENDFOLD  
+;
+;FOLD Ruecksetzen Ausgabe max. Kappenverschleiss
+IF $OUT[O_SZ2_KW_io] THEN
+  B_SK2_M_Stdm = FALSE
+  B_SK2_V_Stdm = FALSE
+  B_SK2_FRG_Ge = TRUE
+ENDIF 
+;ENDFOLD
+;
+;FOLD Lebensbit
+IF Mit_Komb_ST2 THEN 
+  L_Bit_Kombi(2)
+ELSE
+  L_Bit_SZ(2)
+ENDIF
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP S_Zange 3 
+GLOBAL DEF SZ3_LOOP( )
+;
+;SZ 3 Funktionstest ohne Bauteil
+IF Mit_Komb_ST3 THEN 
+  $OUT[O_Kb3_FToBT]=$IN[I_FT_o_BT]
+  IF (Prog_Nr_Kb3<99) AND ($FLAG[F_SZ3_FRG_FR] OR $OUT[O_R_Wart] OR $OUT[O_R_WartB]) THEN
+    Fzg_Typ_SZ3=0
+  ENDIF
+ELSE
+  $OUT[O_SZ3_FToBT]=$IN[I_FT_o_BT] AND (Prog_Nr_SZ3>98) 
+  IF (Prog_Nr_SZ3<99) AND ($FLAG[F_SZ3_FRG_FR] OR $OUT[O_R_Wart] OR $OUT[O_R_WartB]) THEN
+    Fzg_Typ_SZ3=0
+    SK3_Fzg_Typ=0
+  ENDIF
+ENDIF
+;      
+;SZ 3 Anwahl Energiesparmodus
+$OUT[O_SZ3_E_Mode] = (($Brake_Sig==0) AND $timer_flag[TimerNr_E_Mo] AND e_Mode_Hilf2)
+;
+;FOLD SZ Betriebsarten
+;BA-Hand an SZ 3 setzen
+IF $OUT[O_R_Hand] AND (NOT $COULD_START_MOTION OR HAND_FKT2) THEN
+  $OUT[O_SZ3_R_Hand]=TRUE
+  $OUT[O_SZ3_R_Auto]=FALSE
+ENDIF
+;
+;BA-AUTO an SZ 3 setzen
+IF $OUT[O_R_Hand] AND NOT HAND_FKT2 AND ($OUT[O_R_Proz_akt] OR $OUT[O_R_bewegt] OR TAST_AKTIV_1 OR TAST_AKTIV_2 OR TAST_AKTIV_3 OR HAND_FKT1) AND (R1AusgleichFunktion==0) OR $OUT[O_R_Auto] THEN
+  $OUT[O_SZ3_R_Hand]=FALSE
+  $OUT[O_SZ3_R_Auto]=TRUE
+ENDIF
+;ENDFOLD
+;
+;SZ 3 mit EK-Verschleisswert
+$OUT[O_SZ3_Mit_EK]=TRUE 
+;
+;SZ 3 ohne Kraft
+IF $IN[I_SZ3_oh_Kra] THEN
+  $OUT[O_SZ3_oh_Kra]=TRUE 
+ELSE
+  $OUT[O_SZ3_oh_Kra]=FALSE
+ENDIF
+;
+;SZ Kraftvorgabe in Hand
+IF NOT Mit_Komb_ST3  THEN  
+  IF $OUT[O_R_Hand] AND $FLAG[F_o_Prozess] THEN
+    SZ3_Kraft_Soll = M_Kraft_Soll
+  ELSE  
+    SZ3_Kraft_Soll = SK3_Kraft_Soll
+  ENDIF
+ENDIF      
+;
+;Kompensation der EK durch Roboter
+IF AH_Komp AND NOT $FLAG[F_SZ3_m_Komp] AND NOT Mit_Komb_ST3 THEN 
+  $OUT[O_SZ3_m_RKom]=TRUE
+ELSE
+  $OUT[O_SZ3_m_RKom]=FALSE
+ENDIF
+;  
+;Quittierung Stoerung
+IF Mit_Komb_ST3 THEN
+  $OUT[O_Kb3_Fe_Res]=($IN[I_Kb3_Sammel] AND $IN[I_R_Quit_St]) OR (($IN[I_R_Quit_Wei] OR $FLAG[F_SZ_Fe_Res]) AND $IN[I_Kb3_Sammel])
+ELSE  
+  $OUT[O_SZ3_Fe_Res]=($IN[I_SZ3_Sammel] AND $IN[I_R_Quit_St]) OR (($IN[I_R_Quit_Wei] OR $FLAG[F_SZ_Fe_Res]) AND $IN[I_SZ3_Sammel])      
+ENDIF       
+;
+;Ausgabe Statusmeldungen an BMS
+IF Mit_Komb_ST3 THEN
+  ;Vorwahl mit Strom
+  $OUT[O_Kb3_m_Stro]=NOT $IN[I_Kb3_o_Schw] AND NOT $FLAG[F_o_Prozess]
+  ;Start Protokoll
+  $OUT[O_Kb3_Protok]=$IN[I_Kb3_Protok]
+  ;Vorwarnung Zange
+  $OUT[O_Kb3_W_SZ]=($IN[I_SZ3_W_SZ] OR (Q_T_SZ3_VW>3) OR (Q_T_SZ3_kD>50))
+  ;Warnung Schmierung
+  $OUT[O_Kb3_W_Schm]=$IN[I_SZ3_W_Schm]
+  ;Fraesanfrage
+  $OUT[O_Kb3_FrAnf]=$OUT[O_R_Auto] AND $IN[I_Kb3_FrAnf]
+  ;Vorwarnung Kappenstandzeit
+  $OUT[O_Kb3_V_Stdm]=($IN[I_Kb3_V_Stdm] OR B_SK3_V_Stdm)
+  ;Maximale Kappenstandzeit
+  $OUT[O_Kb3_M_Stdm]=($IN[I_SZ3_F_Geom] OR $IN[I_Kb3_M_Stdm] OR B_SK3_M_Stdm)
+  ;Kraftaufbau zu lange
+  $OUT[O_Kb3_F_Kraf]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Kraf]
+  ;Punktanwahlfehler
+  $OUT[O_Kb3_F_Prog]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Prog]
+  ;Zielposition ungueltig
+  $OUT[O_Kb3_F_Ziel]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Ziel]
+  ;Bauteilfehler
+  $OUT[O_Kb3_F_Baut]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Baut]
+  ;Zange geht schwer
+  $OUT[O_Kb3_F_schw]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_schw]
+  ;Fraesen n.i.O.
+  $OUT[O_Kb3_F_Frae]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Frae]
+  ;Fehler Kappenverschleiss
+  $OUT[O_Kb3_F_KaVe]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Kapp]
+  ;Fehler Geometrie
+  $OUT[O_Kb3_F_Geom]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Geom]
+  ;Schleppfehler
+  $OUT[O_Kb3_Schlep]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Schl]
+  ;Fehler Ausgleichssystem
+  $OUT[O_Kb3_F_Ausg]=$OUT[O_R_Auto] AND ($IN[I_SZ3_F_Ausg] OR (Q_T_SZ3_VW>3))
+  ;Fehler Steuerung/Regler
+  $OUT[O_Kb3_F_Steu]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND $IN[I_SZ3_F_Steu]
+  ;Fehler Temperatur Trafo
+  $OUT[O_Kb3_FT_Tra]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Traf]
+  ;Fehler Temperatur Motor
+  $OUT[O_Kb3_FT_Mot]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Mot]
+  ;Schweissung i.O
+  $OUT[O_Kb3_WPS_io]=$OUT[O_R_Auto] AND NOT $FLAG[F_SK3_S_niO]
+  ;Schweissung n.i.O
+  $OUT[O_Kb3_WP_nio]=$OUT[O_R_Auto] AND $FLAG[F_SK3_S_niO]
+  ;Warngrenze verletzt in Folge
+  $OUT[O_Kb3_W_Folg]=$OUT[O_R_Auto] AND $IN[I_Kb3_W_Folg]
+  ;Phasenueberwachung
+  $OUT[O_Kb3_Ph_nio]=$OUT[O_R_Auto] AND $IN[I_Kb3_Ph_nio]
+  ;Ueberstrom Primaerseite
+  $OUT[O_Kb3_Primae]=$OUT[O_R_Auto] AND $IN[I_Kb3_Primae]
+  ;Fehler Stromsensor
+  $OUT[O_Kb3_F_Stro]=$OUT[O_R_Auto] AND $IN[I_Kb3_F_Stro]
+  ;Fehler Spannungssensor
+  $OUT[O_Kb3_F_Span]=$OUT[O_R_Auto] AND $IN[I_Kb3_F_Span]
+  ;Überstrom 24 V DC
+  $OUT[O_Kb3_24V]=$OUT[O_R_Auto] AND $IN[I_Kb3_24V]
+  ;Uebertemperatur Inverter
+  $OUT[O_Kb3_Invert]=$OUT[O_R_Auto] AND $IN[I_Kb3_Invert]
+  ;Sammelstoerung
+  $OUT[O_Kb3_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($IN[I_Kb3_Sammel] OR $FLAG[F_SZ3_Sammel] OR $FLAG[F_SK3_Sammel] OR SZ_LBitFeh[3]) AND $timer_flag[TimerNr_Ein]
+ELSE
+  ;Vorwarnung Zange
+  $OUT[O_SZ3_W_SZ]=($OUT[O_R_Auto] AND $IN[I_SZ3_W_SZ] OR (Q_T_SZ3_VW>3) OR (Q_T_SZ3_kD>50))
+  ;Warnung Schmierung
+  $OUT[O_SZ3_W_Schm]=$OUT[O_R_Auto] AND $IN[I_SZ3_W_Schm]
+  ;Kraftaufbau zu lange
+  $OUT[O_SZ3_F_Kraf]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Kraf]
+  ;Programmfehler/falsche Kraftvorgabe
+  $OUT[O_SZ3_F_Prog]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Prog]
+  ;Zielposition ungueltig
+  $OUT[O_SZ3_F_Ziel]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Ziel]
+  ;Bauteilfehler
+  $OUT[O_SZ3_F_Baut]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Baut]
+  ;Zange geht schwer
+  $OUT[O_SZ3_F_schw]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_schw]
+  ;Fraesen n.i.O.
+  $OUT[O_SZ3_F_Frae]=$OUT[O_R_Auto] AND $IN[I_SZ3_F_Frae]
+  ;Fehler Kappenverschleiss/Geometrie
+  $OUT[O_SZ3_F_Geom]=$OUT[O_R_Auto] AND ($IN[I_SZ3_F_Kapp] OR $IN[I_SZ3_F_Geom] OR $FLAG[F_SZ3_Kapp])
+  ;Fehler Ausgleichssystem
+  $OUT[O_SZ3_F_Ausg]=($OUT[O_R_Auto] AND $IN[I_SZ3_F_Ausg] OR (Q_T_SZ3_Fe>3))
+  ;Fehler Steuerung/Regler
+  $OUT[O_SZ3_F_Steu]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND $IN[I_SZ3_F_Steu]
+  ;Fehler Temperatur Motor/Trafo
+  $OUT[O_SZ3_F_Temp]=$OUT[O_R_Auto] AND ($IN[I_SZ3_F_Traf] OR $IN[I_SZ3_F_Mot]) 
+  ;Sammelstoerung
+  $OUT[O_SZ3_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($IN[I_SZ3_Sammel] OR $FLAG[F_SZ3_Sammel] OR SZ_LBitFeh[3]) AND $timer_flag[TimerNr_Ein]
+ENDIF  
+;Ausgabe Zangencode
+IF Mit_Komb_ST THEN
+  Kb3_ZCode=1
+ELSE
+  EZ3_ZCode=1
+ENDIF 
+;
+;FOLD SZ-Tastbetrieb ruecksetzen
+IF Mit_Komb_ST3 THEN 
+  Temp_Komb_3=($OUT[O_Kb3_t_zu] OR $OUT[O_Kb3_t_auf])
+ENDIF
+IF $OUT[O_R_Hand] AND TAST_AKTIV_3 AND NOT $OUT[O_SZ3_t_auf] AND NOT $OUT[O_SZ3_t_zu] AND NOT Temp_Komb_3 THEN
+  TAST_AKTIV_3=FALSE
+  $OUT[O_SZ3_FRG]=FALSE
+  schleppfehler=TRUE
+  sf_prog_status=#user_act
+  $OUT[O_SZ3_SPos_g]=FALSE
+ENDIF
+;ENDFOLD
+;
+;FOLD SZ INIT Zangenfunktion
+IF $OUT[O_R_Hand] AND NOT $OUT[O_R_Auto] AND $COULD_START_MOTION AND ((NOT $OUT[O_R_Proz_akt] AND NOT $OUT[O_R_bewegt]) OR (R1AusgleichFunktion>0)) THEN
+  IF Mit_Komb_ST3 THEN     
+    Temp_Komb_3=$OUT[O_Kb3_t_zu]
+  ENDIF        
+  IF ($OUT[O_SZ3_S_TPos] OR $OUT[O_SZ3_ref] OR $OUT[O_SZ3_auf] OR $OUT[O_SZ3_zu] OR Temp_Komb_3 OR $OUT[O_SZ3_t_auf] OR $OUT[O_SZ3_t_zu] OR $OUT[O_SZ3_Teach] OR $OUT[O_SZ3_D_Auf] OR $OUT[O_SZ3_Du_Zu]) THEN
+    CheckZangenFunktion()
+    Zangenfunktion()
+  ENDIF
+ELSE
+  IF $OUT[O_SZ3_Teach] OR $OUT[O_SZ3_D_Auf] OR $OUT[O_SZ3_Du_Zu] THEN
+    $OUT[O_SZ3_Teach]=FALSE
+    $OUT[O_SZ3_D_Auf]=FALSE
+    $OUT[O_SZ3_Du_Zu]=FALSE
+    S_Zangen_Msg(54,#NotifyMsg)
+  ENDIF
+ENDIF
+;ENDFOLD
+;
+;FOLD Ruecksetzen Zangenfunktion
+IF ($OUT[O_R_Hand] AND ($PRO_MODE1==#BSTEP)) OR ($OUT[O_R_Hand] AND NOT $FLAG[F_SZ_AH_KOMP] AND $OUT[O_R_bewegt] AND (R1AusgleichFunktion==0)) OR ($OUT[O_R_Hand] AND NOT $COULD_START_MOTION AND (HAND_FKT1 OR HAND_FKT2)) THEN
+  IF NOT ($OUT[O_SZ3_Re_aus] OR $OUT[O_SZ3_MnFrae] OR $OUT[O_Kb3_MnFrae] OR $FLAG[F_SZ3_FRG_FR]) THEN
+    $OUT[O_SZ3_S_TPos]=FALSE
+    $OUT[O_SZ3_ref]=FALSE
+    $OUT[O_SZ3_FRG]=FALSE
+    $OUT[O_SZ3_auf]=FALSE
+    $OUT[O_SZ3_zu]=FALSE
+    $OUT[O_SZ3_t_auf]=FALSE
+    $OUT[O_SZ3_t_zu]=FALSE
+    IF Mit_Komb_ST3 THEN 
+      $OUT[O_Kb3_t_auf]=FALSE
+      $OUT[O_Kb3_t_zu]=FALSE
+    ENDIF
+  ENDIF
+  HAND_FKT1=FALSE
+  HAND_FKT2=FALSE
+ENDIF
+;ENDFOLD
+;
+;FOLD EZ Oeffnungsmass beim Schwenken pruefen
+;EZ/SP3
+IF ($softplcint[3]>0) AND $OUT[O_SZ3_FRG] AND (Varstate("act_P1")==#initialized) THEN
+  IF ($softplcint[3]==8) THEN
+    $FLAG[F_SZ3_Oeff_iO]=(act_P1.E2>=$COUNT_I[60])
+  ENDIF
+  IF ($softplcint[3]==9) THEN
+    $FLAG[F_SZ3_Oeff_iO]=(act_P1.E3>=$COUNT_I[60])
+  ENDIF
+  IF ($softplcint[3]==10) THEN
+    $FLAG[F_SZ3_Oeff_iO]=(act_P1.E4>=$COUNT_I[60])
+  ENDIF
+  IF ($softplcint[3]==11) THEN
+    $FLAG[F_SZ3_Oeff_iO]=(act_P1.E5>=$COUNT_I[60])
+  ENDIF
+  IF ($softplcint[3]==12) THEN
+    $FLAG[F_SZ3_Oeff_iO]=(act_P1.E6>=$COUNT_I[60])
+  ENDIF
+ELSE
+  $FLAG[F_SZ3_Oeff_iO]=FALSE
+ENDIF
+;ENDFOLD
+;
+;FOLD EZ Position nach Messen und Fraesen pruefen 
+;EZ/SP3
+IF ($softplcint[3]>0) AND $FLAG[F_SZ_Anf_Pos] AND $OUT[O_SZ3_FRG] AND (Varstate("act_P1")==#initialized) THEN
+  $FLAG[F_SZ_Anf_Pos]=FALSE
+  IF ($softplcint[3]==8) THEN
+    $FLAG[F_SZ3_Pos_iO] = ((sig3_istpos>=((act_P1.E2*10)-140)) AND (sig3_istpos<=((act_P1.E2*10)+140)))
+  ENDIF
+  IF ($softplcint[3]==9) THEN
+    $FLAG[F_SZ3_Pos_iO] = ((sig3_istpos>=((act_P1.E3*10)-140)) AND (sig3_istpos<=((act_P1.E3*10)+140)))
+  ENDIF
+  IF ($softplcint[3]==10) THEN
+    $FLAG[F_SZ3_Pos_iO] = ((sig3_istpos>=((act_P1.E4*10)-140)) AND (sig3_istpos<=((act_P1.E4*10)+140)))
+  ENDIF
+  IF ($softplcint[3]==11) THEN
+    $FLAG[F_SZ3_Pos_iO] = ((sig3_istpos>=((act_P1.E5*10)-140)) AND (sig3_istpos<=((act_P1.E5*10)+140)))
+  ENDIF
+  IF ($softplcint[3]==12) THEN
+    $FLAG[F_SZ3_Pos_iO] = ((sig3_istpos>=((act_P1.E6*10)-140)) AND (sig3_istpos<=((act_P1.E6*10)+140)))
+  ENDIF
+ENDIF
+;ENDFOLD    
+;
+;FOLD Ruecksetzen Ausgabe max. Kappenverschleiss
+IF $OUT[O_SZ3_KW_io] THEN
+  B_SK3_M_Stdm = FALSE
+  B_SK3_V_Stdm = FALSE
+  B_SK3_FRG_Ge = TRUE
+ENDIF 
+;ENDFOLD
+;
+;FOLD Lebensbit
+IF Mit_Komb_ST3 THEN 
+  L_Bit_Kombi(3)
+ELSE
+  L_Bit_SZ(3)
+ENDIF
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;------------------------------------------------------
+;FOLD Zangenfunktion
+DEF CheckZangenfunktion()
+IF ($Pro_state1 == #P_Free) THEN
+  IF $OUT[O_SZ1_Teach] OR $OUT[O_SZ1_D_Auf] OR $OUT[O_SZ1_Du_Zu] THEN
+    $OUT[O_SZ1_Teach]=FALSE
+    $OUT[O_SZ1_D_Auf]=FALSE
+    $OUT[O_SZ1_Du_Zu]=FALSE
+    S_Zangen_Msg(21,#NotifyMsg)
+  ENDIF
+  IF $OUT[O_SZ2_Teach] OR $OUT[O_SZ2_D_Auf] OR $OUT[O_SZ2_Du_Zu] THEN
+    $OUT[O_SZ2_Teach]=FALSE
+    $OUT[O_SZ2_D_Auf]=FALSE
+    $OUT[O_SZ2_Du_Zu]=FALSE
+    S_Zangen_Msg(21,#NotifyMsg)
+  ENDIF
+  IF $OUT[O_SZ3_Teach] OR $OUT[O_SZ3_D_Auf] OR $OUT[O_SZ3_Du_Zu] THEN
+    $OUT[O_SZ3_Teach]=FALSE
+    $OUT[O_SZ3_D_Auf]=FALSE
+    $OUT[O_SZ3_Du_Zu]=FALSE
+    S_Zangen_Msg(21,#NotifyMsg)
+  ENDIF
+  RETURN
+ENDIF
+IF ($Pro_state1 == #P_Reset) THEN
+  IF $OUT[O_SZ1_Teach] OR $OUT[O_SZ1_D_Auf] OR $OUT[O_SZ1_Du_Zu] THEN
+    $OUT[O_SZ1_Teach]=FALSE
+    $OUT[O_SZ1_D_Auf]=FALSE
+    $OUT[O_SZ1_Du_Zu]=FALSE
+    S_Zangen_Msg(22,#NotifyMsg)
+  ENDIF
+  IF $OUT[O_SZ2_Teach] OR $OUT[O_SZ2_D_Auf] OR $OUT[O_SZ2_Du_Zu] THEN
+    $OUT[O_SZ2_Teach]=FALSE
+    $OUT[O_SZ2_D_Auf]=FALSE
+    $OUT[O_SZ2_Du_Zu]=FALSE
+    S_Zangen_Msg(22,#NotifyMsg)
+  ENDIF
+  IF $OUT[O_SZ3_Teach] OR $OUT[O_SZ3_D_Auf] OR $OUT[O_SZ3_Du_Zu] THEN
+    $OUT[O_SZ3_Teach]=FALSE
+    $OUT[O_SZ3_D_Auf]=FALSE
+    $OUT[O_SZ3_Du_Zu]=FALSE
+    S_Zangen_Msg(22,#NotifyMsg)
+  ENDIF
+  RETURN
+ENDIF
+IF NOT($ON_Path) THEN
+  IF $OUT[O_SZ1_Teach] OR $OUT[O_SZ1_D_Auf] OR $OUT[O_SZ1_Du_Zu] THEN
+    $OUT[O_SZ1_Teach]=FALSE
+    $OUT[O_SZ1_D_Auf]=FALSE
+    $OUT[O_SZ1_Du_Zu]=FALSE
+    S_Zangen_Msg(24,#NotifyMsg)
+  ENDIF
+  IF $OUT[O_SZ2_Teach] OR $OUT[O_SZ2_D_Auf] OR $OUT[O_SZ2_Du_Zu] THEN
+    $OUT[O_SZ2_Teach]=FALSE
+    $OUT[O_SZ2_D_Auf]=FALSE
+    $OUT[O_SZ2_Du_Zu]=FALSE
+    S_Zangen_Msg(24,#NotifyMsg)
+  ENDIF
+  IF $OUT[O_SZ3_Teach] OR $OUT[O_SZ3_D_Auf] OR $OUT[O_SZ3_Du_Zu] THEN
+    $OUT[O_SZ3_Teach]=FALSE
+    $OUT[O_SZ3_D_Auf]=FALSE
+    $OUT[O_SZ3_Du_Zu]=FALSE
+    S_Zangen_Msg(24,#NotifyMsg)
+  ENDIF
+ENDIF  
+IF $OUT[O_SZ1_Teach]  and ($FLAG[F_o_Ausgl]) THEN
+  ; teach funktion nicht wenn kein SStep
+  $OUT[O_SZ1_Teach]=FALSE
+  $OUT[O_SZ1_S_Tpos]=truE
+  ;SyncMoveMessage(39,#NotifyMsg)
+  RETURN
+ENDIF 
+IF $OUT[O_SZ2_Teach]  and ($FLAG[F_o_Ausgl]) THEN
+  ; teach funktion nicht wenn kein SStep
+  $OUT[O_SZ2_Teach]=FALSE
+  $OUT[O_SZ2_S_Tpos]=truE
+  ;SyncMoveMessage(39,#NotifyMsg)
+  RETURN
+ENDIF 
+IF $OUT[O_SZ3_Teach]  and ($FLAG[F_o_Ausgl]) THEN
+  ; teach funktion nicht wenn kein SStep
+  $OUT[O_SZ3_Teach]=FALSE
+  $OUT[O_SZ3_S_Tpos]=truE
+  ;SyncMoveMessage(39,#NotifyMsg)
+  RETURN
+ENDIF 
+IF $OUT[O_SZ1_Teach]  and ($Pro_mode1<>#MSTEP) THEN
+  ; teach funktion nicht wenn kein SStep
+  $OUT[O_SZ1_Teach]=FALSE
+  S_Zangen_Msg(23,#NotifyMsg)
+  RETURN
+ENDIF
+IF $OUT[O_SZ2_Teach] and ($Pro_mode1<>#MSTEP) THEN
+  ; teach funktion nicht wenn kein SStep
+  $OUT[O_SZ2_Teach]=FALSE
+  S_Zangen_Msg(23,#NotifyMsg)
+  RETURN
+ENDIF
+IF $OUT[O_SZ3_Teach] and ($Pro_mode1<>#MSTEP) THEN
+  ; teach funktion nicht wenn kein SStep
+  $OUT[O_SZ3_Teach]=FALSE
+  S_Zangen_Msg(23,#NotifyMsg)
+  RETURN
+ENDIF
+IF $OUT[O_SZ1_Du_Zu]  and ($FLAG[F_o_Ausgl]) THEN
+  ; teach funktion nicht wenn kein Flag [F_o_Ausgl]
+  $OUT[O_SZ1_Du_Zu]=FALSE
+  $OUT[O_SZ1_Zu]=truE
+  ;SyncMoveMessage(80,#NotifyMsg)
+  RETURN
+ENDIF
+IF $OUT[O_SZ1_D_auf]  and ($FLAG[F_o_Ausgl]) THEN
+  ; teach funktion nicht wenn kein Flag [F_o_Ausgl]
+  $OUT[O_SZ1_D_auf]=FALSE
+  $OUT[O_SZ1_auf]=truE
+  ;SyncMoveMessage(80,#NotifyMsg)
+  RETURN
+ENDIF
+
+IF R1AusgleichFunktion==0 THEN
+  IF $OUT[O_SZ1_Teach] then
+    ;teachen SZ1 EIN
+	;xxxxxxxxxx   flegel  xxxxx
+     if ($mode_op==#t1) and ($ov_pro<>50) then
+      ov_merk=$ov_pro
+      $ov_pro=50
+     endif
+     if ($mode_op==#t2) and ($ov_pro<>5) then
+      ov_merk=$ov_pro
+      $ov_pro=5
+     endif
+    R1AusgleichFunktion=1
+    $OUT[O_SZ1_Teach]=FALSE
+    S_Zangen_Msg(31,#NotifyMsg)
+  ENDIF
+  IF $OUT[O_SZ1_D_Auf] then
+    ;Oeffen SZ1
+    R1AusgleichFunktion=2
+    $OUT[O_SZ1_D_Auf]=FALSE
+    S_Zangen_Msg(32,#NotifyMsg)
+  ENDIF
+  IF $OUT[O_SZ1_Du_Zu] then
+    ;schliessen SZ1 EIN
+    R1AusgleichFunktion=3
+    $OUT[O_SZ1_Du_Zu]=FALSE
+    S_Zangen_Msg(33,#NotifyMsg)
+  ENDIF
+  IF $OUT[O_SZ2_Teach] then
+    ;teachen SZ2 EIN
+	;xxxxxxxxxx   flegel  xxxxx
+     if ($mode_op==#t1) and ($ov_pro<>50) then
+      ov_merk=$ov_pro
+      $ov_pro=50
+     endif
+     if ($mode_op==#t2) and ($ov_pro<>5) then
+      ov_merk=$ov_pro
+      $ov_pro=5
+     endif
+    R1AusgleichFunktion=11
+    $OUT[O_SZ2_Teach]=FALSE
+    S_Zangen_Msg(41,#NotifyMsg)
+  ENDIF
+IF $OUT[O_SZ2_Du_Zu]  and ($FLAG[F_o_Ausgl]) THEN
+  ; teach funktion nicht wenn kein Flag [F_o_Ausgl]
+  $OUT[O_SZ2_Du_Zu]=FALSE
+  $OUT[O_SZ2_Zu]=truE
+  ;SyncMoveMessage(80,#NotifyMsg)
+  RETURN
+ENDIF
+IF $OUT[O_SZ2_D_auf]  and ($FLAG[F_o_Ausgl]) THEN
+  ; teach funktion nicht wenn kein Flag [F_o_Ausgl]
+  $OUT[O_SZ2_D_auf]=FALSE
+  $OUT[O_SZ2_auf]=truE
+  ;SyncMoveMessage(80,#NotifyMsg)
+  RETURN
+ENDIF
+  
+  IF $OUT[O_SZ2_D_Auf] then
+    ;Oeffen SZ2
+    R1AusgleichFunktion=12
+    $OUT[O_SZ2_D_Auf]=FALSE
+    S_Zangen_Msg(42,#NotifyMsg)
+  ENDIF
+  IF $OUT[O_SZ2_Du_Zu] then
+    ;schliessen SZ2 EIN
+    R1AusgleichFunktion=13
+    $OUT[O_SZ2_Du_Zu]=FALSE
+    S_Zangen_Msg(43,#NotifyMsg)
+  ENDIF
+  IF $OUT[O_SZ3_Teach] then
+    ;teachen SZ3 EIN
+	;xxxxxxxxxx   flegel  xxxxx
+     if ($mode_op==#t1) and ($ov_pro<>50) then
+      ov_merk=$ov_pro
+      $ov_pro=50
+     endif
+     if ($mode_op==#t2) and ($ov_pro<>5) then
+      ov_merk=$ov_pro
+      $ov_pro=5
+     endif
+    R1AusgleichFunktion=21
+    $OUT[O_SZ3_Teach]=FALSE
+    S_Zangen_Msg(51,#NotifyMsg)
+  ENDIF
+IF $OUT[O_SZ3_Du_Zu]  and ($FLAG[F_o_Ausgl]) THEN
+  ; teach funktion nicht wenn kein Flag [F_o_Ausgl]
+  $OUT[O_SZ3_Du_Zu]=FALSE
+  $OUT[O_SZ3_Zu]=truE
+  ;SyncMoveMessage(80,#NotifyMsg)
+  RETURN
+ENDIF
+IF $OUT[O_SZ3_D_auf]  and ($FLAG[F_o_Ausgl]) THEN
+  ; teach funktion nicht wenn kein Flag [F_o_Ausgl]
+  $OUT[O_SZ3_D_auf]=FALSE
+  $OUT[O_SZ3_auf]=truE
+  ;SyncMoveMessage(80,#NotifyMsg)
+  RETURN
+ENDIF
+
+  IF $OUT[O_SZ3_D_Auf] then
+    ;Oeffen SZ3
+    R1AusgleichFunktion=22
+    $OUT[O_SZ3_D_Auf]=FALSE
+    S_Zangen_Msg(52,#NotifyMsg)
+  ENDIF
+  IF $OUT[O_SZ3_Du_Zu] then
+    ;schliessen SZ3 EIN
+    R1AusgleichFunktion=23
+    $OUT[O_SZ3_Du_Zu]=FALSE
+    S_Zangen_Msg(53,#NotifyMsg)
+  ENDIF
+ELSE
+  IF $OUT[O_SZ1_Teach] OR $OUT[O_SZ1_D_Auf] OR $OUT[O_SZ1_Du_Zu] THEN
+    S_Zangen_Msg(35,#NotifyMsg); Zangenfunktion bereits aktiv
+    $OUT[O_SZ1_Teach]=FALSE
+    $OUT[O_SZ1_D_Auf]=FALSE
+    $OUT[O_SZ1_Du_Zu]=FALSE
+  ENDIF	
+  IF $OUT[O_SZ2_Teach] OR $OUT[O_SZ2_D_Auf] OR $OUT[O_SZ2_Du_Zu] THEN
+    S_Zangen_Msg(45,#NotifyMsg); Zangenfunktion bereits aktiv
+    $OUT[O_SZ2_Teach]=FALSE
+    $OUT[O_SZ2_D_Auf]=FALSE
+    $OUT[O_SZ2_Du_Zu]=FALSE
+  ENDIF
+  IF $OUT[O_SZ3_Teach] OR $OUT[O_SZ3_D_Auf] OR $OUT[O_SZ3_Du_Zu] THEN
+    S_Zangen_Msg(55,#NotifyMsg); Zangenfunktion bereits aktiv
+    $OUT[O_SZ3_Teach]=FALSE
+    $OUT[O_SZ3_D_Auf]=FALSE
+    $OUT[O_SZ3_Du_Zu]=FALSE
+  ENDIF
+ENDIF
+END
+;
+;------------------------------------------------------
+DEF Zangenfunktion()
+;Schweisszangen
+;SZ 1 Oeffnen in Hand
+IF $OUT[O_SZ1_auf] THEN	
+  $OUT[O_SZ1_FRG]=TRUE
+  $OUT[O_SZ1_zu]=FALSE
+  $OUT[O_Kb1_zu_o_S]=FALSE
+  HAND_FKT1=TRUE
+  IF $IN[I_SZ1_auf] THEN
+    $OUT[O_SZ1_auf]=FALSE
+  ENDIF
+ENDIF
+;
+;SZ 1 Schliessen in Hand
+IF Mit_Komb_ST1 THEN
+  IF $OUT[O_Kb1_zu_o_S] THEN	
+    $OUT[O_SZ1_FRG]=TRUE
+    $OUT[O_SZ1_auf]=FALSE
+    HAND_FKT1=TRUE
+    IF $IN[I_SZ1_zu] THEN
+      $OUT[O_Kb1_zu_o_S]=FALSE
+    ENDIF
+  ENDIF
+ELSE
+  IF $OUT[O_SZ1_zu] THEN	
+    $OUT[O_SZ1_FRG]=TRUE
+    $OUT[O_SZ1_auf]=FALSE
+    HAND_FKT1=TRUE
+    IF $IN[I_SZ1_zu] THEN
+      $OUT[O_SZ1_zu]=FALSE
+    ENDIF
+  ENDIF
+ENDIF  
+;
+; ~~~~~~~~~~~~ VW Teil-Anfang~~~~~~~~
+;SZ 1 Fahrt auf Teachposition ausloesen
+IF Mit_Komb_ST THEN
+	IF $OUT[O_SZ1_S_TPos] THEN
+		$OUT[O_SZ1_TPos_u]=FALSE
+		TeachPos=FALSE
+		HAND_FKT2=TRUE
+		WAIT SEC 0.4
+		$OUT[O_SZ1_FRG]=TRUE
+		IF $IN[I_SZ1_TPos_g] THEN
+			TeachPos=TRUE
+			$OUT[O_SZ1_S_TPos]=FALSE
+			$OUT[O_SZ1_TPos_u]=TRUE
+			sf_prog_status=#user_act
+			$OUT[O_SZ1_SPos_g]=FALSE
+			WAIT SEC 0.4
+			schleppfehler=TRUE
+			WAIT SEC 1.0
+       IF  (schleppfehler==FALSE) THEN
+				$OUT[O_SZ1_FRG]=FALSE
+				$OUT[O_SZ1_TPos_u]=FALSE
+				HAND_FKT2=FALSE
+		ENDIF
+	ENDIF
+   ENDIF 
+ELSE
+   IF $OUT[O_SZ1_S_TPos] THEN
+     $OUT[O_SZ1_TPos_u]=FALSE
+     TeachPos=FALSE
+     HAND_FKT2=TRUE
+     WAIT SEC 0.4
+     $OUT[O_SZ1_FRG]=TRUE
+     IF $IN[I_SZ1_TPos_g] THEN
+       TeachPos=TRUE
+       $OUT[O_SZ1_S_TPos]=FALSE
+       $OUT[O_SZ1_TPos_u]=TRUE
+       sf_prog_status=#user_act
+       $OUT[O_SZ1_SPos_g]=FALSE
+       WAIT SEC 0.4
+       schleppfehler=TRUE
+       $OUT[O_SZ1_FRG]=FALSE
+       $OUT[O_SZ1_TPos_u]=FALSE
+       HAND_FKT2=FALSE
+     ENDIF
+   ENDIF
+ENDIF   
+;
+;~~~~~~~~~~~~~~~VW-Teil-Ende~~~~~~~~
+;
+;SZ 1 Referenzieren
+IF $OUT[O_SZ1_ref] THEN	
+  $OUT[O_SZ1_FRG]=TRUE
+  HAND_FKT2=TRUE
+  IF NOT $IN[I_SZ1_ref] THEN
+    B_SZ1_n_Ref=TRUE
+  ENDIF	
+  IF $IN[I_SZ1_ref] AND $IN[I_SZ1_IPos_g] AND B_SZ1_n_Ref THEN
+    $OUT[O_SZ1_ref]=FALSE
+    $OUT[O_SZ1_FRG]=FALSE
+    HAND_FKT2=FALSE
+	 B_SZ1_n_Ref=FALSE
+    S_Zangen_Msg(1,#NotifyMsg)
+  ENDIF
+ENDIF
+;
+;SZ 1 Tastend Auf
+IF Mit_Komb_ST1 THEN
+  IF $OUT[O_Kb1_t_auf] THEN	
+    TAST_AKTIV_1=TRUE
+    $OUT[O_SZ1_FRG]=TRUE
+  ENDIF
+ELSE
+  IF $OUT[O_SZ1_t_auf] THEN	
+    TAST_AKTIV_1=TRUE
+    $OUT[O_SZ1_FRG]=TRUE
+  ENDIF
+ENDIF  
+;
+;SZ 1 Tastend Zu
+IF Mit_Komb_ST1 THEN
+  IF $OUT[O_Kb1_t_zu] THEN	
+    TAST_AKTIV_1=TRUE
+    $OUT[O_SZ1_FRG]=TRUE
+  ENDIF
+ELSE
+  IF $OUT[O_SZ1_t_zu] THEN	
+    TAST_AKTIV_1=TRUE
+    $OUT[O_SZ1_FRG]=TRUE
+  ENDIF
+ENDIF
+;
+;SZ 2 Oeffnen in Hand
+IF $OUT[O_SZ2_auf] THEN	
+  $OUT[O_SZ2_FRG]=TRUE
+  $OUT[O_SZ2_zu]=FALSE
+  $OUT[O_Kb2_zu_o_S]=FALSE
+  HAND_FKT1=TRUE
+  IF $IN[I_SZ2_auf] THEN
+    $OUT[O_SZ2_auf]=FALSE
+  ENDIF
+ENDIF
+;
+;SZ 2 Schliessen in Hand
+IF Mit_Komb_ST2 THEN
+  IF $OUT[O_Kb2_zu_o_S] THEN	
+    $OUT[O_SZ2_FRG]=TRUE
+    $OUT[O_SZ2_auf]=FALSE
+    HAND_FKT1=TRUE
+    IF $IN[I_SZ2_zu] THEN
+      $OUT[O_Kb2_zu_o_S]=FALSE
+    ENDIF
+  ENDIF
+ELSE
+  IF $OUT[O_SZ2_zu] THEN	
+    $OUT[O_SZ2_FRG]=TRUE
+    $OUT[O_SZ2_auf]=FALSE
+    HAND_FKT1=TRUE
+    IF $IN[I_SZ2_zu] THEN
+      $OUT[O_SZ2_zu]=FALSE
+    ENDIF
+  ENDIF
+ENDIF  
+;
+;SZ 2 Fahrt auf Teachposition ausloesen
+IF $OUT[O_SZ2_S_TPos] THEN
+  $OUT[O_SZ2_TPos_u]=FALSE
+  TeachPos=FALSE
+  HAND_FKT2=TRUE
+  WAIT SEC 0.4
+  $OUT[O_SZ2_FRG]=TRUE
+  IF $IN[I_SZ2_TPos_g] THEN
+    TeachPos=TRUE
+    $OUT[O_SZ2_S_TPos]=FALSE
+    $OUT[O_SZ2_TPos_u]=TRUE
+    sf_prog_status=#user_act
+    $OUT[O_SZ2_SPos_g]=FALSE
+    schleppfehler=TRUE
+    WAIT SEC 0.4
+    $OUT[O_SZ2_FRG]=FALSE
+    $OUT[O_SZ2_TPos_u]=FALSE
+    HAND_FKT2=FALSE
+  ENDIF
+ENDIF
+;
+;SZ 2 Referenzieren
+IF $OUT[O_SZ2_ref] THEN	
+  $OUT[O_SZ2_FRG]=TRUE
+  HAND_FKT2=TRUE
+  IF NOT $IN[I_SZ2_ref] THEN
+    B_SZ2_n_Ref=TRUE
+  ENDIF	
+  IF $IN[I_SZ2_ref] AND $IN[I_SZ2_IPos_g] AND B_SZ2_n_Ref THEN
+    $OUT[O_SZ2_ref]=FALSE
+    $OUT[O_SZ2_FRG]=FALSE
+    HAND_FKT2=FALSE
+	 B_SZ2_n_Ref=FALSE
+    S_Zangen_Msg(2,#NotifyMsg)
+  ENDIF
+ENDIF
+;
+;SZ 2 Tastend Auf
+IF Mit_Komb_ST2 THEN
+  IF $OUT[O_Kb2_t_auf] THEN	
+    TAST_AKTIV_2=TRUE
+    $OUT[O_SZ2_FRG]=TRUE
+  ENDIF
+ELSE
+  IF $OUT[O_SZ2_t_auf] THEN	
+    TAST_AKTIV_2=TRUE
+    $OUT[O_SZ2_FRG]=TRUE
+  ENDIF
+ENDIF  
+;
+;SZ 2 Tastend Zu
+IF Mit_Komb_ST2 THEN
+  IF $OUT[O_Kb2_t_zu] THEN	
+    TAST_AKTIV_2=TRUE
+    $OUT[O_SZ2_FRG]=TRUE
+  ENDIF
+ELSE
+  IF $OUT[O_SZ2_t_zu] THEN	
+    TAST_AKTIV_2=TRUE
+    $OUT[O_SZ2_FRG]=TRUE
+  ENDIF
+ENDIF  
+;
+;SZ 3 Oeffnen in Hand
+IF $OUT[O_SZ3_auf] THEN	
+  $OUT[O_SZ3_FRG]=TRUE
+  $OUT[O_SZ3_zu]=FALSE
+  $OUT[O_Kb3_zu_o_S]=FALSE
+  HAND_FKT1=TRUE
+  IF $IN[I_SZ3_auf] THEN
+    $OUT[O_SZ3_auf]=FALSE
+  ENDIF
+ENDIF
+;
+;SZ 3 Schliessen in Hand
+IF Mit_Komb_ST3 THEN
+  IF $OUT[O_Kb3_zu_o_S] THEN	
+    $OUT[O_SZ3_FRG]=TRUE
+    $OUT[O_SZ3_auf]=FALSE
+    HAND_FKT1=TRUE
+    IF $IN[I_SZ3_zu] THEN
+      $OUT[O_Kb3_zu_o_S]=FALSE
+    ENDIF
+  ENDIF
+ELSE
+  IF $OUT[O_SZ3_zu] THEN	
+    $OUT[O_SZ3_FRG]=TRUE
+    $OUT[O_SZ3_auf]=FALSE
+    HAND_FKT1=TRUE
+    IF $IN[I_SZ3_zu] THEN
+      $OUT[O_SZ3_zu]=FALSE
+    ENDIF
+  ENDIF
+ENDIF  
+;
+;SZ 3 Fahrt auf Teachposition ausloesen
+IF $OUT[O_SZ3_S_TPos] THEN
+  $OUT[O_SZ3_TPos_u]=FALSE
+  TeachPos=FALSE
+  HAND_FKT2=TRUE
+  WAIT SEC 0.4
+  $OUT[O_SZ3_FRG]=TRUE
+  IF $IN[I_SZ3_TPos_g] THEN
+    TeachPos=TRUE
+    $OUT[O_SZ3_S_TPos]=FALSE
+    $OUT[O_SZ3_TPos_u]=TRUE
+    sf_prog_status=#user_act
+    $OUT[O_SZ3_SPos_g]=FALSE
+    schleppfehler=TRUE
+    WAIT SEC 0.4
+    $OUT[O_SZ3_FRG]=FALSE
+    $OUT[O_SZ3_TPos_u]=FALSE
+    HAND_FKT2=FALSE
+  ENDIF
+ENDIF
+;
+;SZ 3 Referenzieren
+IF $OUT[O_SZ3_ref] THEN	
+  $OUT[O_SZ3_FRG]=TRUE
+  HAND_FKT2=TRUE
+  IF NOT $IN[I_SZ3_ref] THEN
+    B_SZ3_n_Ref=TRUE
+  ENDIF	
+  IF $IN[I_SZ3_ref] AND $IN[I_SZ3_IPos_g] AND B_SZ3_n_Ref THEN
+    $OUT[O_SZ3_ref]=FALSE
+    $OUT[O_SZ3_FRG]=FALSE
+    HAND_FKT2=FALSE
+	B_SZ3_n_Ref=FALSE
+    S_Zangen_Msg(3,#NotifyMsg)
+  ENDIF
+ENDIF
+;
+;SZ 3 Tastend Auf
+IF Mit_Komb_ST3 THEN
+  IF $OUT[O_Kb3_t_auf] THEN	
+    TAST_AKTIV_3=TRUE
+    $OUT[O_SZ3_FRG]=TRUE
+  ENDIF
+ELSE
+  IF $OUT[O_SZ3_t_auf] THEN	
+    TAST_AKTIV_3=TRUE
+    $OUT[O_SZ3_FRG]=TRUE
+  ENDIF
+ENDIF  
+;
+;SZ 3 Tastend Zu
+IF Mit_Komb_ST3 THEN
+  IF $OUT[O_Kb3_t_zu] THEN	
+    TAST_AKTIV_3=TRUE
+    $OUT[O_SZ3_FRG]=TRUE
+  ENDIF
+ELSE
+  IF $OUT[O_SZ3_t_zu] THEN	
+    TAST_AKTIV_3=TRUE
+    $OUT[O_SZ3_FRG]=TRUE
+  ENDIF
+ENDIF 
+; 
+END
+;ENDFOLD (Zangenfunktion)
+;
+;~~~~~~~~~VW-Teil-Anfang~~~~~~~~
+;
+;FOLD LOOP Mutterbuckeln VW-V3
+GLOBAL DEF BM1_LOOP( )
+  IF $FLAG[F_m_BM1_Einz] OR $FLAG[F_m_BM1_Dopp] THEN
+    MIT_BM1=TRUE
+  ELSE
+    MIT_BM1=FALSE
+  ENDIF
+;  
+  ;Ausgabe Fehlermeldungen
+  IF MIT_BM1 THEN
+   ;   
+   ;Sammelstoerung
+    $OUT[O_BM1_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($OUT[O_SK1_Sammel] OR $FLAG[F_SK1_Sammel]) AND $timer_flag[TimerNr_Ein]
+  ENDIF
+;
+  IF ($OUT[O_R_Hand] AND NOT $OUT[O_R_Auto] AND $OUT[O_R_RK100] AND NOT $OUT[O_R_Proz_akt] AND NOT $FLAG[F_R_RobMove]) THEN
+    ;
+    ;BM1 schliessen in Hand ohne Zustellhub
+    IF (($OUT[O_BM1_zu]) AND $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM1_Dopp] AND NOT $FLAG[F_m_BM2_Einz] AND NOT $FLAG[F_m_BM2_Dopp]) THEN
+      SK1_P_Nr=21
+      SK1_Fzg_Typ=0
+      ;Zange schliessen
+      $OUT[O_BM1_FRGZYL]=TRUE
+      $OUT[O_BM1_ZYL_R]=FALSE
+      $OUT[O_BM1_ZYL_V]=TRUE
+      ;Leckagenausgleich
+      $OUT[O_BM1_LE_AR]=FALSE
+      $OUT[O_BM1_LE_AV]=TRUE
+    ENDIF
+;
+    IF ($OUT[O_BM1_ZYL_V] AND $IN[I_BM1_KAH_S] AND $FLAG[F_m_BM1_Einz]) THEN
+      $OUT[O_BM1_FRGZYL]=FALSE
+      $OUT[O_BM1_ZYL_V]=FALSE
+      $OUT[O_BM1_LE_AV]=FALSE
+    ENDIF
+    ;
+    ;BM 1 schliessen in Hand  mit Zustellhub
+    ;Schiebezylinder ist Vor
+    IF ($OUT[O_BM1_zu] AND $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM1_Dopp]  AND NOT $FLAG[F_m_BM2_Einz] AND NOT $FLAG[F_m_BM2_Dopp]) THEN  
+      SK1_P_Nr=21
+      SK1_Fzg_Typ=0
+      ;Zange schliessen
+      $OUT[O_BM1_FRGZYL]=TRUE
+      $OUT[O_BM1_ZYL_V]=TRUE
+      $OUT[O_BM1_ZYL_R]=FALSE
+      ;Leckagenausgleich 
+      $OUT[O_BM1_LE_AR]=FALSE
+      $OUT[O_BM1_LE_AV]=TRUE
+    ENDIF    
+;
+    IF ($OUT[O_BM1_ZYL_V] AND $IN[I_BM1_KAH_S] AND $FLAG[F_m_BM1_Einz]) THEN
+      $OUT[O_BM1_FRGZYL]=FALSE
+      $OUT[O_BM1_ZYL_V]=FALSE
+      $OUT[O_BM1_LE_AV]=FALSE
+    ENDIF
+;
+    ;BM 1 Zustellhub schliessen in Hand
+    IF($OUT[O_BM1_VorZu] AND NOT $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM2_Einz] AND $FLAG[F_m_BM1_Dopp] AND NOT $FLAG[F_m_BM2_Dopp]) THEN
+      SK1_P_Nr=21
+      SK1_Fzg_Typ=0
+      ;Zange schliessen
+      $OUT[O_BM1_FRGZYL]=TRUE
+      $OUT[O_BM1_ZYL_R]=TRUE
+      $OUT[O_BM1_ZYL_V]=FALSE
+      $OUT[O_BM1_ZH_R]=FALSE
+      $OUT[O_BM1_ZH_V]=TRUE
+    ENDIF
+    ;
+    IF ($OUT[O_BM1_ZYL_R] AND $IN[I_BM1_KZH_V] AND $FLAG[F_m_BM1_Dopp]) THEN
+      $OUT[O_BM1_FRGZYL]=FALSE
+      $OUT[O_BM1_ZYL_R]=FALSE
+      $OUT[O_BM1_ZYL_V]=FALSE
+      $OUT[O_BM1_ZH_R]=FALSE
+      $OUT[O_BM1_ZH_V]=FALSE
+    ENDIF
+    ;
+    ;BM1 Schiebezylinder Vor in Hand
+    IF($OUT[O_BM1_SchVor] AND NOT $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM2_Einz] AND $FLAG[F_m_BM1_Dopp] AND NOT $FLAG[F_m_BM2_Dopp] AND NOT $IN[I_BM1_KSD_E] ) THEN
+      SK1_P_Nr=21
+      SK1_Fzg_Typ=0
+      ;Schiebezylinder vor
+      $OUT[O_BM1_FRGZYL]=TRUE
+      $OUT[O_BM1_SZYL_R]=FALSE
+      $OUT[O_BM1_SZYL_V]=TRUE
+    ENDIF
+;  
+    IF ($OUT[O_BM1_SZYL_V] AND $IN[I_BM1_SZYL_V] AND $FLAG[F_m_BM1_Dopp] ) THEN
+      $OUT[O_BM1_FRGZYL]=FALSE
+      $OUT[O_BM1_SZYL_V]=FALSE
+    ENDIF
+;
+    ;Oeffnen der Stanze BM1
+    ;Schiebezylinder  Rueck BM1 
+    ;BM1 Oeffnen in Hand ohne Zustellhub
+    IF ($OUT[O_BM1_auf] AND $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM2_Einz] AND NOT $FLAG[F_m_BM1_Dopp]AND NOT $FLAG[F_m_BM2_Dopp]) THEN
+      SK1_P_Nr=21
+      SK1_Fzg_Typ=0
+      ;Zange oeffnen 
+      $OUT[O_BM1_FRGZYL]=TRUE
+      $OUT[O_BM1_ZYL_V]=FALSE
+      $OUT[O_BM1_ZYL_R]=TRUE
+      ;Leckagenausgleich 
+      $OUT[O_BM1_LE_AR]=FALSE
+      $OUT[O_BM1_LE_AV]=TRUE
+    ENDIF
+;    
+    IF ($OUT[O_BM1_ZYL_R] AND $IN[I_BM1_BZZH_O] AND $FLAG[F_m_BM1_Einz]) THEN
+      $OUT[O_BM1_FRGZYL]=FALSE
+      $OUT[O_BM1_ZYL_R]=FALSE
+      $OUT[O_BM1_ZYL_V]=FALSE
+      $OUT[O_BM1_LE_AV]=FALSE
+    ENDIF
+;    
+    ;BM 1 Oeffnen in Hand Komplett mit Zustellhub
+    IF ($OUT[O_BM1_Auf] AND NOT $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM2_Einz] AND NOT $FLAG[F_m_BM2_Dopp] AND $FLAG[F_m_BM1_Dopp] ) THEN
+      SK1_P_Nr=21
+      SK1_Fzg_Typ=0
+      ;Zange oeffnen
+      $OUT[O_BM1_FRGZYL]=TRUE
+      $OUT[O_BM1_ZYL_V]=FALSE
+      $OUT[O_BM1_ZYL_R]=TRUE
+      $OUT[O_BM1_ZH_V]=FALSE
+      $OUT[O_BM1_ZH_R]=TRUE
+      ;Leckagenausgleich 
+      $OUT[O_BM1_LE_AR]=FALSE
+      $OUT[O_BM1_LE_AV]=TRUE
+    ENDIF
+ 
+    IF ($OUT[O_BM1_ZH_R] AND $IN[I_BM1_BZZH_O] AND $FLAG[F_m_BM1_Dopp]) THEN
+     $OUT[O_BM1_FRGZYL]=FALSE
+     $OUT[O_BM1_ZYL_R]=FALSE
+     $OUT[O_BM1_LE_AV]=FALSE
+     $OUT[O_BM1_ZYL_V]=FALSE
+     $OUT[O_BM1_ZH_R]=FALSE
+    ENDIF
+;    
+    ;BM1 oeffnen in Hand Zustellhub
+    IF ($OUT[O_BM1_VorAuf] AND NOT $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM2_Einz] AND NOT $FLAG[F_m_BM2_Dopp] AND $FLAG[F_m_BM1_Dopp]) THEN
+      SK1_P_Nr=21
+      SK1_Fzg_Typ=0
+      ;Zange oeffnen 
+      $OUT[O_BM1_FRGZYL]=TRUE
+      $OUT[O_BM1_ZYL_V]=FALSE
+      $OUT[O_BM1_ZYL_R]=TRUE
+      $OUT[O_BM1_ZH_V]=TRUE
+      $OUT[O_BM1_ZH_R]=FALSE
+      ;Leckagenausgleich 
+      $OUT[O_BM1_LE_AR]=FALSE 
+      $OUT[O_BM1_LE_AV]=TRUE
+    ENDIF
+;    
+    IF ($OUT[O_BM1_ZYL_R] AND $IN[I_BM1_KZH_V] AND $FLAG[F_m_BM1_Dopp]) THEN
+      $OUT[O_BM1_FRGZYL]=FALSE
+      $OUT[O_BM1_ZYL_R]=FALSE
+      $OUT[O_BM1_LE_AV]=FALSE
+      $OUT[O_BM1_ZH_V]=FALSE
+    ENDIF
+;    
+    ;BM 1 schiebezylinder Rueck in Hand 
+    IF ($OUT[O_BM1_SchRue] AND NOT $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM2_Einz] AND $FLAG[F_m_BM1_Dopp] AND NOT $FLAG[F_m_BM2_Dopp] AND NOT $IN[I_BM1_KAH_S]) THEN
+      SK1_P_Nr=21
+      SK1_Fzg_Typ=0
+      ;Schiebezylinder vor
+      $OUT[O_BM1_FRGZYL]=TRUE
+      $OUT[O_BM1_SZYL_V]=FALSE
+      $OUT[O_BM1_SZYL_R]=TRUE
+    ENDIF
+;    
+    IF ($OUT[O_BM1_SZYL_R] AND $IN[I_BM1_SZYL_R]) THEN
+      $OUT[O_BM1_FRGZYL]=FALSE
+      $OUT[O_BM1_SZYL_R]=FALSE
+    ENDIF
+;    
+ ENDIF
+End
+;
+;FOLD LOOP Mutterbuckeln VW-V3
+GLOBAL DEF BM2_LOOP( )
+  IF $FLAG[F_m_BM2_Einz] OR $FLAG[F_m_BM2_Dopp] THEN
+    MIT_BM2=TRUE
+  ELSE
+    MIT_BM2=FALSE
+  ENDIF
+  ;Ausgabe Fehlermeldungen
+  IF MIT_BM2 THEN
+   ;   
+   ;Sammelstoerung
+  $OUT[O_BM2_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($OUT[O_SK2_Sammel] OR $FLAG[F_SK2_Sammel]) AND $timer_flag[TimerNr_Ein]
+  ENDIF
+;
+ IF ($OUT[O_R_Hand] AND NOT $OUT[O_R_Auto] AND $OUT[O_R_RK100] AND NOT $OUT[O_R_Proz_akt] AND NOT $FLAG[F_R_RobMove]) THEN
+ 
+    ;BM2 schliessen in Hand ohne Zustellhub
+    IF ($OUT[O_BM2_zu] AND NOT $FLAG[F_m_BM2_Einz] AND $FLAG[F_m_BM2_Einz] AND NOT $FLAG[F_m_BM1_Dopp] AND NOT $FLAG[F_m_BM2_Dopp]) THEN
+      SK2_P_Nr=21
+      SK2_Fzg_Typ=0
+      ;Zange schliessen
+      $OUT[O_BM2_FRGZYL]=TRUE
+      $OUT[O_BM2_ZYL_R]=FALSE
+      $OUT[O_BM2_ZYL_V]=TRUE
+      ;Leckagenausgleich
+      $OUT[O_BM2_LE_AR]=FALSE
+      $OUT[O_BM2_LE_AV]=TRUE    
+    ENDIF
+    
+    IF ($OUT[O_BM2_ZYL_V] AND $IN[I_BM2_KAH_S] AND $FLAG[F_m_BM2_Einz]) THEN
+      $OUT[O_BM2_FRGZYL]=FALSE
+      $OUT[O_BM2_ZYL_V]=FALSE
+      $OUT[O_BM2_LE_AV]=FALSE
+      $OUT[O_BM2_LE_AR]=FALSE
+    ENDIF
+    
+    ;BM 2 schliessen in Hand mit Zustellhub
+    ;Schiebezylinder ist Vor  
+    IF ($OUT[O_BM2_zu] AND NOT $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM1_Dopp] AND NOT $FLAG[F_m_BM2_Einz] AND $FLAG[F_m_BM2_Dopp]) THEN
+      SK2_P_Nr=21
+      SK2_Fzg_Typ=0
+      ;Zange schliessen
+      $OUT[O_BM2_FRGZYL]=TRUE
+      $OUT[O_BM2_ZYL_V]=TRUE 
+      $OUT[O_BM2_ZYL_R]=FALSE
+      ;Leckagenausgleich 
+      $OUT[O_BM2_LE_AR]=FALSE 
+      $OUT[O_BM2_LE_AV]=TRUE
+    ENDIF    
+
+    IF ($OUT[O_BM2_ZYL_V] AND $IN[I_BM2_KAH_S] AND $FLAG[F_m_BM2_Dopp]) THEN
+      $OUT[O_BM2_FRGZYL]=FALSE
+      $OUT[O_BM2_ZYL_V]=FALSE
+      $OUT[O_BM2_LE_AV]=FALSE
+      $OUT[O_BM2_LE_AR]=FALSE
+    ENDIF
+    
+    ;Oeffnen der Stanze BM1
+    ;Schiebezylinder  Rueck BM1 
+    ;BM 2 Schiebezylinder Vor in Hand 
+    IF ($OUT[O_BM2_SchVor] AND NOT $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM2_Einz] AND NOT $FLAG[F_m_BM1_Dopp] AND $FLAG[F_m_BM2_Dopp] AND NOT $IN[I_BM2_KSD_E]) THEN  
+      SK2_P_Nr=21
+      SK2_Fzg_Typ=0
+      ;Schiebezylinder vor
+      $OUT[O_BM2_FRGZYL]=TRUE
+      $OUT[O_BM2_SZYL_R]=FALSE 
+      $OUT[O_BM2_SZYL_V]=TRUE  
+    ENDIF      
+
+    IF ($OUT[O_BM2_SZYL_V] AND $IN[I_BM2_SZYL_V] AND $FLAG[F_m_BM2_Dopp]) THEN
+      $OUT[O_BM2_FRGZYL]=FALSE
+      $OUT[O_BM2_SZYL_V]=FALSE
+    ENDIF
+   
+    ;BM2  Zustellhub schliessen in Hand 
+    IF($OUT[O_BM2_VorZu] AND NOT $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM2_Einz] AND NOT $FLAG[F_m_BM1_Dopp] AND $FLAG[F_m_BM2_Dopp]) THEN
+      SK2_P_Nr=21
+      SK2_Fzg_Typ=0
+      ;Zange schliessen
+      $OUT[O_BM2_FRGZYL]=TRUE
+      $OUT[O_BM2_ZYL_R]=TRUE
+      $OUT[O_BM2_ZYL_V]=FALSE
+      $OUT[O_BM2_ZH_R]=FALSE
+      $OUT[O_BM2_ZH_V]=TRUE
+    ENDIF
+    ;
+    IF ($OUT[O_BM2_ZYL_R] AND $IN[I_BM2_KZH_V] AND $FLAG[F_m_BM2_Dopp]) THEN
+      $OUT[O_BM2_FRGZYL]=FALSE
+      $OUT[O_BM2_ZYL_R]=FALSE
+      $OUT[O_BM2_ZYL_V]=FALSE
+      $OUT[O_BM2_ZH_R]=FALSE
+      $OUT[O_BM2_ZH_V]=FALSE
+    ENDIF
+    ;
+    ;BM2 Oeffnen in Hand ohne Zustellhub
+    IF ($OUT[O_BM2_auf] AND $FLAG[F_m_BM2_Einz] AND $FLAG[F_m_BM2_Einz] AND NOT $FLAG[F_m_BM1_Dopp]) THEN
+      SK2_P_Nr=21
+      SK2_Fzg_Typ=0
+      ;Zange oeffnen 
+      $OUT[O_BM2_FRGZYL]=TRUE
+      $OUT[O_BM2_ZYL_V]=FALSE 
+      $OUT[O_BM2_ZYL_R]=TRUE 
+      ;Leckagenausgleich 
+      $OUT[O_BM2_LE_AR]=FALSE 
+      $OUT[O_BM2_LE_AV]=TRUE
+    ENDIF
+;    
+    IF ($OUT[O_BM2_ZYL_R] AND $IN[I_BM2_BZZH_O] AND $FLAG[F_m_BM2_Einz]) THEN
+      $OUT[O_BM2_FRGZYL]=FALSE
+      $OUT[O_BM2_ZYL_R]=FALSE
+      $OUT[O_BM2_LE_AV]=FALSE
+    ENDIF
+;    
+    ;BM 2 Oeffnen in Hand Komplett mit Zustellhub
+    IF ($OUT[O_BM2_Auf] AND NOT $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM2_Einz] AND $FLAG[F_m_BM2_Dopp] AND NOT $FLAG[F_m_BM1_Dopp]) THEN
+      SK2_P_Nr=21
+      SK2_Fzg_Typ=0
+      ;Zange oeffnen 
+      $OUT[O_BM2_FRGZYL]=TRUE
+      $OUT[O_BM2_ZYL_V]=FALSE
+      $OUT[O_BM2_ZYL_R]=TRUE
+      $OUT[O_BM2_ZH_V]=FALSE
+      $OUT[O_BM2_ZH_R]=TRUE
+      ;Leckagenausgleich 
+      $OUT[O_BM2_LE_AR]=FALSE
+      $OUT[O_BM2_LE_AV]=TRUE
+    ENDIF
+;
+    IF ($OUT[O_BM2_ZH_R] AND $IN[I_BM2_BZZH_O] AND $FLAG[F_m_BM2_Dopp]) THEN
+      $OUT[O_BM2_FRGZYL]=FALSE
+      $OUT[O_BM2_ZYL_R]=FALSE
+      $OUT[O_BM2_LE_AV]=FALSE
+      $OUT[O_BM2_ZYL_V]=FALSE
+      $OUT[O_BM2_ZH_R]=FALSE
+    ENDIF
+;    
+    ;BM2 oeffnen in Hand Zustellhub
+    IF ($OUT[O_BM2_VorAuf] AND NOT $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM2_Einz] AND NOT $FLAG[F_m_BM1_Dopp] AND $FLAG[F_m_BM2_Dopp]) THEN
+      SK2_P_Nr=21
+      SK2_Fzg_Typ=0
+      ;Zange oeffnen 
+      $OUT[O_BM2_FRGZYL]=TRUE
+      $OUT[O_BM2_ZYL_V]=FALSE
+      $OUT[O_BM2_ZYL_R]=TRUE
+      $OUT[O_BM2_ZH_V]=TRUE
+      $OUT[O_BM2_ZH_R]=FALSE
+      ;Leckagenausgleich
+      $OUT[O_BM2_LE_AR]=FALSE
+      $OUT[O_BM2_LE_AV]=TRUE
+    ENDIF
+;    
+    IF ($OUT[O_BM1_ZYL_R] AND $IN[I_BM1_KZH_V] AND $FLAG[F_m_BM2_Dopp]) THEN
+      $OUT[O_BM2_FRGZYL]=FALSE
+      $OUT[O_BM2_ZYL_R]=FALSE
+      $OUT[O_BM2_LE_AV]=FALSE
+      $OUT[O_BM2_ZH_V]=FALSE
+    ENDIF
+;    
+    ;BM2 Schiebezylinder Rueck in Hand 
+    IF ($OUT[O_BM2_SchRue] AND NOT $FLAG[F_m_BM1_Einz] AND NOT $FLAG[F_m_BM2_Einz] AND NOT $FLAG[F_m_BM1_Dopp] AND $FLAG[F_m_BM2_Dopp] AND NOT $IN[I_BM2_KAH_S]) THEN
+      SK2_P_Nr=21
+      SK2_Fzg_Typ=0
+      ;Schiebezylinder vor
+      $OUT[O_BM2_FRGZYL]=TRUE
+      $OUT[O_BM2_SZYL_V]=FALSE
+      $OUT[O_BM2_SZYL_R]=TRUE
+    ENDIF
+;    
+    IF ($OUT[O_BM2_SZYL_R] AND $IN[I_BM2_SZYL_R]) THEN
+      $OUT[O_BM2_FRGZYL]=FALSE
+      $OUT[O_BM2_SZYL_R]=FALSE
+    ENDIF    
+  ENDIF
+;
+END
+;
+;~~~~~~~~~VW-Teil-Ende~~~~~~~~
+;
+;-----------------------------------------------------------
+;FOLD Lebensbit SZ
+DEF L_Bit_SZ(SZNr :IN)
+;Setzen / Rueksetzen Lebensbit Roboter
+INT SZNr
+BOOL LBitSZ, LBitFault
+INT RobTimer
+BOOL ErrLBit, bRet
+ErrLBit = FALSE
+LBitFault=FALSE
+;Setzen - Rucksetzen  des Lebensbit an Zangensteuerung
+$OUT[LBitToSZ[SZNr]] = NOT $IN[LBitFromSZ[SZNr]]
+RobTimer = $ROB_TIMER	
+IF $IN[LBitFromSZ[SZNr]] <> LBitState[SZNr] THEN
+  LBitTimeCnt[SZNr] = RobTimer
+ENDIF
+IF (RobTimer - LBitTimeCnt[SZNr]) > 5000 THEN
+  ErrLBit = TRUE
+  ErrSZNr = SZNr
+  SZ_LBitFeh[SZNr]=TRUE
+ENDIF
+LBitState[SZNr] = $IN[LBitFromSZ[SZNr]]
+IF ErrLBit THEN
+  S_Zangen_Msg(4,#StateMsg, ErrSZNr)
+ELSE
+  IF n_SZS_Handle[4]>-1 THEN
+    bRet=Clear_KrlMsg(n_SZS_Handle[4])
+    n_SZS_Handle[4]=-1
+    ErrSZNr = -1
+  ENDIF
+  SZ_LBitFeh[SZNr]=FALSE
+ENDIF
+;  
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD Lebensbit Kombisteuerungen
+DEF L_Bit_Kombi(SZNr :IN)
+;Setzen / Rueksetzen Lebensbit Roboter
+INT SZNr
+BOOL LBitSZ, LBitFault
+INT RobTimer
+BOOL ErrLBit, bRet
+ErrLBit = FALSE
+LBitFault=FALSE
+;Setzen - Rucksetzen  des Lebensbit an Zangensteuerung
+$OUT[LBitToKS[SZNr]] = NOT $IN[LBitFromKS[SZNr]]
+RobTimer = $ROB_TIMER	
+IF $IN[LBitFromKS[SZNr]] <> LBitState[SZNr] THEN
+  LBitTimeCnt[SZNr] = RobTimer
+ENDIF
+IF (RobTimer - LBitTimeCnt[SZNr]) > 5000 THEN
+  ErrLBit = TRUE
+  ErrSZNr = SZNr
+  SZ_LBitFeh[SZNr]=TRUE
+ENDIF
+LBitState[SZNr] = $IN[LBitFromKS[SZNr]]
+IF ErrLBit THEN
+  S_Zangen_Msg(4,#StateMsg, ErrSZNr)
+ELSE
+  IF n_SZS_Handle[4]>-1 THEN
+    bRet=Clear_KrlMsg(n_SZS_Handle[4])
+    n_SZS_Handle[4]=-1
+    ErrSZNr = -1
+  ENDIF
+  SZ_LBitFeh[SZNr]=FALSE
+ENDIF
+;
+END
+;ENDFOLD
+;-----------------------------------------------------------
+;FOLD SZ_Meldungen
+DEF S_Zangen_Msg(msg_nr :IN, MsgTyp :IN, SZNr :IN )
+INT msg_nr, SZNr, Answer
+DECL SZS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+;
+USER_MSG = { Modul[] "SZ_S_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF Varstate("SZNr")==#initialized then
+  SWITCH SZNr
+    CASE 1
+      Par[1] = { Par_type #Value, Par_int 1 }
+    CASE 2
+      Par[1] = { Par_type #Value, Par_int 2 }
+    CASE 3
+      Par[1] = { Par_type #Value, Par_int 3 }
+    CASE 4
+      Par[1] = { Par_type #Value, Par_int 4 }
+    CASE 5
+      Par[1] = { Par_type #Value, Par_int 5 }
+    CASE 6
+      Par[1] = { Par_type #Value, Par_int 6 }
+    DEFAULT
+      Par[1] = { Par_type #Value, Par_txt[] " " }
+  ENDSWITCH
+ELSE
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+ENDIF
+;
+IF ((n_SZS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]="SZ1 Zange ist referenziert"
+    CASE 2
+	   USER_MSG.MSG_TXT[]="SZ2 Zange ist referenziert"
+    CASE 3
+	   USER_MSG.MSG_TXT[]="SZ3 Zange ist referenziert"
+    CASE 4
+	   USER_MSG.MSG_TXT[]="Zange%1 :keine Antwort auf Lebensbit"
+    CASE 5
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 6
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 7
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 20
+      USER_MSG.MSG_TXT[]="Ausgleich fuer Zangenfunktion abgebrochen, neu anwaehlen"
+    CASE 21
+      USER_MSG.MSG_TXT[]="Programmanwahl fuer Zangenfunktion erforderlich"  
+    CASE 22
+      USER_MSG.MSG_TXT[]="Init mit Start+ fuer Zangenfunktion erforderlich"  
+    CASE 23
+      USER_MSG.MSG_TXT[]="Teachfunktion nicht erlaubt, wenn kein SingleStep"  
+    CASE 24
+      USER_MSG.MSG_TXT[]="Erst SAK fahren, dann Zangenfunktion"  
+    CASE 31	
+      USER_MSG.MSG_TXT[]="SZ1 Zange teachen, Start+ erforderlich"
+    CASE 32
+      USER_MSG.MSG_TXT[]="SZ1 Zange oeffnen, Start+ erforderlich"
+    CASE 33
+      USER_MSG.MSG_TXT[]="SZ1 Zange schliessen, Start+ erforderlich"
+    CASE 34
+      USER_MSG.MSG_TXT[]="SZ1 Zangenfunktion nicht zulaessig"
+    CASE 35
+      USER_MSG.MSG_TXT[]="SZ1 Zangenfunktion bereits aktiv, SAW fuer Abbruch"
+    CASE 41
+      USER_MSG.MSG_TXT[]="SZ2 Zange teachen, Start+ erforderlich"  
+    CASE 42
+      USER_MSG.MSG_TXT[]="SZ2 Zange oeffnen, Start+ erforderlich"  
+    CASE 43
+      USER_MSG.MSG_TXT[]="SZ2 Zange schliessen, Start+ erforderlich"  
+    CASE 44
+      USER_MSG.MSG_TXT[]="SZ2 Zangenfunktion nicht zulaessig"  
+    CASE 45
+      USER_MSG.MSG_TXT[]="SZ2 Zangenfunktion bereits aktiv, SAW fuer Abbruch"  
+    CASE 51
+      USER_MSG.MSG_TXT[]="SZ3 Zange teachen, Start+ erforderlich" 
+    CASE 52
+      USER_MSG.MSG_TXT[]="SZ3 Zange oeffnen, Start+ erforderlich"  
+    CASE 53
+      USER_MSG.MSG_TXT[]="SZ3 Zange schliessen, Start+ erforderlich" 
+    CASE 54
+      USER_MSG.MSG_TXT[]="SZ2 Zangenfunktion nicht zulaessig"    
+    CASE 55
+      USER_MSG.MSG_TXT[]="SZ3 Zangenfunktion bereits aktiv, SAW fuer Abbruch"
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_SZS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_SZS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      n_SZS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_SZS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (NZ Meldungen)

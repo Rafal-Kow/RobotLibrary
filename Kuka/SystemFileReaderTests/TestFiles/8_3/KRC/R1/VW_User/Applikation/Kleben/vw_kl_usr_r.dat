@@ -1,0 +1,50 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Kleben
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEFDAT  vw_kl_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Kleben                              *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.20 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+; 
+;FOLD Kleben
+;Programm-Nr an KL1
+SIGNAL KL1_P_Nr $OUT[1505]  TO $OUT[1512]
+;Quitt. Programm-Nr von KL1
+SIGNAL KL1_P_Nr_IN $IN[1505]  TO $IN[1512]
+;Parametertafel an KL1
+SIGNAL KL1_PT_Nr $OUT[1513]  TO $OUT[1520]
+;Programm-Nr an KL2
+SIGNAL KL2_P_Nr $OUT[1569]  TO $OUT[1576]
+;Quitt. Programm-Nr von KL2
+SIGNAL KL2_P_Nr_IN $IN[1569]  TO $IN[1576]
+;Parametertafel an KL2
+SIGNAL KL2_PT_Nr $OUT[1577]  TO $OUT[1584]
+;Programm-Nr an KL3
+SIGNAL KL3_P_Nr $OUT[1633]  TO $OUT[1640]
+;Quitt. Programm-Nr von KL3
+SIGNAL KL3_P_Nr_IN $IN[1633]  TO $IN[1640]
+;Parametertafel an KL3
+SIGNAL KL3_PT_Nr $OUT[1641]  TO $OUT[1648]
+;Punktnummer an SPS
+SIGNAL KL_PktNr_SPS $OUT[97]  TO $OUT[112]
+;ENDFOLD
+; 
+GLOBAL INT KL_Time=0
+; 
+;FOLD Meldungsausgabe
+ENUM KLR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

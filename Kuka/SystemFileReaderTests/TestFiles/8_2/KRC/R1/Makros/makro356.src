@@ -1,0 +1,52 @@
+&ACCESS RVP
+&COMMENT SPANNGRUPPE 13 ZU/AUF
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrovorgabe.src
+&PARAM EDITMASK = Makro999[0-999]
+&PARAM TPVW_VERSION = 8.1.8
+DEFFCT INT MAKRO356(ADV :IN)
+   ;FOLD Makro Anfang ;%{PSE}%MKUKATPVW
+      BOOL ADV
+      ; interface to basic routines
+      EXT  BAS (BAS_COMMAND  :IN,REAL  :IN )
+      ; interface to VW-standard routines
+      EXT VW (VW_COMMAND:IN, BOOL: IN, REAL:IN, REAL:IN, REAL:IN, REAL:IN, BOOL :IN, E6POS :IN )
+      ; interface select routine
+      EXTFCT INT  SELECT (SUBTYPE  :IN,INT  :IN,BOOL  :IN,ARI_TYP  :IN,INT  :IN,BOOL_TYP  :IN,INT  :IN,BOOL  :IN)
+      SPS_N=-1
+      ;FOLD ;%{H} %MKUKATPVW
+      IF VARSTATE ("ADV") <> #INITIALIZED THEN
+         ADV=FALSE
+      ENDIF
+      IF (NOT ADV) THEN
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Spanngruppe 13 ZU/AUF -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Spanngruppe 13 ZU/AUF --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- KS24 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KS24 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Version: 01 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Version: 01 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Stand: 001 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Stand: 001 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- letzte Aenderung 11.06.2014 PK -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- letzte Aenderung 11.06.2014 PK --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Spanngruppe ZU -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Spanngruppe ZU --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD A603 = !F23 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A603 = !F23, 3: BOASG
+      $OUT[603] = NOT $FLAG[23]
+   ;ENDFOLD
+   ;FOLD -- Spanngruppe AUF -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Spanngruppe AUF --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD A604 = F23 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A604 = F23, 3: BOASG
+      $OUT[604] = $FLAG[23]
+   ;ENDFOLD
+   ;FOLD F36 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F36 = EIN, 3: BOASG
+      $FLAG[36] = TRUE
+   ;ENDFOLD
+   ; FOLD ;%{H}
+   RETURN 1
+   ELSE
+   RETURN 1
+   ENDIF
+ENDFCT
+; ENDFOLD

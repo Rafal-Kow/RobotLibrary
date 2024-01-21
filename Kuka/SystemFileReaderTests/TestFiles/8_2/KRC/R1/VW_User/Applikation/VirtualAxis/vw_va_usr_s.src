@@ -1,0 +1,1061 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/VirtualAxis
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEF vw_va_usr_s( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Virtuelle Achsen                    *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.09 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD INIT VirtualAxis 
+GLOBAL DEF VA_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_VAxis.Name[]="KS24.01.004_160418"
+;ENDFOLD
+;
+;FOLD Vorbesetzung Meldungsausgabe
+FOR i = 1 TO 100
+  n_VAS_Handle[i]=-1
+  n_VAR_Handle[i]=-1
+ENDFOR
+;ENDFOLD
+;
+;FOLD ExtSg_init
+IF SZ_VORHANDEN THEN
+  ExtSg_init()
+ELSE
+  sf_prog_status=#SZ_io  
+ENDIF
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SAW Servo-Zangen
+GLOBAL DEF VA_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RESET Servo-Zangen
+GLOBAL DEF VA_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD CANCEL Servo-Zangen 
+GLOBAL DEF VA_CANCEL( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Servo-Zangen
+GLOBAL DEF VA_LOOP( )
+;
+IF ($PRO_MODE1==#BSTEP) THEN
+  IF (USER_AKTIV==TRUE) THEN
+    USER_AKTIV=FALSE
+  ENDIF  
+ENDIF 
+; 
+;Behandlung Override beim Single-Step
+IF ($PRO_MODE1==#BSTEP) AND $COULD_START_MOTION AND $OUT[O_R_bewegt] AND schleppfehler THEN
+  IF NOT OV_RUECK THEN
+    OV_PRO_Old=$OV_PRO
+    OV_RUECK=TRUE
+  ENDIF
+  $OV_PRO=0
+ELSE
+  IF $OUT[O_R_Hand] AND $OUT[O_R_bewegt] AND NOT schleppfehler AND OV_RUECK THEN
+    $OV_PRO=OV_PRO_Old
+    OV_RUECK=FALSE
+  ENDIF
+ENDIF
+;
+;Behandlung Schleppfehler
+IF schleppfehler THEN
+  Behandlung_schleppfehler()
+ELSE
+  SetSollPos(TRUE) ;Trockenlauf
+  IF $softplcbool[5] THEN
+    sg_fehler()
+  ENDIF
+ENDIF
+;
+;Zustand SoftPLC
+PlcState()    
+;
+IF $COULD_START_MOTION THEN
+  GunNotReady()
+  IF ($mode_op==#T1) OR ($mode_op==#T2) THEN
+    SubManDriveOn()
+  ENDIF
+  IF $EXT AND NOT $softplcbool[5] AND NOT $softplcbool[6] THEN
+    ANTEIN_MERKER=FALSE
+  ENDIF 
+ELSE  ;PERI_RDY
+  IF $EXT AND NOT $softplcbool[5] AND $softplcbool[6] AND NOT $power_fail THEN
+    SF_Vorwarnung=TRUE
+  ENDIF 
+  ANTEIN_MERKER=TRUE
+  $softplcbool[109]=FALSE
+ENDIF ;PERI_RDY
+;
+$H_POS.E1=$AXIS_ACT.E1
+$H_POS.E2=$AXIS_ACT.E2
+$H_POS.E3=$AXIS_ACT.E3
+$H_POS.E4=$AXIS_ACT.E4
+$H_POS.E5=$AXIS_ACT.E5
+$H_POS.E6=$AXIS_ACT.E6
+;
+$softplcbool[11]=$OUT[O_SZ1_FRG]
+$softplcbool[12]=$OUT[O_SZ2_FRG]
+$softplcbool[13]=$OUT[O_SZ3_FRG]
+$softplcbool[14]=$OUT[O_NZ1_FRG]
+$softplcbool[15]=$OUT[O_NZ2_FRG]
+$softplcbool[16]=$OUT[O_CZ1_FRG]
+$softplcbool[17]=$OUT[O_CZ2_FRG]
+IF ($mode_op <> #EX) THEN
+  Handbetrieb=TRUE
+ELSE
+  Handbetrieb=FALSE
+ENDIF
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD ExtSg_init()
+DEF ExtSg_init()
+INT i, RobTimer
+BOOL bRet
+$softplcint[20]=0
+$softplcreal[20]=max_sf
+RobTimer = $ROB_TIMER
+ErrSZNr = -1
+FOR i = 1 TO 7
+  $softplcint[7+i]=SysBusDelay[i]
+ENDFOR
+$OV_ASYNC=100
+IF Docking AND (DOCK_SZ OR DOCK_CZ OR DOCK_NZ OR (ReserveBool[45]==TRUE)) THEN
+  SZConfig(#DockInit)	
+ELSE
+  SZConfig(#StdInit)	
+ENDIF
+async_active=FALSE
+pos_outofsoftend=FALSE
+$softplcbool[18]=proconos_msg
+schleppfehler=FALSE
+SetSollpos(TRUE)
+sf_prog_status=#SZ_io
+;Meldungen zuruecknehmen
+bRet = Clear_KrlMsg(-99)
+IF ($ASYNC_MODE B_AND 'B1') == 0 THEN
+  MsgState(i, "SynchroMove: $ASYNC_MODE Bit1 falsch konfiguriert", "vw_usr_s",,, 110)
+ENDIF
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD Behandlung Schleppfehler
+DEF  Behandlung_schleppfehler()
+BOOL bRet
+;
+IF (async_active==FALSE) AND NOT $power_fail THEN
+  SWITCH sf_prog_status
+    CASE #man_motion
+      Fahrt_SG_Istpos()
+    CASE #prg_motion
+      IF $ROB_STOPPED THEN
+        IF $EXT==FALSE THEN
+          SetSollPos(FALSE)
+          IF $softplcbool[6] THEN
+            Fahrt_SG_Istpos()
+          ELSE
+            schleppfehler=FALSE
+			   sf_prog_status=#SZ_io
+          ENDIF
+        ELSE
+          IF $COULD_START_MOTION THEN
+            SetSollPos(TRUE)
+            IF $softplcbool[6]==FALSE THEN
+              schleppfehler=FALSE
+			     sf_prog_status=#SZ_io
+            ENDIF
+          ENDIF
+        ENDIF
+      ENDIF
+    CASE #driveoff_motion
+      IF $EXT==FALSE THEN
+        SetSollPos(FALSE)
+        Fahrt_SG_Istpos()
+      ELSE
+        IF $COULD_START_MOTION THEN
+          SetSollPos(TRUE)
+          IF $softplcbool[6]==FALSE THEN
+            schleppfehler=FALSE
+			   sf_prog_status=#SZ_io
+          ENDIF
+        ENDIF
+      ENDIF
+    CASE #dest_invalid
+      Fahrt_SG_Istpos()
+    CASE #user_act
+      Fahrt_SG_Istpos()
+    CASE #SZ_io
+      IF NOT $softplcbool[5] AND NOT $softplcbool[6] THEN
+        schleppfehler=FALSE
+		ENDIF
+  ENDSWITCH
+ENDIF
+SWITCH $ASYNC_STATE
+  CASE #BUSY
+    async_active=TRUE
+  CASE #IDLE ;asynchron-Bewegung abgeschlossen
+    IF async_active THEN
+      schleppfehler = FALSE
+	   sf_prog_status=#SZ_io
+      SetSollPos(TRUE)
+      async_active=FALSE	
+    ENDIF
+  CASE #CANCELLED
+    async_active=FALSE
+ENDSWITCH
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD PlcState *** Fehler SoftPLC
+DEF PlcState()
+;*** Fehler SoftPLC
+BOOL bRet
+INT MsgNum, actState, tmpInt
+;
+tmpInt = 0
+actState = cIoCtl($Soft_Plc_Cmd,1005,0," ",tmpInt)
+MsgNum = 0	
+;
+IF (actState==2) OR ($ROB_TIMER < pcoBootTime) THEN
+  pcoBootTime = $ROB_TIMER
+ENDIF
+;
+;Verzoegerung Bootphase um 1000ms
+IF  (($ROB_TIMER - pcoBootTime) > 1000) AND NOT $softplcbool[1] THEN ;ProConOs in stop
+  MsgNum=1
+ENDIF
+IF $softplcbool[2] THEN ;SoftPLC ungueltige Zangenkonfiguration
+  MsgNum=2
+ENDIF
+IF $softplcbool[3] THEN ;SoftPLC Ueberlauf der Sollposition
+  MsgNum=3
+ENDIF
+IF MsgNum > 0 THEN	
+  $OV_PRO=0
+  VAchse_Msg(MsgNum, #StateMsg)
+  RemMsgNum = MsgNum
+ENDIF	
+IF ((MsgNum==0) AND (RemMsgNum > 0)) THEN
+  bRet=Clear_KrlMsg(n_VAS_Handle[RemMsgNum])
+  n_VAS_Handle[1]=-1
+  RemMsgNum=0
+ENDIF
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SubManDriveOn
+DEF SubManDriveOn()
+IF ANTEIN_MERKER THEN
+  ANTEIN_MERKER=FALSE
+  ;Fahrt auf Istposition bei Antriebe Ein in Hand
+  schleppfehler = ManDriveOn()
+ENDIF ;Antein_Merker
+IF ($PRO_STATE1<>#P_ACTIVE) AND $PRO_MOVE THEN
+  ManualMove()
+ENDIF
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD GunNotReady
+DEF GunNotReady()
+INT SZNr
+BOOL FrgSZ, SZRdy, SZNotRdyMsg, bRet
+;Meldung wenn Zangensteuerung nicht bereit
+SZNotRdyMsg=FALSE
+FOR SZNr = 1 To 7
+  FrgSZ=FctFrgSZ(SZNr)
+  IF (NOT FrgSZ) AND ($softplcint[SZNr]<>0) THEN
+    SZRdy=FctSZRdy(SZNr)
+    IF NOT SZRdy THEN
+      ErrSZNr = SZNr
+      SZNotRdyMsg=TRUE
+      EXIT
+    ENDIF
+  ENDIF
+ENDFOR
+MsgNrOffSet=13
+IF SZNotRdyMsg THEN
+  VAchse_Msg((MsgNrOffSet+ErrSZNr), #StateMsg)
+ELSE
+  FOR SZNr = 1 To 7
+    IF n_VAS_Handle[(MsgNrOffSet+SZNr)]>-1 THEN
+      bRet=Clear_KrlMsg(n_VAS_Handle[(MsgNrOffSet+SZNr)])
+      n_VAS_Handle[(MsgNrOffSet+SZNr)]=-1
+    ENDIF
+  ENDFOR
+  ErrSZNr = -1   
+ENDIF
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD sg_fehler
+DEF sg_fehler ()
+INT SZNr, MsgNum
+BOOL FrgSZ,InvDestPos, bRet
+MsgNum=0
+FOR SZNr=1 To 7
+  FrgSZ=FctFrgSZ(SZNr)
+  IF ($softplcint[SZNr]<>0) AND NOT FrgSZ AND NOT $power_fail THEN
+    schleppfehler=TRUE
+    IF $PRO_STATE1==#P_ACTIVE THEN
+      sf_prog_status=#prg_motion
+    ELSE ;$PRO_STATE1<>#P_ACTIVE
+      IF NOT $EXT THEN
+        SetSollPos(FALSE)
+      ENDIF
+      IF NOT $COULD_START_MOTION THEN
+        IF (IOCTL("IBusDrv",3,0)==1)  AND NOT $power_fail THEN
+          sf_prog_status=#driveoff_motion
+          ErrSZNr = SZNr
+          VAchse_Msg(12, #NotifyMsg, ErrSZNr);  Zange auf unzulaessiger Position
+          ErrSZNr = -1
+        ENDIF
+      ELSE
+        IF NOT $power_fail THEN
+          sf_prog_status=#man_motion
+          MsgNum=4
+	     ENDIF
+      ENDIF
+    ENDIF
+    InvDestPos=FctDestPos(SZNr)
+    IF InvDestPos THEN
+      ErrSZNr = SZNr
+      VAchse_Msg(13, #NotifyMsg, ErrSZNr) ; Zielposition ungueltig
+      ErrSZNr = -1
+      sf_prog_status=#dest_invalid
+    ENDIF ;Zielposition_ungueltig
+  ENDIF
+ENDFOR
+;Meldungen generieren
+IF MsgNum > 0 THEN
+  ErrSZNr=SZNr
+  VAchse_Msg(MsgNum, #StateMsg, ErrSZNr)
+  RemMsgNum=MsgNum
+  ErrSZNr = -1
+ELSE
+  IF ((MsgNum==0) AND (RemMsgNum > 0)) THEN
+    bRet=Clear_KrlMsg(n_VAS_Handle[RemMsgNum])
+    n_VAS_Handle[1]=-1
+    RemMsgNum=0
+  ENDIF  
+ENDIF
+END
+;ENDFOLD
+;  
+;-----------------------------------------------------------
+;FOLD Asynchronfahrt auf Istposition
+DEF Fahrt_SG_Istpos()
+INT SZNr, i
+E6AXIS zielpos
+;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+; Asynchronfahrt auf aktuelle Istposition
+;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!;
+IF $COULD_START_MOTION AND $ROB_STOPPED THEN
+  pos_outofsoftend=FALSE
+  FOR SZNr=1 To 7
+    IF $softplcint[SZNr]<>0 THEN
+      SWITCH $softplcint[SZNr]
+        CASE 7
+          zielpos.E1=IstPosCalc(SZNr)
+          pos_outofsoftend=Outofsoftend(zielpos.E1, 7)
+        CASE 8
+          zielpos.E2=IstPosCalc(SZNr)
+          pos_outofsoftend=Outofsoftend(zielpos.E2, 8)
+        CASE 9
+          zielpos.E3=IstPosCalc(SZNr)
+          pos_outofsoftend=Outofsoftend(zielpos.E3, 9)
+        CASE 10
+          zielpos.E4=IstPosCalc(SZNr)
+          pos_outofsoftend=Outofsoftend(zielpos.E4, 10)
+        CASE 11
+          zielpos.E5=IstPosCalc(SZNr)
+          pos_outofsoftend=Outofsoftend(zielpos.E5, 11)
+        CASE 12
+          zielpos.E6=IstPosCalc(SZNr)
+          pos_outofsoftend=Outofsoftend(zielpos.E6, 12)
+        DEFAULT
+          HALT
+      ENDSWITCH
+    ENDIF
+    IF pos_outofsoftend THEN
+      goto FctEnd
+    ENDIF
+  ENDFOR
+  FOR i = 1 TO 6
+    $ACC_EXTAX[i]=100
+    $VEL_EXTAX[i]=100
+  ENDFOR
+  IF $ROB_CAL AND NOT pos_outofsoftend THEN
+    asyptp zielpos
+  ENDIF
+  FctEnd:
+ENDIF
+END
+;ENDFOLD
+;  
+;--------------------------------------------------------------------------------------------------------------------------------------
+;FOLD SZ Konfiguration
+DEF SZConfig(SZCfgCmd :IN)
+DECL _SZCfgCmd SZCfgCmd
+INT i
+SWITCH SZCfgCmd
+  CASE #StdInit
+    $softplcbool[20]=FALSE
+    SZAxConfig=-1
+;
+    IF (SZ_1_E1 AND NZ_1_E1) OR  (SZ_1_E1 AND CZ_1_E1) OR  (NZ_1_E1 AND CZ_1_E1) OR (SZ_1_E2 AND NZ_1_E2) OR  (SZ_1_E2 AND CZ_1_E2) OR  (NZ_1_E2 AND CZ_1_E2) THEN
+      VAchse_Msg(11, #NotifyMsg)
+    ENDIF
+    IF (SZ_2_E2 AND NZ_1_E2) OR  (SZ_2_E2 AND CZ_1_E2) OR (SZ_2_E3 AND NZ_1_E3) OR  (SZ_2_E3 AND CZ_1_E3) OR  (NZ_2_E3 AND CZ_2_E3) THEN
+      VAchse_Msg(11, #NotifyMsg)
+    ENDIF
+    IF (SZ_2_E2 AND NZ_2_E2) OR  (SZ_2_E2 AND CZ_2_E2) OR  (NZ_2_E2 AND CZ_2_E2) OR (SZ_2_E3 AND NZ_2_E3) OR  (SZ_2_E3 AND CZ_2_E3) OR  (NZ_2_E3 AND CZ_2_E3) THEN
+      VAchse_Msg(11, #NotifyMsg)
+    ENDIF
+    IF (SZ_3_E3 AND NZ_2_E3) OR  (SZ_3_E3 AND CZ_2_E3) OR (SZ_3_E4 AND NZ_2_E4) OR  (SZ_3_E4 AND CZ_2_E4) OR  (NZ_2_E4 AND CZ_2_E4) THEN
+      VAchse_Msg(11, #NotifyMsg)
+    ENDIF
+    IF (NZ_1_E4 AND CZ_1_E4) OR (NZ_1_E5 AND CZ_1_E5) OR (NZ_1_E6 AND CZ_1_E6) OR (NZ_2_E5 AND CZ_2_E5) OR (NZ_2_E6 AND CZ_2_E6) THEN
+      VAchse_Msg(11, #NotifyMsg)
+    ENDIF
+;
+    SetPlcIntNull(0)
+;  
+    IF SZ_1_E1 THEN
+      $softplcint[1]=7
+    ENDIF
+    IF SZ_1_E2 THEN
+      $softplcint[1]=8
+    ENDIF
+    IF SZ_2_E2 THEN
+      IF ReserveBool[40] THEN
+        $softplcint[3]=8
+      ELSE
+        $softplcint[2]=8
+      ENDIF  
+    ENDIF
+    IF SZ_2_E3 THEN
+      IF ReserveBool[40] THEN
+        $softplcint[3]=9
+      ELSE
+        $softplcint[2]=9
+      ENDIF
+    ENDIF
+    IF SZ_3_E3 THEN
+      $softplcint[3]=9
+    ENDIF
+    IF SZ_3_E4 THEN
+      $softplcint[3]=10
+    ENDIF
+;
+    IF NZ_1_E1 THEN
+      $softplcint[4]=7
+    ENDIF
+    IF NZ_1_E2 THEN
+      $softplcint[4]=8
+    ENDIF
+    IF NZ_1_E3 THEN
+      $softplcint[4]=9
+    ENDIF
+    IF NZ_1_E4 THEN
+      $softplcint[4]=10
+    ENDIF
+    IF NZ_1_E5 THEN
+      $softplcint[4]=11
+    ENDIF
+    IF NZ_1_E6 THEN
+      $softplcint[4]=12
+    ENDIF
+;
+    IF NZ_2_E2 THEN
+      $softplcint[5]=8
+    ENDIF
+    IF NZ_2_E3 THEN
+      $softplcint[5]=9
+    ENDIF
+    IF NZ_2_E4 THEN
+      $softplcint[5]=10
+    ENDIF
+    IF NZ_2_E5 THEN
+      $softplcint[5]=11
+    ENDIF
+    IF NZ_2_E6 THEN
+      $softplcint[5]=12
+    ENDIF
+;  
+    IF CZ_1_E1 THEN
+      $softplcint[6]=7
+    ENDIF
+    IF CZ_1_E2 THEN
+      $softplcint[6]=8
+    ENDIF
+    IF CZ_1_E3 THEN
+      $softplcint[6]=9
+    ENDIF
+    IF CZ_1_E4 THEN
+      $softplcint[6]=10
+    ENDIF
+    IF CZ_1_E5 THEN
+      $softplcint[6]=11
+    ENDIF
+    IF CZ_1_E6 THEN
+      $softplcint[6]=12
+    ENDIF
+;
+    IF CZ_2_E2 THEN
+      $softplcint[7]=8
+    ENDIF
+    IF CZ_2_E3 THEN
+      $softplcint[7]=9
+    ENDIF
+    IF CZ_2_E4 THEN
+      $softplcint[7]=10
+    ENDIF
+    IF CZ_2_E5 THEN
+      $softplcint[7]=11
+    ENDIF
+    IF CZ_2_E6 THEN
+      $softplcint[7]=12
+    ENDIF
+;
+  CASE #DockInit
+      DK_INIT(2)
+;
+ENDSWITCH ;SZCfgCmd
+END
+;
+;-----------------------------------------------------------
+GLOBAL DEF SetPlcIntNull(StartVal : IN)
+INT i, StartVal
+IF (StartVal==0) THEN
+  FOR i = 1 TO 7
+    $softplcint[i]=0
+  ENDFOR
+ELSE
+  $softplcint[StartVal]=0
+ENDIF
+END
+;
+;-----------------------------------------------------------
+;FOLD SetSollpos
+DEF SetSollpos(SollState : IN)
+Bool SollState
+IF SollState THEN
+  $OUT[O_SZ1_SPos_g]=TRUE
+  $OUT[O_SZ2_SPos_g]=TRUE
+  $OUT[O_SZ3_SPos_g]=TRUE
+  IF MIT_NZ1_Serv THEN
+    $OUT[O_NZ1_SPos_g]=TRUE
+  ENDIF  
+  IF MIT_NZ2_Serv THEN
+    $OUT[O_NZ2_SPos_g]=TRUE
+  ENDIF
+  IF MIT_CZ1_Serv THEN
+    $OUT[O_CZ1_SPos_g]=TRUE
+  ENDIF
+  IF MIT_CZ2_Serv THEN
+    $OUT[O_CZ2_SPos_g]=TRUE
+  ENDIF  
+ELSE
+  $OUT[O_SZ1_SPos_g]=FALSE
+  $OUT[O_SZ2_SPos_g]=FALSE
+  $OUT[O_SZ3_SPos_g]=FALSE
+  IF MIT_NZ1_Serv THEN
+    $OUT[O_NZ1_SPos_g]=FALSE
+  ENDIF 
+  IF MIT_NZ2_Serv THEN
+    $OUT[O_NZ2_SPos_g]=FALSE
+  ENDIF
+  IF MIT_CZ1_Serv THEN
+    $OUT[O_CZ1_SPos_g]=FALSE
+  ENDIF
+  IF MIT_CZ2_Serv THEN
+    $OUT[O_CZ2_SPos_g]=FALSE
+  ENDIF  
+ENDIF
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD ManualMove
+DEF ManualMove()
+INT SZNr
+BOOL FrgSZ, SollPosVal, IstPosVal, DestPosVal
+BOOL RemFrgSZ, RemSollPos, RemIstPos, RemDestPos
+RemFrgSZ=FALSE
+RemSollPos=FALSE
+RemIstPos=FALSE
+RemDestPos=FALSE
+FOR SZNr = 1 To 7
+  IF $softplcint[SZNr] <> 0 THEN
+    $softplcint[13]=SZNr
+    FrgSZ=FctFrgSZ(SZNr)
+    IF FrgSZ THEN
+      RemFrgSZ=TRUE
+      EXIT
+    ENDIF
+    SollPosVal=FctSollPos(SZNr)
+    IF NOT SollPosVal THEN
+      RemSollPos=TRUE
+      EXIT
+    ENDIF
+    IstPosVal=FctIstPos(SZNr)
+    IF NOT IstPosVal THEN
+      RemIstPos=TRUE
+      EXIT
+    ENDIF
+    DestPosVal=FctDestPos(SZNr)
+    IF DestPosVal THEN
+      RemDestPos=TRUE
+      EXIT
+    ENDIF
+  ENDIF
+ENDFOR
+IF RemFrgSZ==TRUE THEN
+  VAchse_Msg(21, #NotifyMsg,SZNr)
+ELSE
+  IF RemSollPos==TRUE THEN
+    VAchse_Msg(22, #NotifyMsg,SZNr)
+  ELSE
+    IF RemIstPos==TRUE THEN
+      VAchse_Msg(23, #NotifyMsg,SZNr)
+    ELSE
+      IF RemDestPos==TRUE THEN
+        VAchse_Msg(24, #NotifyMsg,SZNr)
+      ENDIF ;RemDestPos
+    ENDIF ;RemIstpos
+  ENDIF ;RemSollPos
+ENDIF ;RemFrgSZ
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD FctManDriveOn
+DEFFCT BOOL ManDriveOn()
+INT SZNr
+BOOL FrgSZ, FctSchleppfehler
+FctSchleppfehler=FALSE
+FOR SZNr = 1 TO 7
+  IF $softplcint[SZNr] <> 0 THEN
+    FrgSZ=FctFrgSZ(SZNr)
+    IF NOT FrgSZ THEN
+      IF ABS($softplcreal[SZNr]) > 1 THEN
+        FctSchleppfehler=TRUE
+        sf_prog_status=#user_act
+        SetSollPos(FALSE)
+      ENDIF
+    ENDIF
+  ENDIF
+ENDFOR
+RETURN(FctSchleppfehler)
+ENDFCT
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD FctFrgSZ
+DEFFCT BOOL FctFrgSZ(SZNr:IN)
+INT SZNr
+BOOL FctFrgSZVal
+SWITCH SZNr
+  CASE 1
+    FctFrgSZVal=$OUT[O_SZ1_FRG]
+  CASE 2
+    FctFrgSZVal=$OUT[O_SZ2_FRG]
+  CASE 3
+    FctFrgSZVal=$OUT[O_SZ3_FRG]
+  CASE 4
+    FctFrgSZVal=$OUT[O_NZ1_FRG]
+  CASE 5
+    FctFrgSZVal=$OUT[O_NZ2_FRG]
+  CASE 6
+    FctFrgSZVal=$OUT[O_CZ1_FRG]
+  CASE 7
+    FctFrgSZVal=$OUT[O_CZ2_FRG]  
+ENDSWITCH
+RETURN(FctFrgSZVal)
+ENDFCT
+;ENDFOLD
+;  
+;-----------------------------------------------------------
+;FOLD FctSollPos
+DEFFCT BOOL FctSollPos(SZNr:IN)
+INT SZNr
+BOOL FctSollPosVal
+SWITCH SZNr
+  CASE 1
+    FctSollPosVal=$OUT[O_SZ1_SPos_g]
+  CASE 2
+    FctSollPosVal=$OUT[O_SZ2_SPos_g]
+  CASE 3
+    FctSollPosVal=$OUT[O_SZ3_SPos_g]
+  CASE 4
+    FctSollPosVal=$OUT[O_NZ1_SPos_g]
+  CASE 5
+    FctSollPosVal=$OUT[O_NZ2_SPos_g]
+  CASE 6
+    FctSollPosVal=$OUT[O_CZ1_SPos_g]
+  CASE 7
+    FctSollPosVal=$OUT[O_CZ2_SPos_g]
+ENDSWITCH
+RETURN(FctSollPosVal)
+ENDFCT
+;ENDFOLD
+;  
+;-----------------------------------------------------------
+;FOLD FctIstPos
+DEFFCT BOOL FctIstPos(SZNr:IN)
+INT SZNr
+BOOL FctIstPosVal
+SWITCH SZNr
+  CASE 1
+    FctIstPosVal=$IN[I_SZ1_IPos_g]
+  CASE 2
+    FctIstPosVal=$IN[I_SZ2_IPos_g]
+  CASE 3
+    FctIstPosVal=$IN[I_SZ3_IPos_g]
+  CASE 4
+    FctIstPosVal=$IN[I_NZ1_IPos_g]
+  CASE 5
+    FctIstPosVal=$IN[I_NZ2_IPos_g]
+  CASE 6
+    FctIstPosVal=$IN[I_CZ1_IPos_g]
+  CASE 7
+    FctIstPosVal=$IN[I_CZ2_IPos_g]
+ENDSWITCH
+RETURN(FctIstPosVal)
+ENDFCT
+;ENDFOLD
+;  
+;-----------------------------------------------------------
+;FOLD FctDestPos
+DEFFCT BOOL FctDestPos(SZNr:IN)
+INT SZNr
+BOOL FctDestPosVal
+SWITCH SZNr
+  CASE 1
+    FctDestPosVal=$IN[I_SZ1_F_Ziel]
+  CASE 2
+    FctDestPosVal=$IN[I_SZ2_F_Ziel]
+  CASE 3
+    FctDestPosVal=$IN[I_SZ3_F_Ziel]
+  CASE 4
+    FctDestPosVal=$IN[I_NZ1_F_Ziel]
+  CASE 5
+    FctDestPosVal=$IN[I_NZ2_F_Ziel]
+  CASE 6
+    FctDestPosVal=$IN[I_CZ1_F_Ziel]
+  CASE 7
+    FctDestPosVal=$IN[I_CZ2_F_Ziel]
+ENDSWITCH
+RETURN(FctDestPosVal)
+ENDFCT
+;ENDFOLD
+;  
+;-----------------------------------------------------------
+;FOLD FctSZRdy
+DEFFCT BOOL FctSZRdy(SZNr:IN)
+INT SZNr
+BOOL FctSZRdyVal
+SWITCH SZNr
+  CASE 1
+    FctSZRdyVal=$IN[I_SZ1_bereit]
+  CASE 2
+    FctSZRdyVal=$IN[I_SZ2_bereit]
+  CASE 3
+    FctSZRdyVal=$IN[I_SZ3_bereit]
+  CASE 4
+    FctSZRdyVal=$IN[I_NZ1_bereit]
+  CASE 5
+    FctSZRdyVal=$IN[I_NZ2_bereit]
+  CASE 6
+    FctSZRdyval=$IN[I_CZ1_bereit]
+  CASE 7
+    FctSZRdyval=$IN[I_CZ2_bereit]
+ENDSWITCH
+RETURN(FctSZRdyVal)
+ENDFCT
+;ENDFOLD
+;  
+;-----------------------------------------------------------
+;FOLD IstPosCalc
+DEFFCT REAL IstPosCalc(SZNr:IN)
+INT SZNr
+REAL FctIstPos
+SWITCH SZNr
+  CASE 1
+    FctIstPos=sig1_istpos
+	 MyZiel=sig1_istpos
+    FctIstPos=FctIstPos / 10
+    IF $IN[I_SZ1_Vorz] THEN
+      FctIstPos=FctIstPos * (-1)
+    ENDIF
+  CASE 2
+    FctIstPos=sig2_istpos
+    FctIstPos=FctIstPos / 10
+    IF $IN[I_SZ2_Vorz] THEN
+      FctIstPos=FctIstPos * (-1)
+    ENDIF
+  CASE 3
+    FctIstPos=sig3_istpos
+    FctIstPos=FctIstPos / 10
+    IF $IN[I_SZ3_Vorz] THEN
+      FctIstPos=FctIstPos * (-1)
+    ENDIF
+  CASE 4
+    FctIstPos=sig4_istpos
+    FctIstPos=FctIstPos / 10
+    IF $IN[I_NZ1_Vorz] THEN
+      FctIstPos=FctIstPos * (-1)
+    ENDIF
+  CASE 5
+    FctIstPos=sig5_istpos
+    FctIstPos=FctIstPos / 10
+    IF $IN[I_NZ2_Vorz] THEN
+      FctIstPos=FctIstPos * (-1)
+    ENDIF
+  CASE 6
+    FctIstPos=sig6_istpos
+    FctIstPos=FctIstPos / 10
+    IF $IN[I_CZ1_Vorz] THEN
+      FctIstPos=FctIstPos * (-1)
+    ENDIF
+  CASE 7
+    FctIstPos=sig7_istpos
+    FctIstPos=FctIstPos / 10
+    IF $IN[I_CZ2_Vorz] THEN
+      FctIstPos=FctIstPos * (-1)
+    ENDIF
+  DEFAULT
+    HALT
+ENDSWITCH
+RETURN(FctIstPos)
+ENDFCT
+;ENDFOLD
+;  
+;-----------------------------------------------------------
+;FOLD Kontrolle ob Istpos innerhalb SW-Endschalter
+DEFFCT BOOL OUTOFSOFTEND(SZ_Zielpos:IN, SZ_num:IN)
+REAL SZ_Zielpos
+BOOL zielpos_invalid
+INT SZ_num
+zielpos_invalid=FALSE
+IF (SZ_Zielpos < $softn_end[SZ_num]) OR (SZ_Zielpos > $softp_end[SZ_num]) THEN
+  IF (SZ_num==7) THEN
+    VAchse_Msg(5, #NotifyMsg)
+  ENDIF
+  IF (SZ_num==8) THEN
+    IF ($softplcint[1]==8) THEN
+      VAchse_Msg(5, #NotifyMsg)
+    ELSE
+      VAchse_Msg(6, #NotifyMsg)
+    ENDIF  
+  ENDIF
+  IF (SZ_num==9) THEN
+    IF ($softplcint[2]==9) THEN
+      VAchse_Msg(6, #NotifyMsg)
+    ELSE
+      VAchse_Msg(7, #NotifyMsg)
+    ENDIF  
+  ENDIF
+  IF (SZ_num==10) THEN
+    IF ($softplcint[3]==10) THEN
+      VAchse_Msg(7, #NotifyMsg)
+    ELSE
+      VAchse_Msg(8, #NotifyMsg)
+    ENDIF  
+  ENDIF
+  IF (SZ_num==11) THEN
+    IF ($softplcint[4]==11) THEN
+      VAchse_Msg(8, #NotifyMsg)
+    ELSE
+      VAchse_Msg(9, #NotifyMsg)
+    ENDIF  
+  ENDIF
+  IF (SZ_num==12) THEN
+    IF ($softplcint[5]==12) THEN
+      VAchse_Msg(9, #NotifyMsg)
+    ELSE
+      VAchse_Msg(10, #NotifyMsg)
+    ENDIF  
+  ENDIF
+  zielpos_invalid=TRUE
+ENDIF  
+RETURN(zielpos_invalid)
+ENDFCT
+;ENDFOLD
+;
+;-----------------------------------------------------------
+GLOBAL DEFFCT INT ActDockAx(DockStation : IN)
+INT DockStation, FctActDockAx
+IF NOT $OUT[O_SZ1_Re_aus] THEN
+  SWITCH DockStation
+    CASE 1
+      FctActDockAx= 6 + SZAxConfig
+    CASE 2
+      FctActDockAx= 7 + SZAxConfig
+    CASE 3
+      FctActDockAx= 8 + SZAxConfig
+    CASE 4
+      FctActDockAx= 9 + SZAxConfig
+    CASE 5
+      FctActDockAx= 10 + SZAxConfig
+    CASE 6
+      FctActDockAx= 11 + SZAxConfig
+    DEFAULT
+    HALT
+  ENDSWITCH
+ELSE
+  FctActDockAx=$softplcint[1]
+ENDIF
+RETURN(FctActDockAx)
+ENDFCT
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD VAchsen_Meldungen
+DEF VAchse_Msg(msg_nr :IN, MsgTyp :IN, SZNr :IN)
+INT msg_nr, SZNr
+DECL VAS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+;
+USER_MSG = { Modul[] "VA_S_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF Varstate("SZNr")==#initialized then
+  SWITCH SZNr
+    CASE 1
+      Par[1] = { Par_type #Value, Par_int 1 }
+    CASE 2
+      Par[1] = { Par_type #Value, Par_int 2 }
+    CASE 3
+      Par[1] = { Par_type #Value, Par_int 3 }
+    CASE 4
+      Par[1] = { Par_type #Value, Par_int 4 }
+    CASE 5
+      Par[1] = { Par_type #Value, Par_int 5 }
+    CASE 6
+      Par[1] = { Par_type #Value, Par_int 6 }
+    DEFAULT
+      Par[1] = { Par_type #Value, Par_txt[] " " }
+  ENDSWITCH
+ELSE
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+ENDIF
+;
+IF ((n_VAS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]="SoftPLC in Stop - Kaltstart durchfuehren"
+    CASE 2
+	   USER_MSG.MSG_TXT[]="Zuordnung VAchse - Roboterachse unzulaessig"
+    CASE 3
+	   USER_MSG.MSG_TXT[]="SoftPLC Ueberlauf der Sollposition"
+    CASE 4
+	   USER_MSG.MSG_TXT[]="VAchse %1: Schleppfehler im Handbetrieb"
+    CASE 5
+	   USER_MSG.MSG_TXT[]="VAchse E1 ausserhalb Softwaregrenze"
+    CASE 6
+	   USER_MSG.MSG_TXT[]="VAchse E2 ausserhalb Softwaregrenze"
+    CASE 7
+	   USER_MSG.MSG_TXT[]="VAchse E3 ausserhalb Softwaregrenze"
+    CASE 8
+	   USER_MSG.MSG_TXT[]="VAchse E4 ausserhalb Softwaregrenze"
+    CASE 9
+	   USER_MSG.MSG_TXT[]="VAchse E5 ausserhalb Softwaregrenze"
+    CASE 10
+	   USER_MSG.MSG_TXT[]="VAchse E6 ausserhalb Softwaregrenze"  
+    CASE 11
+	   USER_MSG.MSG_TXT[]="ungueltige Zangen-Konfiguration"  
+    CASE 12 	
+	   USER_MSG.MSG_TXT[]="VAchse %1: auf unzulaessiger Position"
+    CASE 13 	
+	   USER_MSG.MSG_TXT[]="VAchse %1: Zielposition ungueltig" 
+    CASE 14
+	   USER_MSG.MSG_TXT[]="EZ1/SP1 Steuerung nicht bereit"
+    CASE 15
+	   USER_MSG.MSG_TXT[]="EZ2/SP2 Steuerung nicht bereit"
+    CASE 16
+	   USER_MSG.MSG_TXT[]="EZ3/SP3 Steuerung nicht bereit"
+    CASE 17
+	   USER_MSG.MSG_TXT[]="NZ1 Steuerung nicht bereit"
+    CASE 18
+	   USER_MSG.MSG_TXT[]="NZ2 Steuerung nicht bereit"
+    CASE 19
+	   USER_MSG.MSG_TXT[]="CZ1 Steuerung nicht bereit"
+    CASE 20
+	   USER_MSG.MSG_TXT[]="CZ2 Steuerung nicht bereit"  
+    CASE 21 	
+      USER_MSG.MSG_TXT[]="VAchse %1: Freigabe gesetzt"
+    CASE 22 	
+      USER_MSG.MSG_TXT[]="VAchse %1: Sollposition ungueltig"
+    CASE 23 	
+      USER_MSG.MSG_TXT[]="VAchse %1: Istposition ungueltig"
+    CASE 24 	
+      USER_MSG.MSG_TXT[]="VAchse %1: Zielposition ungueltig" 
+    CASE 25 	
+      USER_MSG.MSG_TXT[]=" "       
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_VAS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_VAS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      n_VAS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_VAS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (VAchsen_Meldungen)

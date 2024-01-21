@@ -1,0 +1,236 @@
+&ACCESS  R
+&COMMENT KS_1.1
+&PARAM DISKPATH = VW_User/Applikation/Vision/SMA
+&PARAM TPVW_VERSION = 8.1.8
+&REL 49
+DEF vw_sma_usr_r(CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN,PAR7 :IN)
+;-----------------------------------------------------------
+;Aufruf im Trigger der Punkt-SPS
+INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+BOOL PAR7
+;
+;FOLD VMT SMA
+; Aufrufe von VMT SMA
+;-----------------------------------------------------------
+; Autor: T.Schulz
+; Firma: VMT GmbH
+; Datum: 06.06.2012, 
+; Beschreibung: 
+; Ruft je nach Wert von PAR1 verschiedene SMA Funktionen auf:
+; PAR1 = 1 --> SMA_Init_Type
+; PAR1 = 2 --> SMA_End_Type
+; PAR1 = 3 --> SMA_Position_Init
+; PAR1 = 4 --> SMA_Measure
+;-----------------------------------------------------------
+  SWITCH PAR1
+  CASE 1 
+    SMA_Init_Type(PAR2)
+  CASE 2
+    SMA_End_Type(PAR2)
+  CASE 3
+    SMA_Pos_Init(PAR3)
+  CASE 4
+    SMA_Meas(PAR4,PAR7)
+  DEFAULT
+  ENDSWITCH
+;ENDFOLD
+;
+END
+;-----------------------------------------------------------
+;VMT SMA SUBROUTINEN
+;-----------------------------------------------------------
+;
+;FOLD VMT SMA
+GLOBAL DEF VMT_SMA_Init()
+;===========================================================
+;FOLD
+;****************************************
+; Paket:    VMT SMA 
+; Funktion: SMA initialisieren
+; Version:  1.0
+; Name:     T.Schulz    
+; Datum:    06.06.2012
+; Aenderungen: 
+;****************************************
+;ENDFOLD
+;FOLD
+  Recordbitbusy[1] = FALSE
+  ;Recordbitbusy[2] = FALSE
+  VMT_SMA_Timeout = FALSE
+  VMT_SMA_Error = FALSE
+  VMT_SMA_COM_RDY = TRUE
+  SMA_Strobe = FALSE
+;ENDFOLD
+END
+;==========================================================
+;==========================================================
+
+GLOBAL DEF SMA_Init_Type(TypeID : in)
+;FOLD
+;****************************************
+; Paket:    VMT SMA 
+; Funktion: SMA Type initialisieren
+; Version:  1.0
+; Name:     T.Schulz    
+; Datum:    06.06.2012
+; Aenderungen: 
+;****************************************
+;ENDFOLD
+;FOLD
+  DECL int TypeID
+  VMT_SMA_TYPEID = TypeID
+  VMT_SMA_COM_RDY = TRUE
+
+; Variablen zuruecksetzen
+  Recordbitbusy[1] = FALSE
+  ;Recordbitbusy[2] = FALSE
+  VMT_SMA_Timeout = FALSE
+  VMT_SMA_Error = FALSE
+  
+; Kommunikation starten  
+  VMT_Ack(CMD_SMA_Init_Type,VMT_SMA_TYPEID) 
+;ENDFOLD
+END
+;==========================================================
+;==========================================================
+
+GLOBAL DEF SMA_End_Type(TypeID : in)
+;FOLD
+;****************************************
+; Paket:    VMT SMA 
+; Funktion: SMA Type beenden
+; Version:  1.0
+; Name:     T.Schulz    
+; Datum:    06.06.2012
+; Aenderungen: 
+;****************************************
+;ENDFOLD
+;FOLD
+  DECL int TypeID
+  IF (VMT_SMA_TypeID <> TypeID) THEN
+    VMT_SMA_Error = TRUE
+  ENDIF 
+  VMT_Ack(CMD_SMA_End_Type,VMT_SMA_TYPEID) 
+;ENDFOLD
+END
+;==========================================================
+;==========================================================
+
+
+
+GLOBAL DEF SMA_Pos_Init(PosID : in)
+;FOLD
+;****************************************
+; Paket:    VMT SMA 
+; Funktion: SMA Position initialisieren
+; Version:  1.0
+; Name:     T.Schulz    
+; Datum:    06.06.2012
+; Aenderungen: 
+;****************************************
+;ENDFOLD
+;FOLD
+  DECL int PosID
+  
+  VMT_SMA_PosID = PosID
+    
+  VMT_Ack(CMD_SMA_Position_Init,VMT_SMA_PosID)
+    
+
+;ENDFOLD
+END
+
+;==========================================================
+;==========================================================
+
+GLOBAL DEF SMA_Meas(Rec_Index : in, SMA_Measure :in)
+;FOLD
+;****************************************
+; Paket:    VMT SMA 
+; Funktion: SMA Messung starten und stoppen
+; Version:  1.0
+; Name:     T.Schulz    
+; Datum:    06.06.2012
+; Aenderungen: 
+;****************************************
+;ENDFOLD
+;FOLD
+  DECL int Rec_Index
+  DECL bool SMA_Measure
+  IF (Recordbitbusy[Rec_Index] == SMA_Measure) THEN 
+    VMT_SMA_Error = TRUE
+  ELSE
+    IF (Rec_Index == 1) THEN
+      VMT_SMA_PosX1 = VMT_SMA_Pos_Con_Fac * $POS_INT.X
+      VMT_SMA_PosY1 = VMT_SMA_Pos_Con_Fac * $POS_INT.Y
+      VMT_SMA_PosZ1 = VMT_SMA_Pos_Con_Fac * $POS_INT.Z
+      SMA_RECORDBIT1 = SMA_Measure
+    ENDIF
+    ;IF (Rec_Index == 2) THEN
+    ;  VMT_SMA_PosX2 = VMT_SMA_Pos_Con_Fac * $POS_INT.X
+    ;  VMT_SMA_PosY2 = VMT_SMA_Pos_Con_Fac * $POS_INT.Y
+    ;  VMT_SMA_PosZ2 = VMT_SMA_Pos_Con_Fac * $POS_INT.Z
+    ;  SMA_RECORDBIT2 = SMA_Measure
+    ;ENDIF
+    Recordbitbusy[Rec_Index] = SMA_Measure
+  ENDIF  
+;ENDFOLD
+END
+;==========================================================
+;==========================================================
+
+GLOBAL DEF VMT_Ack(CMD : in, ID : in)
+;FOLD
+;****************************************
+; Paket:    VMT SMA 
+; Funktion: Kommunikation und Ueberwachung zw. SMA und Roboter 
+; Version:  1.0
+; Name:     T.Schulz    
+; Datum:    06.06.2012
+; Aenderungen: 
+;****************************************
+;ENDFOLD
+;FOLD
+  DECL int CMD
+  DECL int ID
+  
+  IF (VMT_SMA_COM_RDY == TRUE) THEN
+; Weitere Kommunikation blocken  
+    VMT_SMA_COM_RDY = FALSE
+; Signale setzen abhaenig von CMD
+    SWITCH CMD
+    CASE  1 ; CMD_SMA_Init_Type
+      SMA_TypeID = ID
+      SMA_BodyNo = VMT_SMA_BodyNo    
+    CASE 2 ; CMD_SMA_End_Type  
+    CASE 3 ; CMD_SMA_Position_Init
+      SMA_PosID = ID
+    DEFAULT
+    ENDSWITCH
+; Kommunikation starten    
+    SMA_CMD = CMD 
+    SMA_Strobe = TRUE
+; TIMER starten
+    $TIMER_STOP[SMA_TIMER_NR] = TRUE
+    $TIMER[SMA_TIMER_NR] = -SMA_TIMEOUT
+    $TIMER_STOP[SMA_TIMER_NR] = FALSE 
+  
+    WAIT FOR (VMT_SMA_Ack or $TIMER_FLAG[SMA_TIMER_NR])  
+
+; Timeout und Status Ueberpruefung
+
+    IF (VMT_SMA_Ack == FALSE) THEN
+      VMT_SMA_Timeout = TRUE
+    ELSE
+      IF (VMT_SMA_STATE <> 0) THEN
+        VMT_SMA_Error = TRUE
+      ENDIF
+    ENDIF
+    SMA_Strobe = FALSE
+    VMT_SMA_COM_RDY = TRUE
+  ELSE
+    VMT_SMA_Error = TRUE
+  ENDIF
+;ENDFOLD    
+END
+;ENDFOLD VMT SMA

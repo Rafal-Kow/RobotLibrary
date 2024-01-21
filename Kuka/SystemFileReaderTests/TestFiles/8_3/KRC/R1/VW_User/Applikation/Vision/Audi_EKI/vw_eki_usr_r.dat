@@ -1,0 +1,49 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Vision/Audi_EKI
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEFDAT  vw_eki_usr_r PUBLIC
+; FOLD ;%{H}%MKUKATPVW
+; ENDFOLD
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Vision/Audi_EKI                     *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.17 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD Audi_EKI
+DECL E6POS PosWerkstueck={X -182.150,Y 204.030,Z 125.069504,A 68.5600,B 88.8050766,C -119.903198,S 2,T 10,E1 100.000,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+DECL E6POS Inv_Posact={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0,S 0,T 0,E1 0.0,E2 0.0,E3 0.0,E4 0.0,E5 0.0,E6 0.0}
+; 
+GLOBAL FRAME OffsetFrame={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+GLOBAL FRAME Kalib_Pos={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+GLOBAL FRAME Kalib_Pos_A={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+GLOBAL FRAME Kalib_Pos_B={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+; 
+DECL FRAME EKI_A={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+DECL FRAME EKI_B={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+; 
+GLOBAL BOOL B_EKI_A=FALSE
+GLOBAL BOOL B_EKI_B=FALSE
+GLOBAL BOOL B_EKI_READY=FALSE
+GLOBAL BOOL EKI_F_Range=FALSE
+; 
+GLOBAL INT EKI_X_Max=500
+GLOBAL INT EKI_Y_Max=500
+GLOBAL INT EKI_A_Max=500
+GLOBAL INT TimeToValueValid=384 ;nur Diagnose
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM EKIR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

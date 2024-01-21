@@ -1,0 +1,43 @@
+&ACCESS  R
+&COMMENT KS_1.1
+&PARAM DISKPATH = VW_User/Applikation/Vision/HGV
+&PARAM TPVW_VERSION = 8.3.8
+&REL 1
+DEFDAT  vw_hgv_usr_s PUBLIC
+; 
+;*---------------------------------------------*
+;* HGV GmbH&Co.KG                              *
+;*                                             *
+;* Bearbeitet am:                              *
+;* 29.09.2011 PH  Erstellt                     *
+;* 26.03.2012 PH  Angepasst                    *
+;*---------------------------------------------*
+; 
+;FOLD USER_Version
+GLOBAL INT Version_Tech_HGV=20120309
+;ENDFOLD
+; 
+;FOLD Variablen
+; 
+GLOBAL INT F_m_HGV=229
+; 
+INT N_HGV_MsgRet=0 ; 
+INT N_HGV_TmL=-2000 ; [ms]
+INT N_HGV_TmLNr=54 ; Lifebit
+INT N_HGV_TmM1=-2000 ; [ms]
+INT N_HGV_TmM1Nr=25 ; aktuelle Laufzeit
+INT N_HGV_TmM2=-2000 ; [ms]
+INT N_HGV_TmM2Nr=26 ; letzte Laufzeit
+; 
+GLOBAL BOOL B_MIT_HGV=FALSE
+BOOL B_HGV_UseFct=TRUE ; Life-Bit wird verwendet
+BOOL B_HGV_NoAns0=FALSE ; Keine Antwort auf Low Pegel
+BOOL B_HGV_NoAns1=FALSE ; Keine Antwort auf High Pegel
+BOOL B_HGV_MlgRet=FALSE ; Antwort auf Meldung
+; 
+SIGNAL I_HGV_Life $IN[1985] ; 1.7 Life-Bit
+; 
+SIGNAL O_HGV_Life $OUT[1961] ; 1.7 Life-Bit
+;ENDFOLD (Variablen)
+; 
+ENDDAT

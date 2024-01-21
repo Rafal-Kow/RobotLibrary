@@ -1,0 +1,11 @@
+&ACCESS RV
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrospsvorgabe.src
+&PARAM EDITMASK = MakroSPS3
+&PARAM TPVW_VERSION=8.3.18
+DEF MAKROSPS3 ( )
+; FOLD Makro Anfang;%{PSE} %MKUKATPVW
+SPS_N=-1
+; ENDFOLD
+; FOLD ;%{H}
+END
+; ENDFOLD

@@ -1,0 +1,37 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Stanz_Mutter
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEFDAT  vw_sm_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket StanzMutter                         *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.16 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD StanzMutter
+;Punktnummer an SPS
+SIGNAL SM_PktNr_SPS $OUT[97]  TO $OUT[112]
+;Punktnummer an SM
+SIGNAL SM1_P_Nr $OUT[1809]  TO $OUT[1824]
+SIGNAL SM2_P_Nr $OUT[1841]  TO $OUT[1856]
+; 
+;TCP-Korrektur
+INT Weg=0
+FRAME MyCorr
+FRAME MyCorrWeg
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM SMR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

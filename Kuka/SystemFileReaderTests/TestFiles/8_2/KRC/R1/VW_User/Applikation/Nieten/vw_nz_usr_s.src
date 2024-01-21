@@ -1,0 +1,700 @@
+&ACCESS RVE
+&REL 200
+&PARAM DISKPATH = VW_User/Applikation/Nieten
+&PARAM TPVW_VERSION = 8.3.0
+DEF vw_nz_usr_s( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Nieten                              *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.09 LE                                       *
+;*                                                     *
+;* 2015.11.25 OL/LZ Kontrolle Zangenoeffnung NZ1,2     *
+;* 2016.01.27 OL/LZ NZ2 Zangencode angepasst           *
+;* 2016.01.27 OL/LZ SZ_VORHANDEN entfernt              *
+;* 2016.05.10   EA  Hand und Tastfunktionen angepasst  *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD INIT Nieten 
+GLOBAL DEF NZ_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_Nieten.Name[]="KS24.01.005_160510"
+;ENDFOLD
+;
+;FOLD Vorbesetzung Meldungsausgabe
+FOR i = 1 TO 100
+  n_NZS_Handle[i]=-1
+  n_NZR_Handle[i]=-1
+ENDFOR
+;ENDFOLD
+;
+;FOLD TimerInit
+TimerNr_NZ1 = $ROB_TIMER
+TimerNr_NZ2 = $ROB_TIMER
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SAW Nieten
+GLOBAL DEF NZ_SAW( )
+INT i
+;
+  IF NOT $OUT[O_NZ1_Re_aus] AND MIT_NZ1_Serv THEN
+    $OUT[O_NZ1_ref]=FALSE
+    $OUT[O_NZ1_FRG]=FALSE
+    $OUT[O_NZ1_auf]=FALSE
+    $OUT[O_NZ1_zu]=FALSE
+    $OUT[O_NZ1_t_auf]=FALSE
+    $OUT[O_NZ1_t_zu]=FALSE
+  ENDIF
+  IF NOT $OUT[O_NZ2_Re_aus] AND MIT_NZ2_Serv THEN
+    $OUT[O_NZ2_ref]=FALSE
+    $OUT[O_NZ2_FRG]=FALSE
+    $OUT[O_NZ2_auf]=FALSE
+    $OUT[O_NZ2_zu]=FALSE
+    $OUT[O_NZ2_t_auf]=FALSE
+    $OUT[O_NZ2_t_zu]=FALSE
+  ENDIF
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RESET Nieten
+GLOBAL DEF NZ_RESET( )
+INT i
+;
+  IF NOT $OUT[O_NZ1_Re_aus] AND MIT_NZ1_Serv THEN
+    $OUT[O_NZ1_ref]=FALSE
+    $OUT[O_NZ1_FRG]=FALSE
+    $OUT[O_NZ1_auf]=FALSE
+    $OUT[O_NZ1_zu]=FALSE
+    $OUT[O_NZ1_t_auf]=FALSE
+    $OUT[O_NZ1_t_zu]=FALSE
+  ENDIF
+  IF NOT $OUT[O_NZ2_Re_aus] AND MIT_NZ2_Serv THEN
+    $OUT[O_NZ2_ref]=FALSE
+    $OUT[O_NZ2_FRG]=FALSE
+    $OUT[O_NZ2_auf]=FALSE
+    $OUT[O_NZ2_zu]=FALSE
+    $OUT[O_NZ2_t_auf]=FALSE
+    $OUT[O_NZ2_t_zu]=FALSE
+  ENDIF
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD CANCEL Nieten 
+GLOBAL DEF NZ_CANCEL( )
+INT i
+;
+  IF NOT $OUT[O_NZ1_Re_aus] AND MIT_NZ1_Serv THEN
+    $OUT[O_NZ1_ref]=FALSE
+    $OUT[O_NZ1_FRG]=FALSE
+    $OUT[O_NZ1_auf]=FALSE
+    $OUT[O_NZ1_zu]=FALSE
+    $OUT[O_NZ1_t_auf]=FALSE
+    $OUT[O_NZ1_t_zu]=FALSE
+  ENDIF
+  IF NOT $OUT[O_NZ2_Re_aus] AND MIT_NZ2_Serv THEN
+    $OUT[O_NZ2_ref]=FALSE
+    $OUT[O_NZ2_FRG]=FALSE
+    $OUT[O_NZ2_auf]=FALSE
+    $OUT[O_NZ2_zu]=FALSE
+    $OUT[O_NZ2_t_auf]=FALSE
+    $OUT[O_NZ2_t_zu]=FALSE
+  ENDIF
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Nieten 1 
+GLOBAL DEF NZ1_LOOP( )
+;
+;Vorwahl ohne Prozess
+$OUT[O_NZ1_oh_Fue]=$IN[I_NZ1_oh_Fue] OR $FLAG[F_o_Prozess]
+;
+;BA-Hand an NZ 1 setzen
+IF $OUT[O_R_Hand] AND (NOT $COULD_START_MOTION OR HA2_FKT_NZ1 OR TA1_AKT_NZ1 OR SCHLEPPFEHLER) THEN
+  $OUT[O_NZ1_R_Hand]=TRUE
+  $OUT[O_NZ1_R_Auto]=FALSE
+ENDIF
+;
+;BA-AUTO an NZ 1 setzen
+IF ($OUT[O_R_Hand] AND NOT HA2_FKT_NZ1 AND NOT TA1_AKT_NZ1 AND ($OUT[O_R_Proz_akt] OR $OUT[O_R_bewegt]) AND NOT SCHLEPPFEHLER) OR $OUT[O_R_Auto] THEN
+  $OUT[O_NZ1_R_Hand]=FALSE
+  $OUT[O_NZ1_R_Auto]=TRUE
+ENDIF
+;
+;****VW-spezifischer Teil Anfang****
+;
+    ;NZ 1 Kontrolle Zangenoeffnung 
+    IF (NZ1_istPos>(NZ1_sollPos-max_sf)) AND (NZ1_istPos<(NZ1_sollPos+max_sf)) THEN
+      $FLAG[F_NZ1_InPOS] = TRUE
+    ELSE
+      $FLAG[F_NZ1_InPOS] = FALSE
+    ENDIF
+;
+;****VW-spezifischer Teil Ende ****
+;
+;NZ 1 Anwahl Energiesparmodus 
+$OUT[O_NZ1_E_Mode] = (($Brake_Sig==0) AND $timer_flag[TimerNr_E_Mo] AND e_Mode_Hilf2)    
+;
+;Ausgabe Statusmeldungen an BMS
+;   
+;Nieten n.i.O.
+$OUT[O_NZ1_nio]=$OUT[O_R_Auto] AND $OUT[O_NZ1_P_akt] AND $FLAG[F_NZ1_nio]
+;Vorwarnung Antrieb geht schwer
+$OUT[O_NZ1_W_SZ]=$OUT[O_R_Auto] AND $IN[I_NZ1_W_SZ]
+;Warnung Standzeit Werkzeug
+$OUT[O_NZ1_W_Tool]=$OUT[O_R_Auto] AND $IN[I_NZ1_W_Tool]
+;Kraft unterschritten
+$OUT[O_NZ1_F_Kr_n]=$OUT[O_R_Auto] AND $IN[I_NZ1_F_Kr_n]
+;Kraft ueberschritten
+$OUT[O_NZ1_F_Kr_h]=$OUT[O_R_Auto] AND $IN[I_NZ1_F_Kr_h]
+;Programmfehler
+$OUT[O_NZ1_F_Prog]=$OUT[O_R_Auto] AND $IN[I_NZ1_F_Prog]
+;Zielposition ungueltig
+$OUT[O_NZ1_F_Ziel]=$OUT[O_R_Auto] AND $IN[I_NZ1_F_Ziel]
+;Antrieb geht schwer
+$OUT[O_NZ1_F_schw]=$OUT[O_R_Auto] AND $IN[I_NZ1_F_schw]
+;Zange defekt
+$OUT[O_NZ1_Z_def]=$OUT[O_R_Auto] AND $FLAG[F_NZ1_def]
+;Betriebsbereit fehlt
+B_Hilfsmerk=Docking AND S_Docking AND $IN[SZ_angedockt] AND $IN[bhf1_belegt] OR $OUT[O_NZ1_Re_aus]
+$OUT[O_NZ1_F_Betr]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_NZ1_bereit] AND NOT B_Hilfsmerk AND $timer_flag[TimerNr_Ein]
+;Sammelstoerung
+$OUT[O_NZ1_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($FLAG[F_NZ1_Sammel] OR $IN[I_NZ1_Sammel] OR NZ_LBitFeh[1]) AND $timer_flag[TimerNr_Ein]
+;
+;NZ 1 Tastend ruecksetzen
+IF $OUT[O_R_Hand] AND TA1_AKT_NZ1 AND NOT $OUT[O_NZ1_t_auf] AND NOT $OUT[O_NZ1_t_zu] THEN
+  TA1_AKT_NZ1=FALSE
+  $OUT[O_NZ1_FRG]=FALSE
+  schleppfehler=FALSE   ; AU536 Anpassung da keine simulierte Achse
+  sf_prog_status=#user_act
+  $OUT[O_NZ1_SPos_g]=FALSE
+ENDIF	
+;
+;INIT Zangenfunktion
+IF $OUT[O_R_Hand] AND NOT $OUT[O_R_Auto] AND $COULD_START_MOTION AND ((NOT $OUT[O_R_Proz_akt] AND NOT $OUT[O_R_bewegt]) OR (R1AusgleichFunktion>0)) THEN
+  IF (MIT_NZ1_Serv AND ($OUT[O_NZ1_ref] OR $OUT[O_NZ1_auf] OR $OUT[O_NZ1_zu] OR $OUT[O_NZ1_t_auf] OR $OUT[O_NZ1_t_zu])) THEN 
+    NZ_Z_Funkt(1)
+  ENDIF  
+ENDIF
+;
+;Zangenbefehle ruecksetzen
+IF ($OUT[O_R_Hand] AND ($PRO_MODE1==#BSTEP)) OR ($OUT[O_R_Hand] AND NOT $FLAG[F_SZ_AH_KOMP] AND $OUT[O_R_bewegt] AND (R1AusgleichFunktion==0)) OR ($OUT[O_R_Hand] AND NOT $COULD_START_MOTION AND HA2_FKT_NZ1) THEN
+  IF NOT $OUT[O_NZ1_Re_aus] THEN
+    $OUT[O_NZ1_ref]=FALSE
+    $OUT[O_NZ1_FRG]=FALSE
+	 $OUT[O_NZ1_auf]=FALSE
+    $OUT[O_NZ1_zu]=FALSE
+    $OUT[O_NZ1_t_auf]=FALSE
+    $OUT[O_NZ1_t_zu]=FALSE
+  ENDIF
+  HA2_FKT_NZ1=FALSE
+ENDIF
+;
+;Zangencode setzen
+IF NOT Docking OR (Docking AND NOT DOCK_NZ) THEN
+  NZ1_Servo_ZCode=1 
+ELSE
+  IF NOT DK_KONFIG_NEU THEN ;Downgrade Docking
+    IF ((AX_SIM_ON=='B000011000000') OR (AX_SIM_ON=='B000110000000')) OR ((AX_SIM_ON=='B000001000000') OR (AX_SIM_ON=='B000010000000') AND S_Docking) THEN
+      IF $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND NOT $IN[SZ_angedockt] THEN
+        NZ1_Servo_ZCode=0
+      ENDIF
+;
+      ;Zangencode W1 bei Docking setzen
+      IF NOT $IN[bhf1_belegt] AND $IN[bhf2_belegt] THEN
+        NZ1_Servo_ZCode=1
+      ENDIF
+;
+      ;Zangencode W2 bei Docking setzen
+      IF $IN[bhf1_belegt] AND NOT $IN[bhf2_belegt] AND NOT S_Docking THEN
+        NZ1_Servo_ZCode=2
+      ENDIF
+    ENDIF
+;
+    IF (AX_SIM_ON=='B000111000000') OR (AX_SIM_ON=='B001110000000') THEN
+      IF $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND ($IN[bhf3_belegt] OR DKSZ_stat_SZ) AND NOT $IN[SZ_angedockt] THEN
+        NZ1_Servo_ZCode=0
+      ENDIF
+;
+      ;Zangencode W1 bei Docking setzen
+      IF NOT $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND ($IN[bhf3_belegt] OR DKSZ_stat_SZ) THEN
+        NZ1_Servo_ZCode=1
+      ENDIF
+;
+      ;Zangencode W2 bei Docking setzen
+      IF $IN[bhf1_belegt] AND NOT $IN[bhf2_belegt] AND ($IN[bhf3_belegt] OR DKSZ_stat_SZ) THEN
+        NZ1_Servo_ZCode=2
+      ENDIF
+;
+      ;Zangencode W3 bei Docking setzen
+      IF $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND NOT $IN[bhf3_belegt] THEN
+        NZ1_Servo_ZCode=3
+      ENDIF
+    ENDIF
+;
+    IF (AX_SIM_ON=='B001111000000') OR (AX_SIM_ON=='B011110000000') THEN
+      IF $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND $IN[bhf3_belegt] AND $IN[bhf4_belegt] AND NOT $IN[SZ_angedockt] THEN
+        NZ1_Servo_ZCode=0
+      ENDIF
+;
+      ;Zangencode W1 bei Docking setzen
+      IF NOT $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND $IN[bhf3_belegt] AND $IN[bhf4_belegt] THEN
+        NZ1_Servo_ZCode=1
+      ENDIF
+;
+      ;Zangencode W2 bei Docking setzen
+      IF $IN[bhf1_belegt] AND NOT $IN[bhf2_belegt] AND $IN[bhf3_belegt] AND $IN[bhf4_belegt] THEN
+        NZ1_Servo_ZCode=2
+      ENDIF
+;
+      ;Zangencode W3 bei Docking setzen
+      IF $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND NOT $IN[bhf3_belegt] AND $IN[bhf4_belegt] THEN
+        NZ1_Servo_ZCode=3
+      ENDIF
+;
+      ;Zangencode W4 bei Docking setzen
+      IF $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND $IN[bhf3_belegt] AND NOT $IN[bhf4_belegt] THEN
+        NZ1_Servo_ZCode=4
+      ENDIF
+    ENDIF
+  ENDIF ;Downgrade Docking
+  ;ENDFOLD
+ENDIF  
+;
+;Lebensbit-Ueberwachung  
+L_Bit_NZ(1)	
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Nieten 2
+GLOBAL DEF NZ2_LOOP( )
+;
+;Vorwahl ohne Prozess
+$OUT[O_NZ2_oh_Fue]=$IN[I_NZ2_oh_Fue] OR $FLAG[F_o_Prozess]
+;
+;BA-Hand an NZ 2 setzen
+IF $OUT[O_R_Hand] AND (NOT $COULD_START_MOTION OR HA2_FKT_NZ2 OR TA1_AKT_NZ2 OR SCHLEPPFEHLER) THEN
+  $OUT[O_NZ2_R_Hand]=TRUE
+  $OUT[O_NZ2_R_Auto]=FALSE
+ENDIF
+;
+;BA-AUTO an NZ 2 setzen
+IF ($OUT[O_R_Hand] AND NOT HA2_FKT_NZ2 AND NOT TA1_AKT_NZ2 AND ($OUT[O_R_Proz_akt] OR $OUT[O_R_bewegt]) AND NOT SCHLEPPFEHLER) OR $OUT[O_R_Auto] THEN
+  $OUT[O_NZ2_R_Hand]=FALSE
+  $OUT[O_NZ2_R_Auto]=TRUE
+ENDIF
+;****VW spezifischer Teil Anfang****
+;
+    ;NZ 2 Kontrolle Zangenoeffnung 
+    IF (NZ2_istPos>(NZ2_sollPos-max_sf)) AND (NZ2_istPos<(NZ2_sollPos+max_sf)) THEN
+      $FLAG[F_NZ2_InPOS] = TRUE
+    ELSE
+      $FLAG[F_NZ2_InPOS] = FALSE
+    ENDIF
+;
+;****VW spezifischer Teil Ende****
+;
+;NZ 2 Anwahl Energiesparmodus 
+$OUT[O_NZ2_E_Mode] = (($Brake_Sig==0) AND $timer_flag[TimerNr_E_Mo] AND e_Mode_Hilf2)      
+;
+;Ausgabe Fehlermeldungen
+;   
+;Nieten n.i.O.
+$OUT[O_NZ2_nio]=$OUT[O_R_Auto] AND $OUT[O_NZ2_P_akt] AND $FLAG[F_NZ2_nio]
+;Vorwarnung Antrieb geht schwer
+$OUT[O_NZ2_W_SZ]=$OUT[O_R_Auto] AND $IN[I_NZ2_W_SZ]
+;Warnung Standzeit Werkzeug
+$OUT[O_NZ2_W_Tool]=$OUT[O_R_Auto] AND $IN[I_NZ2_W_Tool]
+;Kraft unterschritten
+$OUT[O_NZ2_F_Kr_n]=$OUT[O_R_Auto] AND $IN[I_NZ2_F_Kr_n]
+;Kraft ueberschritten
+$OUT[O_NZ2_F_Kr_h]=$OUT[O_R_Auto] AND $IN[I_NZ2_F_Kr_h]
+;Programmfehler
+$OUT[O_NZ2_F_Prog]=$OUT[O_R_Auto] AND $IN[I_NZ2_F_Prog]
+;Zielposition ungueltig
+$OUT[O_NZ2_F_Ziel]=$OUT[O_R_Auto] AND $IN[I_NZ2_F_Ziel]
+;Antrieb geht schwer
+$OUT[O_NZ2_F_schw]=$OUT[O_R_Auto] AND $IN[I_NZ2_F_schw]
+;Zange defekt
+$OUT[O_NZ2_Z_def]=$OUT[O_R_Auto] AND $FLAG[F_NZ2_def]
+;Betriebsbereit fehlt
+$OUT[O_NZ2_F_Betr]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_NZ2_bereit] AND $timer_flag[TimerNr_Ein]
+;Sammelstoerung
+$OUT[O_NZ2_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($FLAG[F_NZ2_Sammel] OR $IN[I_NZ2_Sammel] OR NZ_LBitFeh[2]) AND $timer_flag[TimerNr_Ein]
+;
+;NZ 2 Tastend ruecksetzen
+IF $OUT[O_R_Hand] AND TA1_AKT_NZ2 AND NOT $OUT[O_NZ2_t_auf] AND NOT $OUT[O_NZ2_t_zu] THEN
+  TA1_AKT_NZ2=FALSE
+  $OUT[O_NZ2_FRG]=FALSE
+    schleppfehler=FALSE   ; AU536 Anpassung da keine simulierte Achse
+  sf_prog_status=#user_act
+  $OUT[O_NZ2_SPos_g]=FALSE
+ENDIF
+;
+;INIT Zangenfunktion
+IF $OUT[O_R_Hand] AND NOT $OUT[O_R_Auto] AND $COULD_START_MOTION AND ((NOT $OUT[O_R_Proz_akt] AND NOT $OUT[O_R_bewegt]) OR (R1AusgleichFunktion>0)) THEN
+  IF (MIT_NZ2_Serv AND ($OUT[O_NZ2_ref] OR $OUT[O_NZ2_auf] OR $OUT[O_NZ2_zu] OR $OUT[O_NZ2_t_auf] OR $OUT[O_NZ2_t_zu])) THEN 
+    NZ_Z_Funkt(2)
+  ENDIF
+ENDIF 
+;
+;Zangenbefehle ruecksetzen
+IF (($OUT[O_R_Hand] AND ($PRO_MODE1==#BSTEP)) OR ($OUT[O_R_Hand] AND NOT $FLAG[F_SZ_AH_KOMP] AND $OUT[O_R_bewegt] AND (R1AusgleichFunktion==0)) OR ($OUT[O_R_Hand] AND NOT $COULD_START_MOTION AND HA2_FKT_NZ2)) THEN
+  IF NOT $OUT[O_NZ2_Re_aus] AND MIT_NZ2_Serv THEN
+    $OUT[O_NZ2_ref]=FALSE
+    $OUT[O_NZ2_FRG]=FALSE
+	 $OUT[O_NZ2_auf]=FALSE
+    $OUT[O_NZ2_zu]=FALSE
+    $OUT[O_NZ2_t_auf]=FALSE
+    $OUT[O_NZ2_t_zu]=FALSE
+  ENDIF
+  HA2_FKT_NZ2=FALSE
+ENDIF 
+;
+;Zangencode setzen
+IF NOT MIT_flex_DK OR ($FLAG[F_m_NZ1_Serv] AND $FLAG[F_m_NZ2_Serv]) THEN
+  NZ2_Servo_ZCode=1
+ENDIF
+;  
+;Lebensbit-Ueberwachung  
+L_Bit_NZ(2)		
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Nieten Pneumatisch 1
+GLOBAL DEF NZ1_H_LOOP( )
+;
+;BA-Hand an NZ 1 setzen
+IF $OUT[O_R_Hand] AND NOT $COULD_START_MOTION THEN
+  $OUT[O_NZ1_N_Hand]=TRUE
+  $OUT[O_NZ1_N_Auto]=FALSE
+ENDIF
+;
+;BA-AUTO an NZ 1 setzen
+B_NZ1_Hilf = ($OUT[O_NZ1_V_ausf] OR $OUT[O_NZ1_N_ausf] OR $OUT[O_NZ1_N_einf] OR $OUT[O_NZ1_M_wegs] OR $OUT[O_NZ1_M_anle])
+IF (($OUT[O_R_Hand] AND ($OUT[O_R_Proz_akt] OR B_NZ1_Hilf) AND $COULD_START_MOTION) OR $OUT[O_R_Auto]) THEN
+  $OUT[O_NZ1_N_Hand]=FALSE
+  $OUT[O_NZ1_N_Auto]=TRUE
+ENDIF  
+;  
+;Vorwahl ohne Prozess
+$OUT[O_NZ1_oh_Fu2]=$IN[I_NZ1_oh_Fu2] OR $FLAG[F_o_Prozess]
+;
+;NZ 1 Anwahl Energiesparmodus
+$OUT[O_NZ1_H_E_Mo] = (($Brake_Sig==0) AND $timer_flag[TimerNr_E_Mo] AND e_Mode_Hilf2)    
+;
+;Ausgabe Fehlermeldungen
+;   
+;Nieten n.i.O.
+$OUT[O_NZ1_nio2]=$OUT[O_R_Auto] AND $OUT[O_NZ1_P_akt] AND $FLAG[F_NZ1_nio]
+;Vorwarnung liegt an
+$OUT[O_NZ1_W_SZ2]=$OUT[O_R_Auto] AND $IN[I_NZ1_W_SZ2]
+;Verklemmanzeige (Derzeit nicht verwendet)
+;$OUT[O_NZ1_F_Klem]=$OUT[O_R_Auto] AND XXX
+;Startbereit fehlt
+$OUT[O_NZ1_F_Sta2]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_NZ1_F_Sta2] AND $FLAG[F_NZ1_Sammel] AND $timer_flag[TimerNr_Ein]
+;Betriebsbereit fehlt
+$OUT[O_NZ1_F_Bet2]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND $IN[I_NZ1_H_verb] AND NOT $IN[I_NZ1_F_Bet2] AND $timer_flag[TimerNr_Ein]
+;Sammelstoerung
+$OUT[O_NZ1_Samel2]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($FLAG[F_NZ1_Sammel] OR $IN[I_NZ1_H_Samm] OR NZ_LBitFeh[1]) AND $timer_flag[TimerNr_Ein]
+;
+;Downgrade Docking
+IF NOT DK_KONFIG_NEU THEN
+  IF Docking AND NOT S_Docking THEN
+    IF NOT $IN[SZ_angedockt] THEN
+      NZ1_hyd_ZCode=0
+    ELSE
+      IF NOT $IN[bhf1_belegt] AND $IN[bhf2_belegt] THEN
+        NZ1_hyd_ZCode=1
+      ENDIF
+      IF $IN[bhf1_belegt] AND NOT $IN[bhf2_belegt] THEN
+        NZ1_hyd_ZCode=2
+      ENDIF
+    ENDIF  
+  ELSE
+    NZ1_hyd_ZCode=1
+  ENDIF  
+ELSE
+  ;Ausgabe Zangencode
+  IF NOT Docking OR (Docking AND (ReserveBool[46]==FALSE)) THEN
+    NZ1_hyd_ZCode=1
+  ENDIF
+ENDIF   
+;   
+;Lebensbit-Ueberwachung  
+L_Bit_NZH(1)	
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Nieten Pneumatisch 2
+GLOBAL DEF NZ2_H_LOOP( )
+;
+;BA-Hand an NZ 2 setzen
+IF $OUT[O_R_Hand] AND NOT $COULD_START_MOTION THEN
+  $OUT[O_NZ2_N_Hand]=TRUE
+  $OUT[O_NZ2_N_Auto]=FALSE
+ENDIF
+;
+;BA-AUTO an NZ 2 setzen
+B_NZ2_Hilf = ($OUT[O_NZ2_V_ausf] OR $OUT[O_NZ2_N_ausf] OR $OUT[O_NZ2_N_einf] OR $OUT[O_NZ2_M_wegs] OR $OUT[O_NZ2_M_anle])
+IF (($OUT[O_R_Hand] AND ($OUT[O_R_Proz_akt] OR B_NZ2_Hilf) AND $COULD_START_MOTION) OR $OUT[O_R_Auto]) THEN
+  $OUT[O_NZ2_N_Hand]=FALSE
+  $OUT[O_NZ2_N_Auto]=TRUE
+ENDIF  
+;  
+;Vorwahl ohne Prozess
+$OUT[O_NZ2_oh_Fu2]=$IN[I_NZ2_oh_Fu2] OR $FLAG[F_o_Prozess]
+;
+;NZ 2 Anwahl Energiesparmodus
+$OUT[O_NZ2_H_E_Mo] = (($Brake_Sig==0) AND $timer_flag[TimerNr_E_Mo] AND e_Mode_Hilf2)     
+;
+;Ausgabe Fehlermeldungen
+;   
+;Nieten n.i.O.
+$OUT[O_NZ2_nio2]=$OUT[O_R_Auto] AND $OUT[O_NZ2_P_akt] AND $FLAG[F_NZ2_nio]
+;Vorwarnung liegt an
+$OUT[O_NZ2_W_SZ2]=$OUT[O_R_Auto] AND $IN[I_NZ2_W_SZ2]
+;Verklemmanzeige (Derzeit nicht verwendet)
+;$OUT[O_NZ2_F_Klem]=$OUT[O_R_Auto] AND XXX
+;Startbereit fehlt
+$OUT[O_NZ2_F_Sta2]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_NZ2_F_Sta2] AND $FLAG[F_NZ2_Sammel] AND $timer_flag[TimerNr_Ein]
+;Betriebsbereit fehlt
+$OUT[O_NZ2_F_Bet2]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_NZ2_F_Bet2] AND $timer_flag[TimerNr_Ein]
+;Sammelstoerung
+$OUT[O_NZ2_Samel2]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($FLAG[F_NZ2_Sammel] OR $IN[I_NZ2_H_Samm] OR NZ_LBitFeh[2]) AND $timer_flag[TimerNr_Ein]
+;
+;Ausgabe Zangencode
+NZ2_hyd_ZCode=1
+;
+;Lebensbit-Ueberwachung  
+L_Bit_NZH(2)
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD NZ Zangenfunktion
+DEF NZ_Z_Funkt(Nieten_Nr :IN)
+INT Nieten_Nr
+;
+SWITCH Nieten_Nr
+  CASE 1
+    ;NZ 1 Referenzieren (Servo)
+    IF $OUT[O_NZ1_ref] THEN	
+      $OUT[O_NZ1_FRG]=TRUE
+      HA2_FKT_NZ1=TRUE
+      WAIT SEC 0.8
+      IF $IN[I_NZ1_ref] AND $IN[I_NZ1_IPos_g] THEN
+        $OUT[O_NZ1_ref]=FALSE
+        $OUT[O_NZ1_FRG]=FALSE
+        HA2_FKT_NZ1=FALSE
+        Nieten_Msg(2,#NotifyMsg)
+      ENDIF
+    ENDIF
+;
+    ;NZ 1 Tastend Auf (Servo)
+    IF $OUT[O_NZ1_t_auf] THEN	
+      TA1_AKT_NZ1=TRUE
+      IF $OUT[O_NZ1_R_Hand] AND $OUT[O_NZ1_t_auf] THEN	
+        $OUT[O_NZ1_FRG]=TRUE
+      ENDIF
+    ENDIF
+;
+    ;NZ 1 Tastend Zu (Servo)
+    IF $OUT[O_NZ1_t_zu] THEN	
+      TA1_AKT_NZ1=TRUE
+      IF $OUT[O_NZ1_R_Hand] AND $OUT[O_NZ1_t_zu] THEN	
+        $OUT[O_NZ1_FRG]=TRUE
+      ENDIF
+    ENDIF
+;
+  CASE 2
+    ;NZ 2 Referenzieren (Servo)
+    IF $OUT[O_NZ2_ref] THEN	
+      $OUT[O_NZ2_FRG]=TRUE
+      HA2_FKT_NZ2=TRUE
+      WAIT SEC 0.8
+      IF $IN[I_NZ2_ref] AND $IN[I_NZ2_IPos_g] THEN
+        $OUT[O_NZ2_ref]=FALSE
+        $OUT[O_NZ2_FRG]=FALSE
+        HA2_FKT_NZ2=FALSE
+        Nieten_Msg(3,#NotifyMsg)
+      ENDIF
+    ENDIF
+;
+    ;NZ 2 Tastend Auf (Servo)
+    IF $OUT[O_NZ2_t_auf] THEN	
+      TA1_AKT_NZ2=TRUE
+      IF $OUT[O_NZ2_R_Hand] AND $OUT[O_NZ2_t_auf] THEN	
+        $OUT[O_NZ2_FRG]=TRUE
+      ENDIF
+    ENDIF
+;
+    ;NZ 2 Tastend Zu (Servo)
+    IF $OUT[O_NZ2_t_zu] THEN	
+      TA1_AKT_NZ2=TRUE
+      IF $OUT[O_NZ2_R_Hand] AND $OUT[O_NZ2_t_zu] THEN	
+        $OUT[O_NZ2_FRG]=TRUE
+      ENDIF
+    ENDIF
+ENDSWITCH    
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD Lebensbit_NZ_Servo
+DEF L_Bit_NZ(NZNr :IN)
+;Setzen / Rueksetzen Lebensbit Roboter
+INT NZNr
+BOOL LBitNZ, LBitFault
+INT RobTimer
+BOOL ErrLBit, bRet
+ErrLBit = FALSE
+LBitFault=FALSE
+;Setzen - Rucksetzen  des Lebensbit an Zangensteuerung
+$OUT[LBitToNZ[NZNr]] = NOT $IN[LBitFromNZ[NZNr]]
+RobTimer = $ROB_TIMER	
+IF $IN[LBitFromNZ[NZNr]] <> LBitState[NZNr] THEN
+  LBitTimeCnt[NZNr] = RobTimer
+ENDIF
+IF (RobTimer - LBitTimeCnt[NZNr]) > 5000 THEN
+  ErrLBit = TRUE
+  ErrNZNr = NZNr
+  NZ_LBitFeh[NZNr]=TRUE
+ENDIF
+LBitState[NZNr] = $IN[LBitFromNZ[NZNr]]
+IF ErrLBit THEN
+  Nieten_Msg(1,#StateMsg, ErrNZNr)
+ELSE
+  IF n_NZS_Handle[1]>-1 THEN
+    bRet=Clear_KrlMsg(n_NZS_Handle[1])
+    n_NZS_Handle[1]=-1
+    ErrNZNr = -1
+  ENDIF
+  NZ_LBitFeh[NZNr]=FALSE
+ENDIF
+;  
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD Lebensbit_NZ_Hydr
+DEF L_Bit_NZH(NZNr :IN)
+;Setzen / Rueksetzen Lebensbit Roboter
+INT NZNr
+BOOL LBitNZ, LBitFault
+INT RobTimer
+BOOL ErrLBit, bRet
+ErrLBit = FALSE
+LBitFault=FALSE
+;Setzen - Rucksetzen  des Lebensbit an Zangensteuerung
+$OUT[LBitToNZH[NZNr]] = NOT $IN[LBitFromNZH[NZNr]]
+RobTimer = $ROB_TIMER	
+IF $IN[LBitFromNZH[NZNr]] <> LBitState[NZNr] THEN
+  LBitTimeCnt[NZNr] = RobTimer
+ENDIF
+IF (RobTimer - LBitTimeCnt[NZNr]) > 5000 THEN
+  ErrLBit = TRUE
+  ErrNZNr = NZNr
+  NZ_LBitFeh[NZNr]=TRUE
+ENDIF
+LBitState[NZNr] = $IN[LBitFromNZH[NZNr]]
+IF ErrLBit THEN
+  Nieten_Msg(1,#StateMsg, ErrNZNr)
+ELSE
+  IF n_NZS_Handle[1]>-1 THEN
+    bRet=Clear_KrlMsg(n_NZS_Handle[1])
+    n_NZS_Handle[1]=-1
+    ErrNZNr = -1
+  ENDIF
+  NZ_LBitFeh[NZNr]=FALSE
+ENDIF
+;  
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD NZ_Meldungen
+DEF Nieten_Msg(msg_nr :IN, MsgTyp :IN, NZNr :IN)
+INT msg_nr, NZNr, Answer
+DECL NZS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+;
+USER_MSG = { Modul[] "NZ_S_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF Varstate("NZNr")==#initialized then
+  SWITCH NZNr
+    CASE 1
+      Par[1] = { Par_type #Value, Par_int 1 }
+    CASE 2
+      Par[1] = { Par_type #Value, Par_int 2 }
+    CASE 3
+      Par[1] = { Par_type #Value, Par_int 3 }
+    CASE 4
+      Par[1] = { Par_type #Value, Par_int 4 }
+    CASE 5
+      Par[1] = { Par_type #Value, Par_int 5 }
+    CASE 6
+      Par[1] = { Par_type #Value, Par_int 6 }
+    DEFAULT
+      Par[1] = { Par_type #Value, Par_txt[] " " }
+  ENDSWITCH
+ELSE
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+ENDIF
+;
+IF ((n_NZS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]="NZ%1 :keine Antwort auf Lebensbit"
+    CASE 2
+	   USER_MSG.MSG_TXT[]="NZ1 Zange ist referenziert"
+    CASE 3
+	   USER_MSG.MSG_TXT[]="NZ2 Zange ist referenziert"
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "  
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_NZS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_NZS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      n_NZS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_NZS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (NZ Meldungen)

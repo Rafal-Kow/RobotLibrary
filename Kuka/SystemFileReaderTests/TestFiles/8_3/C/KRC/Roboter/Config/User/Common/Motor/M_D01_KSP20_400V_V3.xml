@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Motor xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/Motor.xsd">
+  <Version Label="">
+    <Info Version="Any" />
+    <Schema Version="2" />
+    <!--#############################################################-->
+    <!--########                                             ########-->
+    <!--########                  MOTOR-FILE                 ########-->
+    <!--########              KUKA-ROBOTER GMBH              ########-->
+    <!--########                                             ########-->
+    <!--#############################################################-->
+    <!--ATB 1.42.0, DB V7.308-->
+    <!--Datum: 26-Sep-2016 06:55:49-->
+    <!--Motor:     D01-->
+    <!--Umrichter: KSP20-->
+    <!--xmlFileID_D01_KSP20_20160926065549_369-->
+  </Version>
+  <MotorData BackEMF="90" HoldingCurrent="8" ID="D01" KT-Factor="1.347" KT0-Factor="1.41" MaximalCurrent="20" MaximalTemperature="418" NominalCurrent="5.6" PolePairNumber="4" RampUpTime="10" TorqueOfInertia="0.00173" Vendor="KUKA" WindingInductance="0.008" WindingResistance="0.615" />
+  <SpeedTorqueData>
+    <SpeedTorque Speed="0" Torque="22" />
+    <SpeedTorque Speed="2150" Torque="22" />
+    <SpeedTorque Speed="3700" Torque="12.5" />
+    <SpeedTorque Speed="4800" Torque="7.69" />
+    <SpeedTorque Speed="4801" Torque="0" />
+    <OperatingPoint Speed="3000" Torque="7.3" />
+    <HoldingTorque Speed="0" Torque="11" />
+  </SpeedTorqueData>
+  <BrakeData Available="true" CloseTime="30" CoolOffCoeff="30" HoldingTorque="11" MaximalEnergy="1840" OpenTime="180" Torque="15" />
+  <EncoderData Available="true" Offset="0" RatioMotorEncoder="[4/1]" />
+  <SpeedCurrentDataAccelerate>
+    <SpeedCurrent Current="20" Speed="0" />
+    <SpeedCurrent Current="20" Speed="2200" />
+    <SpeedCurrent Current="11" Speed="4800" />
+    <SpeedCurrent Current="0" Speed="5050" />
+    <SpeedCurrent Current="0" Speed="5350" />
+  </SpeedCurrentDataAccelerate>
+  <SpeedCurrentDataDecelerate>
+    <SpeedCurrent Current="-20" Speed="0" />
+    <SpeedCurrent Current="-20" Speed="2200" />
+    <SpeedCurrent Current="-11" Speed="4800" />
+    <SpeedCurrent Current="0" Speed="5300" />
+    <SpeedCurrent Current="0" Speed="5600" />
+    <SpeedCurrent Current="0" Speed="5660" />
+  </SpeedCurrentDataDecelerate>
+  <IntermediateCircuitVoltage UzkMax="650" UzkRef="498.4" />
+  <KT-Characteristic T_ref="343" a1="1.4049" a3="-0.0002389" b0="1" b1="-0.00054" />
+  <EnergyData d1="-11.9" d2="0.85" d3="19">
+    <k i="1" value="0" />
+    <k i="2" value="5.84e-05" />
+    <k i="3" value="0" />
+    <k i="4" value="2.6749" />
+    <k i="5" value="0" />
+    <k i="6" value="1.1064" />
+    <k i="7" value="0.018" />
+    <k i="8" value="0.0505" />
+    <k i="9" value="0" />
+  </EnergyData>
+</Motor>
+<!--checksum 8303-->

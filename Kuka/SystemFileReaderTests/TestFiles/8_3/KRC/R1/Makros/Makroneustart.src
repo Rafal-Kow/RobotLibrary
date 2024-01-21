@@ -1,0 +1,11 @@
+&ACCESS RV
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makroneustartvorgabe.src
+&PARAM EDITMASK = MakroNeustart
+&PARAM TPVW_VERSION=8.3.18
+DEF  MAKRONEUSTART ( )
+; FOLD Makro Anfang;%{PSE} %MKUKATPVW
+SPS_N=-1
+; ENDFOLD
+; FOLD ;%{H}
+END
+; ENDFOLD

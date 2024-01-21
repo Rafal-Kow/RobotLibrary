@@ -1,0 +1,53 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Reibelement
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_rw_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Reibelement                         *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.20 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+; 
+;FOLD Reibelement
+;RW1
+SIGNAL RW1_sollpos $OUT[1297]  TO $OUT[1311]
+SIGNAL RW1_istpos $IN[1297]  TO $IN[1311]
+; Programmnummer an RW1
+SIGNAL RW1_P_Nr $OUT[1313]  TO $OUT[1328]
+SIGNAL Fzg_Typ_RW1 $OUT[1329]  TO $OUT[1336]
+;RW2
+SIGNAL RW2_sollpos $OUT[1217]  TO $OUT[1231]
+SIGNAL RW2_istpos $IN[1217]  TO $IN[1231]
+; Programmnummer an RW2
+SIGNAL RW2_P_Nr $OUT[1233]  TO $OUT[1248]
+SIGNAL Fzg_Typ_RW2 $OUT[1249]  TO $OUT[1256]
+;Punktnummer an SPS
+SIGNAL RW_PktNr_SPS $OUT[97]  TO $OUT[112]
+;ENDFOLD
+; 
+REAL MyPos=99.0
+REAL MyPos1=99.0
+REAL MyPos2=0.0
+; 
+;TCP-Korrektur
+INT Weg=0
+INT Offset=0
+FRAME MyCorr
+FRAME MyCorrWeg
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM RWR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

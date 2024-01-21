@@ -1,0 +1,1477 @@
+&ACCESS  R
+&COMMENT KS_1.2
+&PARAM DISKPATH = VW_User/Applikation/Vision/HGV
+&PARAM TPVW_VERSION = 8.1.8
+&REL 18
+DEF vw_hgv_usr_r( )
+;
+;*-----------------------------------------------------------------*
+;* ZEISS GmbH&Co.KG                                                *
+;*                                                                 *
+;* Bearbeitet am:                                                  *
+;* 25.08.2016 NI  Angepasst HGV -> ZEISS                           *
+;* 15.08.2017 LZ  InPosWaitTime um PROCPAR[62] erweitert (variabel)*
+;*-----------------------------------------------------------------*
+;
+END
+;
+;-----------------------------------------------------------
+;FOLD HGV_ResetSignals
+GLOBAL DEF HGV_ResetSignals()
+;
+  ;reset Output signals
+  HGV_CommandOut = 0
+  HGV_SequenceOut = 0
+  HGV_IDOut = 0
+  HGV_ModeOut = 0
+  HGV_Double1Out = 0
+  HGV_Double2Out = 0
+  HGV_Double3Out = 0
+;   
+  $FLAG[F_HGV_GeStr] = FALSE ; Sammel Stoerung
+  $FLAG[F_HGV_Err] = FALSE ; Fehler
+  $FLAG[F_HGV_NoErr] = TRUE ; Kein Fehler
+  $FLAG[F_HGV_VFErr] = FALSE ; Korrekturwerte nicht vorhanden
+  $FLAG[F_HGV_VFMax] = FALSE ; Maximale Korrekturwerte erreicht
+  $FLAG[F_HGV_ModID] = FALSE ; Falsche Modell ID
+  $FLAG[F_HGV_NoStr] = FALSE ; Kein Messstart von SPS
+  $FLAG[F_HGV_SyAkt] = FALSE ; System Aktiv
+  $FLAG[F_HGV_SyIna] = FALSE ; System Inaktiv
+  $FLAG[F_HGV_NoVal] = FALSE ; Kein Auftrag
+  $FLAG[F_HGV_TmOut] = FALSE ; TimeOut
+;
+END
+;ENDFOLD ( HGV_ResetSignals )
+;
+;-----------------------------------------------------------
+;FOLD HGV_ResetVariables
+GLOBAL DEF HGV_ResetVariables()
+;
+  ; reset communication variables
+  HGV_Command = 0
+  HGV_ID = 0
+  HGV_Mode = 0
+  HGV_PointToCorrect = HGV_NullPos
+  HGV_CorrectedPoint = HGV_NullPos
+  HGV_AxisToCorrect = HGV_NullAxis
+  HGV_AxisCorrection = HGV_NullAxis
+  HGV_Status = 0
+;
+END
+;ENDFOLD ( HGV_ResetVariables )
+;
+;-----------------------------------------------------------
+;FOLD HGV_IMTInt
+GLOBAL DEF HGV_IMTInt(USER_CMD:IN,CMD_SEL:IN,MODUS:IN,TYP:IN,SUBTYP:IN,SPECIFIER:IN,TOOLNR:IN,WIEDERHOLUNG:IN)
+  DECL VW_USER_CMD USER_CMD
+  DECL INT CMD_SEL, MODUS, TYP, SUBTYP, SPECIFIER, TOOLNR, WIEDERHOLUNG
+  DECL INT Mode
+  DECL CHAR msg[50]
+  DECL INT Offset
+  DECL STATE_T STATE
+;
+  DECL INT UP_Nummer
+  DECL BOOL bResult
+  DECL INT iResult
+  DECL INT nFlagCounter
+  DECL INT N_HGV_Ret1
+  DECL INT iErrorMsgNr
+;  
+  N_HGV_Err1   = 0
+  N_HGV_Err2   = 0
+  N_HGV_MsgOff = 0
+  B_HGV_MsgFlg = FALSE
+  N_HGV_Fkt = 0
+  IF USER_CMD <> #USR_INIT THEN
+    SWITCH CMD_SEL
+     CASE 901   
+       N_HGV_Fkt = CMD_SEL
+     CASE 902   
+       N_HGV_Fkt = CMD_SEL
+     CASE 903   
+       N_HGV_Fkt = CMD_SEL
+     DEFAULT
+       N_HGV_MsgOff = 900
+       B_HGV_MsgFlg = TRUE
+       N_HGV_Err1   = 901   ; Modus P1 ungueltig
+       N_HGV_Ret1   = HGV_MsgErr(#NotifyMsg, N_HGV_Err1,CMD_SEL,N_HGV_Ret1)
+       $FLAG[F_HGV_Err] = TRUE
+       RETURN
+   ENDSWITCH
+   SWITCH MODUS
+     CASE 501,510,511,512,520,522,523,530,531,540,545,548,550,551,552,553,554,555,560,561,599
+       ; OK
+     DEFAULT
+       N_HGV_MsgOff = 900
+       B_HGV_MsgFlg = TRUE
+       N_HGV_Err1   = 902   ; MODUS P2 ungueltig
+       N_HGV_Ret1   = HGV_MsgErr(#NotifyMsg, N_HGV_Err1,MODUS,N_HGV_Ret1)
+       $FLAG[F_HGV_Err] = TRUE
+       RETURN
+    ENDSWITCH
+  ENDIF
+  SWITCH USER_CMD
+    CASE #USR_INIT
+    ;FOLD Init
+      N_HGV_MsgOff = 50
+      B_HGV_MsgFlg = FALSE
+      B_HGV_RetVal = HGV_Sync()
+    ;ENDFOLD (Init)
+;
+    CASE #USR_ADV
+    ;FOLD Advance
+       RETURN
+    ;ENDFOLD (Advance)
+;
+    CASE #USR_TRIG
+    ;FOLD Trig
+       RETURN
+    ;ENDFOLD (Trig)
+;
+    CASE #USR_MAIN
+    ;FOLD Main
+;
+    SWITCH N_HGV_Fkt
+       CASE 901, 902, 903
+        OFFSET = 0
+        ; Ueberprufung der Eingabeparameter
+        IF (HGV_CheckParams(CMD_SEL, MODUS,TYP,SUBTYP,SPECIFIER,TOOLNR,WIEDERHOLUNG)==FALSE) THEN
+          N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_PAR, MODUS )
+          $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+          $FLAG[F_HGV_Err] = TRUE ; Fehler
+          $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+          return
+        ENDIF
+;
+        SWITCH MODUS      
+  ;num501=Status
+  ;num510=Start Modell
+  ;num511=UP-Holen
+  ;num520=Start Messpunkt
+  ;num522=Start Scannen
+  ;num523=Ende Scannen
+  ;num530=Messung komplett
+  ;num540=Sensortausch
+  ;num545=Robotertausch
+  ;num548=Artefakttausch
+  ;num551=Korrektur holen
+  ;num553=BaseKorr ausfuehren
+  ;num554=ToolKorr ausfuehren
+  ;num560=TCP Ueberpruefung
+  ;num561=Artefakt Ueberpruefung
+  ;num555=BaseKorr holen+ausfuehren
+  ;
+          CASE 501
+            ; Status
+            N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_1 )
+            HGV_Status = HGV_StatusIn
+  ;
+          CASE 510
+            ; Start Modell
+            ; TYP ist die Nummer des Modells
+            B_HGV_TCalib = FALSE
+            B_HGV_Check_Art = FALSE
+            B_HGV_Check_TCP = FALSE
+            B_HGV_StopAtPointError = FALSE
+            N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_2, TYP )
+            HGV_CalculationRequired = FALSE
+            IF ( NOT HGV_Start( TYP, 3 ) ) THEN
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_START, TYP )
+            ELSE
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_START, TYP )
+            ENDIF
+  ;
+          CASE 560
+            ; TCP Ueberpruefung
+            ; TYP ist die Nummer des Modells
+            N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_15, TYP )
+            B_HGV_TCalib = FALSE
+            B_HGV_Check_TCP = TRUE
+            B_HGV_Check_Art = FALSE
+            B_HGV_StopAtPointError = TRUE
+            HGV_CalculationRequired = FALSE
+            IF ( NOT HGV_Start( TYP, 3 ) ) THEN
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_START, TYP )
+            ELSE
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_START, TYP )
+            ENDIF
+  ;
+          CASE 561
+            ; Artefakt Ueberpruefung
+            ; TYP ist die Nummer des Modells
+            N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_16, TYP )
+            B_HGV_TCalib = FALSE
+            B_HGV_Check_TCP = FALSE
+            B_HGV_Check_Art = TRUE
+            B_HGV_StopAtPointError = TRUE
+            HGV_CalculationRequired = FALSE
+            IF ( NOT HGV_Start( TYP, 3 ) ) THEN
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_START, TYP )
+            ELSE
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_START, TYP )
+            ENDIF
+  ;
+          CASE 511 
+            ; UP-Holen
+            ; TYP ist die Nummer des Modells
+            N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_3, TYP )
+            B_HGV_Check_Art = FALSE
+            B_HGV_Check_TCP = FALSE
+            B_HGV_StopAtPointError = FALSE
+            HGV_CalculationRequired = FALSE
+            IF TYP >= 100 THEN  ; Temperature compensation - full or sequential
+              IF $FLAG[F_507] THEN
+                UP_Nummer = HGV_UP_Holen( 101 )
+        B_HGV_TCalib = TRUE
+              ELSE
+                UP_Nummer = HGV_UP_Holen( 100 )
+        B_HGV_TCalib = TRUE
+              ENDIF
+              IF( ( UP_Nummer > 0 ) AND ( UP_Nummer <= 20 ) ) THEN
+                IF( NA_HGV_UPNR[100, UP_Nummer] > 0 ) THEN  
+                  N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_UP, NA_HGV_UPNR[100, UP_Nummer] )
+                  SEL_RES=SELECT( #UP, NA_HGV_UPNR[100, UP_Nummer], TRUE ) ;UP selektieren
+                ELSE
+                  N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_PROGID )
+                  $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+                  $FLAG[F_HGV_Err] = TRUE ; Fehler
+                  $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+                ENDIF
+              ELSE
+                N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_PROGID )
+                $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+                $FLAG[F_HGV_Err] = TRUE ; Fehler
+                $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+              ENDIF
+            ELSE   ;Messprogramm-Routine holen
+        B_HGV_TCalib = FALSE
+              UP_Nummer = HGV_UP_Holen( TYP )
+              IF( ( UP_Nummer > 0 ) AND ( UP_Nummer <= 20 ) ) THEN
+                IF( NA_HGV_UPNR[TYP, UP_Nummer] > 0 ) THEN        
+                  N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_UP, NA_HGV_UPNR[100, UP_Nummer] )
+                  SEL_RES=SELECT( #UP, NA_HGV_UPNR[TYP, UP_Nummer], TRUE ) ;UP selektieren
+                ELSE
+                  N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_PROGID )
+                  $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+                  $FLAG[F_HGV_Err] = TRUE ; Fehler
+                  $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+                ENDIF
+              ELSE
+                N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_PROGID )
+                $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+                $FLAG[F_HGV_Err] = TRUE ; Fehler
+                $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+              ENDIF
+            ENDIF
+  ;
+          CASE 520, 530    ; Start Messpunkt / Messung komplett
+          ; SPECIFIER ist die Nummer des Messpunkts
+		    IF PROCPAR[62] > 0 Then
+			   WAIT SEC PROCPAR[62] / (10)
+			   ELSE   
+               WAIT SEC HGV_InPosWaitTime
+			ENDIF   
+            iResult = HGV_Trigger( SPECIFIER )
+            IF ( iResult == 1 ) THEN
+              ;Kommunikationsfehler - noch einmal
+              HGV_MSG( "Retry HGV_Trigger" );
+              iResult = HGV_Trigger( SPECIFIER )
+            ENDIF
+            IF ( iResult <> 0 ) THEN   
+              IF B_HGV_StopAtPointError THEN
+                iErrorMsgNr = HGV_USER_ERR_MEASURE
+                IF ( B_HGV_Check_Art ) THEN
+                  iErrorMsgNr = HGV_USER_ERR_CHECK_ART
+                ENDIF
+                IF ( B_HGV_Check_TCP ) THEN
+                  iErrorMsgNr = HGV_USER_ERR_CHECK_TCP
+                ENDIF
+                N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, iErrorMsgNr, SPECIFIER )
+                WHILE ( HGV_MsgErr( #DlgMsg, iErrorMsgNr, SPECIFIER ) <> 0 )
+                  IF ( HGV_Trigger( SPECIFIER ) == 0 ) THEN
+                    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_MEAS, SPECIFIER )
+                    EXIT
+                  ENDIF
+                ENDWHILE
+              ELSE
+                N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_MEASURE, SPECIFIER )
+              ENDIF
+            ELSE
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_MEAS, SPECIFIER )
+            ENDIF
+            IF ( MODUS == 530 ) THEN
+              IF ( NOT HGV_End() ) THEN
+                IF( HGV_CalculationRequired ) THEN
+                  N_HGV_Ret1 = HGV_MsgErr( #DlgMsg, HGV_USER_ERR_RESULT )
+                ENDIF
+        IF( B_HGV_TCalib ) THEN
+          B_HGV_TCalib = FALSE
+                  N_HGV_Ret1 = HGV_MsgErr( #DlgMsg, HGV_USER_ERR_TCALIB )
+                ENDIF
+              ELSE
+                IF( HGV_CalculationRequired ) THEN
+                  N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_RESULT )
+                ENDIF
+        IF( B_HGV_TCalib ) THEN
+          B_HGV_TCalib = FALSE
+                  N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_TCALIB )
+                ENDIF
+              ENDIF
+            ENDIF
+  ;
+          CASE 522
+          ; Start Scannen
+            N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_MSG_5 )
+            $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+            $FLAG[F_HGV_Err] = TRUE ; Fehler
+            $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+  ;
+          CASE 523  
+            ; Ende Scannen
+            N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_MSG_6 )
+            $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+            $FLAG[F_HGV_Err] = TRUE ; Fehler
+            $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+  ;
+          CASE 540
+            ; Sensortausch
+            N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_8 )
+            N_HGV_Ret1 = HGV_MsgErr( #DlgMsg, HGV_USER_MSG_SPREP )
+            B_HGV_TCalib = FALSE
+            B_HGV_Check_Art = FALSE
+            B_HGV_Check_TCP = FALSE
+            B_HGV_StopAtPointError = TRUE
+            HGV_CalculationRequired = TRUE
+            IF ( NOT HGV_Start( 0, 6 ) ) THEN
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_START, 0 )
+            ELSE
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_START, 0 )
+            ENDIF
+  ;
+          CASE 545  
+            ; Robotertausch
+            N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_9 )
+            B_HGV_TCalib = FALSE
+            B_HGV_Check_Art = FALSE
+            B_HGV_Check_TCP = FALSE
+            B_HGV_StopAtPointError = TRUE
+            HGV_CalculationRequired = TRUE
+            IF ( NOT HGV_Start( 0, 0 ) ) THEN
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_START, 0 )
+            ELSE
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_START, 0 )
+            ENDIF
+  ;     
+          CASE 548  
+            ; Artefakttausch
+            N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_13 )
+            B_HGV_TCalib = FALSE
+            B_HGV_Check_Art = FALSE
+            B_HGV_Check_TCP = FALSE
+            B_HGV_StopAtPointError = TRUE
+            HGV_CalculationRequired = TRUE
+            IF ( NOT HGV_Start( 0, 7 ) ) THEN
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_START, 0 )
+            ELSE
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_START, 0 )
+            ENDIF
+  ;         
+          CASE 551  
+            ; Korrektur holen
+            N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_10 )
+            B_HGV_FrameRead = HGV_ReadFrame()
+            IF NOT B_HGV_FrameRead THEN
+              N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_FRAME )
+              $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+              $FLAG[F_HGV_Err] = TRUE ; Fehler
+              $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+              $FLAG[F_HGV_VFErr] = TRUE ; Korrekturwerte nicht vorhanden
+            ELSE
+              N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_FRAME )
+            ENDIF
+  ;
+          CASE 553
+            ; BaseKorr ausfuehren
+            N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_11 )
+            IF NOT B_HGV_FrameRead THEN
+              N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_FRAME )
+              $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+              $FLAG[F_HGV_Err] = TRUE ; Fehler
+              $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+              $FLAG[F_HGV_VFErr] = TRUE ; Korrekturwerte nicht vorhanden
+            ELSE
+              HGV_AdjustBaseFrame()
+              IF NOT HGV_CheckFrame( 1 ) THEN
+                N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_FRAM1 )
+                $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+                $FLAG[F_HGV_Err] = TRUE ; Fehler
+                $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+                $FLAG[F_HGV_VFMax] = TRUE ; Maximale Korrekturwerte erreicht
+              ELSE
+                IF ((TOOLNR < 0) OR (TOOLNR > 31)) THEN
+                  N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_TOOL )
+                ELSE
+                  N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_BKORR, TOOLNR )
+                  BASE_DATA[TOOLNR] = BASE_DATA[TOOLNR] : AVF_HGV_Korr[1]
+                ENDIF
+              ENDIF
+              ENDIF
+  ;      
+          CASE 554
+            ; ToolKorr ausfuehren
+            N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_14 )
+            IF NOT B_HGV_FrameRead THEN
+              N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_FRAME )
+              $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+              $FLAG[F_HGV_Err] = TRUE ; Fehler
+              $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+              $FLAG[F_HGV_VFErr] = TRUE ; Korrekturwerte nicht vorhanden
+            ELSE
+              HGV_AdjustToolFrame()
+              IF NOT HGV_CheckFrame( 1 ) THEN
+                N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_FRAM1 )
+                $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+                $FLAG[F_HGV_Err] = TRUE ; Fehler
+                $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+                $FLAG[F_HGV_VFMax] = TRUE ; Maximale Korrekturwerte erreicht
+              ELSE
+                IF ((TOOLNR < 0) OR (TOOLNR > 31)) THEN
+                  N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_TOOL )
+                ELSE
+                  N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_TKORR, TOOLNR )
+                  HGV_ApplyToolFrame( TOOLNR )
+                ENDIF
+              ENDIF
+            ENDIF
+  ;      
+          CASE 555
+            ; BaseKorrektur holen+ausfuehren
+            N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_12 )
+            B_HGV_FrameRead = HGV_ReadFrame()
+            IF NOT B_HGV_FrameRead THEN
+              N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_FRAME )
+              $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+              $FLAG[F_HGV_Err] = TRUE ; Fehler
+              $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+              $FLAG[F_HGV_VFErr] = TRUE ; Korrekturwerte nicht vorhanden
+            ELSE
+              IF NOT HGV_CheckFrame( 1 ) THEN
+                N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_FRAM1 )
+                $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+                $FLAG[F_HGV_Err] = TRUE ; Fehler
+                $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+                $FLAG[F_HGV_VFMax] = TRUE ; Maximale Korrekturwerte erreicht
+              ELSE
+                IF ((TOOLNR < 0) OR (TOOLNR > 31)) THEN
+                  N_HGV_Ret1 = HGV_MsgErr( #QuitMsg, HGV_USER_ERR_TOOL )
+                ELSE
+                  N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_MSG_BKORR, TOOLNR )
+                  BASE_DATA[TOOLNR] = BASE_DATA[TOOLNR] : AVF_HGV_Korr[1]
+                ENDIF
+              ENDIF
+            ENDIF
+  ;
+        ENDSWITCH    
+;
+     ENDSWITCH
+;
+    ;ENDFOLD (Main)
+;
+    DEFAULT
+      N_HGV_MsgOff = 900
+      B_HGV_MsgFlg = TRUE
+      N_HGV_Err1   = 911   ; Kommando ungueltig
+      N_HGV_Ret1   = HGV_MsgErr(#NotifyMsg,N_HGV_Err1,CMD_SEL,N_HGV_Ret1)
+      $FLAG[F_HGV_Err] = TRUE
+      RETURN
+  ENDSWITCH
+; 
+END
+;ENDFOLD ( HGV_IMTInt )
+;
+;-----------------------------------------------------------
+;FOLD Vision_HGV Messsystem initialisieren und Handshake synchronisieren
+GLOBAL DEFFCT BOOL HGV_Sync()
+;
+;              Source Code Vision_HGV
+  HGV_ResetSignals()
+  HGV_ResetVariables()
+  $FLAG[F_HGV_GeStr] = FALSE ; Sammel Stoerung
+  $FLAG[F_HGV_Err] = FALSE ; Fehler
+  $FLAG[F_HGV_NoErr] = TRUE ; Kein Fehler
+  $FLAG[F_HGV_VFErr] = FALSE ; Korrekturwerte nicht vorhanden
+  $FLAG[F_HGV_VFMax] = FALSE ; Maximale Korrekturwerte erreicht
+  $FLAG[F_HGV_ModID] = FALSE ; Falsche Modell ID
+  $FLAG[F_HGV_NoStr] = FALSE ; Kein Messstart von SPS
+  $FLAG[F_HGV_SyAkt] = FALSE ; System Aktiv
+  $FLAG[F_HGV_SyIna] = FALSE ; System Inaktiv
+  $FLAG[F_HGV_NoVal] = FALSE ; Kein Auftrag
+  $FLAG[F_HGV_TmOut] = FALSE ; TimeOut
+return TRUE
+;
+ENDFCT
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD Start
+GLOBAL DEFFCT BOOL HGV_Start( Model: IN, Mode: IN )
+  DECL INT Model
+  DECL INT Mode
+;
+  HGV_ResetSignals()
+  HGV_ResetVariables()
+;
+  IF( HGV_WaitForCommand( 0, HGV_CommTimeout ) == FALSE ) THEN
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    return FALSE
+  ENDIF
+  HGV_IDOut = Model
+  HGV_ModeOut = Mode
+  HGV_CommandOut = START_HGV
+  IF( HGV_WaitForCommand( START_HGV, HGV_CommTimeout ) == FALSE ) THEN
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    HGV_ResetSignals()
+    return FALSE
+  ENDIF
+  IF (HGV_AckIn <> 'H80') THEN
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_ACK )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    HGV_ResetSignals()
+    return FALSE
+  ENDIF
+  HGV_ResetSignals()
+  IF( HGV_WaitForCommand( 0, HGV_CommTimeout ) == FALSE ) THEN
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    HGV_ResetSignals()
+    return FALSE
+  ENDIF
+  IF HGV_AckIn <> 'H80' THEN
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_ACK )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    HGV_ResetSignals()
+    return FALSE
+  ENDIF
+  HGV_Status = HGV_StatusIn
+  IF( HGV_Status == 405 ) THEN
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_STATUS )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+  ENDIF
+  RETURN TRUE
+ENDFCT
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD UP holen
+GLOBAL DEFFCT INT HGV_UP_Holen( Model: IN )
+  DECL INT Model
+;
+  DECL INT UP_Nr
+;
+  HGV_ResetSignals()
+  HGV_ResetVariables()
+;
+  IF( HGV_WaitForCommand( 0, HGV_CommTimeout ) == FALSE ) THEN
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    return (-1)
+  ENDIF
+  HGV_IDOut = Model
+  HGV_CommandOut = REQUEST_UP_HGV
+  IF( HGV_WaitForCommand( REQUEST_UP_HGV, HGV_CommTimeout ) == FALSE ) THEN
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    HGV_ResetSignals()
+    return (-1)
+  ENDIF
+  IF (HGV_AckIn <> 'H80') THEN
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_ACK )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    HGV_ResetSignals()
+    return (-1)
+  ENDIF
+  UP_Nr = HGV_UPIn
+  HGV_ResetSignals()
+  IF( HGV_WaitForCommand( 0, HGV_CommTimeout ) == FALSE ) THEN
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    HGV_ResetSignals()
+    return (-1)
+  ENDIF
+  IF HGV_AckIn <> 'H80' THEN
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_ACK )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    HGV_ResetSignals()
+    return (-1)
+  ENDIF
+  HGV_Status = HGV_StatusIn
+  IF( HGV_Status == 405 ) THEN
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_STATUS )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+  ENDIF
+  return UP_Nr
+ENDFCT
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD Trigger
+GLOBAL DEFFCT INT HGV_Trigger( ID: In )
+  DECL INT ID
+;
+  HGV_ResetSignals()
+  IF( HGV_WaitForCommand( 0, HGV_CommTimeout ) == FALSE ) THEN
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    return (-1)
+  ENDIF
+  HGV_IDOut = ID
+  HGV_Double1Out = $AXIS_ACT.A1 * 1000000.0
+  HGV_Double2Out = $AXIS_ACT.A2 * 1000000.0
+  HGV_Double3Out = $AXIS_ACT.A3 * 1000000.0
+  WAIT SEC 0.05
+  HGV_CommandOut = TRIGGER_HGV
+   IF( NOT HGV_WaitForCommand( TRIGGER_HGV, HGV_CommTimeout ) ) THEN
+    HGV_MSG( "HGV_Trigger: No 1st command response!" );
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    HGV_ResetSignals()
+    return 1
+  ENDIF
+  IF HGV_AckIn <> 'H80' THEN
+    HGV_MSG( "HGV_Trigger: No 1st ACK!" );
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_ACK )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    HGV_ResetSignals()
+    return 1
+  ENDIF
+;
+  HGV_Double1Out = $AXIS_ACT.A4 * 1000000.0
+  HGV_Double2Out = $AXIS_ACT.A5 * 1000000.0
+  HGV_Double3Out = $AXIS_ACT.A6 * 1000000.0
+  WAIT SEC 0.05
+  HGV_CommandOut = TRIGGER_HGV2
+   IF( NOT HGV_WaitForCommand( TRIGGER_HGV2, HGV_CommTimeout ) ) THEN
+    HGV_MSG( "HGV_Trigger: No 2nd command response!" );
+    HGV_MSG2( "CommandIn: ", HGV_CommandIn );
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    HGV_ResetSignals()
+    return 1
+  ENDIF
+  IF HGV_AckIn <> 'H80' THEN
+    HGV_MSG( "HGV_Trigger: No 2nd ACK!" );
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_ACK )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    HGV_ResetSignals()
+    return 1
+  ENDIF
+  HGV_ResetSignals()
+; wait for Release from PC
+  IF( NOT HGV_WaitForCommand( 0, HGV_CommTimeout ) ) THEN
+    HGV_MSG( "HGV_Trigger: No CommandReset response!" );
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    return 1
+  ENDIF
+  IF HGV_AckIn <> 'H80' THEN
+    HGV_MSG( "HGV_Trigger: No 3rd ACK!" );
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_ACK )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    HGV_ResetSignals()
+    return 1
+  ENDIF
+  HGV_Status = HGV_StatusIn
+  IF( HGV_Status == 409 ) THEN
+    HGV_MSG( "HGV_Trigger: Status Invalid!" );
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_STATUS, ID )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    return 2
+  ENDIF
+  return 0
+ENDFCT
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD End
+GLOBAL DEFFCT BOOL HGV_End()
+  HGV_ResetSignals()
+  IF( HGV_WaitForCommand( 0, HGV_CommTimeout ) == FALSE ) THEN
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+     return FALSE
+  ENDIF
+  HGV_CommandOut = END_HGV
+  IF( HGV_WaitForCommand( END_HGV, HGV_CommTimeout ) == FALSE ) THEN
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    HGV_ResetSignals()
+    return FALSE
+  ENDIF
+  IF HGV_AckIn <> 'H80' THEN
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_ACK )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    HGV_ResetSignals()
+    return FALSE
+  ENDIF
+  HGV_ResetSignals()
+  IF( HGV_WaitForCommand( 0, HGV_CalculateTimeout ) == FALSE) THEN
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_COM )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    HGV_ResetSignals()
+    return FALSE
+  ENDIF
+  IF HGV_AckIn <> 'H80' THEN
+    N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_ACK )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    HGV_ResetSignals()
+    return FALSE
+  ENDIF
+  HGV_Status = HGV_StatusIn
+  IF( HGV_Status <> 401 ) THEN
+    HGV_MSG( "HGV_Trigger: Status Invalid!" );
+      N_HGV_Ret1 = HGV_MsgErr( #NotifyMsg, HGV_USER_ERR_STATUS )
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    return FALSE
+  ENDIF
+  return TRUE
+ENDFCT
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD ReadFrame
+GLOBAL DEFFCT BOOL HGV_ReadFrame()
+;
+  HGV_ResetSignals()
+  HGV_FrameIn = { x 0, y 0, z 0, a 0, b 0, c 0 }
+  AVF_HGV_Korr[1] = { x 0, y 0, z 0, a 0, b 0, c 0 }
+  IF( HGV_WaitForCommand( 0, HGV_CommTimeout ) == FALSE ) THEN
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+     return false
+  ENDIF
+  HGV_CommandOut = READ_FRAME_HGV
+  IF( HGV_WaitForCommand( READ_FRAME_HGV, HGV_ReadFrameTimeout ) == FALSE ) THEN
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    HGV_ResetSignals()
+    return FALSE
+  ENDIF
+  HGV_FrameIn.X = HGV_Double1In / 1000.0
+  HGV_FrameIn.Y = HGV_Double2In / 1000.0
+  HGV_FrameIn.Z = HGV_Double3In / 1000.0
+  HGV_CommandOut = READ_FRAME_HGV2
+  IF( HGV_WaitForCommand( READ_FRAME_HGV2, HGV_ReadFrameTimeout ) == FALSE ) THEN
+    HGV_FrameIn = { x 0, y 0, z 0, a 0, b 0, c 0 }
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    HGV_ResetSignals()
+    return FALSE
+  ENDIF
+  HGV_FrameIn.C = HGV_Double1In / 1000000.0
+  HGV_FrameIn.B = HGV_Double2In / 1000000.0
+  HGV_FrameIn.A = HGV_Double3In / 1000000.0
+  HGV_ResetSignals()
+  IF( NOT HGV_WaitForCommand( 0, HGV_CommTimeout ) ) THEN
+    $FLAG[F_HGV_GeStr] = TRUE ; Sammel Stoerung
+    $FLAG[F_HGV_Err] = TRUE ; Fehler
+    $FLAG[F_HGV_NoErr] = FALSE ; Kein Fehler
+    $FLAG[F_HGV_TmOut] = TRUE ; TimeOut
+    HGV_ResetSignals()
+    return FALSE
+  ENDIF
+  AVF_HGV_Korr[1] = HGV_FrameIn
+  HGV_Status = HGV_StatusIn
+  return TRUE
+ENDFCT
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD HGV_CheckFrame
+GLOBAL DEFFCT BOOL HGV_CheckFrame( Index: IN )
+;
+  INT Index
+;
+  BOOL bOK
+  FRAME fCheck
+;
+  bOK = TRUE
+  IF Index == 0 THEN
+    fCheck = HGV_FrameIn
+  ELSE 
+    IF ((Index >= 1) AND (Index <= 20)) THEN
+      fCheck = AVF_HGV_Korr[Index]
+    ELSE
+      return FALSE
+    ENDIF
+  ENDIF
+    
+  IF fCheck.x < VF_HGV_Min.x THEN
+    bOK = FALSE
+  ENDIF
+  IF fCheck.y < VF_HGV_Min.y THEN
+    bOK = FALSE
+  ENDIF
+  IF fCheck.z < VF_HGV_Min.z THEN
+    bOK = FALSE
+  ENDIF
+  IF fCheck.a < VF_HGV_Min.a THEN
+    bOK = FALSE
+  ENDIF
+  IF fCheck.b < VF_HGV_Min.b THEN
+    bOK = FALSE
+  ENDIF
+  IF fCheck.c < VF_HGV_Min.c THEN
+    bOK = FALSE
+  ENDIF
+  IF fCheck.x > VF_HGV_Max.x THEN
+    bOK = FALSE
+  ENDIF
+  IF fCheck.y > VF_HGV_Max.y THEN
+    bOK = FALSE
+  ENDIF
+  IF fCheck.z > VF_HGV_Max.z THEN
+    bOK = FALSE
+  ENDIF
+  IF fCheck.a > VF_HGV_Max.a THEN
+    bOK = FALSE
+  ENDIF
+  IF fCheck.b > VF_HGV_Max.b THEN
+    bOK = FALSE
+  ENDIF
+  IF fCheck.c > VF_HGV_Max.c THEN
+    bOK = FALSE
+  ENDIF
+  return bOK
+ENDFCT
+;ENDFOLD
+;
+;
+;-----------------------------------------------------------
+;FOLD AdjustToolFrame
+;---------------------------------------------------------------------------------------------
+DEF HGV_AdjustToolFrame()
+;
+  AVF_HGV_Korr[2].a = 0
+  AVF_HGV_Korr[2].b = 0
+  AVF_HGV_Korr[2].c = 0
+  AVF_HGV_Korr[2].z = AVF_HGV_Korr[1].x
+  AVF_HGV_Korr[2].x = - AVF_HGV_Korr[1].z
+  AVF_HGV_Korr[2].y = - AVF_HGV_Korr[1].y
+  AVF_HGV_Korr[1] = AVF_HGV_Korr[2]
+END
+;---------------------------------------------------------------------------------------------
+;ENDFOLD
+;
+;
+;-----------------------------------------------------------
+;FOLD ApplyToolFrame
+;---------------------------------------------------------------------------------------------
+DEF HGV_ApplyToolFrame( ToolNr: IN )
+;
+  DECL INT ToolNr
+;
+    TOOL_DATA[TOOLNR].x = TOOL_DATA[TOOLNR].x + AVF_HGV_Korr[1].x
+    TOOL_DATA[TOOLNR].y = TOOL_DATA[TOOLNR].y + AVF_HGV_Korr[1].y
+    TOOL_DATA[TOOLNR].z = TOOL_DATA[TOOLNR].z + AVF_HGV_Korr[1].z
+END
+;---------------------------------------------------------------------------------------------
+;ENDFOLD
+;
+;
+;-----------------------------------------------------------
+;FOLD AdjustBaseFrame
+;---------------------------------------------------------------------------------------------
+DEF HGV_AdjustBaseFrame()
+;
+;   Rotation internes KOS -> Base == Inverse Rotation hier
+  AVF_HGV_Korr[2].x = 0
+  AVF_HGV_Korr[2].y = 0
+  AVF_HGV_Korr[2].z = 0
+  AVF_HGV_Korr[2].a = 0
+  AVF_HGV_Korr[2].b = 180
+  AVF_HGV_Korr[2].c = 0
+;   Konjugation: 
+  AVF_HGV_Korr[3] = ( AVF_HGV_Korr[2] : AVF_HGV_Korr[1] ) : AVF_HGV_Korr[2]
+;   Zurueckkopieren
+  AVF_HGV_Korr[1] = AVF_HGV_Korr[3]
+END
+;---------------------------------------------------------------------------------------------
+;ENDFOLD
+;
+;
+;-----------------------------------------------------------
+;FOLD WaitForCommand
+GLOBAL DEFFCT BOOL HGV_WaitForCommand( CommandExpected :IN, TimeOut: IN )
+DECL INT CommandExpected
+DECL INT TimeOut
+  $Timer_Stop[56] = TRUE
+  $Timer[56] = 0
+  $Timer_Stop[56] = FALSE
+  ;
+  WAIT FOR ( ( ( HGV_CommandIn B_AND 127 ) == CommandExpected ) OR ( $Timer[56] > TimeOut ) )
+  IF( $TIMER[56] > TimeOut ) THEN
+    HGV_MSG4( "ERR: WaitForCmd Exp.:", CommandExpected, "Read:", HGV_CommandIn )
+    return FALSE
+  ENDIF
+  return TRUE
+ENDFCT
+;ENDFOLD
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD HGV_CheckParams
+GLOBAL DEFFCT BOOL HGV_CheckParams( CMD_SEL:IN, MODUS:IN, TYP:IN, SUBTYP:IN, SPECIFIER:IN, TOOLNR:IN, WIEDERHOLUNG:IN )
+  DECL INT CMD_SEL, MODUS, TYP, SUBTYP, SPECIFIER, TOOLNR, WIEDERHOLUNG
+; 
+  ; Ueberprufung der Eingabeparameter
+  SWITCH MODUS
+        CASE 501
+;
+        CASE 510
+          ; Messstart
+          ; TYP ist die Nummer des Modells
+          IF TYP < 1 THEN
+            return FALSE
+          ENDIF
+;
+        CASE 511
+          ; UP-Holen
+          ; TYP ist die Nummer des Modells
+          IF TYP < 1 THEN
+            return FALSE
+          ENDIF
+          IF ( TYP > 9 ) AND ( TYP < 100 )  THEN
+            return FALSE
+          ENDIF
+;
+        CASE 520  
+        ; Start Messpunkt
+        ; SPECIFIER ist die Nummer des Messpunkts
+          IF SPECIFIER < 0 THEN
+            return FALSE
+          ENDIF
+;
+        CASE 522
+        ; Start Scannen
+          return FALSE
+;
+        CASE 523  
+          ; Ende Scannen
+            return FALSE
+;
+        CASE 530
+          ; Messung komplett
+          ; SPECIFIER ist die Nummer des Messpunkts
+          IF SPECIFIER < 0 THEN
+            return FALSE
+          ENDIF
+;
+        CASE 540
+          ; Sensortausch
+;
+        CASE 545  
+          ; Robotertausch
+;     
+        CASE 548  
+          ; Artefakttausch
+;
+        CASE 551  
+          ; Korrektur holen
+;
+        CASE 553 
+          ; Korrektur ausfuehren
+;      
+        CASE 554 
+          ; ToolKorr ausfuehren
+;      
+        CASE 555 
+          ; BaseKorr holen+ausfuehren
+;
+        CASE 560  
+          ; TCP Check
+;
+        CASE 561  
+          ; Artefakt Check
+;
+    DEFAULT
+      return FALSE
+;
+  ENDSWITCH
+  return TRUE
+ENDFCT
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD HGV Meldungen
+;*---------------------------------------------*
+;* HGV GmbH&Co.KG                              *
+;*                                             *
+;* Bearbeitet am:                              *
+;* 29.09.2011 PH                               *
+;*     Erstellt                                *
+;*---------------------------------------------*
+;
+GLOBAL DEFFCT INT HGV_MsgMld (MSG_TYP:IN, MSG_NR:IN)
+DECL INT           MSG_NR
+DECL HGV_MsgType   MSG_TYP
+DECL KRLMSG_T      USER_MSG
+DECL KRLMSGPAR_T   PAR[3]
+DECL KRLMSGOPT_T   OPT
+DECL KrlMsgDlgSK_T SK[7]
+INT                nDlgHandle
+INT                nDlgAnswer
+  USER_MSG    = { Modul[] "ZEISS", Nr -1, Msg_txt[] " "}
+  Par[1]      = { Par_type #Value, Par_txt[] " " }
+  Opt         = { VL_Stop FALSE, Clear_P_Reset FALSE, Log_To_DB TRUE }
+  SK[1]       = {Sk_Type #Value,Sk_Txt[] "OK"}
+  USER_MSG.Nr = MSG_NR
+  nDlgAnswer  = 1
+  SWITCH MSG_NR
+    CASE 1
+      USER_MSG.MSG_TXT[] = "ZEISS: Keine Antwort auf Lebensbit"
+    CASE 2
+      USER_MSG.MSG_TXT[] = "Zuruecksetzen des HGV-KorrekturFrames"
+    DEFAULT
+      USER_MSG.MSG_TXT[] = "ZEISS: Unbekannte Meldung" 
+  ENDSWITCH
+  SWITCH MSG_TYP
+    CASE #DlgMsg
+      nDlgHandle = Set_KrlDlg(USER_MSG,Par[],SK[],Opt)      
+      REPEAT
+      UNTIL NOT Exists_KrlDlg(nDlgHandle,nDlgAnswer)      
+      SWITCH nDlgAnswer        
+        CASE 1
+          ;HALT ;Softkey 1 was hit        
+        CASE 2
+          ;HALT ;Softkey 2 was hit       
+        CASE 3
+          ;HALT ;Softkey 3 was hit        
+        DEFAULT
+          ;HALT ;Wrong softkey was hit          
+      ENDSWITCH    
+    CASE #StatMsg
+      nDlgHandle= Set_KrlMsg(#State, USER_MSG, Par[], Opt)   ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      nDlgHandle = Set_KrlMsg(#Quit, USER_MSG, Par[], Opt)   ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      nDlgHandle = Set_KrlMsg(#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    CASE #WaitMsg
+      nDlgHandle = Set_KrlMsg(#Waiting, USER_MSG, Par[], Opt);Ausgabe Hinweismeldung  
+    DEFAULT
+      nDlgHandle = Set_KrlMsg(#Quit, USER_MSG, Par[], Opt)   ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+  RETURN(nDlgAnswer)
+ENDFCT
+;
+;ENDFOLD ( HGV Meldungen )
+;
+;-----------------------------------------------------------
+;FOLD HGV Message
+GLOBAL DEF  HGV_MSG (MSG_TEXT[]: IN)
+; Meldung die in allen Betriebsarten ausgegeben wird.
+  DECL CHAR MSG_TEXT[]
+;
+  DECL INT Offset
+  DECL STATE_T STATE
+  Decl KrlMsg_T USER_Msg
+  Decl KrlMsgPar_T Par[3]
+  Decl KrlMsgOpt_T Opt
+  DECL INT nHandle
+;
+;Nur Debug-Meldungen
+  IF( B_HGV_Debug == FALSE ) THEN
+    RETURN
+  ENDIF
+;
+  USER_MSG = { Modul[] "ZEISS_MSG", Nr 1, Msg_txt[] " "}
+  Opt = { VL_Stop False, Clear_P_Reset True, Log_To_DB False }
+  OFFSET=0
+  SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,MSG_TEXT[])
+  nHandle = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+END
+;
+;
+DEF  HGV_MSG2 (MSG_TEXT[]: IN, Value: IN )
+; Meldung die in allen Betriebsarten ausgegeben wird.
+  DECL CHAR MSG_TEXT[]
+  DECL Int Value
+;
+  DECL INT Offset
+  DECL STATE_T STATE
+  Decl KrlMsg_T USER_Msg
+  Decl KrlMsgPar_T Par[3]
+  Decl KrlMsgOpt_T Opt
+  DECL INT nHandle
+;
+;Nur Debug-Meldungen
+  IF( B_HGV_Debug == FALSE ) THEN
+    RETURN
+  ENDIF
+;
+  USER_MSG = { Modul[] "ZEISS_MSG2", Nr 1, Msg_txt[] " "}
+  Opt = { VL_Stop False, Clear_P_Reset True, Log_To_DB False }
+  OFFSET=0
+  SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,MSG_TEXT[])
+  SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," %d", Value)
+  nHandle = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+END
+;
+;
+GLOBAL DEF  HGV_MSG_STAT (MSG_TEXT[]: IN, Value: IN )
+; Meldung die in allen Betriebsarten ausgegeben wird.
+  DECL CHAR MSG_TEXT[]
+  DECL Int Value
+;
+  DECL INT Offset
+  DECL STATE_T STATE
+  Decl KrlMsg_T USER_Msg
+  Decl KrlMsgPar_T Par[3]
+  Decl KrlMsgOpt_T Opt
+  DECL BOOL bResult
+;
+;Nur Debug-Meldungen
+  IF( B_HGV_Debug == FALSE ) THEN
+    RETURN
+  ENDIF
+;
+  IF ( HGV_Handle > 0 ) THEN
+    bResult = Clear_KrlMsg(HGV_Handle)
+  ENDIF
+  USER_MSG = { Modul[] "ZEISS_MSG_STAT", Nr 1, Msg_txt[] " "}
+  Opt = { VL_Stop False, Clear_P_Reset True, Log_To_DB False }
+  OFFSET=0
+  SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,MSG_TEXT[])
+  IF varState("Value") == #INITIALIZED THEN
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," %d", Value)
+  ENDIF
+  HGV_Handle = Set_KrlMsg (#state, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+END
+;
+;
+GLOBAL DEF  HGV_MSG4 (MSG_TEXT[]: IN, Value: IN, MSG_TEXT2[]: IN, Value2: IN )
+; Meldung die in allen Betriebsarten ausgegeben wird.
+  DECL CHAR MSG_TEXT[]
+  DECL Int Value
+  DECL CHAR MSG_TEXT2[]
+  DECL Int Value2
+;
+  Decl KrlMsg_T USER_Msg
+  Decl KrlMsgPar_T Par[3]
+  Decl KrlMsgOpt_T Opt
+  DECL INT nHandle
+  DECL INT Offset
+  DECL STATE_T STATE
+;
+;Nur Debug-Meldungen
+  IF( B_HGV_Debug == FALSE ) THEN
+    RETURN
+  ENDIF
+;
+  USER_MSG = { Modul[] "ZEISS_MSG4", Nr 1, Msg_txt[] " "}
+  Opt = { VL_Stop False, Clear_P_Reset True, Log_To_DB False }
+  OFFSET=0
+  SWRITE( USER_MSG.MSG_TXT[], STATE, OFFSET, "%S %d %S %d", MSG_TEXT[], Value, MSG_TEXT2[], Value2 )
+  nHandle = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+END
+;
+;ENDFOLD ( ZEISS Message )
+;
+;;
+;Meldungsart:
+;In Automatik duerfen nur NIO-Meldungen ausgegeben werden
+;In Single-Step alle wichtigen Meldungen
+;In Single-Step + Debugger-Flag alle Meldungen
+;
+;FOLD HGV Fehlermeldungen
+GLOBAL DEFFCT INT HGV_MsgErr (HGV_MLD_TYP:IN, MSG_NR:IN, rPar :IN, nPar:IN)
+DECL Real          rPar
+DECL INT           MSG_NR
+DECL INT           nPar
+DECL INT           OFFSET
+DECL HGV_MsgType   HGV_MLD_TYP
+DECL STATE_T       STATE
+DECL KRLMSG_T      USER_MSG
+DECL KRLMSGPAR_T   PAR[3]
+DECL KRLMSGOPT_T   OPT
+DECL KrlMsgDlgSK_T SK[7]
+DECL Char          sMeldFunction[80]
+DECL INT           nTmp
+DECL INT           nDlgHandle
+DECL INT           nDlgAnswer
+DECL BOOL          bResult
+;
+;In Automatik duerfen nur NIO-Meldungen ausgegeben werden
+  IF (($mode_op <> #T1) AND ($mode_op <> #T2) AND (MSG_NR < 100) AND (B_HGV_Debug == FALSE) ) THEN
+    RETURN(1)
+  ENDIF
+;
+  ;FOLD Init
+;
+  IF varState("rPar") <> #INITIALIZED THEN
+     rPar = -1
+  ENDIF
+  IF varState("nPar") <> #INITIALIZED THEN
+     nPar = -1
+  ENDIF
+  USER_MSG         = { Modul[] "ZEISS", Nr 1, Msg_txt[] " "}
+  USER_MSG.Nr = MSG_NR
+  Par[1]           = { Par_type #Value, Par_txt[] " " }
+  Opt              = { VL_Stop TRUE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+  FOR nTmp = 1 TO 7
+    SK[nTmp] = {Sk_Type #Empty}
+  ENDFOR
+  ;ENDFOLD (Init)
+;
+  ;FOLD Meldungs-Nr
+;
+  OFFSET  = 0
+  nTmp    = rPar
+  SK[1]   = {Sk_Type #Value,Sk_Txt[] "Weiter"}
+  SWITCH MSG_NR
+; Fehler (Debug)
+    CASE HGV_USER_MSG_1
+      USER_MSG.MSG_TXT[] = "Status"
+      ;SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    CASE HGV_USER_MSG_2
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET, "Messstart %d", nTmp )
+     CASE HGV_USER_MSG_3
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"UP-Holen %d", nTmp )
+      IF ( HGV_MLD_TYP == #StatMsg ) THEN
+        IF ( nDlgHandleUP > 0 ) THEN
+          bResult = Clear_KrlMsg(nDlgHandleUP)
+        ENDIF
+      ENDIF
+    CASE HGV_USER_MSG_4
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Start Messpunkt %d", nTmp )
+      IF ( HGV_MLD_TYP == #StatMsg ) THEN
+        IF ( nDlgHandlePoint > 0 ) THEN
+          bResult = Clear_KrlMsg(nDlgHandlePoint)
+        ENDIF
+      ENDIF
+    CASE HGV_USER_MSG_5
+      USER_MSG.MSG_TXT[] = "Start Scannen: Nicht unterstuetzt"
+    CASE HGV_USER_MSG_6
+      USER_MSG.MSG_TXT[] = "Ende Scannen: Nicht unterstuetzt"
+    CASE HGV_USER_MSG_7
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Messung komplett %d", nTmp )
+      IF ( HGV_MLD_TYP == #StatMsg ) THEN
+        IF ( nDlgHandlePoint > 0 ) THEN
+          bResult = Clear_KrlMsg(nDlgHandlePoint)
+        ENDIF
+      ENDIF
+    CASE HGV_USER_MSG_8
+      USER_MSG.MSG_TXT[] = "Sensortausch"
+    CASE HGV_USER_MSG_9
+      USER_MSG.MSG_TXT[] = "Robotertausch"
+    CASE HGV_USER_MSG_10
+      USER_MSG.MSG_TXT[] = "Korrektur holen"
+    CASE HGV_USER_MSG_11
+      USER_MSG.MSG_TXT[] = "BaseKorr ausfuehren"
+    CASE HGV_USER_MSG_12
+      USER_MSG.MSG_TXT[] = "BaseKorr holen + ausfuehren"
+    CASE HGV_USER_MSG_13
+      USER_MSG.MSG_TXT[] = "Artefakttausch"
+    CASE HGV_USER_MSG_14
+      USER_MSG.MSG_TXT[] = "ToolKorr ausfuehren"
+    CASE HGV_USER_MSG_15
+      USER_MSG.MSG_TXT[] = "TCP Ueberpruefung"
+    CASE HGV_USER_MSG_16
+      USER_MSG.MSG_TXT[] = "Artefakt Ueberpruefung"
+    CASE HGV_USER_MSG_RESULT
+      USER_MSG.MSG_TXT[] = "Berechnung erfolgreich"
+    CASE HGV_USER_MSG_MEAS
+      swrite(USER_MSG.MSG_TXT[], STATE, OFFSET,"Messpunkt %d gemessen", nTmp )
+    CASE HGV_USER_MSG_START
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Modell Start %d erfolgreich", nTmp )
+    CASE HGV_USER_MSG_UP
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Aufruf UP%d", nTmp )
+    CASE HGV_USER_MSG_BKORR
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"BaseKorr OK Base %d", nTmp )
+    CASE HGV_USER_MSG_TKORR
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"ToolKorr OK Tool %d", nTmp )
+    CASE HGV_USER_MSG_FRAME
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Frame einlesen OK" )
+    CASE HGV_USER_ERR_COM
+      USER_MSG.MSG_TXT[] = "Kommunikationsfehler mit TEISS-Rechner"
+    CASE HGV_USER_ERR_TIMEOUT
+      USER_MSG.MSG_TXT[] = "Kommunikations-Timeout mit ZEISS-Rechner"
+    CASE HGV_USER_ERR_ACK
+      USER_MSG.MSG_TXT[] = "Kein ACK vom ZEISS-Messrechner"
+    CASE HGV_USER_ERR_SEQUENCE
+      USER_MSG.MSG_TXT[] = "Keine weitere Sequenz vom ZEISS-Messrechner"
+    CASE HGV_USER_ERR_STATUS
+      IF( nTmp >= 0 ) THEN
+        swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Status-Fehler vom ZEISS-Messrechner am Punkt %d", nTmp )
+      ELSE
+    USER_MSG.MSG_TXT[] = "Status-Fehler vom ZEISS-Messrechner"
+      ENDIF
+    CASE HGV_USER_MSG_TCALIB
+      USER_MSG.MSG_TXT[] = "Temperatur-Kompensation OK"
+    
+ ; Fehlermeldungen
+    CASE HGV_USER_ERR
+      USER_MSG.MSG_TXT[] = "Allgemeiner ZEISS-Fehler"
+    CASE HGV_USER_MSG_SPREP
+      USER_MSG.MSG_TXT[] = "Bei Sensorwechsel: Sensordaten aktualisiert?"
+    CASE HGV_USER_ERR_PROGID
+      USER_MSG.MSG_TXT[] = "ProgID falsch"
+    CASE HGV_USER_ERR_TOL
+      USER_MSG.MSG_TXT[] = "Toleranzfehler"
+    CASE HGV_USER_ERR_PAR
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Ungueltiger Parameter fuer Modus %d", nTmp )
+    CASE HGV_USER_ERR_FRAME
+      USER_MSG.MSG_TXT[] = "Kein KorrekturFrame vom ZEISS-Messrechner"
+    CASE HGV_USER_ERR_TOOL
+      USER_MSG.MSG_TXT[] = "Falsche Tool/Base-Nummer!"
+    CASE HGV_USER_ERR_FRAM1
+      USER_MSG.MSG_TXT[] = "KorrekturFrame ausser Toleranz"
+    CASE HGV_USER_ERR_START
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Modell Start %d Fehler!", nTmp )
+    CASE HGV_USER_ERR_MEASURE
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Fehlmessung am Punkt %d", nTmp )
+      SK[1]   = {Sk_Type #Value,Sk_Txt[] "Wiederhol"}
+    CASE HGV_USER_ERR_CHECK_ART
+      IF( nTmp >= 0 ) THEN
+        swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Artefakt-Ueberpruefung fehlgeschlagen! Punkt %d", nTmp )
+      ELSE
+        swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Artefakt-Ueberpruefung fehlgeschlagen!" )
+      ENDIF
+      SK[1]   = {Sk_Type #Value,Sk_Txt[] "Wiederhol"}
+    CASE HGV_USER_ERR_CHECK_TCP
+      IF( nTmp >= 0 ) THEN
+        swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"TCP-Ueberpruefung fehlgeschlagen! Punkt %d", nTmp )
+      ELSE
+        swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"TCP-Ueberpruefung fehlgeschlagen!" )
+      ENDIF
+      SK[1]   = {Sk_Type #Value,Sk_Txt[] "Wiederhol"}
+    CASE HGV_USER_ERR_RESULT
+      USER_MSG.MSG_TXT[] = "Berechnung fehlerhaft! Bitte ueberpruefen!"
+    CASE HGV_USER_ERR_TCALIB
+      USER_MSG.MSG_TXT[] = "Temperatur-Kompensation Fehler!"
+; Parameterfehler
+    CASE 901
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET, "CMD_SEL (P1) ungueltig - %d", nTmp )
+    CASE 902
+      USER_MSG.MSG_TXT[] = "FUNKTION (P2) ungueltig"
+    CASE 911
+      USER_MSG.MSG_TXT[] = "CMD_SEL (P1) ungueltig"
+; Fehler: (Unbekannt)
+    DEFAULT
+      swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Unbekannter Fehler %d", MSG_NR )
+  ENDSWITCH 
+;
+  ;ENDFOLD (Meldungs-Nr)
+;
+  IF MSG_NR > 0 THEN
+    USER_MSG.Nr = MSG_NR
+  ENDIF
+  OFFSET      = 0  
+  SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"%s %s",sMeldFunction[],USER_MSG.MSG_TXT[]) 
+  nDlgAnswer = 1
+  SWITCH HGV_MLD_TYP  
+    CASE #DlgMsg      
+      nDlgHandle = Set_KrlDlg(USER_MSG,Par[],SK[],Opt)      
+      IF (nDlgHandle > 0) Then
+        While (Exists_KrlDlg(nDlgHandle, nDlgAnswer))         ;Warten bis der Dialog beantwortet wird
+          Wait Sec 0.1
+        ENDWHILE
+      ENDIF        
+    CASE #StatMsg
+      nDlgHandle = Set_KrlMsg (#State, USER_MSG, Par[], OPT)   ; Ausgabe Statusmeldung
+    CASE #QuitMsg
+      nDlgHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], OPT)    ; Ausgabe Quittierungsmeldung
+      IF (nDlgHandle > 0) Then
+        While ( Exists_KrlMsg(nDlgHandle))                     ;Warten bis der Anwender quittiert
+          Wait Sec 0.1
+        ENDWHILE
+      ENDIF  
+    CASE #NotifyMsg
+      nDlgHandle = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt)  ; Ausgabe Hinweismeldung
+    CASE #WaitMsg
+      nDlgHandle = Set_KrlMsg (#Waiting, USER_MSG, Par[], Opt) ; Ausgabe Hinweismeldung
+    DEFAULT
+      USER_MSG.MSG_TXT[] = "MSG_Typ falsch"
+      nDlgHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], OPT)    ; Ausgabe Quittierungsmeldung
+      IF (nDlgHandle > 0) Then
+        While (Exists_KrlMsg(nDlgHandle))                      ;Warten bis der Anwender quittiert
+          Wait Sec 0.1
+        ENDWHILE
+      ENDIF      
+  ENDSWITCH
+;
+  SWITCH MSG_NR
+     CASE HGV_USER_MSG_3
+      IF ( HGV_MLD_TYP == #StatMsg ) THEN
+        nDlgHandleUP = nDlgHandle
+      ENDIF
+    CASE HGV_USER_MSG_4, HGV_USER_MSG_7
+      IF ( HGV_MLD_TYP == #StatMsg ) THEN
+        nDlgHandlePoint = nDlgHandle
+      ENDIF
+  ENDSWITCH
+; 
+  RETURN(nDlgAnswer)
+ENDFCT
+;
+;ENDFOLD (HGV Fehlermeldungen)
