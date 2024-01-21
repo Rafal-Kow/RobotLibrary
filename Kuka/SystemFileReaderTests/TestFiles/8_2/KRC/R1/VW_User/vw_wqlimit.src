@@ -1,0 +1,66 @@
+&ACCESS  RV
+&COMMENT WQ_Limit
+&PARAM DISKPATH = VW_User
+&PARAM TPVW_VERSION = 8.1.8
+&REL 4
+DEF VW_WQLimit()
+; ---------------------------------
+; ---------------------------------
+; Schnittstelle zur Alarmbehandlung
+; ---------------------------------
+; Uebergabe Zange, Typ, Punktnummer
+; ---------------------------------
+; Gemessene Werte INT - Array P[5]
+; Zeiten: 1 = Zange zu, 2= Schweissen, 3= Zange auf
+; Wege[1/10mm]: 4 = Durchbiegungen, 5= Ausgleich
+; ---------------------------------
+; Ergebnis INT-ARRAY R[5]
+; 0 = keine Limits verletzt
+; +/-1 = gelbes Limit nach oben/unten ueberschritten
+; +/-2 = rotes Limit nach oben/unten ueberschritten
+; -3 = keine Limits für diese Daten
+; ---------------------------------
+; ---------------------------------
+END
+GLOBAL DEF WQLimit(Gun:IN, Typ:IN, Number:IN, P[]:OUT,R[]:OUT)
+; ---------------------------------
+INT Gun,Typ,Number
+DECL INT P[]
+DECL INT R[]
+Bool SpotIsFound
+INT N
+INT SpotNoFound
+SpotIsFound=False
+N=1
+REPEAT
+  SpotIsFound = (Gun==Spot[N].Gun) AND (Typ==Spot[N].Typ) AND (Number==Spot[N].Number) 
+  N=N+1
+UNTIL SpotIsFound OR (N>maxSpot)
+IF ((N>MaxSpot) AND NOT SpotIsFound) THEN
+  FOR N=1 TO 5 
+    R[N]=-3
+  ENDFOR
+  RETURN
+ELSE
+  SpotNoFound=N-1
+ENDIF
+FOR N=1 TO 5
+  IF P[N]< Limit[SpotNoFound,N].low2 THEN
+    R[N]=-2
+  ELSE
+    IF P[N]< Limit[SpotNoFound,N].low1 THEN
+      R[N]=-1
+    ELSE
+      IF P[N]> Limit[SpotNoFound,N].high2 THEN
+        R[N]=2
+      ELSE
+        IF P[N]> Limit[SpotNoFound,N].high1 THEN
+          R[N]=1
+        ELSE
+          R[N]=0
+        ENDIF
+      ENDIF
+    ENDIF  
+  ENDIF
+ENDFOR
+END

@@ -1,0 +1,249 @@
+&ACCESS R
+&PARAM TPVW_VERSION=8.3.18
+&PARAM SUPPRESS = LoosOfPrecision UnswitchedEnum UnusedFunctionParameter
+DEF VW_ServoGun_Interface ( )
+   
+END
+;FOLD interface VW - Servogun Basic --> DO NOT DELETE THIS LINE #INSERTMARKER
+
+GLOBAL DEF VW_SGB_SPOT_ADV(Condition:IN, MovementType :IN, PointCoord :IN,GunNumber :IN,ProgNumber :IN,PointNummer :IN, VehicleType :IN,Offset :IN,TeachInAuto :IN,SheetThick :IN,CompType :IN, EQMode:IN, CompPara1 :IN,CompPara2 :IN,CompPara3 :IN)
+   BOOL Condition, TeachInAuto
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   DECL COMPTYP_T CompType
+   DECL SGEQ_ParamMode EQMode
+   INT VehicleType,ProgNumber,GunNumber,PointNummer,Offset, SheetThick,CompPara1, CompPara2, CompPara3
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+GLOBAL DEF VW_SGB_SPOT_MAIN(Condition:IN, MovementType :IN, PointCoord :IN,GunNumber :IN,ProgNumber :IN,PointNummer :IN, VehicleType :IN, Offset :IN, TeachInAuto :IN,SheetThick :IN,CompType :IN, EQMode:IN, CompPara1 :IN, CompPara2 :IN,CompPara3 :IN)
+   BOOL Condition, TeachInAuto
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   DECL COMPTYP_T CompType
+   DECL SGEQ_ParamMode EQMode
+   INT VehicleType,ProgNumber,GunNumber,PointNummer,Offset,SheetThick, CompPara1, CompPara2, CompPara3
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+;Init Function Calls
+GLOBAL DEF VW_SGB_INIT_ADV(Condition:IN, MovementType :IN, PointCoord :IN,GunNumber :IN,InitType :IN)
+   BOOL Condition
+   DECL SG_MoveType_T MovementType
+   DECL InitType_T InitType
+   E6POS PointCoord
+   INT GunNumber
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+GLOBAL DEF VW_SGB_INIT_MAIN(Condition:IN, MovementType :IN, PointCoord :IN,GunNumber :IN,InitType :IN)
+   BOOL Condition
+   DECL SG_MoveType_T MovementType
+   DECL InitType_T InitType
+   E6POS PointCoord
+   INT GunNumber
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP  
+END
+
+;Dress Function Calls
+GLOBAL DEF VW_SGB_DRESS_ADV(Condition:IN, MovementType :IN, PointCoord :IN, GunNumber :IN,PointNumber1 :IN,VehicleType :IN,DualDress :IN,PointNumber2 :IN)
+   BOOL Condition,DualDress
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   INT GunNumber,PointNumber1, PointNumber2,VehicleType
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+GLOBAL DEF VW_SGB_DRESS_MAIN(Condition:IN, MovementType :IN, PointCoord :IN, GunNumber :IN,PointNumber1 :IN,VehicleType :IN,DualDress :IN,PointNumber2 :IN)
+   BOOL Condition,DualDress
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   INT GunNumber,PointNumber1, PointNumber2,VehicleType
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP      
+END
+
+;ForceClose Function Calls
+GLOBAL DEF VW_SGB_FORCECLOSE_ADV(Condition:IN, MovementType :IN, PointCoord :IN, GunNumber :IN,PointNumber :IN,VehicleType :IN)
+   BOOL Condition
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   INT GunNumber,PointNumber, VehicleType
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+GLOBAL DEF VW_SGB_FORCECLOSE_MAIN(Condition:IN, MovementType :IN, PointCoord :IN, GunNumber :IN,PointNumber :IN,VehicleType :IN)
+   BOOL Condition
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   INT GunNumber,PointNumber, VehicleType  
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+;Couple Function Calls
+GLOBAL DEF VW_SGB_COUPLE_ADV(Condition:IN,GunNumber :IN)
+   BOOL Condition
+   INT GunNumber  
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+GLOBAL DEF VW_SGB_COUPLE_MAIN(Condition:IN,GunNumber :IN)
+   BOOL Condition
+   INT GunNumber
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+;DeCouple Function Calls
+GLOBAL DEF VW_SGB_DECOUPLE_ADV(Condition:IN,GunNumber :IN)
+   BOOL Condition
+   INT GunNumber
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+GLOBAL DEF VW_SGB_DECOUPLE_MAIN(Condition:IN,GunNumber :IN)
+   BOOL Condition
+   INT GunNumber
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+;DeCouple Function Calls
+GLOBAL DEF VW_SGB_MAINTENANCE_ADV(Condition:IN,MovementType :IN,PointCoord :IN,GunNumber :IN)
+   BOOL Condition
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   INT GunNumber
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+GLOBAL DEF VW_SGB_MAINTENANCE_MAIN(Condition:IN,MovementType :IN,PointCoord :IN,GunNumber :IN)
+   BOOL Condition
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   INT GunNumber
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+;Background Function Calls
+GLOBAL DEF VW_SGB_SYNCHRON_ADV(Condition:IN,MovementType :IN,PointCoord :IN,GunNumber :IN)
+   BOOL Condition
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   INT GunNumber
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP 
+END
+
+GLOBAL DEF VW_SGB_SYNCHRON_MAIN(Condition:IN,MovementType :IN,PointCoord :IN,GunNumber :IN)
+   BOOL Condition
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   INT GunNumber
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+GLOBAL DEF VW_SGB_ASYNCHRON_ADV(Condition:IN,MovementType :IN,PointCoord :IN,GunNumber :IN)
+   BOOL Condition
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   INT GunNumber
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP 
+END
+
+GLOBAL DEF VW_SGB_ASYNCHRON_MAIN(Condition:IN,MovementType :IN,PointCoord :IN,GunNumber :IN)
+   BOOL Condition
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   INT GunNumber
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+;Service function calls
+GLOBAL DEF VW_SGB_SERVICE_ADV(Condition:IN, MovementType :IN, PointCoord :IN,GunNumber :IN,PowerMode :IN,Force :IN,PointNummer :IN, VehicleType :IN, SheetThick :IN, SheetThickTolerance:IN,CompType :IN, EQMode:IN, CompPara1 :IN, CompPara2 :IN,CompPara3 :IN)
+   BOOL Condition, PowerMode
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   DECL COMPTYP_T CompType
+   DECL SGEQ_ParamMode EQMode
+   DECL SGg_POINT_T SGB_PointData
+   INT Force,VehicleType,GunNumber,PointNummer,SheetThick,SheetThickTolerance, CompPara1, CompPara2, CompPara3
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+GLOBAL DEF VW_SGB_SERVICE_MAIN(Condition:IN, MovementType :IN, PointCoord :IN,GunNumber :IN,PowerMode :IN,Force :IN,PointNummer :IN, VehicleType :IN, SheetThick :IN, SheetThickTolerance:IN,CompType :IN, EQMode:IN, CompPara1 :IN, CompPara2 :IN,CompPara3 :IN)
+   BOOL Condition, PowerMode
+   DECL SG_MoveType_T MovementType
+   E6POS PointCoord
+   DECL COMPTYP_T CompType
+   DECL SGEQ_ParamMode EQMode
+   INT Force,VehicleType,GunNumber,PointNummer,SheetThick,SheetThickTolerance, CompPara1, CompPara2, CompPara3
+   LOOP 
+      MsgQuit("ServoGunIsNotInstalled","VwInlineForms",,,91)
+      HALT
+   ENDLOOP
+END
+
+;ENDFOLD interface VW - Servogun Basic --> DO NOT DELETE THIS LINE #INSERTMARKER
+GLOBAL DEF VW_SGB_CONFIG_SPOT_CHECK(GunNumber :IN, CompType :IN)
+   DECL INT GunNumber
+   DECL COMPTYP_T CompType 
+   IF (ServoGun[GunNumber].CompType <> CompType) THEN  
+      LOOP 
+         MsgQuit("ServoGunConfigChangedCompType","VwInlineForms",,,93)
+         HALT
+      ENDLOOP
+   ENDIF
+END

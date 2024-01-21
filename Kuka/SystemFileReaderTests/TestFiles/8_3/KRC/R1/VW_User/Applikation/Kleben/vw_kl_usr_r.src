@@ -1,0 +1,360 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Kleben
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEF vw_kl_usr_r( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Kleben                              *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.20 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD Kleben_Interface
+GLOBAL DEF KL_Interfac(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+INT i
+;
+;-----------------------------------------------------------
+SWITCH USER_CMD
+;
+;-----------------------------------------------------------
+  CASE #USR_INIT
+    ;FOLD Init
+    ;
+    ;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------------
+  CASE #USR_ADV
+    ;FOLD Advance
+;        
+;
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------------
+  CASE #USR_TRIG
+    ;FOLD Trig
+;    
+    SWITCH PAR1 
+      CASE 1  ;Auswahl Klebesteuerung 1
+        IF $IN[I_FT_o_BT] THEN
+          $TIMER_STOP[12]=TRUE
+          $TIMER[12]=PROCPAR[17]
+          $TIMER_STOP[12]=FALSE
+        ENDIF
+        ;
+        IF NOT $IN[I_FT_o_BT] THEN
+          $FLAG[F_KL1_Sammel]=NOT $IN[I_KL1_Sammel]
+          ;FOLD WARTE BIS E1524;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1524,3:  WBOASG
+            $LOOP_MSG[]="E1524"
+            $LOOP_CONT=TRUE
+          WAIT FOR $IN[I_KL1_Sammel] OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          ;
+          $FLAG[F_KL1_Sammel]=FALSE
+          $OUT[O_KL1_PK_start]=FALSE
+          ;FOLD WARTE BIS A4037;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A4037,3:  WBOASG
+            $LOOP_MSG[]="A4037"
+            $LOOP_CONT=TRUE
+          WAIT FOR $OUT[O_R_steht] OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          ;
+          $FLAG[F_KL1_Sammel]=$IN[I_KL1_Proz_niO] OR $IN[I_KL1_Proz_iO]
+          ;FOLD WARTE BIS !E1537 & !E1538;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E1537 & !E1538,3:  WBOASG
+            $LOOP_MSG[]="!E1537 & !E1538"
+            $LOOP_CONT=TRUE
+          WAIT FOR NOT $IN[I_KL1_Proz_niO] AND NOT $IN[I_KL1_Proz_iO] OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          ;
+          $OUT[O_KL1_PK_start]=TRUE
+          $TIMER_STOP[10]=TRUE
+          $TIMER[10]=-5
+          $TIMER_STOP[10]=FALSE         
+          ;FOLD WARTE BIS E1537 & !E1538 + !E1537 & E1538 + T10;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1537 & !E1538 + !E1537 & E1538 + T10,3:  WBOASG
+            $LOOP_MSG[]="E1537 & !E1538 + !E1537 & E1538 + T10"
+            $LOOP_CONT=TRUE
+          WAIT FOR ($IN[I_KL1_Proz_niO] AND NOT $IN[I_KL1_Proz_iO] OR NOT $IN[I_KL1_Proz_niO] AND $IN[I_KL1_Proz_iO]) OR ($TIMER[10]>=0) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          $FLAG[F_KL1_Sammel]=($TIMER[10]>=0)
+          ;
+          ;FOLD WARTE BIS E1537 & !E1538 + !E1537 & E1538;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1537 & !E1538 + !E1537 & E1538,3:  WBOASG
+            $LOOP_MSG[]="E1537 & !E1538 + !E1537 & E1538"
+            $LOOP_CONT=TRUE
+          WAIT FOR ($IN[I_KL1_Proz_niO] AND NOT $IN[I_KL1_Proz_iO] OR NOT $IN[I_KL1_Proz_niO] AND $IN[I_KL1_Proz_iO]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          $FLAG[F_KL1_Sammel]=FALSE
+          $OUT[O_KL1_PK_start]=FALSE
+          ;
+          $TIMER_STOP[10]=TRUE
+          $TIMER[10]=-5
+          $TIMER_STOP[10]=FALSE           
+          ;FOLD WARTE BIS !E1537 & !E1538 + T10;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E1537 & !E1538 + T10,3:  WBOASG
+            $LOOP_MSG[]="!E1537 & !E1538 + T10"
+            $LOOP_CONT=TRUE
+          WAIT FOR (NOT $IN[I_KL1_Proz_niO] AND NOT $IN[I_KL1_Proz_iO]) OR ($TIMER[10]>=0) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          $FLAG[F_KL1_Sammel]=($TIMER[10]>=0)
+          ;
+          ;FOLD WARTE BIS !E1537 & !E1538;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E1537 & !E1538,3:  WBOASG
+            $LOOP_MSG[]="!E1537 & !E1538"
+            $LOOP_CONT=TRUE
+          WAIT FOR (NOT $IN[I_KL1_Proz_niO] AND NOT $IN[I_KL1_Proz_iO]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          $FLAG[F_KL1_Sammel]=FALSE         
+        ELSE
+          ;FOLD WARTE BIS T12;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS T12,3:  WBOASG
+            $LOOP_MSG[]="T12"
+            $LOOP_CONT=TRUE
+          WAIT FOR ($TIMER[12]>=0) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+         ;ENDFOLD
+        ENDIF 
+;        
+      CASE 2  ;Auswahl Klebesteuerung 2
+        IF $IN[I_FT_o_BT] THEN
+          $TIMER_STOP[12]=TRUE
+          $TIMER[12]=PROCPAR[17]
+          $TIMER_STOP[12]=FALSE
+        ENDIF
+        ;
+        IF NOT $IN[I_FT_o_BT] THEN
+          $FLAG[F_KL2_Sammel]=NOT $IN[I_KL2_Sammel]
+          ;FOLD WARTE BIS E1588;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1588,3:  WBOASG
+            $LOOP_MSG[]="E1588"
+            $LOOP_CONT=TRUE
+          WAIT FOR $IN[I_KL2_Sammel] OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          ;
+          $FLAG[F_KL2_Sammel]=FALSE
+          $OUT[O_KL2_PK_start]=FALSE
+          ;FOLD WARTE BIS A4037;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A4037,3:  WBOASG
+            $LOOP_MSG[]="A4037"
+            $LOOP_CONT=TRUE
+          WAIT FOR $OUT[O_R_steht] OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          ;
+          $FLAG[F_KL2_Sammel]=$IN[I_KL2_Proz_niO] OR $IN[I_KL2_Proz_iO]
+          ;FOLD WARTE BIS !E1601 & !E1602;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E1601 & !E1602,3:  WBOASG
+            $LOOP_MSG[]="!E1601 & !E1602"
+            $LOOP_CONT=TRUE
+          WAIT FOR NOT $IN[I_KL2_Proz_niO] AND NOT $IN[I_KL2_Proz_iO] OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          ;
+          $OUT[O_KL2_PK_start]=TRUE
+          $TIMER_STOP[10]=TRUE
+          $TIMER[10]=-5
+          $TIMER_STOP[10]=FALSE           
+          ;FOLD WARTE BIS E1601 & !E1602 + !E1601 & E1602 + T10;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1601 & !E1602 + !E1601 & E1602 + T10,3:  WBOASG
+            $LOOP_MSG[]="E1601 & !E1602 + !E1601 & E1602 + T10"
+            $LOOP_CONT=TRUE
+          WAIT FOR ($IN[I_KL2_Proz_niO] AND NOT $IN[I_KL2_Proz_iO] OR NOT $IN[I_KL2_Proz_niO] AND $IN[I_KL2_Proz_iO]) OR ($TIMER[10]>=0) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          $FLAG[F_KL2_Sammel]=($TIMER[10]>=0)
+          ;
+          ;FOLD WARTE BIS E1601 & !E1602 + !E1601 & E1602;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1601 & !E1602 + !E1601 & E1602,3:  WBOASG
+            $LOOP_MSG[]="E1601 & !E1602 + !E1601 & E1602"
+            $LOOP_CONT=TRUE
+          WAIT FOR ($IN[I_KL2_Proz_niO] AND NOT $IN[I_KL2_Proz_iO] OR NOT $IN[I_KL2_Proz_niO] AND $IN[I_KL2_Proz_iO]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          $FLAG[F_KL2_Sammel]=FALSE
+          $OUT[O_KL2_PK_start]=FALSE
+          ;
+          $TIMER_STOP[10]=TRUE
+          $TIMER[10]=-5
+          $TIMER_STOP[10]=FALSE            
+          ;FOLD WARTE BIS !E1601 & !E1602 + T10;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E1601 & !E1602 + T10,3:  WBOASG
+            $LOOP_MSG[]="!E1601 & !E1602 + T10"
+            $LOOP_CONT=TRUE
+          WAIT FOR (NOT $IN[I_KL2_Proz_niO] AND NOT $IN[I_KL2_Proz_iO]) OR ($TIMER[10]>=0) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          $FLAG[F_KL2_Sammel]=($TIMER[10]>=0)
+          ;
+          ;FOLD WARTE BIS !E1601 & !E1602;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E1601 & !E1602,3:  WBOASG
+            $LOOP_MSG[]="!E1601 & !E1602"
+            $LOOP_CONT=TRUE
+          WAIT FOR (NOT $IN[I_KL2_Proz_niO] AND NOT $IN[I_KL2_Proz_iO]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          $FLAG[F_KL2_Sammel]=FALSE         
+        ELSE
+          ;FOLD WARTE BIS T12;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS T12,3:  WBOASG
+            $LOOP_MSG[]="T12"
+            $LOOP_CONT=TRUE
+          WAIT FOR ($TIMER[12]>=0) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+         ;ENDFOLD
+        ENDIF 
+;        
+      CASE 3  ;Auswahl Klebesteuerung 3
+        IF $IN[I_FT_o_BT] THEN
+          $TIMER_STOP[12]=TRUE
+          $TIMER[12]=PROCPAR[17]
+          $TIMER_STOP[12]=FALSE
+        ENDIF
+        ;
+        IF NOT $IN[I_FT_o_BT] THEN
+          $FLAG[F_KL3_Sammel]=NOT $IN[I_KL3_Sammel]
+          ;FOLD WARTE BIS E1652;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1652,3:  WBOASG
+            $LOOP_MSG[]="E1652"
+            $LOOP_CONT=TRUE
+          WAIT FOR $IN[I_KL3_Sammel] OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          ;
+          $FLAG[F_KL3_Sammel]=FALSE
+          $OUT[O_KL3_PK_start]=FALSE
+          ;FOLD WARTE BIS A4037;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A4037,3:  WBOASG
+            $LOOP_MSG[]="A4037"
+            $LOOP_CONT=TRUE
+          WAIT FOR $OUT[O_R_steht] OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          ;
+          $FLAG[F_KL3_Sammel]=$IN[I_KL3_Proz_niO] OR $IN[I_KL3_Proz_iO]
+          ;FOLD WARTE BIS !E1665 & !E1666;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E1665 & !E1666,3:  WBOASG
+            $LOOP_MSG[]="!E1665 & !E1666"
+            $LOOP_CONT=TRUE
+          WAIT FOR NOT $IN[I_KL3_Proz_niO] AND NOT $IN[I_KL3_Proz_iO] OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          ;
+          $OUT[O_KL3_PK_start]=TRUE
+          $TIMER_STOP[10]=TRUE
+          $TIMER[10]=-5
+          $TIMER_STOP[10]=FALSE            
+          ;FOLD WARTE BIS E1665 & !E1666 + !E1665 & E1666 + T10;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1665 & !E1666 + !E1665 & E1666 + T10,3:  WBOASG
+            $LOOP_MSG[]="E1665 & !E1666 + !E1665 & E1666 + T10"
+            $LOOP_CONT=TRUE
+          WAIT FOR ($IN[I_KL3_Proz_niO] AND NOT $IN[I_KL3_Proz_iO] OR NOT $IN[I_KL3_Proz_niO] AND $IN[I_KL3_Proz_iO]) OR ($TIMER[10]>=0) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          $FLAG[F_KL3_Sammel]=($TIMER[10]>=0)
+          ;
+          ;FOLD WARTE BIS E1665 & !E1666 + !E1665 & E1666;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1665 & !E1666 + !E1665 & E1666,3:  WBOASG
+            $LOOP_MSG[]="E1665 & !E1666 + !E1665 & E1666"
+            $LOOP_CONT=TRUE
+          WAIT FOR ($IN[I_KL3_Proz_niO] AND NOT $IN[I_KL3_Proz_iO] OR NOT $IN[I_KL3_Proz_niO] AND $IN[I_KL3_Proz_iO]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          $FLAG[F_KL3_Sammel]=FALSE
+          $OUT[O_KL3_PK_start]=FALSE
+          ;
+          $TIMER_STOP[10]=TRUE
+          $TIMER[10]=-5
+          $TIMER_STOP[10]=FALSE           
+          ;FOLD WARTE BIS !E1665 & !E1666 + T10;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E1665 & !E1666 + T10,3:  WBOASG
+            $LOOP_MSG[]="!E1665 & !E1666 + T10"
+            $LOOP_CONT=TRUE
+          WAIT FOR (NOT $IN[I_KL3_Proz_niO] AND NOT $IN[I_KL3_Proz_iO]) OR ($TIMER[10]>=0) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          $FLAG[F_KL3_Sammel]=($TIMER[10]>=0)
+          ;
+          ;FOLD WARTE BIS !E1665 & !E1666;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E1665 & !E1666,3:  WBOASG
+            $LOOP_MSG[]="!E1665 & !E1666"
+            $LOOP_CONT=TRUE
+          WAIT FOR (NOT $IN[I_KL3_Proz_niO] AND NOT $IN[I_KL3_Proz_iO]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+          ;ENDFOLD
+          $FLAG[F_KL3_Sammel]=FALSE         
+        ELSE
+          ;FOLD WARTE BIS T12;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS T12,3:  WBOASG
+            $LOOP_MSG[]="T12"
+            $LOOP_CONT=TRUE
+          WAIT FOR ($TIMER[12]>=0) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+          $LOOP_MSG[]="                                                                                                                                "
+         ;ENDFOLD
+        ENDIF 
+      DEFAULT
+        Kleben_Msg(1,#QuitMsg) ;P1 falscher Wert
+    ENDSWITCH ;von PAR1
+;
+    ;ENDFOLD (Trig)
+;
+;-----------------------------------------------------------
+  CASE #USR_MAIN
+    ;FOLD Main
+;
+;
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------------
+  DEFAULT
+;  
+  ENDSWITCH
+END
+;
+;ENDFOLD (Kleben Interface)
+;
+;-----------------------------------------------------------
+;FOLD KL_Meldungen
+DEF Kleben_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr
+DECL KLR_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "KL_R_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF ((n_KLR_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+      USER_MSG.MSG_TXT[]="P1: Falsche Auswahl"
+    CASE 2
+      USER_MSG.MSG_TXT[]="P2: Falsche Auswahl"
+    CASE 3
+      USER_MSG.MSG_TXT[]="P3: Falsche Auswahl"
+    CASE 4
+	   USER_MSG.MSG_TXT[]="P4: Falsche Auswahl"
+    CASE 5
+	   USER_MSG.MSG_TXT[]="P5: Falsche Auswahl"
+    CASE 6
+	   USER_MSG.MSG_TXT[]="P6: Falsche Auswahl"      
+    DEFAULT
+      USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_KLR_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_KLR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      While ( Exists_KrlMsg(n_KLR_Handle[msg_nr]) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      Endwhile
+    CASE #NotifyMsg
+      n_KLR_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_KLR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (KL_Meldungen)
+

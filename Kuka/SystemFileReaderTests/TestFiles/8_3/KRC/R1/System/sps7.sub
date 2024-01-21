@@ -1,0 +1,25 @@
+&ACCESS RVO
+&PARAM TPVW_VERSION = 8.3.18
+DEF Sps7( )
+; FOLD ;%{H} %MKUKATPVW
+; FOLD Call of initalisation makro
+DECL INT ADV_RESULT, OFFSET
+DECL BOOL MAKRO_ADV
+DECL STATE_T STATE
+MAKRO_ADV = FALSE
+SWITCH  MAKRONUMBERSPECIALRUN  ;-- CALL MAKRO --
+CASE 57
+ADV_RESULT = MAKRO57(MAKRO_ADV)
+DEFAULT
+$LOOP_MSG[]="                                                                                                                                "
+OFFSET = 0
+SWRITE($LOOP_MSG[], STATE, OFFSET,"Makro%D ist nicht vorhanden", MAKRONUMBERSPECIALRUN)
+HALT
+$LOOP_MSG[]="                                                                                                                                "
+ENDSWITCH
+SPECIALRUNFINISHED = TRUE
+; this line is necessary because otherwise the unselect in sps.sub does not work properly and modules are still linked
+WAIT FOR FALSE
+;ENDFOLD
+END
+;ENDFOLD

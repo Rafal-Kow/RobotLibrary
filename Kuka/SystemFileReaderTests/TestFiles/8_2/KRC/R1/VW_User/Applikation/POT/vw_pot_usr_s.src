@@ -1,0 +1,123 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/POT
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEF VW_POT_USR_S( )
+; 
+;*-----------------------------------------------------*
+;* Technologiepaket Docking                            *
+;*                                                     *
+;* Konzernstandard                                     *
+;* Bearbeiter: Chr. Eisenknappl I/PG-C61               *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.09.14 CE                                       *
+;* 2017.02.04 MBA LOOP Pot_no_val=FALSE gesetzt        *
+;*                                                     *
+;*-----------------------------------------------------*
+; 
+END
+;
+;FOLD INIT POT 
+GLOBAL DEF POT_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_POT.Name[]="KS24.02.004_170204"
+;ENDFOLD
+;
+;FOLD Vorbesetzung Meldungsausgabe
+FOR i = 1 TO 100
+  n_POTS_Handle[i]=-1
+  n_POTR_Handle[i]=-1
+ENDFOR
+;ENDFOLD
+;
+;
+END
+;
+;-----------------------------------------------------------
+;
+;FOLD SAW POT 
+GLOBAL DEF POT_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD RESET POT 
+GLOBAL DEF POT_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD CANCEL POT 
+GLOBAL DEF POT_CANCEL( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD LOOP POT
+GLOBAL DEF POT_LOOP( )
+INT i
+;
+IF ((PROCPAR[1]>=0) OR (PROCPAR[2]>=0) OR (PROCPAR[3]>=0) OR (PROCPAR[4]>=0) OR (PROCPAR[10]>=0) OR (PROCPAR[15]>=0) OR (PROCPAR[16]>=0) OR (PROCPAR[17]>=0) OR (PROCPAR[18]>=0) OR (PROCPAR[20]>=0) OR (PROCPAR[21]>=0) OR (PROCPAR[22]>=0) OR (PROCPAR[23]>=0) OR (PROCPAR[24]>=0) OR (PROCPAR[25]>=0) OR (PROCPAR[26]>=0) OR (PROCPAR[27]>=0) OR (PROCPAR[30]>=0) OR (PROCPAR[31]>=0) OR (PROCPAR[45]>=0) OR (PROCPAR[35]>=0) OR (PROCPAR[40]>=0) OR (PROCPAR[41]>=0) OR (PROCPAR[42]>=0) OR (PROCPAR[50]>=0) OR (PROCPAR[51]>=0) OR (PROCPAR[55]>=0)) AND NOT (POT_no_val==TRUE) THEN
+    POT_no_val=FALSE
+ENDIF
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD POT Meldungen
+DEF POT_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr, Answer
+DECL POTS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+BOOL Result
+;
+USER_MSG = { Modul[] "POT_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset FALSE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF ((n_POTS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 2
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 3
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+    n_POTS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+    n_POTS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+    n_POTS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+    n_POTS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (POT Meldungen)

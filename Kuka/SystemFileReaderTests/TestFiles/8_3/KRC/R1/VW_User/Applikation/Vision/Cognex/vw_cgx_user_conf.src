@@ -1,0 +1,16 @@
+&ACCESS  RV
+&COMMENT KS_1.19
+&PARAM DISKPATH = VW_User/Applikation/Vision/Cognex
+&PARAM EDITMASK = vw_cgx_user_conf
+&PARAM TPVW_VERSION = 8.3.8
+&REL 36
+DEF vw_cgx_user_conf( )
+;
+;*---------------------------------------------*
+;* Cognex                                      *
+;* Version 1.0     / VKRC 4                    *
+;* Bearbeitet am:                              *
+;* 05.02.2015 NI/DB neu erstellt               *
+;*---------------------------------------------*
+;
+END

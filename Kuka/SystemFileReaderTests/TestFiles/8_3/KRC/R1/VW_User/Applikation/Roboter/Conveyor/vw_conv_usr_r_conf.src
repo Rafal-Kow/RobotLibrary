@@ -1,0 +1,14 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Roboter/Conveyor
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vw_usr_rv
+&PARAM TPVW_VERSION = 8.3.8
+&PARAM EDITMASK = vw_usr_r
+&REL 129
+DEF vw_conv_usr_r_conf()
+;
+;*---------------------------------------------*
+;* Conveyor                                    *
+;* Version VKRC 4                              *
+;*---------------------------------------------*
+;
+END

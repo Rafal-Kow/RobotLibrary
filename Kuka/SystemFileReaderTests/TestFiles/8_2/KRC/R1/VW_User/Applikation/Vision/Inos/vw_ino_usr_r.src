@@ -1,0 +1,2703 @@
+&ACCESS  R
+&COMMENT KS_1.2
+&PARAM DISKPATH = VW_User/Applikation/Vision/Inos
+&PARAM TPVW_VERSION = 8.1.8
+&REL 1
+DEF vw_ino_usr_r( )
+;
+;*---------------------------------------------*
+;* INOS                                        *
+;* Version 1.0.0  / VKRC 4                     *
+;* Bearbeitet am:                              *
+;* 25.08.2010 HF / MG                          *
+;* 03.02.2012 MAT (inos)                       *
+;* 24.04.2012 MAT (inos)                       *
+;* 12.07.2012 MAT (inos)                       *
+;*            2-10 - Ueberpruefung Nullwerte   *
+;*---------------------------------------------*
+;
+END
+;
+;FOLD Kommunikation, Flags & Variablen INOS zuruecksetzen
+GLOBAL DEF INOS_ResetSignals()
+  O_INO_CTRL = 0
+  ;Alle Flags ruecksetzen
+  FOR N_INO_Flag = 495 TO 507
+    IF N_INO_Flag <> F_INO_ER_LIF THEN
+      $FLAG[N_INO_Flag]=FALSE
+    ENDIF
+  ENDFOR
+  ;Base zuruecksetzen
+  BASE_DATA[N_INO_BSNR] = FR_INO_NLLPS
+END
+;ENDFOLD (Kommunikation, Flags & Variablen INOS zuruecksetzen)
+;
+;------------------------------------------------------
+;FOLD INOS Interface
+;
+;
+GLOBAL DEF INOS_Intrfc(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+  DECL VW_USER_CMD USER_CMD
+  INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+  DECL INT  N_INO_CMDSEL
+  N_INO_CMDSEL = 0
+  IF USER_CMD <> #USR_INIT THEN
+    SWITCH CMD_SEL
+    CASE 806, 807   
+      N_INO_CMDSEL = CMD_SEL
+    DEFAULT
+      $FLAG[F_INO_ER] = TRUE
+      RETURN
+    ENDSWITCH
+  ENDIF
+  
+  SWITCH USER_CMD
+  CASE #USR_INIT
+    ;FOLD Init
+    O_INO_CTRL = 0;
+    ;Alle Flags ruecksetzen
+    FOR N_INO_Flag = 495 TO 507
+       IF N_INO_Flag <> F_INO_ER_LIF THEN
+        $FLAG[N_INO_Flag]=FALSE
+       ENDIF
+    ENDFOR
+    ;Base und Tool-Daten sichern
+    FR_INO_BTOOL = TOOL_DATA[N_INO_TOOLNR]
+    BASE_DATA[N_INO_BSNR] = FR_INO_NLLPS
+    ;ENDFOLD (Init)
+  CASE #USR_ADV
+    ;FOLD Advance
+    SWITCH N_INO_CMDSEL
+    CASE 806, 807
+      Ino_RF(#USR_ADV,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    DEFAULT
+      ; fehlerhafte Gruppennummer an inos uebergeben
+      N_INO_USERFB = INO_MsgIO (#NotifyMsg,#CMDERR,CMD_SEL) 
+      RETURN
+    ENDSWITCH
+    ;ENDFOLD (Advance)
+  CASE #USR_TRIG
+    ;FOLD Trig
+    SWITCH N_INO_CMDSEL
+    CASE 806, 807
+      Ino_RF(#USR_TRIG,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    DEFAULT
+      ; fehlerhafte Gruppennummer an inos uebergeben
+      N_INO_USERFB = INO_MsgIO (#NotifyMsg,#CMDERR,CMD_SEL) 
+      RETURN
+    ENDSWITCH
+    ;ENDFOLD (Trig)
+  CASE #USR_MAIN
+    ;FOLD Main
+    SWITCH N_INO_CMDSEL
+    CASE 806, 807
+      Ino_RF(#USR_MAIN,CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6)
+    DEFAULT
+      ; fehlerhafte Gruppennummer an inos uebergeben
+      N_INO_USERFB = INO_MsgIO (#NotifyMsg,#CMDERR,CMD_SEL) 
+      RETURN
+    ENDSWITCH
+
+    ;ENDFOLD (Main)
+  DEFAULT
+    ; unbekannte User_CMD an inos uebergeben
+    N_INO_USERFB = INO_MsgIO (#NotifyMsg,#USRERR)
+    RETURN
+  ENDSWITCH
+END
+;
+;*****************************
+;FOLD INOS RoboterFuehrung
+;
+GLOBAL DEF Ino_RF(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+  DECL VW_USER_CMD USER_CMD
+  INT CMD_SEL, PAR1, PAR2, PAR3, PAR4, PAR5, PAR6
+  BOOL B_EX_TRNSTP
+;
+  SWITCH CMD_SEL
+  CASE 806 ; Hauptgruppe 7, Untergruppe 6: HPPOS
+    B_INO_VALID = FALSE
+    ;FOLD Gueltige Parameterkombinationen HPPOS
+    ; Abfangen ungueltiger Parameterkombinationen 
+    SWITCH PAR1
+    CASE 1
+      SWITCH PAR2
+      CASE 1,2,3,4,7,10,11
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH
+    CASE 2
+      SWITCH PAR2
+      CASE 2,3,4,5,10
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH
+    CASE 3
+      SWITCH PAR2
+      CASE 1,2,3,4,5,12,13
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH
+    CASE 4
+      SWITCH PAR2
+      CASE 1,2,3
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH          
+    CASE 6
+      SWITCH PAR2
+      CASE 8,9,10
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH    
+    CASE 7
+      SWITCH PAR2
+      CASE 8,9,10
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH   
+    CASE 8
+      SWITCH PAR2
+      CASE 5
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH 
+    DEFAULT
+      B_INO_VALID = FALSE
+    ENDSWITCH
+    ;ENDFOLD (Gueltige Parameterkombinationen HPPOS)
+  CASE 807 ; Hauptgruppe 7, Untergruppe 7: HPFIT
+    B_INO_VALID = FALSE
+    ;FOLD Gueltige Parameterkombinationen HPFIT
+    ; Abfangen ungueltiger Parameterkombinationen
+    SWITCH PAR1
+    CASE 1
+      SWITCH PAR2
+      CASE 1,2,3,8
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH
+    CASE 2
+      SWITCH PAR2
+      CASE 2,3,4,5,10
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH
+    CASE 3
+      SWITCH PAR2
+      CASE 1,2,3,5
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH
+    CASE 4
+      SWITCH PAR2
+      CASE 2,3
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH       
+    CASE 5
+      SWITCH PAR2
+      CASE 2,3
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH       
+    CASE 6
+      SWITCH PAR2
+      CASE 8,9,10
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH    
+    CASE 7
+      SWITCH PAR2
+      CASE 9,10
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH   
+    CASE 8
+      SWITCH PAR2
+      CASE 5
+        B_INO_VALID = TRUE
+      DEFAULT
+        B_INO_VALID = FALSE
+      ENDSWITCH          
+    DEFAULT
+      B_INO_VALID = FALSE
+    ENDSWITCH
+    ;ENDFOLD (Gueltige Parameterkombinationen HPFit)           
+  DEFAULT
+    B_INO_VALID = FALSE
+  ENDSWITCH
+;
+  IF (NOT B_INO_VALID) THEN
+    ;FOLD Falsche Parameterkombination     
+    N_INO_USERFB   = INO_MsgIO(#NotifyMsg,#ERRPARMS,PAR1,PAR2)
+    $FLAG[F_INO_ER] = TRUE 
+    GOTO END_RF
+    ;ENDFOLD (Falsche Parameterkombination)
+  ENDIF
+;
+  SWITCH USER_CMD
+  CASE #USR_ADV
+    ;FOLD Advance    
+    ; Aufrufparameter in inos Variablen speichern
+    NA_INO_USRPR[1] = PAR1
+    NA_INO_USRPR[2] = PAR2
+    NA_INO_USRPR[3] = PAR3
+    NA_INO_USRPR[4] = PAR4
+    NA_INO_USRPR[5] = PAR5 
+    NA_INO_USRPR[6] = PAR6
+    ; Unterscheidung nach PAR1 - FUNKTION (Modus)
+    SWITCH PAR1
+    CASE 5     ;SWITCH PAR1 = 5 : Statusanfrage
+      ;FOLD Statusanfrage und Bewegungsgrenzen
+      ; Aktuelle Position uebernehmen
+      NA_INO_USRPR[1] = 1     ; inos intern: setup grip/fit
+      E_INO_ACTPS = $pos_act;
+      ; Anfrage senden
+      IOWRITE(5000)
+      ; Warten auf Rueckmeldung
+      IOREAD(5000)
+      ;Unterscheidung nach PAR2 (Funktion)
+      SWITCH PAR2
+      CASE 2      ;SWITCH PAR2 = 2 : Greifen
+        E_INO_MXGRIP.X = E_INO_ZPS.X 
+        E_INO_MXGRIP.Y = E_INO_ZPS.Y 
+        E_INO_MXGRIP.Z = E_INO_ZPS.Z 
+        E_INO_MXGRIP.A = E_INO_ZPS.A 
+        E_INO_MXGRIP.B = E_INO_ZPS.B 
+        E_INO_MXGRIP.C = E_INO_ZPS.C 
+      CASE 3      ;SWITCH PAR2 = 3 : Fuegen
+        E_INO_MXFIT.X = E_INO_ZPS.X 
+        E_INO_MXFIT.Y = E_INO_ZPS.Y 
+        E_INO_MXFIT.Z = E_INO_ZPS.Z 
+        E_INO_MXFIT.A = E_INO_ZPS.A 
+        E_INO_MXFIT.B = E_INO_ZPS.B 
+        E_INO_MXFIT.C = E_INO_ZPS.C    
+      DEFAULT
+      ENDSWITCH
+      ; Initialisierung Roboter Operationsflags 
+      $FLAG[F_INO_RFOK] = FALSE
+      $FLAG[F_INO_RFNOK] = FALSE
+      ;ENDFOLD (Statusanfrage und Bewegungsgrenzen)
+    DEFAULT
+    ENDSWITCH
+    ;ENDFOLD (Advance)
+  CASE #USR_TRIG
+    ;FOLD Trig
+    ; Aufrufparameter in inos Variablen speichern
+    NA_INO_USRPR[1] = PAR1
+    NA_INO_USRPR[2] = PAR2
+    NA_INO_USRPR[3] = PAR3
+    NA_INO_USRPR[4] = PAR4
+    NA_INO_USRPR[5] = PAR5
+    NA_INO_USRPR[6] = PAR6
+    N_INO_TOOLNR = PAR5
+
+    ; Unterscheidung nach PAR1 - FUNKTION (Modus)
+    SWITCH PAR1
+    CASE 1    ;SWITCH PAR1 = 1 : Einrichten
+      ;FOLD 1 Einrichten  
+      ; Beim Training wird immer gewartet bis Roboter steht
+      WAIT FOR $ROB_STOPPED
+      ; Unterscheidung nach PAR2 (Funktion)
+      SWITCH PAR2
+      ;
+      CASE 1    ; SWITCH PAR2 = 1 : Training
+        ;FOLD 1-1 Einrichten Training
+        ; Startposition speichern	
+        FR_INO_STRPS = $POS_ACT
+        REPEAT
+          NA_INO_USRPR[5] = 1
+          NA_INO_USRPR[6] = PAR6
+          ; Trainingsdaten abfragen
+          IOWRITE (3000) 
+          ; Warten auf Daten
+          IOREAD (50000)
+          IF ($FLAG[F_INO_ER] == FALSE) THEN
+            ; Abfahren der Trainingspunkte
+            NA_INO_USRPR[5] = 2
+            NA_INO_USRPR[6] = 0
+
+            ;FOLD Alle Trainingspositionen anfahren
+            FOR N_INO_IDOF = 1 TO 6
+              FR_INO_TMPPS = FR_INO_NLLPS
+              B_EX_TRNSTP = FALSE
+              ; Je nach einzelnem Freiheitsgrad
+              ; Berechne Anfangsposition
+              SWITCH N_INO_IDOF
+              CASE 1      ;SWITCH DOF = 1 : X
+                IF (E_INO_ZPS.X-FR_INO_ZBS.X) > 0.1 THEN
+                  FR_INO_TMPPS.X = FR_INO_ZBS.X
+                  B_EX_TRNSTP = TRUE
+                ENDIF
+              CASE 2      ;SWITCH DOF = 2 : Y
+                IF (E_INO_ZPS.Y-FR_INO_ZBS.Y) > 0.1 THEN
+                  FR_INO_TMPPS.Y = FR_INO_ZBS.Y
+                  B_EX_TRNSTP = TRUE                    
+                ENDIF
+              CASE 3      ;SWITCH DOF = 3 : Z
+                IF (E_INO_ZPS.Z-FR_INO_ZBS.Z) > 0.1 THEN								
+                  FR_INO_TMPPS.Z = FR_INO_ZBS.Z
+                  B_EX_TRNSTP = TRUE                    
+                ENDIF
+              CASE 4     ;SWITCH DOF = 4 : A
+                IF (E_INO_ZPS.A-FR_INO_ZBS.A) > 0.1 THEN
+                  FR_INO_TMPPS.A = FR_INO_ZBS.A
+                  B_EX_TRNSTP = TRUE                    
+                ENDIF
+              CASE 5      ;SWITCH DOF = 5 : B
+                IF (E_INO_ZPS.B-FR_INO_ZBS.B) > 0.1 THEN
+                  FR_INO_TMPPS.B = FR_INO_ZBS.B
+                  B_EX_TRNSTP = TRUE                    
+                ENDIF
+              CASE 6      ;SWITCH DOF = 6 : C
+                IF (E_INO_ZPS.C-FR_INO_ZBS.C) > 0.1 THEN
+                  FR_INO_TMPPS.C = FR_INO_ZBS.C
+                  B_EX_TRNSTP = TRUE                    
+                ENDIF   
+              DEFAULT
+              ENDSWITCH
+              IF (B_EX_TRNSTP == TRUE) THEN
+                IF (N_INO_IDOF <> 1) THEN
+                  NA_INO_USRPR[6] = NA_INO_USRPR[6]+1    
+                ENDIF
+                ; Anfangsposition pro Freiheitsgrad anfahren                    
+                LIN $POS_ACT:FR_INO_TMPPS 
+                ; Trainingsposition melden
+                IOWRITE (3000)
+                ; Warten auf Bestaetigung 
+                IOREAD (50000)
+                IF ((NA_INO_INPR[6] == 0) OR ($FLAG[F_INO_ER]==TRUE)) THEN
+                  ; Im Falle eines Fehlers Fehlermeldung und gehe zu END_TRAIN
+                  N_INO_USERFB = INO_MsgIO(#DlgMsg, #TRAINERR)
+                  HALT
+                  $FLAG[F_INO_ER]=TRUE
+                  GOTO END_TRAIN
+                ENDIF
+                FR_INO_TMPPS = FR_INO_NLLPS
+                SWITCH N_INO_IDOF
+                CASE 1      ;SWITCH DOF = 1 : X                 
+                  R_INO_DELTA = (E_INO_ZPS.X-FR_INO_ZBS.X)/(NA_INO_INPR[5]-1)						  
+                  FR_INO_TMPPS.X = R_INO_DELTA
+                CASE 2
+                  R_INO_DELTA = (E_INO_ZPS.Y-FR_INO_ZBS.Y)/(NA_INO_INPR[5]-1)
+                  FR_INO_TMPPS.Y = R_INO_DELTA
+                CASE 3
+                  R_INO_DELTA = (E_INO_ZPS.Z-FR_INO_ZBS.Z)/(NA_INO_INPR[5]-1)
+                  FR_INO_TMPPS.Z = R_INO_DELTA
+                CASE 4
+                  R_INO_DELTA = (E_INO_ZPS.A-FR_INO_ZBS.A)/(NA_INO_INPR[5]-1)
+                  FR_INO_TMPPS.A = R_INO_DELTA
+                CASE 5
+                  R_INO_DELTA = (E_INO_ZPS.B-FR_INO_ZBS.B)/(NA_INO_INPR[5]-1)
+                  FR_INO_TMPPS.B = R_INO_DELTA
+                CASE 6
+                  R_INO_DELTA = (E_INO_ZPS.C-FR_INO_ZBS.C)/(NA_INO_INPR[5]-1)
+                  FR_INO_TMPPS.C = R_INO_DELTA
+                DEFAULT
+                ENDSWITCH
+                FOR N_INO_ISTEP = 1 TO (NA_INO_INPR[5]-1)
+                  NA_INO_USRPR[6] = NA_INO_USRPR[6]+1
+                  ; Freiheitsgrad-Unterpositionen anfahren
+                  LIN $POS_ACT:FR_INO_TMPPS 
+                  ; Trainingsposition melden
+                  IOWRITE (3000)
+                  ; Warten auf Bestaetigung 
+                  IOREAD (50000)
+                  IF ((NA_INO_INPR[6] == 0) OR ($FLAG[F_INO_ER]==TRUE)) THEN
+                    ; Im Falle eines Fehlers Fehlermeldung und gehe zu END_TRAIN
+                    N_INO_USERFB = INO_MsgIO(#DlgMsg, #TRAINERR)
+                    HALT
+                    $FLAG[F_INO_ER]=TRUE
+                    GOTO END_TRAIN
+                  ENDIF
+                ENDFOR
+                ; Auf Startposition zurueckkehren
+                LIN FR_INO_STRPS
+              ENDIF 
+            ENDFOR ; ENDFOR N_INO_IDOF = 1 TO 6, Training beendet
+            ;ENDFOLD (Alle Trainingspositionen anfahren)
+            NA_INO_USRPR[5] = 3
+            IOWRITE (3000)
+            ; Warten auf Bestaetigung 
+            IOREAD (50000)
+          ELSE
+            NA_INO_INPR[6] = 1;
+          ENDIF
+END_TRAIN:
+          ; Roboter zur Anfangsposition
+          LIN FR_INO_STRPS
+          IF (($FLAG[F_INO_ER] ==FALSE)) THEN
+            ; Kein Fehler 
+            N_INO_USERFB = INO_MsgIO (#QuitMsg, #TRAINOK)
+          ELSE
+            ; Fehler, Training muss wiederholt werden 
+            N_INO_USERFB = INO_MsgIO (#DlgMsg, #ERRGENTRAIN)
+          ENDIF               
+        UNTIL (($FLAG[F_INO_ER] == FALSE) OR (N_INO_USERFB <> 1))
+        ;ENDFOLD (1-1 Einrichten Training)
+      ;
+      CASE 2, 3 ; SWITCH PAR2 = 2,3 : Nominalaufnahme Greifen & Fuegen
+        ;FOLD 1-2 Einrichten (Nominalaufnahme) Greifen
+        NA_INO_USRPR[1] = 3
+        NA_INO_USRPR[2] = 5
+        NA_INO_USRPR[5] = 1
+        ; Einrichtfunktion starten
+        IOWRITE (3000) 
+        IF ($FLAG[F_INO_ER] == FALSE) THEN
+          IOREAD (50000)
+        ENDIF
+        IF (NA_INO_INPR[5]==2) THEN
+          ; Fehler bei der Merkmalsextraktion
+          N_INO_USERFB = INO_MsgIO (#QuitMsg, #ERRFEATURE)
+        ENDIF
+        IF ($FLAG[F_INO_ER] == TRUE) THEN
+          ; Fehler bei der PC-Roboter Kommunikation
+          N_INO_USERFB = INO_MsgIO (#QuitMsg, #OERR)
+        ENDIF
+        IF (NA_INO_INPR[5]<>2) AND ($FLAG[F_INO_ER] == FALSE) THEN
+          ; Messung erfolgreich, Benutzer sollte jedoch am PC auch visuell ueberpruefen
+          N_INO_USERFB = INO_MsgIO (#QuitMsg, #ERRROT)
+        ENDIF
+        ;ENDFOLD (1-2 Einrichten Greifen)
+      ;
+      CASE 4    ; SWITCH PAR2 = 4 : Serie
+        ;FOLD 1-4 Einrichten Serie
+        ; Ausgaenge zuruecksetzen
+        $FLAG[F_INO_ERMMOV]=FALSE
+        $FLAG[F_INO_ERFEAT]=FALSE
+        $FLAG[F_INO_ERF_GR]=FALSE
+        NA_INO_USRPR[1] = 3
+        NA_INO_USRPR[5] = 2
+        ; Anfrage senden
+        IOWRITE (3000)
+        ; Warten auf Bestaetigung 
+        IOREAD (50000)
+        ; Unterscheidung nach Rueckmeldung vom PC
+        SWITCH NA_INO_INPR[5]
+        CASE 1       ; SWITCH NA_INO_INPR[5] = 1 : Messung erfolgreich
+          ; Korrekturwerte auf BASE addieren
+          BASE_DATA[N_INO_BSNR] = BASE_DATA[N_INO_BSNR]:FR_INO_ZBS
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=FALSE
+        CASE 6       ; SWITCH NA_INO_INPR[5] = 6: Zuwenig Merkmale erkannt
+          N_INO_USERFB = INO_MsgIO(#NotifyMsg, #ERRFEATURE)
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ERFEAT]=TRUE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        CASE 7       ; SWITCH NA_INO_INPR[5] = 7 : Regelschritt zu gross
+          N_INO_USERFB = INO_MsgIO(#NotifyMsg, #ERRTHRES)
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ERMMOV]=TRUE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        DEFAULT
+          ;FOLD Falsche Rueckantwort			 
+
+          ;ENDFOLD Falsche Rueckantwort
+        ENDSWITCH
+        ;ENDFOLD (1-4 Einrichten Serie)
+      ;
+      CASE 7    ; SWITCH PAR2 = 7 : Kalibrierplatte
+        ;FOLD 1-7 Einrichten Kalibrierplatte
+        ; Ausgaenge zuruecksetzen
+        $FLAG[F_INO_ERMMOV]=FALSE
+        $FLAG[F_INO_ERFEAT]=FALSE
+        $FLAG[F_INO_ERF_GR]=FALSE        
+        NA_INO_USRPR[1]=3
+        NA_INO_USRPR[2]=4
+        NA_INO_USRPR[5]=1
+        ; Anfrage senden
+        IOWRITE (3000)
+        ; Warten auf Bestaetigung 
+        IOREAD (50000)
+        ; Unterscheidung nach Rueckmeldung vom PC           
+        SWITCH NA_INO_INPR[5]
+        CASE 1       ; SWITCH NA_INO_INPR[5] = 1 : Messung erfolgreich
+          ; Korrekturwerte merken für Robotertausch
+          FR_INO_BFFST = FR_INO_ZBS
+          ; Korrekturwerte auf BASE addieren
+          BASE_DATA[N_INO_BSNR] = BASE_DATA[N_INO_BSNR]:FR_INO_ZBS
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=FALSE
+        CASE 6       ; SWITCH NA_INO_INPR[5] = 6: Zuwenig Merkmale erkannt
+          N_INO_USERFB = INO_MsgIO(#NotifyMsg, #ERRFEATURE)
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ERFEAT]=TRUE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        CASE 7       ; SWITCH NA_INO_INPR[5] = 7 : Regelschritt zu gross
+          N_INO_USERFB = INO_MsgIO(#NotifyMsg, #ERRTHRES)
+          ;Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ERMMOV]=TRUE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        DEFAULT
+          ;FOLD Falsche Rueckantwort
+
+          ;ENDFOLD Falsche Rueckantwort
+        ENDSWITCH
+        ;ENDFOLD (1-7 Einrichten Kalibrierplatte)
+      ;
+      CASE 8    ; SWITCH PAR2 = 8 : Sensor
+        ;FOLD 1-8 Einrichten Sensor / Aufnahme Referenz
+        ; Ausgaenge zuruecksetzen
+        REPEAT
+          $FLAG[F_INO_ERMEAS]=FALSE
+          $FLAG[F_INO_ER]=FALSE
+          ; Anfrage senden
+          IOWRITE (3000)
+          ; Warten auf Bestaetigung 
+          IOREAD (50000)
+          IF NA_INO_INPR[5] == 0 THEN
+            N_INO_USERFB = INO_MsgIO (#NotifyMsg, #REFOK)
+            $FLAG[F_INO_ERMEAS]=FALSE
+            $FLAG[F_INO_ER]=FALSE
+          ELSE
+            $FLAG[F_INO_ERMEAS]=TRUE
+            $FLAG[F_INO_ER]=TRUE
+            N_INO_USERFB = INO_MsgIO (#DlgMsg, #REFER)			
+          ENDIF
+        UNTIL (NA_INO_INPR[6] == 0 ) 
+        ;ENDFOLD (1-8 Einrichten Sensor / Aufnahme Referenz)
+      ;
+      CASE 10   ; SWITCH PAR2 = 10: Roboter
+        ;FOLD 1-10 Einrichten Roboter
+        ; Ausgaenge zuruecksetzen
+        $FLAG[F_INO_ERMMOV]=FALSE
+        $FLAG[F_INO_ERFEAT]=FALSE
+        $FLAG[F_INO_ERF_GR]=FALSE
+        NA_INO_USRPR[1] = 3
+        NA_INO_USRPR[2] = 4
+        NA_INO_USRPR[3] = 8
+        NA_INO_USRPR[5] = 2
+        ; Anfrage senden
+        IOWRITE (3000)
+        ; Warten auf Bestaetigung 
+        IOREAD (5000)
+        ; Unterscheidung nach Rueckmeldung vom PC
+        SWITCH NA_INO_INPR[5]
+        CASE 1       ; SWITCH NA_INO_INPR[5] = 1 : Messung erfolgreich
+          ; Korrekturwerte auf BASE addieren
+          BASE_DATA[N_INO_BSNR] = BASE_DATA[N_INO_BSNR]:FR_INO_ZBS
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=FALSE
+        CASE 6       ; SWITCH NA_INO_INPR[5] = 6: Zuwenig Merkmale erkannt
+          N_INO_USERFB = INO_MsgIO(#NotifyMsg, #ERRFEATURE)
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ERFEAT]=TRUE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        CASE 7       ; SWITCH NA_INO_INPR[5] = 7 : Korrektur zu gross
+          N_INO_USERFB = INO_MsgIO(#NotifyMsg, #ERRTHRES)
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ERMMOV]=TRUE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        DEFAULT
+          ;FOLD Falsche Rueckantwort				
+
+          ;ENDFOLD Falsche Rueckantwort
+        ENDSWITCH
+        ;ENDFOLD (1-10 Einrichten Roboter)
+      ;
+      CASE 11   ; SWITCH PAR2 = 11 : Volumenkalibrierung
+        ;FOLD 1-11 Einrichten Volumenkalibrierung
+        REPEAT
+          NA_INO_USRPR[2] = 1
+          NA_INO_USRPR[6] = 3
+          ; Trainingsdaten abfragen
+          IOWRITE (3000) 
+          ; Warten auf Daten
+          IOREAD (50000)
+          IF ($FLAG[F_INO_ER] == FALSE) THEN
+            N_INO_NMSTPS=NA_INO_INPR[5]
+            FR_INO_TMIN=FR_INO_ZBS
+            FR_INO_TMAX=E_INO_ZPS
+            ; Abfahren der Trainingspunkte
+            ; Startposition speichern
+            NA_INO_USRPR[2] = 4
+            NA_INO_USRPR[6] = 0
+            FR_INO_STRPS = $POS_ACT
+            ;FOLD Alle Trainingspositionen anfahren
+            FOR N_INO_IDOF = 1 TO 6
+              FR_INO_TMPPS = FR_INO_NLLPS
+              B_EX_TRNSTP = FALSE
+              ; Je nach einzelnem Freiheitsgrad
+              SWITCH N_INO_IDOF
+              CASE 1      ;SWITCH DOF = 1 : X	
+                IF (FR_INO_TMAX.X-FR_INO_TMIN.X) > 0.1 THEN
+                  FR_INO_TMPPS.X = FR_INO_TMIN.X
+                  B_EX_TRNSTP = TRUE
+                ENDIF
+              CASE 2      ;SWITCH DOF = 2 : Y
+                IF (FR_INO_TMAX.Y-FR_INO_TMIN.Y) > 0.1 THEN
+                  FR_INO_TMPPS.Y = FR_INO_TMIN.Y
+                  B_EX_TRNSTP = TRUE
+                ENDIF
+              CASE 3      ;SWITCH DOF = 3 : Z
+                IF (FR_INO_TMAX.Z-FR_INO_TMIN.Z) > 0.1 THEN
+                  FR_INO_TMPPS.Z = FR_INO_TMIN.Z                  
+                  B_EX_TRNSTP = TRUE
+                ENDIF
+              CASE 4      ;SWITCH DOF = 4 : A
+                IF (FR_INO_TMAX.A-FR_INO_TMIN.A) > 0.1 THEN
+                  FR_INO_TMPPS.A = FR_INO_TMIN.A                  
+                  B_EX_TRNSTP = TRUE
+                ENDIF
+              CASE 5      ;SWITCH DOF = 5 : B
+                IF (FR_INO_TMAX.B-FR_INO_TMIN.B) > 0.1 THEN
+                  FR_INO_TMPPS.B = FR_INO_TMIN.B                  
+                  B_EX_TRNSTP = TRUE
+                ENDIF
+              CASE 6      ;SWITCH DOF = 6 : C
+                IF (FR_INO_TMAX.C-FR_INO_TMIN.C) > 0.1 THEN
+                  FR_INO_TMPPS.C = FR_INO_TMIN.C                  
+                  B_EX_TRNSTP = TRUE
+                ENDIF                  
+              ENDSWITCH
+              IF (B_EX_TRNSTP == TRUE) THEN
+                IF (N_INO_IDOF<>1) THEN
+                  NA_INO_USRPR[6] = NA_INO_USRPR[6]+1                  
+                ENDIF
+                ; Zur Anfangsposition pro Freiheitsgrad
+                LIN $POS_ACT:FR_INO_TMPPS 
+                ; Trainingsposition melden
+                IOWRITE (3000)
+                ; Warten auf Bestaetigung 
+                IOREAD (50000)
+                IF ((NA_INO_INPR[6] == 0) OR ($FLAG[F_INO_ER]==TRUE)) THEN
+                  N_INO_USERFB = INO_MsgIO(#DlgMsg, #TRAINERR)
+                  HALT
+                  IF (N_INO_USERFB == 1) THEN
+                    $FLAG[F_INO_ER]=TRUE
+                  ENDIF
+                  NA_INO_INPR[6] = 0
+                  GOTO END_KAL
+                ENDIF
+                FR_INO_TMPPS = FR_INO_NLLPS
+                SWITCH N_INO_IDOF
+                CASE 1      ;SWITCH DOF = 1 : X          
+                  R_INO_DELTA = (FR_INO_TMAX.X-FR_INO_TMIN.X)/(N_INO_NMSTPS-1)
+                  FR_INO_TMPPS.X = R_INO_DELTA
+                CASE 2
+                  R_INO_DELTA = (FR_INO_TMAX.Y-FR_INO_TMIN.Y)/(N_INO_NMSTPS-1)
+                  FR_INO_TMPPS.Y = R_INO_DELTA
+                CASE 3
+                  R_INO_DELTA = (FR_INO_TMAX.Z-FR_INO_TMIN.Z)/(N_INO_NMSTPS-1)
+                  FR_INO_TMPPS.Z = R_INO_DELTA
+                CASE 4
+                  R_INO_DELTA = (FR_INO_TMAX.A-FR_INO_TMIN.A)/(N_INO_NMSTPS-1)
+                  FR_INO_TMPPS.A = R_INO_DELTA
+                CASE 5
+                  R_INO_DELTA = (FR_INO_TMAX.B-FR_INO_TMIN.B)/(N_INO_NMSTPS-1)
+                  FR_INO_TMPPS.B = R_INO_DELTA
+                CASE 6
+                  R_INO_DELTA = (FR_INO_TMAX.C-FR_INO_TMIN.C)/(N_INO_NMSTPS-1)
+                  FR_INO_TMPPS.C = R_INO_DELTA                    
+                ENDSWITCH
+                ; Fuer jede Trainingsunterposition eines Freiheitsgrades
+                FOR N_INO_ISTEP = 1 TO (NA_INO_INPR[5]-1)
+                  NA_INO_USRPR[6] = NA_INO_USRPR[6]+1
+                  ; Trainingsposition anfahren
+                  LIN $POS_ACT:FR_INO_TMPPS 
+                  ; Trainingsposition melden
+                  IOWRITE (3000)
+                  ; Warten auf Bestaetigung 
+                  IOREAD (50000)
+                  IF ((NA_INO_INPR[6] == 0) OR ($FLAG[F_INO_ER]==TRUE)) THEN
+                    ; Im Falle eines Fehlers
+                    N_INO_USERFB = INO_MsgIO(#NotifyMsg, #TRAINERR)
+                    HALT
+                    NA_INO_INPR[6] = 0
+                    GOTO END_KAL
+                  ENDIF
+                ENDFOR
+                ; Zur Startposition fahren
+                LIN FR_INO_STRPS
+              ENDIF 
+            ENDFOR ; ENDFOR N_INO_IDOF = 1 TO 6, Schrittkalibrierung beendet
+            ;ENDFOLD (Alle Trainingspositionen anfahren)
+            NA_INO_USRPR[1] = 3
+            NA_INO_USRPR[2] = 9
+            NA_INO_USRPR[5] = (PAR4*2) - 1
+            IOWRITE (3000)
+            ;Warten auf Bestaetigung 
+            IOREAD (120000)
+            IF ($FLAG[F_INO_ER] == TRUE) THEN
+              NA_INO_INPR[6] = 0
+            ENDIF
+          ELSE
+            NA_INO_INPR[6] = 0
+          ENDIF
+END_KAL:
+          IF NA_INO_INPR[6] == 1 THEN
+            N_INO_USERFB = INO_MsgIO (#StatMsg, #TRAINOK)
+          ELSE
+            N_INO_USERFB = INO_MsgIO (#DlgMsg, #ERRCAL)
+          ENDIF
+        UNTIL (($FLAG[F_INO_ER]==FALSE) OR (N_INO_USERFB <> 1))
+        ;ENDFOLD (1-11 Einrichten Schrittkalibrierung)
+      ;
+      DEFAULT
+        ;FOLD Falsche Parameterkombination			 
+
+        ;ENDFOLD Falsche Parameterkombination
+      ENDSWITCH ;von PAR2
+      ;ENDFOLD (1 Einrichten)
+    ;
+    CASE 3,4   ; SWITCH PAR1 = 3/4 : Messen statisch/dynamisch
+      ;FOLD 3/4 Messen
+      IF PAR1 == 3 THEN
+        ;Bei Messen statisch wird immer gewartet bis Roboter steht, sonst nicht
+        WAIT FOR $ROB_STOPPED
+      ENDIF
+      ; Unterscheidung nach PAR2
+      SWITCH PAR2
+        CASE 1     ; SWITCH PAR2 = 1 : Training/Referenz
+        ;FOLD 3-1 Messen Reference Object         
+        REPEAT
+          ; Ausgaenge zuruecksetzen
+          $FLAG[F_INO_ERMEAS]=FALSE
+          $FLAG[F_INO_ER]=FALSE
+          ; Anfrage senden
+          IOWRITE (3000)
+          ;Warten auf Bestaetigung 
+          IOREAD (50000)
+          IF NA_INO_INPR[6] == 0 THEN
+            ; Messung unter Toleranz gemessen
+            N_INO_USERFB = INO_MsgIO (#NotifyMsg, #SENSOK)
+            $FLAG[F_INO_ERMEAS]=FALSE
+            $FLAG[F_INO_ER]=FALSE
+          ELSE          
+            IF NA_INO_INPR[6] == 1 THEN
+              ; Messung unter maximaller Toleranz 
+              N_INO_USERFB = INO_MsgIO (#NotifyMsg, #SENSNOKMIN)
+              $FLAG[F_INO_ERMEAS]=FALSE
+              $FLAG[F_INO_ER]=FALSE
+            ELSE
+              ; Messung ausserhalb maximaller Toleranz 
+              $FLAG[F_INO_ERMEAS]=TRUE
+              $FLAG[F_INO_ER]=TRUE
+              N_INO_USERFB = INO_MsgIO (#DlgMsg, #SENSNOKMAX)
+            ENDIF
+          ENDIF
+        UNTIL ((NA_INO_INPR[6] == 0 ) OR (NA_INO_INPR[6] == 1 ))
+        ;ENDFOLD (3-1 Messen Reference Object)
+      ;
+      CASE 2     ; SWITCH PAR2 = 2 : Greifen
+        ;FOLD 3-2 Messen Greifen
+        ; Ausgaenge zuruecksetzen
+        $FLAG[F_INO_ER] = FALSE
+        $FLAG[F_INO_ERMEAS] = FALSE
+        $FLAG[F_INO_RFOK] = FALSE
+        $FLAG[F_INO_RFNOK] = FALSE
+        ; Anfrage senden
+        IOWRITE (3000)
+        ; Warten auf Bestaetigung 
+        IOREAD (15000)
+        IF $FLAG[F_INO_ER] == FALSE THEN
+          IF NA_INO_INPR[5] <> 0 THEN
+            ; Fehler, Ausgaenge fuer Roboter setzen
+            $FLAG[F_INO_ERMEAS]=TRUE
+            $FLAG[F_INO_ER]=TRUE
+            $FLAG[F_INO_RFOK] = FALSE
+            $FLAG[F_INO_RFNOK] = TRUE            
+          ELSE
+            ; Q-Messung Greifen erfolgreich 
+            $FLAG[F_INO_ERMEAS]=FALSE
+            $FLAG[F_INO_ER]=FALSE
+            $FLAG[F_INO_RFOK] = TRUE
+            $FLAG[F_INO_RFNOK] = FALSE
+          ENDIF
+        ENDIF
+        ;ENDFOLD (3-2 Messen Greifen)
+      ;
+      CASE 3     ; SWITCH PAR2 = 3 : Fuegen
+        ;FOLD 3-3 Messen Fuegen 
+        ; Ausgaenge zuruecksetzen
+        $FLAG[F_INO_ER] = FALSE
+        $FLAG[F_INO_ERMEAS] = FALSE
+        $FLAG[F_INO_RFOK] = FALSE
+        $FLAG[F_INO_RFNOK] = FALSE
+        ; Anfrage senden
+        IOWRITE (3000)
+        ; Warten auf Bestaetigung 
+        IOREAD (15000)
+        IF $FLAG[F_INO_ER] == FALSE THEN
+          IF NA_INO_INPR[5] <> 0 THEN
+            ; Fehler, Ausgang setzen fuer Roboter
+            $FLAG[F_INO_ERMEAS]=TRUE
+            $FLAG[F_INO_ER]=TRUE
+            $FLAG[F_INO_RFOK] = FALSE
+            $FLAG[F_INO_RFNOK] = TRUE            
+          ELSE
+            ; Q-Messung Fuegen erfolgreich
+            $FLAG[F_INO_ERMEAS]=FALSE
+            $FLAG[F_INO_ER]=FALSE
+            $FLAG[F_INO_RFOK] = TRUE
+            $FLAG[F_INO_RFNOK] = FALSE
+          ENDIF
+        ENDIF
+        ;ENDFOLD (3-3 Messen Fuegen)
+      ;
+      CASE 4     ; SWITCH PAR2 = 4 : Serie - nominals for registered sensors?
+        ;FOLD 3-4 Messen Serie
+        ; Ausgaenge zuruecksetzen
+        $FLAG[F_INO_ERMMOV]=FALSE
+        $FLAG[F_INO_ERFEAT]=FALSE
+        $FLAG[F_INO_ERF_GR]=FALSE
+        NA_INO_USRPR[5] = 3
+        ; Anfrage senden
+        IOWRITE (3000)
+        ; Warten auf Bestaetigung 
+        IOREAD (15000)
+        ; Unterscheidung nach Rueckmeldung vom PC
+        SWITCH NA_INO_INPR[5]
+        CASE 1       ; SWITCH NA_INO_INPR[5] = 1 : Messung erfolgreich
+          ; Korrekturwerte auf BASE addieren
+          BASE_DATA[N_INO_BSNR] = BASE_DATA[N_INO_BSNR]:FR_INO_ZBS
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=FALSE
+        CASE 6       ; SWITCH NA_INO_INPR[5] = 6: Zuwenig Merkmale erkannt
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRFEATURE)
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ERFEAT]=TRUE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        CASE 7       ; SWITCH NA_INO_INPR[5] = 7 : Regelschritt zu gross
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRTHRES)
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ERMMOV]=TRUE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        DEFAULT
+          ;FOLD Falsche Rueckantwort				
+
+          ;ENDFOLD Falsche Rueckantwort
+        ENDSWITCH
+        ;ENDFOLD (3-4 Messen Serie)
+      ;
+      CASE 5	    ; SWITCH PAR2 = 5 : Nominal
+        ;FOLD 3-5 Messen Nominal 
+        ; Flags / Ausgaenge zuruecksetzen
+        $FLAG[F_INO_ERMEAS]=FALSE
+        ; Anfrage senden
+        IOWRITE (3000)
+        ; Warten auf Bestaetigung 
+        IOREAD (15000)
+        IF ($FLAG[F_INO_ER] == TRUE) THEN
+          NA_INO_INPR[5]=2
+        ENDIF	        
+        IF NA_INO_INPR[5] == 2 THEN
+          ; Falls Fehler, dann Flags / Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ERMEAS]=TRUE
+          $FLAG[F_INO_ER]=TRUE
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRFEATURE)
+        ELSE
+          ; Kein Fehler
+          $FLAG[F_INO_ERMEAS]=FALSE
+          $FLAG[F_INO_ER]=FALSE
+        ENDIF
+        ;ENDFOLD (3-5 Messen Nominal)
+      ;
+      CASE 12     ; SWITCH PAR2 = 12 : Start
+        ;FOLD 3-12 Messen Start
+        ; Ausgaenge zuruecksetzen
+        $FLAG[F_INO_ERMMOV]=FALSE
+        $FLAG[F_INO_ERFEAT]=FALSE
+        $FLAG[F_INO_ERF_GR]=FALSE
+        NA_INO_USRPR[5] = 3
+        ; Anfrage senden
+        IOWRITE (3000)
+        ; Warten auf Bestaetigung 
+        IOREAD (15000)
+        IF ($FLAG[F_INO_ER] == TRUE) THEN
+          NA_INO_INPR[5]=0
+        ENDIF	
+        ; Unterscheidung nach Rueckmeldung vom PC
+        SWITCH NA_INO_INPR[5]
+        CASE 1       ; SWITCH NA_INO_INPR[5] = 1 : Aufnahme erfolgreich
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=FALSE
+        CASE 0       ; SWITCH NA_INO_INPR[5] = 0: Aufnahme nicht erfolgreich
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRGRAB)
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ERFEAT]=TRUE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        DEFAULT
+          ; Sonst Fehler; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=TRUE
+        ENDSWITCH
+       ;ENDFOLD (3-12 Messen Start)
+      ;
+      CASE 13     ; SWITCH PAR2 = 13 : Abholen
+        ;FOLD 3-13 Messen Abholen
+        ; Ausgaenge zuruecksetzen
+        $FLAG[F_INO_ERMMOV]=FALSE
+        $FLAG[F_INO_ERFEAT]=FALSE
+        $FLAG[F_INO_ERF_GR]=FALSE
+        NA_INO_USRPR[5] = 3
+        ; Anfrage senden
+        IOWRITE (3000)
+        ; Warten auf Bestaetigung 
+        IOREAD (150000)
+        ; Unterscheidung nach Rueckmeldung vom PC
+        SWITCH NA_INO_INPR[5]
+        CASE 1       ; SWITCH NA_INO_INPR[5] = 1 : Messung erfolgreich
+          ; Korrekturwerte auf BASE addieren
+          BASE_DATA[N_INO_BSNR] = BASE_DATA[N_INO_BSNR]:FR_INO_ZBS
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=FALSE
+        CASE 6       ; SWITCH NA_INO_INPR[5] = 6: Zuwenig Merkmale erkannt
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRFEATURE)
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ERFEAT]=TRUE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        CASE 7       ; SWITCH NA_INO_INPR[5] = 7 : Regelschritt zu gross
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRTHRES)
+          ; Ausgang setzen fuer Roboter
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ERMMOV]=TRUE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        DEFAULT
+          ;FOLD Falsche Rueckantwort		
+
+          ;ENDFOLD Falsche Rueckantwort
+        ENDSWITCH
+        ;ENDFOLD (3-13 Messen Abholen)
+      ;
+      DEFAULT
+      ENDSWITCH ; von PAR2 : Anwenden
+      ;ENDFOLD (3/4 Messen)
+    ;
+    CASE 6     ; SWITCH PAR1 = 6: Tausch
+      ;FOLD 6 Tausch
+      ; Beim Tausch wird immer gewartet bis Roboter steht, sonst nicht
+      ; Unterscheidung nach PAR2
+      SWITCH PAR2
+      CASE 8	    ; SWITCH PAR2 = 8 : Sensor
+        ;FOLD 6-8 Tausch Sensor 
+        SWITCH CMD_SEL ; HPPOS: Tausch Sensor 
+        CASE 806
+          REPEAT
+            NA_INO_USRPR[1] = 3
+            ; Ausgaenge zuruecksetzen
+            $FLAG[F_INO_ERMEAS]=FALSE
+            $FLAG[F_INO_ER]=TRUE
+            ; Anfrage senden
+            IOWRITE (3000)
+            ; Warten auf Bestaetigung 
+            IOREAD (15000)
+            IF (NA_INO_INPR[5]<>0) OR ($FLAG[F_INO_ER]==TRUE) THEN
+              ; Im Falle eines Fehlers Flags/Ausgaenge setzen
+              $FLAG[F_INO_ER]=TRUE
+              N_INO_USERFB = INO_MsgIO (#DlgMsg,#ERRSENSRPLC)
+            ELSE
+              ; Tausch erfolgreich
+              N_INO_USERFB = INO_MsgIO (#DlgMsg,#SREPLACEOK)
+              IF (N_INO_USERFB == 1) THEN
+                ; Bei Bestaetigung vom Benutzer
+                $FLAG[F_INO_ER]=FALSE
+                FR_INO_TFFST = E_INO_ZPS
+              ENDIF
+            ENDIF
+          UNTIL ($FLAG[F_INO_ER]==FALSE)		    
+        DEFAULT
+        ENDSWITCH  ; Tausch Sensor HPPos
+        ;ENDFOLD (6-8 Tausch Sensor)
+      ;
+      CASE 9	    ; SWITCH PAR2 = 9 : Tool
+        ;FOLD 6-9 Tausch Tool 
+        SWITCH CMD_SEL ; Tausch Tool HPPOS
+        CASE 806
+          ;FOLD Tausch Tool HPPOS
+          REPEAT
+            NA_INO_USRPR[1] = 3
+            NA_INO_USRPR[2] = 8
+            ; Flags / Ausgaenge zuruecksetzen
+            $FLAG[F_INO_ERMEAS]=FALSE
+            $FLAG[F_INO_ER]=FALSE
+            ; Anfrage senden
+            IOWRITE (3000)
+            ; Warten auf Bestaetigung 
+            IOREAD (15000)
+            IF (NA_INO_INPR[5]<>0) OR ($FLAG[F_INO_ER]==TRUE) THEN
+              ; Im falle eines Fehlers
+              $FLAG[F_INO_ER]=TRUE
+              N_INO_USERFB = INO_MsgIO (#DlgMsg,#ERRTOOL)
+            ELSE
+              ; Vorgang erfolgreich 
+              N_INO_USERFB = INO_MsgIO (#DlgMsg,#SREPLACEOK)
+              IF (N_INO_USERFB == 1) THEN
+                $FLAG[F_INO_ER]=FALSE
+                FR_INO_TFFST = E_INO_ZPS
+              ENDIF
+            ENDIF
+          UNTIL ($FLAG[F_INO_ER]==FALSE)       
+          ;ENDFOLD (Tausch Tool HPPOS)
+        DEFAULT
+        ENDSWITCH  ; Tausch Tool HPPOS
+        ;ENDFOLD (6-9 Tausch Tool)
+      ;
+      CASE 10    ; SWITCH PAR2 = 10: Roboter
+        ;FOLD 6-10 Tausch Roboter        
+
+        SWITCH CMD_SEL ; Tausch Roboter HPPos
+        CASE 806
+          ;FOLD Tausch Roboter HPPOS
+          ; Ausgaenge zuruecksetzen
+          $FLAG[F_INO_ERMMOV]=FALSE
+          $FLAG[F_INO_ERFEAT]=FALSE
+          $FLAG[F_INO_ERF_GR]=FALSE
+          NA_INO_USRPR[1] = 3
+          NA_INO_USRPR[2] = 4
+          NA_INO_USRPR[3] = 8
+          NA_INO_USRPR[5] = 3
+          ; Anfrage senden
+          IOWRITE (3000)
+          ; Warten auf Bestaetigung 
+          IOREAD (15000)
+          ; Unterscheidung nach Rueckmeldung vom PC
+          SWITCH NA_INO_INPR[5]
+          CASE 1       ; SWITCH NA_INO_INPR[5] = 1 : Messung erfolgreich
+            ; Korrekturwerte merken fuer Robotertausch
+            FR_INO_BFFST = FR_INO_ZBS
+            ; Ausgang setzen fuer Roboter
+            $FLAG[F_INO_ER]=FALSE
+          CASE 6       ; SWITCH NA_INO_INPR[5] = 6: Zuwenig Merkmale erkannt
+            N_INO_USERFB = INO_MsgIO (#DlgMsg,#ERRFEATURE)
+            ; Ausgang setzen fuer Roboter
+            $FLAG[F_INO_ER]=TRUE
+            $FLAG[F_INO_ERFEAT]=TRUE
+            $FLAG[F_INO_ERF_GR]=TRUE
+          CASE 7       ; SWITCH NA_INO_INPR[5] = 7 : Korrektur zu gross
+            N_INO_USERFB = INO_MsgIO (#DlgMsg,#ERRTHRES)
+            ; Ausgang setzen fuer Roboter
+            $FLAG[F_INO_ER]=TRUE
+            $FLAG[F_INO_ERMMOV]=TRUE
+            $FLAG[F_INO_ERF_GR]=TRUE
+          DEFAULT
+            ;FOLD Falsche Rueckantwort
+            ;ENDFOLD Falsche Rueckantwort
+          ENDSWITCH
+          ;ENDFOLD (Tausch Roboter HPPOS)
+        DEFAULT
+        ENDSWITCH  
+        ;ENDFOLD (6-10 Tausch Roboter)
+      ;
+      DEFAULT
+      ENDSWITCH ;von PAR2 : Anwenden
+      ;ENDFOLD (6 Tausch)
+    CASE 8     ; SWITCH PAR1 = 8 : Station
+      ;FOLD 8 Station
+      ; Unterscheidung nach PAR2
+      SWITCH PAR2
+      CASE 5	    ; SWITCH PAR2 = 5 : Ruecksetzen
+        ;FOLD 8-5 Station ruecksetzen
+        ; Fehler Flags ruecksetzen
+        FOR N_INO_Flag = 495 TO 503
+          $FLAG[N_INO_Flag]=FALSE
+        ENDFOR
+        ; Anfrage senden
+        NA_INO_USRPR[1] = 1
+        NA_INO_USRPR[2] = 6
+        IOWRITE (3000)
+        ; Warten auf Bestaetigung 
+        IOREAD (3000)
+        BASE_DATA[N_INO_BSNR] = FR_INO_NLLPS  
+        B_INO_SBFIT=FALSE
+        IF ($FLAG[F_INO_ER] == TRUE) THEN
+          HALT
+        ENDIF	
+        ;ENDFOLD (8-5 Station ruecksetzen)
+      DEFAULT
+        ;FOLD Falsche Parameterkombination	 
+
+        ;ENDFOLD Falsche Parameterkombination
+      ENDSWITCH ;PAR2
+      ;	 
+      ;ENDFOLD (8 Station)
+    DEFAULT
+      ;FOLD Falsche Parameterkombination		 
+
+      ;ENDFOLD Falsche Parameterkombination
+    ENDSWITCH ; PAR1
+    ;ENDFOLD (Trig)
+  ;   
+  CASE #USR_MAIN
+    ; Aufrufparameter in globale Variablen speichern
+    N_INO_TOOLNR = PAR5
+
+    ; Unterscheidung nach PAR1 (Modus)
+    SWITCH PAR1
+    CASE 2    ; SWITCH PAR1 = 2 : Korrektur
+      ;FOLD 2 Korrektur
+      ; Korrekturanfrage senden
+      ; Aktuelle Position uebernehmen           
+      E_INO_ACTPS = $pos_act;
+      ; Vorlaufzaehler 
+      N_INO_BCKADV = $ADVANCE
+      $ADVANCE = 0
+      ; Unterscheidung nach PAR2 (Funktion)
+      SWITCH PAR2
+      CASE 2      ; SWITCH PAR2 = 2 : Greifen
+        ;FOLD 2-2 Entnahme
+        NA_INO_USRPR[1] = PAR1
+        NA_INO_USRPR[2] = PAR2
+        NA_INO_USRPR[3] = PAR3
+        NA_INO_USRPR[4] = PAR4
+        NA_INO_USRPR[5] = PAR6
+        NA_INO_USRPR[6] = PAR5
+        ; inos Greiffunktion
+        Ino_Grip(USER_CMD, PAR6)
+        ;ENDFOLD (2-2 Entnahme)
+      ;
+      CASE 3 	    ; SWITCH PAR2 = 3 : Fuegen
+        ;FOLD 2-3 Fuegen
+        NA_INO_USRPR[1] = PAR1
+        NA_INO_USRPR[2] = PAR2
+        NA_INO_USRPR[3] = PAR3
+        NA_INO_USRPR[4] = PAR4
+        NA_INO_USRPR[5] = PAR6
+        NA_INO_USRPR[6] = PAR5
+        ; inos Fuegefunktion
+        Ino_Fit(USER_CMD,PAR6)
+        ;ENDFOLD (2-3 Fuegen)
+      ;
+      CASE 5      ; SWITCH PAR2 = 5 : Ruecksetzen
+        ;FOLD 2-5 Ruecksetzen lokal
+        ; Alle Flags ruecksetzen
+        FOR N_INO_Flag = 495 TO 507
+           IF N_INO_Flag <> F_INO_ER_LIF THEN
+            $FLAG[N_INO_Flag]=FALSE 
+           ENDIF
+        ENDFOR
+        BASE_DATA[N_INO_BSNR] = FR_INO_NLLPS
+        B_INO_SBFIT=FALSE
+        $ADVANCE = N_INO_BCKADV
+        $ADVANCE=1
+        ;ENDFOLD (2-5 Ruecksetzen lokal)
+      ;
+      CASE 10      ; SWITCH PAR2 = 10 : Roboter Gesamtkorrektur Base (z.B. zweiter Schraubroboter ohne Sensorik)
+        ;FOLD 2-10 Roboter Gesamtkorrektur Base
+        ; Parameteruebergabe
+        NA_INO_USRPR[1] = PAR1
+        NA_INO_USRPR[2] = PAR2
+        NA_INO_USRPR[3] = PAR3
+        NA_INO_USRPR[4] = PAR4
+        NA_INO_USRPR[5] = PAR5
+        NA_INO_USRPR[6] = PAR6
+        ;--------------------------------------
+        ;   Korrektur anfordern
+        ;--------------------------------------
+        ; Vorlaufstopp
+        NA_INO_USRPR[2] = 9
+        WAIT SEC 0
+        IOWRITE (3000)
+        IF $FLAG[F_INO_ER] == FALSE THEN
+        ; Auf Korrektur warten
+          IOREAD (10000)         
+          IF NOT $FLAG[F_INO_ER] THEN
+            IF  NA_INO_INPR[5] == 6 THEN
+              N_INO_USERFB = INO_MsgIO(#NotifyMsg, #ERRFEATURE)
+              ; Ausgang setzen fuer Roboter
+              $FLAG[F_INO_ER]=TRUE
+              $FLAG[F_INO_ERFEAT]=TRUE
+              $FLAG[F_INO_ERF_GR]=TRUE
+            ENDIF
+            ;--------------------------------------
+            ;   Regelweg OK?
+            ;--------------------------------------
+            IF ((ABS(FR_INO_ZBS.X) > 120) OR (ABS(FR_INO_ZBS.Y) > 120) OR (ABS(FR_INO_ZBS.Z) > 120) OR (ABS(FR_INO_ZBS.A) > 5) OR (ABS(FR_INO_ZBS.B) > 5) OR (ABS(FR_INO_ZBS.C) > 5)) THEN
+              ;--------------------------------------
+              ;   Fehler: Regelweg ueberschritten
+              ;--------------------------------------
+              ;   Ausgang setzen fuer Roboter
+              $FLAG[F_INO_ER] = TRUE
+              N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRTHRES)
+            ELSE
+              IF ((FR_INO_ZBS.X == 0) AND (FR_INO_ZBS.Y == 0) AND (FR_INO_ZBS.Z == 0) AND (FR_INO_ZBS.A == 0) AND (FR_INO_ZBS.B == 0) AND (FR_INO_ZBS.C==0)) THEN 
+                ;--------------------------------------
+                ;   Fehler: Regelweg unterschritten
+                ;--------------------------------------
+                ;   Ausgang setzen fuer Roboter
+                $FLAG[F_INO_ER] = TRUE
+                N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRTHRES)
+              ELSE
+                ;--------------------------------------
+                ;   Korrektur ausfuehren
+                ;--------------------------------------
+                ;   Korrekturwerte auf BASE setzen              
+                IF NOT $FLAG[F_INO_ER] THEN
+                  BASE_DATA[N_INO_BSNR] = BASE_DATA[N_INO_TOOLNR]:FR_INO_ZBS
+                ENDIF
+              ENDIF
+            ENDIF
+          ELSE
+
+            ; Kommunikationsfehler
+            N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IERR)
+          ENDIF
+        ELSE
+
+          ; Kommunikationsfehler
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#OERR)
+        ENDIF
+
+        ;ENDFOLD (2-10 Roboter Gesamtkorrektur Base)    
+      DEFAULT
+        ;FOLD Falsche Parameterkombination	  
+
+        ;ENDFOLD Falsche Parameterkombination
+      ENDSWITCH ;von PAR2 
+      ;ENDFOLD (2 Korrektur)
+    ;
+    CASE 6     ; SWITCH PAR1 = 6: Tausch
+      ;FOLD 6 Tausch        
+      ; Beim Tausch wird immer gewartet bis Roboter steht, sonst nicht
+
+      ; Parameteruebergabe
+      NA_INO_USRPR[1] = PAR1
+      NA_INO_USRPR[2] = PAR2
+      NA_INO_USRPR[3] = PAR3
+      NA_INO_USRPR[4] = PAR4
+      NA_INO_USRPR[5] = PAR5
+      NA_INO_USRPR[6] = PAR6
+      N_INO_TOOLNR = PAR5
+
+      ; Unterscheidung nach PAR2
+      SWITCH PAR2
+      CASE 8	    ; SWITCH PAR2 = 8 : Sensor
+        ;FOLD 6-8 Tausch Sensor  
+        SWITCH CMD_SEL ; Nur fuer SensorStation: Tausch Sensor 
+        CASE 807 
+          ;FOLD Tausch Sensor SensorStation / HPFit
+          $FLAG[F_INO_ER]=FALSE
+          ; Anfrage senden
+          IOWRITE(5000)
+          N_INO_USERFB = INO_MsgIO (#DlgMsg,#SNEXCH)           
+          ;ENDFOLD (Nur fuer Tausch Sensor SensorStation)
+        DEFAULT
+        ENDSWITCH  ; Tausch Sensor
+        ;ENDFOLD (6-9 Tausch Sensor)    
+      CASE 9	    ; SWITCH PAR2 = 9 : Tool
+        ;FOLD 6-9 Tausch Tool 
+        SWITCH CMD_SEL ; Tausch Tool HPFit
+        CASE 807
+          ;FOLD Tausch Tool HPFit
+          ; Vorsicht: Tool tausch darf nur am Referenzobjekt ausgeführt werden
+          REPEAT
+            ; Flags/Ausgaenge ruecksetzen
+            $FLAG[F_INO_ERMEAS]=FALSE
+            $FLAG[F_INO_ERF_GR]=FALSE
+            $FLAG[F_INO_ER]=FALSE
+
+            ; Zuerst SetupFit um Bewegungsgrenzen zu erhalten                
+            NA_INO_USRPR[1] = 1 ; inos setup grip/fit
+            NA_INO_USRPR[2] = 3
+            NA_INO_USRPR[3] = PAR3
+            NA_INO_USRPR[4] = 2    ; Operationen am REF Objekt sollten in Process 2 sein
+            NA_INO_USRPR[5] = PAR6
+            NA_INO_USRPR[6] = PAR5
+
+            ; Aktuelle Position uebernehmen
+            E_INO_ACTPS = $pos_act;
+            ; Anfrage senden
+            IOWRITE(5000)
+            ; Warten auf Rueckmeldung
+            IOREAD(5000)
+            IF ($FLAG[F_INO_ER]== FALSE) THEN
+              ; Falls kein Fehler 
+              E_INO_MXFIT.X = E_INO_ZPS.X 
+              E_INO_MXFIT.Y = E_INO_ZPS.Y 
+              E_INO_MXFIT.Z = E_INO_ZPS.Z 
+              E_INO_MXFIT.A = E_INO_ZPS.A 
+              E_INO_MXFIT.B = E_INO_ZPS.B 
+              E_INO_MXFIT.C = E_INO_ZPS.C              
+
+              ; Dann fuehre das Fitting aus und speichere Korrektur ab        
+              NA_INO_USRPR[1] = 2
+              NA_INO_USRPR[2] = 3
+              NA_INO_USRPR[3] = PAR3
+              NA_INO_USRPR[4] = 2    ; Operationen am REF Objekt sollten in Process 2 sein
+              NA_INO_USRPR[5] = PAR6
+              NA_INO_USRPR[6] = PAR5
+              N_INO_TOOLNR = PAR5
+              WAIT SEC 1
+              ; inos Fuegen
+              Ino_Fit(USER_CMD, PAR6)          
+              IF ($FLAG[F_INO_ERF_GR]==TRUE) THEN
+                ; Im Falle eines Fehlers
+                $FLAG[F_INO_ER]=TRUE
+                ; Benutzermeldung
+                N_INO_USERFB = INO_MsgIO (#DlgMsg,#ERRTOOL)
+              ELSE
+                ; Kein Fehler
+                N_INO_USERFB = INO_MsgIOPS(#DlgMsg,#SREPLACEOK,FR_INO_CORR)
+                IF (N_INO_USERFB == 1) THEN
+                  ; Nach Benutzerbestaetigung
+                  $FLAG[F_INO_ER]=FALSE
+                  FR_INO_TFFST.X = FR_INO_TCORR.X 
+                  FR_INO_TFFST.Y = FR_INO_TCORR.Y
+                  FR_INO_TFFST.Z = FR_INO_TCORR.Z
+                  FR_INO_TFFST.A = FR_INO_TCORR.A
+                  FR_INO_TFFST.B = FR_INO_TCORR.B
+                  FR_INO_TFFST.C = FR_INO_TCORR.C
+                  INO_IFRAME (FR_INO_TFFST )
+                ENDIF
+              ENDIF
+            ELSE
+              ; Fehler bei der Positionierung an der Referenzposition
+              N_INO_USERFB = INO_MsgIO (#DlgMsg,#ERRTOOL)
+            ENDIF
+          ; Wiederholen bis kein Fehler
+          UNTIL ($FLAG[F_INO_ER]==FALSE) 
+          ;ENDFOLD (Tausch Tool HPFit)
+        DEFAULT
+        ENDSWITCH  ; Tausch Tool HPFit
+        ;ENDFOLD (6-9 Tausch Tool HPFit)
+      ;
+      CASE 10     ; SWITCH PAR2 = 10: Roboter
+        ;FOLD 6-10 Tausch Roboter
+        SWITCH CMD_SEL  ; Tausch Roboter HPFit
+        CASE 807
+          ;FOLD Tausch Roboter HPFit
+          REPEAT
+            ; Ausgaenge zuruecksetzen        
+            $FLAG[F_INO_ERMMOV]=FALSE
+            $FLAG[F_INO_ERFEAT]=FALSE
+            $FLAG[F_INO_ERF_GR]=FALSE            
+            ; Zuerst SetupFit um Bewegungsgrenzen zu erhalten
+            NA_INO_USRPR[1] = 1  ; inos setup grip/fit
+            NA_INO_USRPR[2] = 3
+            NA_INO_USRPR[3] = PAR3
+            NA_INO_USRPR[4] = 2  ; Operationen am REF Objekt sollten in Process 2 sein
+            NA_INO_USRPR[5] = PAR6
+            NA_INO_USRPR[6] = PAR5
+            FR_INO_BBS = BASE_DATA[N_INO_BSNR]
+            E_INO_ACTPS = $pos_act
+            ;Anfrage senden
+            IOWRITE(5000)
+            ;Warten auf Rueckmeldung
+            IOREAD(5000)
+            IF ($FLAG[F_INO_ER]== FALSE) THEN     
+              ; Falls kein Fehler, maximalle Bewegungswerte speichern
+              E_INO_MXFIT.X = E_INO_ZPS.X 
+              E_INO_MXFIT.Y = E_INO_ZPS.Y 
+              E_INO_MXFIT.Z = E_INO_ZPS.Z 
+              E_INO_MXFIT.A = E_INO_ZPS.A 
+              E_INO_MXFIT.B = E_INO_ZPS.B 
+              E_INO_MXFIT.C = E_INO_ZPS.C               
+              ; Fuegevorgang um Roboter zur Referenzposition zu fuehren
+              NA_INO_USRPR[1] = 2
+              NA_INO_USRPR[2] = 3
+              NA_INO_USRPR[3] = PAR3
+              NA_INO_USRPR[4] = 2     ; Operationen am REF Objekt sollten in Process 2 sein 
+              NA_INO_USRPR[5] = PAR6
+              NA_INO_USRPR[6] = PAR5
+              N_INO_TOOLNR = PAR5
+              WAIT SEC 1
+              Ino_Fit(USER_CMD, PAR6)                        
+              IF ($FLAG[F_INO_ERF_GR]==TRUE) THEN
+                ; Im Falle eines Fehler Flags / Ausgaenge und Meldung setzen
+                $FLAG[F_INO_ER]=TRUE
+                N_INO_USERFB = INO_MsgIO (#DlgMsg,#ERRROBRPLC)
+              ELSE
+                ; Benutzer fragen, ob Korrektur ok ist
+                N_INO_USERFB = INO_MsgIOPS(#DlgMsg,#ROBRPLCOK,BASE_DATA[N_INO_BSNR])
+                IF (N_INO_USERFB == 1) THEN
+                  $FLAG[F_INO_ER]=FALSE
+                  FR_INO_BFFST = BASE_DATA[N_INO_BSNR]                               
+                ENDIF
+              ENDIF 
+            ELSE
+              ; Fehler beim Robotertausch
+              N_INO_USERFB = INO_MsgIO (#DlgMsg,#ERRROBRPLC)
+            ENDIF
+            ; Originaldaten fuer Base zurueckschreiben; Korrektur wird auf Base im Verrechnen angewandt
+            BASE_DATA[N_INO_BSNR] = FR_INO_BBS
+          UNTIL ($FLAG[F_INO_ER]==FALSE)
+          ;ENDFOLD (Tausch Roboter HPFit)
+        DEFAULT
+        ENDSWITCH  
+        ;ENDFOLD (6-10 Tausch Roboter)
+      ;
+      DEFAULT
+      ENDSWITCH ;von PAR2 : Anwenden
+      ;ENDFOLD (6 Tausch)
+    ;
+    CASE 7     ; SWITCH PAR1 = 7 : Verrechnen
+      ;FOLD 7 Verrechnen
+      ; Parameteruebergabe
+      NA_INO_USRPR[1] = PAR1
+      NA_INO_USRPR[2] = PAR2
+      NA_INO_USRPR[3] = PAR3
+      NA_INO_USRPR[4] = PAR4
+      NA_INO_USRPR[5] = PAR5
+      NA_INO_USRPR[6] = PAR6
+      N_INO_TOOLNR = PAR5
+      ; Unterscheidung nach PAR2
+      SWITCH PAR2
+      CASE 8	    ; SWITCH PAR2 = 8 : Sensor
+        ;FOLD 7-8 Verrechnen Sensor 
+        N_INO_USERFB = INO_MsgIO (#DlgMsg,#TOOLOFFAC,N_INO_TOOLNR)
+        IF (N_INO_USERFB == 1) THEN
+          TOOL_DATA[N_INO_TOOLNR]=TOOL_DATA[N_INO_TOOLNR]:FR_INO_TFFST
+        ENDIF
+        ;ENDFOLD (7-8 Verrechnen Sensor)
+      ;	 
+      CASE 9	    ; SWITCH PAR2 = 9 : Tool
+        ;FOLD 7-9 Verrechnen Tool 
+        N_INO_USERFB = INO_MsgIO (#DlgMsg,#TOOLOFFAC,N_INO_TOOLNR)
+        IF (N_INO_USERFB == 1) THEN
+          TOOL_DATA[N_INO_TOOLNR]=TOOL_DATA[N_INO_TOOLNR]:FR_INO_TFFST
+        ENDIF
+        ;ENDFOLD (7-9 Verrechnen Tool)		 
+      ;	 
+      CASE 10	    ;SWITCH PAR2 = 10 : Roboter
+        ;FOLD 7-10 Verrechnen Baseoffset 
+        N_INO_USERFB = INO_MsgIO (#DlgMsg,#BASEOFFAC,N_INO_TOOLNR)
+        IF (N_INO_USERFB == 1) THEN
+          ; Berechnung findet beim Fuegen statt
+          SWITCH CMD_SEL ; Unterscheidung HPPos - HPFit
+          CASE 806 ; HPPos
+            ; Beim HPPos Tausch wurde die reine Korrektur berechnet
+            BASE_DATA[N_INO_TOOLNR] = BASE_DATA[N_INO_TOOLNR]:FR_INO_BFFST 
+          CASE 807 ; HPFit
+            ; Beim HPFit Tausch wurde die Korrektur fuer den angegebenen BASE berechnet
+            BASE_DATA[N_INO_TOOLNR] = FR_INO_BFFST    
+          DEFAULT
+          ENDSWITCH  ; Unterscheidung HPPos - HPFit
+        ENDIF
+        ;ENDFOLD (7-10 Verrechnen Baseoffset)
+      DEFAULT
+      ENDSWITCH ;PAR2 
+      ;ENDFOLD (7 Verrechnen)
+    ;
+    DEFAULT
+      ;FOLD Falsche Parameterkombination 
+
+      ;ENDFOLD Falsche Parameterkombination
+    ENDSWITCH ; von PAR1
+  DEFAULT
+    ;FOLD Falsche Parameterkombination	 
+
+    ;ENDFOLD Falsche Parameterkombination
+  ENDSWITCH ; USER_CMD
+;
+END_RF:
+;
+END
+;
+;ENDFOLD (INOS RoboterFuehrung)
+;
+;*****************************
+;
+;-----------------------------------------------------------
+;FOLD INOS Subroutinen
+;
+;*****************************
+; inos Greifen
+GLOBAL DEF Ino_Grip(MD_CMD:IN, N_TOT_NM_TRY :IN)
+  INT N_TOT_NM_TRY
+  DECL VW_USER_CMD MD_CMD
+  ;
+  ; Anzahl der Versuche
+  N_INO_TRIES = 0
+  REPEAT
+    ; Initialisierungen
+    $COUNT_I[1]=0
+    $FLAG[F_INO_ER]=FALSE
+    B_INO_FINISH = FALSE
+    FR_INO_CORR=FR_INO_NLLPS          
+    FR_INO_TCORR=FR_INO_NLLPS
+    $FLAG[F_INO_ERF_GR]=FALSE
+    $FLAG[F_INO_ERMMOV]=FALSE
+    $FLAG[F_INO_ERMSTP]=FALSE
+    $FLAG[F_INO_ERFEAT]=FALSE
+    $FLAG[F_INO_RFOK] = FALSE
+    $FLAG[F_INO_RFNOK] = FALSE	       
+    ; Position beim Start der Regelung sichern
+    E_INO_BACTPS = $POS_ACT
+    FR_INO_BBS = FR_INO_NLLPS
+    ; Schleife mit Regelvorgang
+    NA_INO_USRPR[6]=N_INO_TRIES
+    REPEAT
+      $FLAG[F_INO_ER]=FALSE            
+      ; Regelungsschritt anfordern
+      IOWRITE (3000) 
+      IF $FLAG[F_INO_ER] == FALSE THEN
+        ;   Auf Regelungsschritt warten
+        IOREAD (10000) 
+        IF $FLAG[F_INO_ER] == FALSE THEN
+          ;   Maximale Anzahl Regelschritte
+          N_INO_MXLOOP = NA_INO_INPR[6]
+          ;   Unterscheidung nach Rueckgabewert inos
+          SWITCH NA_INO_INPR[5]
+          CASE 1,2
+            ;   Regelschritt ausfuehren
+            ;   Bisherigen Regelweg aufsummieren
+            FR_INO_CORR = FR_INO_CORR:E_INO_ZPS
+            ;   Regelweg ueberpruefen
+            IF (ABS(FR_INO_CORR.X)>E_INO_MXGRIP.X) OR (ABS(FR_INO_CORR.Y)>E_INO_MXGRIP.Y) OR (ABS(FR_INO_CORR.Z)>E_INO_MXGRIP.Z) OR (ABS(FR_INO_CORR.A)>E_INO_MXGRIP.A) OR (ABS(FR_INO_CORR.B)>E_INO_MXGRIP.B) OR (ABS(FR_INO_CORR.C)>E_INO_MXGRIP.C) OR (ABS(FR_INO_ZBS.X)>40) OR (ABS(FR_INO_ZBS.Y)>40) OR (ABS(FR_INO_ZBS.Z)>50) OR (ABS(FR_INO_ZBS.A)>2) OR (ABS(FR_INO_ZBS.B)>2) OR (ABS(FR_INO_ZBS.C)>2) THEN 
+              ;   Fehler
+              $FLAG[F_INO_ER]=TRUE
+              N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRTHRES)
+              ;   Ausgang setzen fuer Roboter
+              $FLAG[F_INO_ERMMOV]=TRUE
+              $FLAG[F_INO_ERF_GR]=TRUE
+            ELSE
+              IF TOOL_TYPE[N_INO_TOOLNR]==#TCP THEN
+                ;   Korrektur TCP
+                CONTINUE
+                FR_INO_TCORR = FR_INO_TCORR:E_INO_ZPS
+                $TOOL=$TOOL:E_INO_ZPS
+              ELSE
+                ;   Korrektur in Base
+                ;   Korrekturwerte auf BASE addieren
+                FR_INO_TCORR = FR_INO_TCORR:E_INO_ZPS
+                FR_INO_BBS = FR_INO_BBS:FR_INO_ZBS                      
+                ;    An naechster Position fahren 
+                FR_INO_TMPPS = $POS_ACT
+                PTP_REL A_INO_HSTCMP
+                LIN FR_INO_TMPPS:E_INO_ZPS                 
+              ENDIF
+              ;   Regelgrenze unterschritten
+              IF NA_INO_INPR[5] == 2 THEN
+                B_INO_FINISH = TRUE
+                B_INO_SBFIT = TRUE
+                $FLAG[F_INO_RFOK] = TRUE
+                FR_INO_TMPPS = BASE_DATA[N_INO_TOOLNR]:FR_INO_BBS
+                BASE_DATA[N_INO_BSNR] = FR_INO_TMPPS        
+              ENDIF
+              ; Zaehler
+              $COUNT_I[1]=$COUNT_I[1]+1
+            ENDIF
+          CASE 3
+            ;   Regelschritt zu gross
+            N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRTHRES)
+            $FLAG[F_INO_ER]=TRUE
+            ;   Ausgang setzen fuer Roboter
+            $FLAG[F_INO_ERMMOV]=TRUE
+            $FLAG[F_INO_ERF_GR]=TRUE
+          DEFAULT
+            ;   Fehler
+            $FLAG[F_INO_ER]=TRUE
+            N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRTHRES)
+            ;   Ausgang setzen fuer Roboter
+            $FLAG[F_INO_ERFEAT]=TRUE
+            $FLAG[F_INO_ERF_GR]=TRUE
+          ENDSWITCH
+        ELSE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        ENDIF
+      ELSE
+        $FLAG[F_INO_ERF_GR]=TRUE
+      ENDIF
+    ; Durchlauf bis Schwelle unterschritten oder Fehler
+    UNTIL (($COUNT_I[1]>N_INO_MXLOOP) OR ($FLAG[F_INO_ER] == TRUE) OR (B_INO_FINISH == TRUE))
+    IF ($COUNT_I[1]>N_INO_MXLOOP) AND (NOT (B_INO_FINISH == TRUE)) THEN
+      ;   Fehler
+      N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRSTEP)
+      $FLAG[F_INO_ER]=TRUE
+      ;   Ausgang setzen fuer Roboter
+      $FLAG[F_INO_ERMSTP]=TRUE
+      $FLAG[F_INO_ERF_GR]=TRUE
+    ENDIF
+    IF $FLAG[F_INO_ER] == FALSE THEN
+      ; Kein Fehler
+      $FLAG[F_INO_ERF_GR]=FALSE
+      N_INO_TRIES = N_INO_TRIES + 1
+    ELSE          
+      ; Fehler; falls im step mode wiederholen mit Benutzermeldung
+      IF (($PRO_MODE==#MSTEP) OR ($PRO_MODE==#ISTEP) ) THEN   
+        N_INO_USERFB = INO_MsgIO (#DlgMsg,#ERFIT)
+        IF (N_INO_USERFB == 2) THEN
+          N_INO_TRIES = N_INO_TRIES + 1
+        ENDIF
+      ELSE             
+        N_INO_TRIES = N_INO_TRIES + 1
+      ENDIF
+      $FLAG[F_INO_RFNOK] = TRUE
+      ; Korrektur zurucksetzen
+      FR_INO_BBS = FR_INO_NLLPS
+      ; An Startposition zurueckfahren
+      PTP FR_INO_BBS:E_INO_BACTPS
+      IF (MD_CMD==#USR_MAIN) THEN
+        $ADVANCE=N_INO_BCKADV
+        $ADVANCE=1
+      ENDIF
+    ENDIF
+  UNTIL (($FLAG[F_INO_ERF_GR] == FALSE) OR (N_INO_TRIES >= N_TOT_NM_TRY))
+END
+;
+;*****************************
+; inos Fuegen
+GLOBAL DEF Ino_Fit(MD_CMD:IN, N_TOT_NM_TRY :IN)
+  ;FOLD FUEGEN
+  INT N_TOT_NM_TRY
+  DECL VW_USER_CMD MD_CMD
+  ;      
+  ;Vorlaufzaehler 
+  IF (MD_CMD==#USR_MAIN) THEN
+    N_INO_BCKADV = $ADVANCE
+    $ADVANCE = 0
+  ENDIF
+  ;   Initialisierungen
+  ;   Anzahl der Versuche
+  N_INO_TRIES = 0
+  REPEAT
+    $COUNT_I[1]=0
+    $FLAG[F_INO_ER]=FALSE
+    B_INO_FINISH = FALSE
+    FR_INO_CORR=FR_INO_NLLPS
+    FR_INO_TCORR=FR_INO_NLLPS
+    ; Flags / Ausgaenge zuruecksetzen
+    $FLAG[F_INO_ERF_GR]=FALSE
+    $FLAG[F_INO_ERMMOV]=FALSE
+    $FLAG[F_INO_ERMSTP]=FALSE
+    $FLAG[F_INO_ERFEAT]=FALSE
+    $FLAG[F_INO_RFOK] = FALSE
+    $FLAG[F_INO_RFNOK] = FALSE
+    ;   Position beim Start der Regelung sichern
+    E_INO_BACTPS = $POS_ACT
+    FR_INO_BBS = FR_INO_NLLPS
+    ;   Schleife mit Regelvorgang
+    NA_INO_USRPR[6]=N_INO_TRIES
+    REPEAT
+      ;   Regelungsschritt anfordern            
+      IOWRITE (3000) 
+      IF $FLAG[F_INO_ER] == FALSE THEN
+        ;   Auf Regelungsschritt warten
+        IOREAD (15000) 
+        IF $FLAG[F_INO_ER] == FALSE THEN
+          IF (NA_INO_INPR[5]==1) OR (NA_INO_INPR[5]==2) THEN
+            N_INO_MXLOOP = NA_INO_INPR[6]
+            ;   Bisherigen Regelweg aufsummieren
+            FR_INO_CORR = FR_INO_CORR:E_INO_ZPS
+            ;   Regelweg ueberpruefen
+            ;   Vorhalteposition
+            IF (ABS(FR_INO_CORR.X)>E_INO_MXFIT.X) OR (ABS(FR_INO_CORR.Y)>E_INO_MXFIT.Y) OR (ABS(FR_INO_CORR.Z)>E_INO_MXFIT.Z) OR (ABS(FR_INO_CORR.A)>E_INO_MXFIT.A) OR (ABS(FR_INO_CORR.B)>E_INO_MXFIT.B) OR (ABS(FR_INO_CORR.C)>E_INO_MXFIT.C) OR (ABS(FR_INO_ZBS.X)>120) OR (ABS(FR_INO_ZBS.Y)>120) OR (ABS(FR_INO_ZBS.Z)>120) OR (ABS(FR_INO_ZBS.A)>5) OR (ABS(FR_INO_ZBS.B)>5) OR (ABS(FR_INO_ZBS.C)>5) THEN 
+              $FLAG[F_INO_ER]=TRUE
+              N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRTHRES)
+              N_INO_USERFB = INO_MsgIOPS(#NotifyMsg,#ERRTHRES,FR_INO_CORR)
+              N_INO_USERFB = INO_MsgIOPS(#NotifyMsg,#ERRTHRES,E_INO_MXFIT)
+              ;   Ausgang setzen fuer Roboter
+              $FLAG[F_INO_ERMMOV]=TRUE
+              $FLAG[F_INO_ERF_GR]=TRUE
+            ENDIF
+          ENDIF
+          IF $FLAG[F_INO_ER]==FALSE THEN
+            SWITCH NA_INO_INPR[5]
+            CASE 1,2  		  ;   Regelschritt ausfuehren
+              ;   Korrekturwerte auf BASE addieren                    
+              FR_INO_TCORR = FR_INO_TCORR:E_INO_ZPS
+              FR_INO_BBS = FR_INO_BBS:FR_INO_ZBS
+              ;   An Startposition fahren mit korrigierter BASE
+              IF (VW_MPARA_ACT.MOVE_TYPE==#PTP_MOTION) THEN
+                PTP FR_INO_BBS:E_INO_BACTPS
+              ENDIF
+              IF (VW_MPARA_ACT.MOVE_TYPE==#PATH_MOTION) THEN
+                LIN FR_INO_BBS:E_INO_BACTPS
+              ENDIF
+              IF NA_INO_INPR[5] == 2 THEN
+                B_INO_FINISH = TRUE
+                B_INO_SBFIT = TRUE
+                $FLAG[F_INO_RFOK] = TRUE
+                FR_INO_TMPPS = BASE_DATA[N_INO_TOOLNR]:FR_INO_BBS
+                BASE_DATA[N_INO_BSNR] = FR_INO_TMPPS        
+              ENDIF
+              ; Zaehler
+              $COUNT_I[1]=$COUNT_I[1]+1
+            CASE 3			  ;   Regelschritt zu gross
+              $FLAG[F_INO_ER]=TRUE
+              N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRTHRES)
+              ;   Ausgang setzen fuer Roboter
+              $FLAG[F_INO_ERMMOV]=TRUE
+              $FLAG[F_INO_ERF_GR]=TRUE
+            CASE 7			  ;   Zuwenig Merkmale erkannt
+              $FLAG[F_INO_ER]=TRUE
+              N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRFEATURE)
+              ;   Ausgang setzen fuer Roboter
+              $FLAG[F_INO_ERFEAT]=TRUE
+              $FLAG[F_INO_ERF_GR]=TRUE
+            DEFAULT			  ;   Fehler
+              $FLAG[F_INO_ER]=TRUE
+              N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRFEATURE)
+              ;   Ausgang setzen fuer Roboter
+              $FLAG[F_INO_ERFEAT]=TRUE
+              $FLAG[F_INO_ERF_GR]=TRUE
+            ENDSWITCH
+          ENDIF
+        ELSE
+          $FLAG[F_INO_ERF_GR]=TRUE
+        ENDIF
+      ELSE
+        $FLAG[F_INO_ERF_GR]=TRUE
+      ENDIF
+    ; Durchlauf bis Schwelle unterschritten oder Fehler
+    UNTIL (($COUNT_I[1]>N_INO_MXLOOP) OR ($FLAG[F_INO_ER] == TRUE) OR (B_INO_FINISH == TRUE))
+    IF ($COUNT_I[1]>N_INO_MXLOOP) AND (NOT (B_INO_FINISH == TRUE)) THEN
+      ;   Fehler
+      N_INO_USERFB = INO_MsgIO (#NotifyMsg,#ERRSTEP)
+      $FLAG[F_INO_ER]=TRUE
+      ;   Augang setzen fuer Roboter
+      $FLAG[F_INO_ERMSTP]=TRUE
+      $FLAG[F_INO_ERF_GR]=TRUE
+    ENDIF
+
+    ; 
+    IF $FLAG[F_INO_ER] == FALSE THEN
+      $FLAG[F_INO_ERF_GR]=FALSE
+      N_INO_TRIES = N_INO_TRIES + 1        
+    ELSE       
+      IF (($PRO_MODE==#MSTEP) OR ($PRO_MODE==#ISTEP) ) THEN   
+        N_INO_USERFB = INO_MsgIO (#DlgMsg,#ERFIT)
+        IF (N_INO_USERFB == 2) THEN
+          N_INO_TRIES = N_INO_TRIES + 1
+        ENDIF
+      ELSE   
+        N_INO_TRIES = N_INO_TRIES + 1
+      ENDIF
+      $FLAG[F_INO_RFNOK] = TRUE
+      FR_INO_BBS = FR_INO_NLLPS
+      ;   An Startposition fahren mit korrigierter BASE
+      PTP FR_INO_BBS:E_INO_BACTPS
+      IF (MD_CMD==#USR_MAIN) THEN
+        $ADVANCE=N_INO_BCKADV
+        $ADVANCE=1
+      ENDIF
+    ENDIF         
+  UNTIL (($FLAG[F_INO_ERF_GR] == FALSE) OR (N_INO_TRIES >= N_TOT_NM_TRY))
+  ;ENDFOLD (FUEGEN)
+END
+;
+;*****************************
+;
+;============================================================
+; WRITE - Schreiben auf I/O Schnittstelle-Interbus
+; Beschreibung  : Daten auf I/O schreiben mit Handshake
+; Parameter     : TIMEOUT: Maximaler Wert für Zeitüberschreitung (in [ms])
+;============================================================
+GLOBAL DEF IOWRITE (N_TOUT :IN )
+;
+  ;FOLD IOWRITE
+  INT N_TOUT
+  INT N_DATANR
+  INT nVALUE
+  INT nVALUE_LW
+  INT nVALUE_HW
+  ;
+  $FLAG[F_INO_ER]=FALSE
+  $FLAG[F_INO_ER_IO]=FALSE
+  ;	Aktuelle Position und Base abfragen
+  E_INO_ACTPS = $POS_ACT
+  FR_INO_ACTBS = $BASE
+  FOR N_DATANR=1 TO 6
+    IF ($FLAG[F_INO_ER] == FALSE) THEN
+      O_INO_TYPE = N_DATANR
+      ;	Unterscheidung nach Protokollnr.
+      SWITCH N_DATANR
+      CASE 1
+        ;FOLD	Daten X
+        nVALUE = FR_INO_ACTBS.X*1000+8388608
+        nVALUE_HW=nVALUE/65536
+        nVALUE_LW=nVALUE-nVALUE_HW*65536
+        O_INO_D1LW=nVALUE_LW
+        O_INO_D1HW=nVALUE_HW
+        nVALUE = E_INO_ACTPS.X*1000+8388608
+        nVALUE_HW=nVALUE/65536
+        nVALUE_LW=nVALUE-nVALUE_HW*65536
+        O_INO_D2LW=nVALUE_LW
+        O_INO_D2HW=nVALUE_HW
+        O_INO_PAR = NA_INO_USRPR[1]
+        ;	Controlbit setzen
+        O_INO_CTRL = 1
+        ; Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ; Warten auf Bestaetigung
+        WAIT FOR ((I_INO_CTRL==2) AND (I_INO_INTYPE==O_INO_TYPE)) OR ($TIMER[N_INO_TMRNR]>N_TOUT) 
+        ;	Zeitueberschreitung bei Handshake
+        IF  (I_INO_CTRL==0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ER_IO]=TRUE
+        ENDIF
+        ;	Controlbit setzen
+        O_INO_CTRL = 0
+        ; Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ; Warten auf Bestaetigung
+        WAIT FOR ((I_INO_CTRL == 0)) OR ($TIMER[N_INO_TMRNR]>N_TOUT)
+        ;	Zeitueberschreitung bei Handshake
+        IF  (I_INO_CTRL>0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ER_IO]=TRUE
+          ENDIF
+        ;ENDFOLD (Daten X)
+      CASE 2
+        ;FOLD	Daten Y
+        nVALUE = FR_INO_ACTBS.Y*1000+8388608
+        nVALUE_HW=nVALUE/65536
+        nVALUE_LW=nVALUE-nVALUE_HW*65536
+        O_INO_D1LW=nVALUE_LW
+        O_INO_D1HW=nVALUE_HW
+        nVALUE = E_INO_ACTPS.Y*1000+8388608
+        nVALUE_HW=nVALUE/65536
+        nVALUE_LW=nVALUE-nVALUE_HW*65536
+        O_INO_D2LW=nVALUE_LW
+        O_INO_D2HW=nVALUE_HW
+        O_INO_PAR = NA_INO_USRPR[2]
+        ;	Controlbit setzen
+        O_INO_CTRL = 1
+        ;	Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ;	Warten auf Bestaetigung
+        WAIT FOR ((I_INO_CTRL>0) AND (I_INO_INTYPE==O_INO_TYPE)) OR ($TIMER[N_INO_TMRNR]>N_TOUT) 
+        ;	Zeitueberschreitung bei Handshake
+        IF  (I_INO_CTRL==0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ER_IO]=TRUE
+        ENDIF
+        ;	Controlbit setzen
+        O_INO_CTRL = 0
+        ; Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ; Warten auf Bestaetigung
+        WAIT FOR ((I_INO_CTRL == 0)) OR ($TIMER[N_INO_TMRNR]>N_TOUT)
+        ;	Zeitueberschreitung bei Handshake
+        IF  (I_INO_CTRL>0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ER_IO]=TRUE
+        ENDIF
+        ;ENDFOLD (Daten Y)
+      CASE 3
+        ;FOLD	Daten Z
+        nVALUE = FR_INO_ACTBS.Z*1000+8388608
+        nVALUE_HW=nVALUE/65536
+        nVALUE_LW=nVALUE-nVALUE_HW*65536
+        O_INO_D1LW=nVALUE_LW
+        O_INO_D1HW=nVALUE_HW
+        nVALUE = E_INO_ACTPS.Z*1000+8388608
+        nVALUE_HW=nVALUE/65536
+        nVALUE_LW=nVALUE-nVALUE_HW*65536
+        O_INO_D2LW=nVALUE_LW
+        O_INO_D2HW=nVALUE_HW
+        O_INO_PAR = NA_INO_USRPR[3]
+        ;	Controlbit setzen
+        O_INO_CTRL = 1
+        ;	Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ;	Warten auf Bestaetigung
+        WAIT FOR ((I_INO_CTRL>0) AND (I_INO_INTYPE==O_INO_TYPE)) OR ($TIMER[N_INO_TMRNR]>N_TOUT) 
+        ;	Zeitueberschreitung bei Handshake
+        IF  (I_INO_CTRL==0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ER_IO]=TRUE
+        ENDIF
+        ;	Controlbit setzen
+        O_INO_CTRL = 0
+        ; Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ; Warten auf Bestaetigung
+        WAIT FOR ((I_INO_CTRL == 0)) OR ($TIMER[N_INO_TMRNR]>N_TOUT)
+        ;	Zeitueberschreitung bei Handshake
+        IF  (I_INO_CTRL>0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ER_IO]=TRUE
+        ENDIF
+        ;ENDFOLD (Daten Z)
+      CASE 4
+        ;FOLD	Daten A
+        nVALUE = FR_INO_ACTBS.A*1000+8388608
+        nVALUE_HW=nVALUE/65536
+        nVALUE_LW=nVALUE-nVALUE_HW*65536
+        O_INO_D1LW=nVALUE_LW
+        O_INO_D1HW=nVALUE_HW
+        nVALUE = E_INO_ACTPS.A*1000+8388608
+        nVALUE_HW=nVALUE/65536
+        nVALUE_LW=nVALUE-nVALUE_HW*65536
+        O_INO_D2LW=nVALUE_LW
+        O_INO_D2HW=nVALUE_HW 
+        O_INO_PAR = NA_INO_USRPR[4]
+        ;	Controlbit setzen
+        O_INO_CTRL = 1
+        ; Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ; Warten auf Bestaetigung
+        WAIT FOR ((I_INO_CTRL>0) AND (I_INO_INTYPE==O_INO_TYPE)) OR ($TIMER[N_INO_TMRNR]>N_TOUT) 
+        ;	Zeitueberschreitung bei Handshake
+        IF  (I_INO_CTRL==0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ER_IO]=TRUE
+        ENDIF
+        ;	Controlbit setzen
+        O_INO_CTRL = 0
+        ; Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ; Warten auf Bestaetigung
+        WAIT FOR ((I_INO_CTRL == 0)) OR ($TIMER[N_INO_TMRNR]>N_TOUT)
+        ;	Zeitueberschreitung bei Handshake
+        IF  (I_INO_CTRL>0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ER_IO]=TRUE
+        ENDIF
+        ;ENDFOLD	(Daten A)
+      CASE 5
+        ;FOLD	Daten B
+        nVALUE = FR_INO_ACTBS.B*1000+8388608
+        nVALUE_HW=nVALUE/65536
+        nVALUE_LW=nVALUE-nVALUE_HW*65536
+        O_INO_D1LW=nVALUE_LW
+        O_INO_D1HW=nVALUE_HW
+        nVALUE = E_INO_ACTPS.B*1000+8388608
+        nVALUE_HW=nVALUE/65536
+        nVALUE_LW=nVALUE-nVALUE_HW*65536
+        O_INO_D2LW=nVALUE_LW
+        O_INO_D2HW=nVALUE_HW
+        O_INO_PAR = NA_INO_USRPR[5]
+        ;	Controlbit setzen
+        O_INO_CTRL = 1
+        ;	Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ;	Warten auf Bestaetigung
+        WAIT FOR ((I_INO_CTRL>0) AND (I_INO_INTYPE==O_INO_TYPE)) OR ($TIMER[N_INO_TMRNR]>N_TOUT) 
+        ;	Zeitueberschreitung bei Handshake
+        IF  (I_INO_CTRL==0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ER_IO]=TRUE
+        ENDIF
+        ;	Controlbit setzen
+        O_INO_CTRL = 0
+        ; Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ; Warten auf Bestaetigung
+        WAIT FOR ((I_INO_CTRL == 0)) OR ($TIMER[N_INO_TMRNR]>N_TOUT)
+        ;	Zeitueberschreitung bei Handshake
+        IF  (I_INO_CTRL>0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ER_IO]=TRUE
+        ENDIF
+        ;ENDFOLD	(Daten B)
+      CASE 6
+        ;FOLD	Daten C
+        nVALUE = FR_INO_ACTBS.C*1000+8388608
+        nVALUE_HW=nVALUE/65536
+        nVALUE_LW=nVALUE-nVALUE_HW*65536
+        O_INO_D1LW=nVALUE_LW
+        O_INO_D1HW=nVALUE_HW
+        nVALUE = E_INO_ACTPS.C*1000+8388608
+        nVALUE_HW=nVALUE/65536
+        nVALUE_LW=nVALUE-nVALUE_HW*65536
+        O_INO_D2LW=nVALUE_LW
+        O_INO_D2HW=nVALUE_HW
+        O_INO_PAR = NA_INO_USRPR[6]
+        ;	Controlbit setzen
+        O_INO_CTRL = 1
+        ;	Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ;	Warten auf Bestaetigung
+        WAIT FOR ((I_INO_CTRL>0) AND (I_INO_INTYPE==O_INO_TYPE)) OR ($TIMER[N_INO_TMRNR]>N_TOUT) 
+        ;	Zeitueberschreitung bei Handshake
+        IF  (I_INO_CTRL==0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ER_IO]=TRUE
+        ENDIF
+        ;	Controlbit setzen
+        O_INO_CTRL = 0
+        ; Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ; Warten auf Bestaetigung
+        WAIT FOR ((I_INO_CTRL == 0)) OR ($TIMER[N_INO_TMRNR]>N_TOUT)
+        ;	Zeitueberschreitung bei Handshake
+        IF  (I_INO_CTRL>0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          $FLAG[F_INO_ER]=TRUE
+          $FLAG[F_INO_ER_IO]=TRUE
+        ENDIF
+        ;ENDFOLD	(Daten C)
+      DEFAULT
+      ENDSWITCH
+      ; Ende SWITCH N_DATANR
+    ENDIF
+  ENDFOR
+  ;ENDFOLD IOWRITE
+END
+;
+;*****************************
+;
+;============================================================
+; READ - Lesen von I/O Schnittstelle-Interbus
+; Beschreibung  : Daten von I/O lesen mit Handshake
+; Parameter     : TIMEOUT: Maximaler Wert für Zeitüberschreitung (in [ms])
+;============================================================
+GLOBAL DEF IOREAD (N_TOUT :IN )
+;
+  ;FOLD IOREAD
+  INT N_TOUT
+  INT N_DATANR
+  INT I
+  BOOL B_ERROR
+  ;
+  B_ERROR = FALSE
+  $FLAG[F_INO_ER_IO]=FALSE
+  FOR I=1 TO 6
+    NA_INO_INPR[I] = 0
+    IF B_ERROR == FALSE THEN
+      ;	Timer initialisieren
+      $TIMER_STOP[N_INO_TMRNR]=TRUE
+      $TIMER[N_INO_TMRNR]=0
+      $TIMER_STOP[N_INO_TMRNR]=FALSE
+      ;	Warten auf Bestätigung
+      WAIT FOR ((I_INO_INTYPE==i) and (I_INO_CTRL==1)) OR ($TIMER[N_INO_TMRNR]>N_TOUT) 
+      ;	Zeitueberschreitung bei Handshake
+      IF NOT (I_INO_CTRL==1) THEN
+        ;   Fehler bei Schreiben
+        N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+        B_ERROR=TRUE
+      ELSE
+        N_DATANR = I_INO_INTYPE
+        $FLAG[F_INO_ALCMOK] = I_INO_ACAMOK
+        $FLAG[F_INO_ALLSOK] = I_INO_ALASOK         
+        $FLAG[F_INO_SYSCAL] = I_INO_SYSCAL
+        ;	Unterscheidung nach Protokollnr.
+        SWITCH N_DATANR
+        CASE 1
+          ;FOLD	Daten X
+          FR_INO_ZBS.X=((I_INO_D1HW*65536+I_INO_D1LW)-8388608)/1000.0
+          E_INO_ZPS.X=((I_INO_D2HW*65536+I_INO_D2LW)-8388608)/1000.0
+          NA_INO_INPR[1] = I_INO_PAR
+          ;	Controlbit setzen
+          O_INO_TYPE = I_INO_INTYPE
+          O_INO_CTRL = 2
+          ;ENDFOLD	(Daten X)
+        CASE 2
+          ;FOLD	Daten Y
+          FR_INO_ZBS.Y=((I_INO_D1HW*65536+I_INO_D1LW)-8388608)/1000.0
+          E_INO_ZPS.Y=((I_INO_D2HW*65536+I_INO_D2LW)-8388608)/1000.0
+          NA_INO_INPR[2] = I_INO_PAR
+          ;	Controlbit setzen
+          O_INO_TYPE = I_INO_INTYPE
+          O_INO_CTRL = 2
+          ;ENDFOLD (Daten Y)
+        CASE 3
+          ;FOLD	Daten Z
+          FR_INO_ZBS.Z=((I_INO_D1HW*65536+I_INO_D1LW)-8388608)/1000.0
+          E_INO_ZPS.Z=((I_INO_D2HW*65536+I_INO_D2LW)-8388608)/1000.0
+          NA_INO_INPR[3] = I_INO_PAR
+          ;	Controlbit setzen
+          O_INO_TYPE = I_INO_INTYPE
+          O_INO_CTRL = 2
+          ;ENDFOLD	(Daten Z)
+        CASE 4
+          ;FOLD	Daten A
+          FR_INO_ZBS.A=((I_INO_D1HW*65536+I_INO_D1LW)-8388608)/1000.0
+          E_INO_ZPS.A=((I_INO_D2HW*65536+I_INO_D2LW)-8388608)/1000.0
+          NA_INO_INPR[4] = I_INO_PAR
+          ;	Controlbit setzen
+          O_INO_TYPE = I_INO_INTYPE
+          O_INO_CTRL = 2
+          ;ENDFOLD	(Daten A)
+        CASE 5
+          ;FOLD	Daten B
+          FR_INO_ZBS.B=((I_INO_D1HW*65536+I_INO_D1LW)-8388608)/1000.0
+          E_INO_ZPS.B=((I_INO_D2HW*65536+I_INO_D2LW)-8388608)/1000.0
+          NA_INO_INPR[5] = I_INO_PAR
+          ;	Controlbit setzen
+          O_INO_TYPE = I_INO_INTYPE
+          O_INO_CTRL = 2
+          ;ENDFOLD	(Daten B)
+        CASE 6
+          ;FOLD	Daten C
+          FR_INO_ZBS.C=((I_INO_D1HW*65536+I_INO_D1LW)-8388608)/1000.0
+          E_INO_ZPS.C=((I_INO_D2HW*65536+I_INO_D2LW)-8388608)/1000.0
+          NA_INO_INPR[6] = I_INO_PAR
+          ;	Controlbit setzen
+          O_INO_TYPE = I_INO_INTYPE
+          O_INO_CTRL = 2
+          ;ENDFOLD	(DatenC)
+        ENDSWITCH
+        ; Ende SWITCH N_DATANR
+        ; Warten bis beide Seiten fertig
+        ;	Timer initialisieren
+        $TIMER_STOP[N_INO_TMRNR]=TRUE
+        $TIMER[N_INO_TMRNR]=0
+        $TIMER_STOP[N_INO_TMRNR]=FALSE
+        ;	Warten auf Bestätigung
+        WAIT FOR ((I_INO_CTRL==0)) OR ($TIMER[N_INO_TMRNR]>N_TOUT) 
+        ;	Zeitueberschreitung bei Handshake
+        IF NOT (I_INO_CTRL==0) THEN
+          ;   Fehler bei Schreiben
+          N_INO_USERFB = INO_MsgIO (#NotifyMsg,#IBERR) 
+          B_ERROR=TRUE
+        ENDIF
+        ; Daten zuruecksetzen
+        O_INO_CTRL = 0
+        O_INO_TYPE = 0
+      ENDIF
+    ENDIF
+  ENDFOR
+  IF B_ERROR == TRUE THEN
+    $FLAG[F_INO_ER]=TRUE
+    $FLAG[F_INO_ER_IO]=TRUE
+  ENDIF
+  ;ENDFOLD (IOREAD)
+END
+;
+;*****************************
+;FOLD Berechnung inverse Matrix
+;
+; Transformationen
+GLOBAL DEF INO_MAT2RPY (RM_T[,]:OUT,R_A:OUT,R_B:OUT,R_C:OUT )
+; Umwandlung einer Matrix T in die Winkel A, B, C
+; T = Rot_z(A) * Rot_y(B) * Rot_x(C)
+  REAL RM_T[,],R_A,R_B,R_C
+  REAL R_SIN_A,R_COS_A,R_SIN_B,R_ABS_COS_B,R_SIN_C,R_COS_C
+  ;
+  R_A=INO_ARCTAN2(RM_T[2,1],RM_T[1,1])
+  R_SIN_A=SIN(R_A)
+  R_COS_A=COS(R_A)
+  R_SIN_B=-RM_T[3,1]
+  R_ABS_COS_B=R_COS_A*RM_T[1,1]+R_SIN_A*RM_T[2,1]
+  R_B=INO_ARCTAN2(R_SIN_B,R_ABS_COS_B) ;       Hier: -90 <= B <= +90 !!
+  R_SIN_C=R_SIN_A*RM_T[1,3]-R_COS_A*RM_T[2,3]
+  R_COS_C=-R_SIN_A*RM_T[1,2]+R_COS_A*RM_T[2,2]
+  R_C=INO_ARCTAN2(R_SIN_C,R_COS_C)
+END
+;-------------------------------------------------------
+GLOBAL DEF INO_RPY2MAT (T[,]:OUT,A :IN,B :IN,C :IN )
+; Umwandlung von Winkeln A, B, C in eine Matrix T
+; T = Rot_z(A) * Rot_y(B) * Rot_x(C)
+  REAL T[,],A,B,C
+  REAL COS_A,SIN_A,COS_B,SIN_B,COS_C,SIN_C
+  ;
+  COS_A=COS(A)
+  SIN_A=SIN(A)
+  COS_B=COS(B)
+  SIN_B=SIN(B)
+  COS_C=COS(C)
+  SIN_C=SIN(C)
+  T[1,1]=COS_A*COS_B
+  T[1,2]=-SIN_A*COS_C+COS_A*SIN_B*SIN_C
+  T[1,3]=SIN_A*SIN_C+COS_A*SIN_B*COS_C
+  T[2,1]=SIN_A*COS_B
+  T[2,2]=COS_A*COS_C+SIN_A*SIN_B*SIN_C
+  T[2,3]=-COS_A*SIN_C+SIN_A*SIN_B*COS_C
+  T[3,1]=-SIN_B
+  T[3,2]=COS_B*SIN_C
+  T[3,3]=COS_B*COS_C
+END
+;-------------------------------------------------------
+GLOBAL DEF INO_IFRAME (F:OUT )
+  FRAME F
+  REAL O[3,3],MINUS_P[3],INV_P[3]
+  ;
+  ; Orientierung invertieren:
+  INO_RPY2MAT (O[,],F.A,F.B,F.C )
+  INO_IORIMAT (O[,] )
+  INO_MAT2RPY (O[,],F.A,F.B,F.C )
+  ; Posvektor invertieren:
+  MINUS_P[1]=-F.X
+  MINUS_P[2]=-F.Y
+  MINUS_P[3]=-F.Z
+  INO_MATMALV (O[,],MINUS_P[],INV_P[],3,3 )
+  F.X=INV_P[1]
+  F.Y=INV_P[2]
+  F.Z=INV_P[3]
+END
+;-------------------------------------------------------
+GLOBAL DEF  INO_IORIMAT (O[,]:OUT )
+; Invertieren der Orientierungsmatrix durch Transponieren
+  REAL O[,]
+  REAL TAUSCH
+  INT I,J
+  ;
+  FOR I=1 TO  3
+    FOR J=I+1 TO  3
+      TAUSCH=O[I,J]
+      O[I,J]=O[J,I]
+      O[J,I]=TAUSCH
+    ENDFOR
+  ENDFOR
+END
+;-------------------------------------------------------
+GLOBAL DEF  INO_MATMALV (A[,]:OUT,X[]:OUT,Be[]:OUT,N :IN,M :IN )
+; b = A * x wird berechnet, wobei dim(A) = N x M
+  REAL A[,],X[],Be[]
+  INT N,M
+  REAL SUM
+  INT I,J
+  ;
+  FOR I=1 TO  N
+    SUM=0
+    FOR J=1 TO  M
+      SUM=SUM+A[I,J]*X[J]
+    ENDFOR
+    Be[I]=SUM
+  ENDFOR
+END
+;-------------------------------------------------------
+GLOBAL DEFFCT  REAL INO_ARCTAN2(Y :IN,X :IN)
+; Arcustangens mit 2 Argumenten und Check, ob x und y numerisch 0 sind
+  REAL X,Y
+  REAL ATAN_EPS
+  ;
+  ATAN_EPS=0.00011
+  IF ((ABS(X)<ATAN_EPS) AND (ABS(Y)<ATAN_EPS)) THEN
+    RETURN  (0)
+  ELSE
+    RETURN  (ATAN2(Y,X))
+  ENDIF
+ENDFCT
+;
+;ENDFOLD (Berechnung inverse Matrix)
+;
+;*****************************
+;
+;ENDFOLD (INOS Subroutinen)
+;
+;
+;-----------------------------------------------------------
+;
+;FOLD INOS Meldungen
+;
+; Meldungsart:
+; In Automatik duerfen nur NIO-Meldungen ausgegeben werden
+; In Single-Step alle wichtigen Meldungen
+; In Single-Step + Debugger-Flag alle Meldungen
+;
+;*****************************
+; inos Allgemeinmeldung
+GLOBAL DEFFCT INT INO_MsgIO (MSG_TYP:IN, MSG_NR:IN, nPar1:IN, nPar2:IN, nPar:IN)
+  DECL INT           nPar1
+  DECL INT           nPar2
+  DECL INO_T_MESNR   MSG_NR
+  DECL INT           nMSG_NR
+  DECL INT           nPar
+  DECL INT           OFFSET
+  DECL INO_MsgTyp    MSG_TYP
+  DECL STATE_T       STATE
+  DECL KRLMSG_T      USER_MSG
+  DECL KRLMSGPAR_T   PAR[3]
+  DECL KRLMSGOPT_T   OPT
+  DECL KrlMsgDlgSK_T SK[7]
+  DECL Char          sMeldFunction[80]
+  DECL INT           nTmp
+  DECL INT           nDlgHandle
+  DECL INT           nDlgAnswer
+
+  ;
+  ;FOLD Init  
+  nDlgAnswer=0
+  IF varState("nPar1") <> #INITIALIZED THEN
+  	 nPar1 = -1
+  ENDIF
+  IF varState("nPar2") <> #INITIALIZED THEN
+  	 nPar2 = -1
+  ENDIF
+  IF varState("nPar") <> #INITIALIZED THEN
+  	 nPar = -1
+  ENDIF
+  nMSG_NR = 0
+  sMeldFunction[]  = " "
+  USER_MSG         = { Modul[] "INOS_MsgIO", Nr 1, Msg_txt[] " "}
+  Par[1]           = { Par_type #Value, Par_txt[] " " }
+  Opt              = { VL_Stop TRUE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+  FOR nTmp = 1 TO 7
+    SK[nTmp] = {Sk_Type #Empty}
+  ENDFOR
+  ;ENDFOLD (Init)
+
+  ;
+  ;FOLD Meldungs-Nr
+  ;
+  OFFSET  = 0
+  ;	Fehler (Debug)
+  SWITCH MSG_NR
+  ;-----------------------------------------------------------
+  CASE #INOSOK
+    USER_MSG.MSG_TXT[]="INOS-USER initialisiert..."
+    nMSG_NR = 1
+  ;-----------------------------------------------------------
+  ;-----------------------------------------------------------
+  CASE #TRAINERR
+    USER_MSG.MSG_TXT[]="Fehler bei Trainingsposition. Wiederholen"
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    ; SK[2] = {Sk_Type #Value,Sk_Txt[] "Abbruch"}
+    nMSG_NR = 2
+  ;-----------------------------------------------------------
+  ;-----------------------------------------------------------
+  CASE #IBERR
+    USER_MSG.MSG_TXT[]="Timeout beim Kommunikationshandshake"
+    nMSG_NR = 3
+  ;-----------------------------------------------------------
+  ;-----------------------------------------------------------
+  CASE #SAERR
+    USER_MSG.MSG_TXT[]="Fehler bei Statusanfrage"
+    nMSG_NR = 4
+  ;-----------------------------------------------------------
+  ;-----------------------------------------------------------
+  CASE #ERRTHRES
+    USER_MSG.MSG_TXT[]="Maximaler Regelweg ueberschritten"
+    nMSG_NR = 5
+  ;-----------------------------------------------------------
+  ;-----------------------------------------------------------
+  CASE #ERRSTEP
+    USER_MSG.MSG_TXT[]="Zuviele Regelschritte"
+    nMSG_NR = 6
+  ;-----------------------------------------------------------
+  ;-----------------------------------------------------------
+  CASE #ERRFEATURE
+    USER_MSG.MSG_TXT[]="Zuwenig Merkmale erkannt"
+    nMSG_NR = 7
+  ;-----------------------------------------------------------
+  ;-----------------------------------------------------------
+  CASE #ERRCOMB
+    USER_MSG.MSG_TXT[]="Ungueltige USER-Parameter-Kombination"
+    nMSG_NR = 8
+  ;-----------------------------------------------------------
+  ;-----------------------------------------------------------
+  CASE #ERRGRAB
+    USER_MSG.MSG_TXT[]="Fehler bei Bildaufnahme"
+    nMSG_NR = 9
+  ;-----------------------------------------------------------
+  ;-----------------------------------------------------------
+  CASE #ERRPARMS    
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Parameterkombination ohne Funktion: %d ",nPar1)
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"und %d ",nPar2)
+    nMSG_NR = 10
+  CASE #ERRGENTRAIN
+    USER_MSG.MSG_TXT[] = "Training nicht erfolgreich. Bitte wiederholen"
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    nMSG_NR = 11
+  CASE #TRAINOK 
+    USER_MSG.MSG_TXT[] = "Training erfolgreich. Sensitivity am PC uebernehmen."
+    nMSG_NR = 12
+  CASE #ERRROT
+    USER_MSG.MSG_TXT[] = "Bitte Ausrichtung auch am PC kontrollieren!"
+    nMSG_NR = 13
+  CASE #ROTCHECK
+    USER_MSG.MSG_TXT[] = "Ausrichtung in Ordnung?"
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Ja"}
+    SK[2] = {Sk_Type #Value,Sk_Txt[] "Nein"}  
+    nMSG_NR = 14
+  CASE #CALOK
+    USER_MSG.MSG_TXT[] = "Kalibrierung erfolgreich"
+    nMSG_NR = 15
+  CASE #ERRCAL
+    USER_MSG.MSG_TXT[] = "Kalibrierung nicht erfolgreich. Wiederholen?"
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    SK[2] = {Sk_Type #Value,Sk_Txt[] "Abbruch"} 
+   nMSG_NR = 16
+  CASE #SENSOK
+    USER_MSG.MSG_TXT[] = "OK, keine Veraenderung der Sensoren"
+    nMSG_NR = 17
+  CASE #SENSNOKMIN
+    USER_MSG.MSG_TXT[] = "OK, geringe Veraenderung kompensiert"
+    nMSG_NR = 18    
+  CASE #SENSNOKMAX
+    USER_MSG.MSG_TXT[] = "Veraenderung zu gross! Ausrichten mit LiveViewer und wiederholen!"
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    nMSG_NR = 19
+  CASE #ERRSENSRPLC
+    USER_MSG.MSG_TXT[] = "Fehler beim Sensortausch. Bitte wiederholen"
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    nMSG_NR = 20
+  CASE #ERRTOOL
+    USER_MSG.MSG_TXT[] = "Fehler beim Tooltausch. Bitte wiederholen"
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    nMSG_NR = 21
+  CASE #SREPLACEOK
+    USER_MSG.MSG_TXT[] = "Tooltauscheval. erfolreich. Tooloffset speichern?"
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Ja"}
+    SK[2] = {Sk_Type #Value,Sk_Txt[] "Nein"} 
+    nMSG_NR = 22    
+  CASE #ERRROBRPLC
+    USER_MSG.MSG_TXT[] = "Fehler beim Robotertausch. Bitte wiederholen"
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    nMSG_NR = 23
+  CASE #ROBRPLCOK
+ 	 USER_MSG.MSG_TXT[] = "Robotertauscheval. erfolgreich. Baseoffset speichern?"
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Ja"}
+    SK[2] = {Sk_Type #Value,Sk_Txt[] "Nein"}  
+    nMSG_NR = 24    
+  CASE #TOOLOFFAC
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Tooloffset fuer Tool Nr: %d uebernehmen?",nPar1)
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Ja"}
+    SK[2] = {Sk_Type #Value,Sk_Txt[] "Nein"}   
+    nMSG_NR = 25
+  CASE #BASEOFFAC
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Neue Base fuer Base Nr: %d uebernehmen?",nPar1)
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Ja"}
+    SK[2] = {Sk_Type #Value,Sk_Txt[] "Nein"} 
+    nMSG_NR = 26
+  CASE #IERR
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Fehler beim Empfangen der PC-Antwort")
+    nMSG_NR = 27
+  CASE #OERR
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Fehler beim Senden der Anfrage")
+    nMSG_NR = 28
+  CASE #CMDERR
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Unbekanntes Kommando: %d",nPar1)
+    nMSG_NR = 29
+  CASE #USRERR
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Nicht unterstueztes USR_CMD")
+    nMSG_NR = 30
+  CASE #DEB
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Debug Wert %d",nPar1)
+    nMSG_NR = 31
+  CASE #ERFIT
+     USER_MSG.MSG_TXT[] = "Fehler beim Fitting. Wiederholen?"
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    SK[2] = {Sk_Type #Value,Sk_Txt[] "Abbruch"}    
+    nMSG_NR = 32
+  CASE #ERVER
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Fehler: Verrechnung ohne Korrektur");
+    nMSG_NR = 33
+  CASE #REFOK
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Referenzbild und Referenzmessung aktuallisiert");
+    nMSG_NR = 34
+  CASE #REFER
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Fehler beim Referenzbild bzw. bei der Referenzmessung");
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Wdh."}
+    nMSG_NR = 35   
+  CASE #SNEXCH
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Sensorposition anpassen und dann in PC quittieren.");
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    nMSG_NR = 36   
+  DEFAULT
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Unbekannter Fehler ")
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    nMSG_NR = 37
+  ENDSWITCH
+  ;
+  ;ENDFOLD (Meldungs-Nr)
+  ;
+  IF (nMSG_NR > 0) THEN
+    USER_MSG.Nr = nMSG_NR
+  ENDIF
+  OFFSET      = 0  
+
+  IF (($mode_op <> #T1)) THEN
+    MSG_TYP = #NotifyMsg 
+  ENDIF
+  nDlgAnswer = 0
+  SWITCH MSG_TYP  
+  CASE #DlgMsg      
+    nDlgHandle = Set_KrlDlg(USER_MSG,Par[],SK[],Opt)      
+    IF (nDlgHandle > 0) Then
+      WHILE (Exists_KrlDlg(nDlgHandle, nDlgAnswer))         ;Warten bis der Dialog beantwortet wird
+        Wait Sec 0.1
+      ENDWHILE
+    ENDIF        
+  CASE #StatMsg
+    nDlgHandle = Set_KrlMsg (#State, USER_MSG, Par[], OPT)   ; Ausgabe Statusmeldung
+  CASE #QuitMsg
+    nDlgHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], OPT)    ; Ausgabe Quittierungsmeldung
+    IF (nDlgHandle > 0) Then
+      WHILE ( Exists_KrlMsg(nDlgHandle))                     ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      ENDWHILE
+    ENDIF  
+  CASE #NotifyMsg
+    NA_INO_MsgH[nMSG_NR] = Set_KrlMsg (#Notify, USER_MSG, Par[], OPT)  ; Ausgabe Hinweismeldung
+  CASE #WaitMsg
+    NA_INO_MsgH[nMSG_NR] = Set_KrlMsg (#Waiting, USER_MSG, Par[], OPT) ; Ausgabe Hinweismeldung
+  DEFAULT
+    USER_MSG.MSG_TXT[] = "MSG_Typ falsch"
+    nDlgHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], OPT)    ; Ausgabe Quittierungsmeldung
+    IF (nDlgHandle > 0) Then
+      WHILE (Exists_KrlMsg(nDlgHandle))                      ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      ENDWHILE
+    ENDIF      
+  ENDSWITCH
+  RETURN(nDlgAnswer)
+ENDFCT
+;
+;*****************************
+; inos Meldung mit Dof-Info Ausgabe
+GLOBAL DEFFCT INT INO_MsgIOPS (MSG_TYP:IN, MSG_NR:IN, frPar1:IN)
+  DECL FRAME         frPar1
+  DECL INO_T_MESNR   MSG_NR
+  DECL INT           nMSG_NR
+  DECL INT           nPar
+  DECL INT           OFFSET
+  DECL INO_MsgTyp    MSG_TYP
+  DECL STATE_T       STATE
+  DECL KRLMSG_T      USER_MSG
+  DECL KRLMSGPAR_T   PAR[3]
+  DECL KRLMSGOPT_T   OPT
+  DECL KrlMsgDlgSK_T SK[7]
+  DECL Char          sMeldFunction[80]
+  DECL INT           nTmp
+  DECL INT           nDlgHandle
+  DECL INT           nDlgAnswer
+
+  ;
+  ;FOLD Init
+  ;
+  nDlgAnswer=0
+  nMSG_NR = 0
+  sMeldFunction[]  = " "
+  USER_MSG         = { Modul[] "INOS_MsgIOPS", Nr 1, Msg_txt[] " "}
+  Par[1]           = { Par_type #Value, Par_txt[] " " }
+  Opt              = { VL_Stop TRUE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+  FOR nTmp = 1 TO 7
+    SK[nTmp] = {Sk_Type #Empty}
+  ENDFOR
+  ;ENDFOLD (Init)
+
+  ;
+  ;FOLD Meldungs-Nr
+  ;
+  OFFSET  = 0
+
+  ;	Fehler (Debug) 80
+  SWITCH MSG_NR
+  CASE #SREPLACEOK
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Tooloffset X:%.1F",frPar1.X) 
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," Y:%.1F", frPar1.Y)
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," Z:%.1F", frPar1.Z)
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," A:%.1F", frPar1.A)
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," B:%.1F", frPar1.B)
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," C:%.1F speichern?", frPar1.C)
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Ja"}
+    SK[2] = {Sk_Type #Value,Sk_Txt[] "Nein"} 
+    nMSG_NR = 101    
+  CASE #ROBRPLCOK
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Neue Base X:%.1F",frPar1.X) 
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," Y:%.1F",frPar1.Y)
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," Z:%.1F", frPar1.Z)
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," A:%.1F", frPar1.A)
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," B:%.1F", frPar1.B)
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," C:%.1F speichern?", frPar1.C)
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Ja"}
+    SK[2] = {Sk_Type #Value,Sk_Txt[] "Nein"}  
+    nMSG_NR = 102    
+  CASE #ERRTHRES  
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"TCP Cor: X:%.1F",frPar1.X) 
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," Y:%.1F", frPar1.Y)
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," Z:%.1F ",frPar1.Z)
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," A:%.1F", frPar1.A)
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," B:%.1F", frPar1.B)
+    SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET," C:%.1F", frPar1.C)
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "Ja"}
+    nMSG_NR = 103
+  DEFAULT
+    swrite(USER_MSG.MSG_TXT[],STATE,OFFSET,"Unbekannte Meldung ")
+    SK[1] = {Sk_Type #Value,Sk_Txt[] "OK"}
+    nMSG_NR = 105
+  ENDSWITCH
+  ;
+  ;ENDFOLD (Meldungs-Nr)
+  ;
+  IF (nMSG_NR > 0) THEN
+    USER_MSG.Nr = nMSG_NR
+  ENDIF
+  OFFSET      = 0  
+
+  IF (($mode_op <> #T1)) THEN
+    MSG_TYP = #NotifyMsg 
+  ENDIF
+  nDlgAnswer = 0
+  SWITCH MSG_TYP  
+  CASE #DlgMsg      
+    nDlgHandle = Set_KrlDlg(USER_MSG,Par[],SK[],Opt)      
+    IF (nDlgHandle > 0) Then
+      WHILE (Exists_KrlDlg(nDlgHandle, nDlgAnswer))         ;Warten bis der Dialog beantwortet wird
+        Wait Sec 0.1
+      ENDWHILE
+    ENDIF        
+  CASE #StatMsg
+    nDlgHandle = Set_KrlMsg (#State, USER_MSG, Par[], OPT)   ; Ausgabe Statusmeldung
+  CASE #QuitMsg
+    nDlgHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], OPT)    ; Ausgabe Quittierungsmeldung
+    IF (nDlgHandle > 0) Then
+      WHILE ( Exists_KrlMsg(nDlgHandle))                     ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      ENDWHILE
+    ENDIF  
+  CASE #NotifyMsg
+    nDlgHandle = Set_KrlMsg (#Notify, USER_MSG, Par[], OPT)  ; Ausgabe Hinweismeldung
+  CASE #WaitMsg
+    nDlgHandle = Set_KrlMsg (#Waiting, USER_MSG, Par[], OPT) ; Ausgabe Hinweismeldung
+  DEFAULT
+    USER_MSG.MSG_TXT[] = "MSG_Typ falsch"
+    nDlgHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], OPT)    ; Ausgabe Quittierungsmeldung
+    IF (nDlgHandle > 0) Then
+      WHILE (Exists_KrlMsg(nDlgHandle))                      ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      ENDWHILE
+    ENDIF      
+  ENDSWITCH
+  RETURN(nDlgAnswer)
+ENDFCT
+;
+;ENDFOLD (INOS Meldungen)
+;
+;ENDFOLD (INOS Interface)

@@ -1,0 +1,22 @@
+Measurement-Override: 1.000890
+
+Maximum Current Axis[1]: 0.000000
+Maximum Current Axis[2]: 0.000000
+Maximum Current Axis[3]: 16.046028
+Maximum Current Axis[4]: 0.000000
+Maximum Current Axis[5]: 9.209061
+Maximum Current Axis[6]: 0.000000
+
+Axis[1]: 0 % of maximum powermodule-current
+Axis[2]: 0 % of maximum powermodule-current
+Axis[3]: 1604 % of maximum powermodule-current
+Axis[4]: 0 % of maximum powermodule-current
+Axis[5]: 920 % of maximum powermodule-current
+Axis[6]: 0 % of maximum powermodule-current
+
+Quality Axis[1]: 0.000000
+Quality Axis[2]: 0.000000
+Quality Axis[3]: 264.818252
+Quality Axis[4]: 0.000000
+Quality Axis[5]: 48.056929
+Quality Axis[6]: 0.000000

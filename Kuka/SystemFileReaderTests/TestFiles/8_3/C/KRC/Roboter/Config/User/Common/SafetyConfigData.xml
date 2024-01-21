@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<SafetyConfigData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <AxisRangeNameItems />
+  <ChangeLog>
+    <Entries>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_GlobalParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2019-05-09T21:02:56.492671+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_HardwareParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2019-05-09T21:02:57.3581084+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ReferenceAdjustmentParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2019-05-09T21:02:57.4631144+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_AxisMonitoringParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2019-05-09T21:02:57.4631144+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_MachineDataUpdated</MessageKey>
+        <MessageParams />
+        <Timestamp>2019-05-09T21:02:57.9481421+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ConfigurationSaved</MessageKey>
+        <MessageParams />
+        <Timestamp>2019-05-09T21:02:57.9821441+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ReferenceAdjustmentParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2019-12-06T10:10:34.9651784+01:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_AxisMonitoringParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2019-12-06T10:10:34.9651784+01:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_MachineDataUpdated</MessageKey>
+        <MessageParams />
+        <Timestamp>2019-12-06T10:10:35.0183267+01:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ConfigurationSaved</MessageKey>
+        <MessageParams />
+        <Timestamp>2019-12-06T10:10:35.0303682+01:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ReferenceAdjustmentParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2023-07-18T13:49:24.8387596+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_AxisMonitoringParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2023-07-18T13:49:24.8387596+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_MachineDataUpdated</MessageKey>
+        <MessageParams />
+        <Timestamp>2023-07-18T13:49:24.9217926+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ConfigurationSaved</MessageKey>
+        <MessageParams />
+        <Timestamp>2023-07-18T13:49:24.9277945+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ReferenceAdjustmentParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2023-07-18T13:54:23.6117913+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_AxisMonitoringParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2023-07-18T13:54:23.6117913+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_MachineDataUpdated</MessageKey>
+        <MessageParams />
+        <Timestamp>2023-07-18T13:54:23.6798182+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ConfigurationSaved</MessageKey>
+        <MessageParams />
+        <Timestamp>2023-07-18T13:54:23.6858209+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ReferenceAdjustmentParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2023-07-19T10:42:18.6359036+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_AxisMonitoringParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2023-07-19T10:42:18.6359036+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_MachineDataUpdated</MessageKey>
+        <MessageParams />
+        <Timestamp>2023-07-19T10:42:18.7149081+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ConfigurationSaved</MessageKey>
+        <MessageParams />
+        <Timestamp>2023-07-19T10:42:18.729909+02:00</Timestamp>
+      </ProtocolEntry>
+    </Entries>
+  </ChangeLog>
+  <OverwriteEntries>
+    <Overwrites />
+  </OverwriteEntries>
+  <DevDescrRevision>589825</DevDescrRevision>
+  <LastModified>2023-07-19T10:42:19.7039647+02:00</LastModified>
+  <MachineDataLastModified>2023-07-19T10:42:18.7149081+02:00</MachineDataLastModified>
+  <ProjectName>-</ProjectName>
+  <ToolNameItems />
+  <Version>4</Version>
+  <WorksheetCrc>355092227</WorksheetCrc>
+  <MonitoringSpaceNameItems />
+  <WorkspaceNameItems />
+</SafetyConfigData>

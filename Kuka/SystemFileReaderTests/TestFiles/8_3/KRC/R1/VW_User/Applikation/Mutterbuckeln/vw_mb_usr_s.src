@@ -1,0 +1,318 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Mutterbuckeln
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEF vw_mb_usr_s( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Mutterbuckeln                       *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.16 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD INIT Mutterbuckeln 
+GLOBAL DEF MB_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_MBuckeln.Name[]="KS24.01.001_150616"
+;ENDFOLD
+;
+;FOLD Vorbesetzung Meldungsausgabe
+FOR i = 1 TO 100
+  n_MBS_Handle[i]=-1
+  n_MBR_Handle[i]=-1
+ENDFOR
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SAW Mutterbuckeln 
+GLOBAL DEF MB_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RESET Mutterbuckeln 
+GLOBAL DEF MB_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD CANCEL Mutterbuckeln 
+GLOBAL DEF MB_CANCEL( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Mutterbuckeln 1 
+GLOBAL DEF MB1_LOOP(MB1_Cmd :IN )
+INT MB1_Cmd
+;
+SWITCH MB1_Cmd
+  CASE 1
+    ;Vorwahl mit Prozess
+    $OUT[O_MB1_m_Proz]=NOT $IN[I_MB1_o_Proz]
+;    
+    ;BA-Hand an MB 1 setzen
+    IF $OUT[O_R_Hand] AND NOT $COULD_START_MOTION THEN
+      $OUT[O_MB1_Hand]=TRUE
+      $OUT[O_MB1_Auto]=FALSE
+    ENDIF
+;
+    ;BA-AUTO an MB 1 setzen
+	 B_MB1_Hilf = ($OUT[O_MB1_AH_auf] OR $OUT[O_MB1_AH_zu] OR $OUT[O_MB1_Zuf_zu] OR $OUT[O_MB1_Zuf_vo] OR $OUT[O_MB1_H_senk] OR $OUT[O_MB1_H_heb])
+    IF (($OUT[O_R_Hand] AND ($OUT[O_R_Proz_akt] OR B_MB1_Hilf) AND $COULD_START_MOTION) OR $OUT[O_R_Auto]) THEN
+      $OUT[O_MB1_Hand]=FALSE
+      $OUT[O_MB1_Auto]=TRUE
+    ENDIF
+;
+    ;Roboter-Antriebe Ein an MB 1 setzen    
+    $OUT[O_MB1_Antr_N]=$COULD_START_MOTION    
+;
+    ;Ausgabe Fehlermeldungen
+;   
+    ;Buckeln n.i.O.
+    $OUT[O_MB1_nio]=$OUT[O_R_Auto] AND $OUT[O_MB1_P_akt] AND $FLAG[F_MB1_nio]
+    ;Prozessmaterial fehlt
+    $OUT[O_MB1_Mat]=$OUT[O_R_Auto] AND $IN[I_MB1_Mat]
+    ;Betriebsbereit fehlt
+    $OUT[O_MB1_nBerei]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_MB1_bereit] AND $timer_flag[TimerNr_Ein]
+    ;Sammelstoerung
+    $OUT[O_MB1_Samel2]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($FLAG[F_MB1_Sammel] OR NOT $IN[I_MB1_KW_vor] OR NOT $IN[I_MB1_bereit]) AND $timer_flag[TimerNr_Ein]
+;
+  CASE 2
+    ;Vorwahl mit Prozess
+    $OUT[O_MB1_m_Proz]=NOT $IN[I_MB1_o_Proz]
+;    
+    ;BA-Hand an MB 1 setzen
+    B_MB1_Hilf = ($OUT[O_MB1_AH_a_N] OR $OUT[O_MB1_AH_z_N] OR $OUT[O_MB1_Zf_z_N] OR $OUT[O_MB1_Zf_v_N] OR $OUT[O_MB1_H_se_N] OR $OUT[O_MB1_H_he_N])
+    IF $OUT[O_R_Hand] AND (NOT $COULD_START_MOTION OR (NOT $OUT[O_R_Proz_akt] AND NOT B_MB1_Hilf)) THEN
+      $OUT[O_MB1_Hand_N]=TRUE
+      $OUT[O_MB1_Auto_N]=FALSE
+    ENDIF
+;
+    ;BA-AUTO an MB 1 setzen
+    IF (($OUT[O_R_Hand] AND ($OUT[O_R_Proz_akt] OR B_MB1_Hilf) AND $COULD_START_MOTION) OR $OUT[O_R_Auto]) THEN
+      $OUT[O_MB1_Hand_N]=FALSE
+      $OUT[O_MB1_Auto_N]=TRUE
+    ENDIF
+;
+    ;Roboter-Antriebe Ein an MB 1 setzen    
+    $OUT[O_MB1_Antr_N]=$COULD_START_MOTION
+;
+    ;Ausgabe Fehlermeldungen
+;   
+    ;Buckeln n.i.O.
+    $OUT[O_MB1_nio_N]=$OUT[O_R_Auto] AND $OUT[O_MB1_P_akt] AND $FLAG[F_MB1_nio]
+    ;Vorwarnung Standmenge
+    $OUT[O_MB1_V_Ka_N]=$OUT[O_R_Auto] AND $IN[I_MB1_V_Ka_N]
+    ;Maximale Standmenge
+    $OUT[O_MB1_M_Ka_N]=$OUT[O_R_Auto] AND $IN[I_MB1_M_Ka_N]
+    ;Prozessmaterial fehlt
+    $OUT[O_MB1_Mat_N]=$OUT[O_R_Auto] AND $IN[I_MB1_Mat_N]
+    ;Betriebsbereit fehlt
+    $OUT[O_MB1_nBerei]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_MB1_bereit] AND $timer_flag[TimerNr_Ein]
+    ;Sammelstoerung
+    $OUT[O_MB1_Samel2]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($FLAG[F_MB1_Sammel] OR NOT $IN[I_MB1_KW_v_N] OR NOT $IN[I_MB1_bereit]) AND $timer_flag[TimerNr_Ein]
+;
+  DEFAULT
+ENDSWITCH  
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Mutterbuckeln 2
+GLOBAL DEF MB2_LOOP(MB2_Cmd :IN )
+INT MB2_Cmd
+;
+SWITCH MB2_Cmd
+  CASE 1
+    ;Vorwahl mit Prozess
+    $OUT[O_MB2_m_Proz]=NOT $IN[I_MB2_o_Proz]    
+;
+    ;BA-Hand an MB 2 setzen
+    IF $OUT[O_R_Hand] AND NOT $COULD_START_MOTION THEN
+      $OUT[O_MB2_Hand]=TRUE
+      $OUT[O_MB2_Auto]=FALSE
+    ENDIF
+;
+    ;BA-AUTO an MB 2 setzen
+	 B_MB2_Hilf = ($OUT[O_MB2_AH_auf] OR $OUT[O_MB2_AH_zu] OR $OUT[O_MB2_Zuf_zu] OR $OUT[O_MB2_Zuf_vo] OR $OUT[O_MB2_H_senk] OR $OUT[O_MB2_H_heb])
+    IF (($OUT[O_R_Hand] AND ($OUT[O_R_Proz_akt] OR B_MB2_Hilf) AND $COULD_START_MOTION) OR $OUT[O_R_Auto]) THEN
+      $OUT[O_MB2_Hand]=FALSE
+      $OUT[O_MB2_Auto]=TRUE
+    ENDIF
+;
+    ;Roboter-Antriebe Ein an MB 2 setzen    
+    $OUT[O_MB2_Antr_N]=$COULD_START_MOTION    
+;
+    ;Ausgabe Fehlermeldungen
+;   
+    ;Buckeln n.i.O.
+    $OUT[O_MB2_nio]=$OUT[O_R_Auto] AND $OUT[O_MB2_P_akt] AND $FLAG[F_MB2_nio]
+    ;Prozessmaterial fehlt
+    $OUT[O_MB2_Mat]=$OUT[O_R_Auto] AND $IN[I_MB2_Mat]
+    ;Betriebsbereit fehlt
+    $OUT[O_MB2_nBerei]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_MB2_bereit] AND $timer_flag[TimerNr_Ein]
+    ;Sammelstoerung
+    $OUT[O_MB2_Samel2]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($FLAG[F_MB2_Sammel] OR NOT $IN[I_MB2_KW_vor] OR NOT $IN[I_MB2_bereit]) AND $timer_flag[TimerNr_Ein]
+;
+  CASE 2
+    ;Vorwahl mit Prozess
+    $OUT[O_MB2_m_Proz]=NOT $IN[I_MB2_o_Proz]    
+;
+    ;BA-Hand an MB 2 setzen
+    B_MB2_Hilf = ($OUT[O_MB2_AH_a_N] OR $OUT[O_MB2_AH_z_N] OR $OUT[O_MB2_Zf_z_N] OR $OUT[O_MB2_Zf_v_N] OR $OUT[O_MB2_H_se_N] OR $OUT[O_MB2_H_he_N])
+    IF $OUT[O_R_Hand] AND (NOT $COULD_START_MOTION OR (NOT $OUT[O_R_Proz_akt] AND NOT B_MB2_Hilf)) THEN
+      $OUT[O_MB2_Hand_N]=TRUE
+      $OUT[O_MB2_Auto_N]=FALSE
+    ENDIF
+;
+    ;BA-AUTO an MB 2 setzen
+    IF (($OUT[O_R_Hand] AND ($OUT[O_R_Proz_akt] OR B_MB2_Hilf) AND $COULD_START_MOTION) OR $OUT[O_R_Auto]) THEN
+      $OUT[O_MB2_Hand_N]=FALSE
+      $OUT[O_MB2_Auto_N]=TRUE
+    ENDIF
+;
+    ;Roboter-Antriebe Ein an MB 2 setzen    
+    $OUT[O_MB2_Antr_N]=$COULD_START_MOTION
+;
+    
+    ;Ausgabe Fehlermeldungen
+;   
+    ;Buckeln n.i.O.
+    $OUT[O_MB2_nio_N]=$OUT[O_R_Auto] AND $OUT[O_MB2_P_akt] AND $FLAG[F_MB2_nio]
+    ;Vorwarnung Standmenge
+    $OUT[O_MB2_V_Ka_N]=$OUT[O_R_Auto] AND $IN[I_MB2_V_Ka_N]
+    ;Maximale Standmenge
+    $OUT[O_MB2_M_Ka_N]=$OUT[O_R_Auto] AND $IN[I_MB2_M_Ka_N]
+    ;Prozessmaterial fehlt
+    $OUT[O_MB2_Mat_N]=$OUT[O_R_Auto] AND $IN[I_MB2_Mat_N]
+    ;Betriebsbereit fehlt
+    $OUT[O_MB2_nBerei]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_MB2_bereit] AND $timer_flag[TimerNr_Ein]
+    ;Sammelstoerung
+    $OUT[O_MB2_Samel2]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND ($FLAG[F_MB2_Sammel] OR NOT $IN[I_MB2_KW_v_N] OR NOT $IN[I_MB2_bereit]) AND $timer_flag[TimerNr_Ein]
+;
+  DEFAULT
+ENDSWITCH  
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD Lebensbit MB
+DEF L_Bit_MB(MBNr :IN)
+;Setzen / Rueksetzen Lebensbit Roboter
+INT MBNr
+BOOL LBitMB, LBitFault
+INT RobTimer
+BOOL ErrLBit, bRet
+ErrLBit = FALSE
+LBitFault=FALSE
+;Setzen - Rucksetzen  des Lebensbit an Zangensteuerung
+$OUT[LBitToMB[MBNr]] = NOT $IN[LBitFromMB[MBNr]]
+RobTimer = $ROB_TIMER	
+IF $IN[LBitFromMB[MBNr]] <> LBitState[MBNr] THEN
+  LBitTimeCnt[MBNr] = RobTimer
+ENDIF
+IF (RobTimer - LBitTimeCnt[MBNr]) > 5000 THEN
+  ErrLBit = TRUE
+  ErrMBNr = MBNr
+  MB_LBitFeh[MBNr]=TRUE
+ENDIF
+LBitState[MBNr] = $IN[LBitFromMB[MBNr]]
+IF ErrLBit THEN
+  Mutterbuckeln_Msg(1,#StateMsg, ErrMBNr)
+ELSE
+  IF n_MBS_Handle[1]>-1 THEN
+    bRet=Clear_KrlMsg(n_MBS_Handle[1])
+    n_MBS_Handle[1]=-1
+    ErrMBNr = -1
+  ENDIF
+  MB_LBitFeh[MBNr]=FALSE
+ENDIF
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD MB_Meldungen
+DEF Mutterbuckeln_Msg(msg_nr :IN, MsgTyp :IN, MBNr :IN)
+INT msg_nr, MBNr, Answer
+DECL MBS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+;
+USER_MSG = { Modul[] "MB_S_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF Varstate("MBNr")==#initialized then
+  SWITCH MBNr
+    CASE 1
+      Par[1] = { Par_type #Value, Par_int 1 }
+    CASE 2
+      Par[1] = { Par_type #Value, Par_int 2 }
+    CASE 3
+      Par[1] = { Par_type #Value, Par_int 3 }
+    CASE 4
+      Par[1] = { Par_type #Value, Par_int 4 }
+    CASE 5
+      Par[1] = { Par_type #Value, Par_int 5 }
+    CASE 6
+      Par[1] = { Par_type #Value, Par_int 6 }
+    DEFAULT
+      Par[1] = { Par_type #Value, Par_txt[] " " }
+  ENDSWITCH
+ELSE
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+ENDIF
+;
+IF ((n_MBS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]="MB%1 :keine Antwort auf Lebensbit"
+    CASE 2
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 3
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_MBS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_MBS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      n_MBS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_MBS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (MB Meldungen)

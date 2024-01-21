@@ -1,0 +1,32 @@
+&ACCESS R
+&PARAM TPVW_VERSION=8.3.18
+&PARAM SUPPRESS = LoosOfPrecision UnswitchedEnum UnusedFunctionParameter
+DEFDAT VW_ServoGun_Interface PUBLIC
+;FOLD interface VW - Servogun Basic --> DO NOT DELETE THIS LINE #INSERTMARKER
+
+GLOBAL ENUM COMPTYP_T NONE,AIR,EQUALIZING
+GLOBAL ENUM SGEQ_ParamMode OFF,WEAK,MEDIUM,STRONG,USER1,USER2,CUSTOM
+GLOBAL ENUM SG_ForceMode_T SINGLE,DUAL,MULTI
+GLOBAL ENUM InitType_T NEW,SAME,WEARREF,WEARMEAS
+GLOBAL ENUM SG_MoveType_T SG_PTP,SG_LIN,SG_CIRC,SG_SPTP,SG_SLIN,SG_SCIRC
+GLOBAL ENUM SG_GunControl_T POSITION,FORCE
+GLOBAL ENUM SG_GunTyp CGUN,XGUN
+GLOBAL ENUM WEARTYP_T RATIO,SINGLE
+GLOBAL ENUM SG_AirComp_T NO,CYL1,CYL2,BOTH
+GLOBAL ENUM SG_Cont_T NO,SCLOSE,SOPEN,CLS_OPEN
+GLOBAL STRUC SGg_POINT_T CHAR Name[24],INT GNumber,REAL Thickness,REAL ThicknessTol,CHAR ForceProfile[24],SG_ForceMode_T ForceMode,REAL Force,WeldTime,Force2,SG_AirComp_T Comp,REAL Path,INT PrNumber,BOOL MoveApprox,INT MaxRestart,SG_Cont_T Cont,BOOL KeepForceAtWelding
+GLOBAL ENUM SG_DIRECTIONTYP_T PX,NX,PY,NY,PZ,NZ
+GLOBAL STRUC ServoGun_T CHAR Name[24],SG_GunControl_T GunControl,SG_GunTyp GunType,COMPTYP_T CompType,INT ExtAxNumber,INT DriveChannel,INT WeldTimerIndex,SG_DIRECTIONTYP_T GunDirection,INT MaxRestart,REAL WearMax,WEARTYP_T WearType,INT WearRatio,REAL ForceMax,REAL ForceInitNew,REAL ForceInit,BOOL TipControl,BOOL TipCorrection,BOOL BGProcessActive,BOOL MultiforceActive,BOOL Dockable,BOOL XCompActive,SG_DIRECTIONTYP_T XCompDirection,BOOL FlexCompActive,BOOL AsyBndCompActive
+
+
+DECL GLOBAL ServoGun_T ServoGun[6]
+ServoGun[1]={Name[] " ",GunControl #POSITION,GunType #CGUN,CompType #NONE,ExtAxNumber 0,DriveChannel 0,WeldTimerIndex 0,GunDirection #PX,MaxRestart 0,WearMax 0.0,WearType #RATIO,WearRatio 50,ForceMax 0.0,ForceInitNew 0.0,ForceInit 0.0,TipControl FALSE,TipCorrection FALSE,BGProcessActive FALSE,MultiforceActive FALSE,Dockable FALSE,XCompActive FALSE,XCompDirection #NZ,FlexCompActive FALSE,AsyBndCompActive FALSE}
+ServoGun[2]={Name[] " ",GunControl #POSITION,GunType #CGUN,CompType #NONE,ExtAxNumber 0,DriveChannel 0,WeldTimerIndex 0,GunDirection #PX,MaxRestart 0,WearMax 0.0,WearType #RATIO,WearRatio 50,ForceMax 0.0,ForceInitNew 0.0,ForceInit 0.0,TipControl FALSE,TipCorrection FALSE,BGProcessActive FALSE,MultiforceActive FALSE,Dockable FALSE,XCompActive FALSE,XCompDirection #NZ,FlexCompActive FALSE,AsyBndCompActive FALSE}
+ServoGun[3]={Name[] " ",GunControl #POSITION,GunType #CGUN,CompType #NONE,ExtAxNumber 0,DriveChannel 0,WeldTimerIndex 0,GunDirection #PX,MaxRestart 0,WearMax 0.0,WearType #RATIO,WearRatio 50,ForceMax 0.0,ForceInitNew 0.0,ForceInit 0.0,TipControl FALSE,TipCorrection FALSE,BGProcessActive FALSE,MultiforceActive FALSE,Dockable FALSE,XCompActive FALSE,XCompDirection #NZ,FlexCompActive FALSE,AsyBndCompActive FALSE}
+ServoGun[4]={Name[] " ",GunControl #POSITION,GunType #CGUN,CompType #NONE,ExtAxNumber 0,DriveChannel 0,WeldTimerIndex 0,GunDirection #PX,MaxRestart 0,WearMax 0.0,WearType #RATIO,WearRatio 50,ForceMax 0.0,ForceInitNew 0.0,ForceInit 0.0,TipControl FALSE,TipCorrection FALSE,BGProcessActive FALSE,MultiforceActive FALSE,Dockable FALSE,XCompActive FALSE,XCompDirection #NZ,FlexCompActive FALSE,AsyBndCompActive FALSE}
+ServoGun[5]={Name[] " ",GunControl #POSITION,GunType #CGUN,CompType #NONE,ExtAxNumber 0,DriveChannel 0,WeldTimerIndex 0,GunDirection #PX,MaxRestart 0,WearMax 0.0,WearType #RATIO,WearRatio 50,ForceMax 0.0,ForceInitNew 0.0,ForceInit 0.0,TipControl FALSE,TipCorrection FALSE,BGProcessActive FALSE,MultiforceActive FALSE,Dockable FALSE,XCompActive FALSE,XCompDirection #NZ,FlexCompActive FALSE,AsyBndCompActive FALSE}
+ServoGun[6]={Name[] " ",GunControl #POSITION,GunType #CGUN,CompType #NONE,ExtAxNumber 0,DriveChannel 0,WeldTimerIndex 0,GunDirection #PX,MaxRestart 0,WearMax 0.0,WearType #RATIO,WearRatio 50,ForceMax 0.0,ForceInitNew 0.0,ForceInit 0.0,TipControl FALSE,TipCorrection FALSE,BGProcessActive FALSE,MultiforceActive FALSE,Dockable FALSE,XCompActive FALSE,XCompDirection #NZ,FlexCompActive FALSE,AsyBndCompActive FALSE}
+
+;ENDFOLD interface VW - Servogun Basic --> DO NOT DELETE THIS LINE #INSERTMARKER
+
+ENDDAT

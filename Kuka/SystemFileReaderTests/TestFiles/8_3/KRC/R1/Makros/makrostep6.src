@@ -1,0 +1,48 @@
+&ACCESS RV
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrostepvorgabe.src
+&PARAM EDITMASK = MakroStep6
+&PARAM TPVW_VERSION=8.3.18
+DEF makrostep6(Function:IN)
+; FOLD Makro Schrittkette;%{SE} %MKUKATPVW
+; FOLD ;%{H} %MKUKATPVW
+INT Function
+IF Function==1 THEN
+APP_INT_STEP[6]=1
+Return
+ENDIF
+SWITCH APP_INT_STEP[6] 
+Case 0
+; ENDFOLD
+;ENDFOLD
+;FOLD SCHRITT 1 --INIT--;%{P}%MKUKATPVW,%CSTEP,%VST_NR,%P 1:SCHRITT , 2:1, 3:INIT
+;FOLD ;%{H}
+Case 1
+;ENDFOLD
+;FOLD 1:;%{SE} %MKUKATPVW
+;ENDFOLD 
+;ENDFOLD
+; FOLD ;%{H}
+DEFAULT
+   HMeldung ("StepNotAvailableInModul")
+   APP_INT_STEP[6]=1
+ENDSWITCH
+END
+DEF HMeldung (Meld[]:IN)
+   CHAR Meld[]
+   DECL KrlMsg_T Msg
+   DECL KrlMsgPar_T Par[3]
+   DECL KrlMsgOpt_T Opt
+   INT nHandle
+   BOOL dummy
+     dummy=STRCOPY(Msg.Msg_txt[],Meld[])
+     Msg.Modul[]="MAKROSTEP"
+     Msg.Nr=111
+     Par[1].Par_type=#Value
+     Par[1].Par_Txt[] = "6"
+     Par[2].Par_type=#Value
+     Par[2].Par_Int = PREV_STEP[6]
+     Opt = {VL_Stop TRUE, Clear_P_Reset TRUE, Log_To_DB FALSE}
+     nHandle = Set_KrlMsg (#Notify, Msg, Par[], Opt)
+     WAIT SEC 0.2
+END
+; ENDFOLD

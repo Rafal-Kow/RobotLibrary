@@ -24,7 +24,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../KukaReaderLibrary/KukaSystemFileReader.csproj" />
+    <ProjectReference Include="..\SystemFileReader\SystemFileReader.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="TestFiles/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <none
+      Include="TestFiles\**"
+      CopyToOutputDirectory="PreserveNewest"
+      LinkBase="TestFiles\" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,6 @@
+&ACCESS RVO2
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vw_userv
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM EDITMASK = vw_user
+DEFDAT  vw_user
+ENDDAT

@@ -1,0 +1,266 @@
+&ACCESS RVE
+&REL 202
+&PARAM DISKPATH = VW_User/Applikation/Nieten
+&PARAM TPVW_VERSION = 8.3.0
+DEF vw_nz_usr_r( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Nieten                              *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.09 LE                                       *
+;*                                                     *
+;* Aenderung:                                          *
+;* 2015.11.25 OL/LZ Ausgabe Programmnummer 2 SNZ1,2    *
+;*------------------------------------------------------
+;
+END
+;
+;FOLD Nieten_Interface
+GLOBAL DEF NZ_Interfac(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+INT i
+;
+;-----------------------------------------------------------
+SWITCH USER_CMD
+;
+;-----------------------------------------------------------
+  CASE #USR_INIT
+    ;FOLD Init
+;
+;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------------
+  CASE #USR_ADV
+    ;FOLD Advance
+;    
+    Offset=PAR4
+    IF (PAR4>0) THEN
+      CONTINUE
+      IF (($PRO_MODE==#GO) OR ($EXT)) THEN
+        MyCorrOFF=(Offset*0.1)
+        WHILE ((Offset<0) or (Offset>150))
+          Nieten_Msg(2,#QuitMsg) ; MyCorrOFF nicht im zulaessigen Bereich
+        ENDWHILE
+;
+        MyCorr=$NULLFRAME
+        MyCorr.X=-MyCorrOff
+        IF (VW_MPARA_ACT.BASE_NO > 0) THEN
+          SWITCH BASE_TYPE[VW_MPARA_ACT.BASE_NO]
+            CASE #TCP
+              CONTINUE
+              $BASE=$BASE:MyCorr
+            DEFAULT
+              CONTINUE
+              $TOOL=$TOOL:MyCorr
+          ENDSWITCH
+        ELSE
+          CONTINUE
+          $TOOL=$TOOL:MyCorr
+        ENDIF
+      ENDIF  ;Von PRO_MODE
+    ENDIF  ;Von PAR4
+;
+    CONTINUE
+    NZ_PktNr_SPS=PAR6
+;
+    SWITCH PAR1
+;     
+      CASE 1  ;Auswahl Servo
+        $FLAG[F_SZ_AH_KOMP]=TRUE
+        SWITCH PAR2
+          CASE 1
+            CONTINUE
+            SNZ1_P_Nr=PAR3 ;NZ 1 Ausgabe Programm-Nr
+          CASE 2
+            CONTINUE
+            SNZ2_P_Nr=PAR3 ;NZ 2 Ausgabe Programm-Nr
+	     ENDSWITCH  
+;            
+      CASE 2  ;Auswahl hydraulisch
+        SWITCH PAR2
+          CASE 1
+            CONTINUE
+            PNZ1_P_Nr=PAR3 ;NZ 1 Ausgabe Programm-Nr
+          CASE 2
+            CONTINUE
+            PNZ2_P_Nr=PAR3 ;NZ 2 Ausgabe Programm-Nr
+	     ENDSWITCH  	
+;
+      DEFAULT
+        Nieten_Msg(20,#QuitMsg) ;Falsche Auswahl
+;    
+    ENDSWITCH ;von PAR1
+;
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------------
+  CASE #USR_TRIG
+;  
+    ;FOLD Trig
+    SWITCH CMD_SEL
+      CASE 203
+        IF (PAR6==$COUNT_I[I_Arbpkt_Nr]) AND NOT (PAR6==0) THEN
+          Nieten_Msg(1,#QuitMsg) ; Punkt schon genietet
+        ENDIF
+        SWITCH PAR1
+          CASE 1  ;Auswahl Servo
+            IF NOT $FLAG[F_SZ_AH_KOMP]==TRUE THEN
+              $FLAG[F_SZ_AH_KOMP]=TRUE
+              WAIT SEC 0.1
+            ENDIF
+            SWITCH PAR2
+              CASE 1
+                IF (SNZ1_P_Nr<>PAR3) THEN
+                  SNZ1_P_Nr=PAR3 ;NZ 1 Ausgabe Programm-Nr
+		            WAIT SEC 0.1
+	             ENDIF
+              CASE 2
+                IF (SNZ2_P_Nr<>PAR3) THEN
+                  SNZ2_P_Nr=PAR3 ;NZ 2 Ausgabe Programm-Nr
+		            WAIT SEC 0.1
+	             ENDIF
+	         ENDSWITCH  
+;            
+          CASE 2  ;Auswahl hydraulisch
+            SWITCH PAR2
+              CASE 1
+                IF (PNZ1_P_Nr<>PAR3) THEN
+                  PNZ1_P_Nr=PAR3 ;NZ 1 Ausgabe Programm-Nr
+		            WAIT SEC 0.1
+	             ENDIF
+              CASE 2
+                IF (PNZ2_P_Nr<>PAR3) THEN
+                  PNZ2_P_Nr=PAR3 ;NZ 2 Ausgabe Programm-Nr
+		            WAIT SEC 0.1
+	             ENDIF
+	         ENDSWITCH  	
+;
+          DEFAULT
+            Nieten_Msg(21,#QuitMsg) ;Falsche Auswahl
+;    
+        ENDSWITCH ;von PAR1
+;
+      CASE 310
+        SWITCH PAR2
+          CASE 1
+            IF MIT_NZ1_Serv THEN  ;Servo Zange
+              SWITCH PAR3
+                CASE 1
+                  $OUT[O_NZ1_FRG]=FALSE
+                CASE 2
+                  $OUT[O_NZ1_FRG]=TRUE
+                DEFAULT
+                  Nieten_Msg(22,#QuitMsg) ;Falsche Auswahl
+              ENDSWITCH;von PAR3
+              NZ1_sollPos=PAR1 ;NZ 1 Ausgabe Zangen-Oeffnung
+              $OUT[O_NZ1_SPos_g]=TRUE
+              ;Servo_NZ Programmnummer Nachfolger
+               SNZ1_P2_Nr=PAR4 ;NZ 1 Ausgabe Programmnummer 2
+            ENDIF
+          CASE 2
+            IF MIT_NZ2_Serv THEN  ;Servo Zange
+              SWITCH PAR3
+                CASE 1
+                  $OUT[O_NZ2_FRG]=FALSE
+                CASE 2
+                  $OUT[O_NZ2_FRG]=TRUE
+                DEFAULT
+                  Nieten_Msg(22,#QuitMsg) ;Falsche Auswahl
+              ENDSWITCH ;von PAR3
+              NZ2_sollPos=PAR1 ;NZ 2 Ausgabe Zangen-Oeffnung
+              $OUT[O_NZ2_SPos_g]=TRUE
+              ;Servo_NZ Programmnummer Nachfolger
+              SNZ2_P2_Nr=PAR4 ;NZ 2 Ausgabe Programmnummer 2
+            ENDIF
+;
+          DEFAULT
+            Nieten_Msg(21,#QuitMsg) ;Falsche Auswahl
+        ENDSWITCH;von PAR2
+;
+      DEFAULT
+        Nieten_Msg(19,#QuitMsg) ;Falsche Auswahl
+    ENDSWITCH ;von SEL   
+;
+    ;ENDFOLD (TRIG)    
+;
+;-----------------------------------------------------------
+  CASE #USR_MAIN
+    ;FOLD Main
+;    
+    $COUNT_I[I_Arbpkt_Nr]=PAR6
+    Weg=PAR5
+    ;+X Rueckbewegung
+    MyCorrWeg=$NULLFRAME
+    MyCorrWeg.X=-(Weg*0.1)
+    IF (Weg>9) THEN
+      LIN $Pos_act:MyCorrWeg C_VEL
+    ENDIF  
+;
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------------
+  DEFAULT
+;  
+  ENDSWITCH
+END
+;
+;ENDFOLD (Nieten Interface)
+;
+;-----------------------------------------------------------
+;FOLD NZ_Meldungen
+DEF Nieten_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr
+DECL NZR_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "NZ_R_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF ((n_NZR_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+      USER_MSG.MSG_TXT[]="Punkt schon genietet"
+    CASE 2
+	   USER_MSG.MSG_TXT[]="MyCorrOFF nicht im zulaessigen Bereich"
+    CASE 3
+      USER_MSG.MSG_TXT[]=" "
+    CASE 19
+	   USER_MSG.MSG_TXT[]="Falsche Gruppen-Auswahl"  
+    CASE 20
+	   USER_MSG.MSG_TXT[]="P1: Falsche Auswahl"
+    CASE 21
+	   USER_MSG.MSG_TXT[]="P2: Falsche Auswahl" 
+    CASE 22
+	   USER_MSG.MSG_TXT[]="P3: Falsche Auswahl"    
+    DEFAULT
+      USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_NZR_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_NZR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      While ( Exists_KrlMsg(n_NZR_Handle[msg_nr]) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      Endwhile
+    CASE #NotifyMsg
+      n_NZR_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_NZR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF  
+END
+;
+;ENDFOLD (NZ Meldungen)
+

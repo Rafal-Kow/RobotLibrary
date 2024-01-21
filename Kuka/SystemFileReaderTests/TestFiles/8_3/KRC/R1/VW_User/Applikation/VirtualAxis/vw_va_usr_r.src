@@ -1,0 +1,898 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/VirtualAxis
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEF vw_va_usr_r( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Virtuelle Achsen                    *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.16 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+;
+END
+;
+;FOLD Virtuelle_Achsen_Interface
+GLOBAL DEF VA_Interfac(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+INT SZNr, i
+BOOL FrgSZ
+;
+;-----------------------------------------------------------
+SWITCH USER_CMD
+;
+;-----------------------------------------------------------
+  CASE #USR_INIT
+    ;FOLD Init
+;
+    ;Warten wenn SZ nicht bereit
+    IF (($mode_op==#T1) OR ($mode_op==#T2)) THEN
+      WAIT SEC 0.5
+    ENDIF  
+    FOR R_SZNr = 1 TO 7
+      IF ($softplcint[R_SZNr]>0) THEN
+        FrgSZ=FctFrgSZ(R_SZNr)
+        IF NOT FrgSZ THEN
+          SWITCH R_SZNr
+            CASE 1
+	           ;SZ 1 nicht in Automatik
+	           IF NOT $IN[I_SZ1_Auto] THEN
+  	             VAMsg(51,#StateMsg)
+              ENDIF
+	           ;SZ 1 Referenzieren falls erforderlich
+              IF Hibernate_2 AND ($mode_op == #EX) THEN
+                WAIT SEC 3
+              ENDIF
+	           IF NOT $IN[I_SZ1_ref] THEN
+	             $OUT[O_SZ1_FRG]=TRUE
+	             $OUT[O_SZ1_ref]=TRUE
+	             WAIT FOR $IN[I_SZ1_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_SZ1_IPos_g]
+	             $OUT[O_SZ1_ref]=FALSE
+	             $OUT[O_SZ1_FRG]=FALSE
+              ENDIF
+              WAIT FOR $IN[I_SZ1_bereit] AND $IN[I_SZ1_IPos_g]
+            CASE 2 
+	           ;SZ 2 nicht in Automatik
+  	           IF NOT $IN[I_SZ2_Auto] THEN
+  	             VAMsg(52,#StateMsg)
+              ENDIF
+	           ;SZ 2 Referenzieren falls erforderlich
+              IF Hibernate_2 AND ($mode_op == #EX) THEN
+                WAIT SEC 3
+              ENDIF
+   	        IF NOT $IN[I_SZ2_ref] THEN
+	             $OUT[O_SZ2_FRG]=TRUE
+	             $OUT[O_SZ2_ref]=TRUE
+	             WAIT FOR $IN[I_SZ2_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_SZ2_IPos_g]
+	             $OUT[O_SZ2_ref]=FALSE
+	             $OUT[O_SZ2_FRG]=FALSE
+              ENDIF
+              WAIT FOR $IN[I_SZ2_bereit] AND $IN[I_SZ2_IPos_g]
+            CASE 3 
+              ;SZ 3 nicht in Automatik
+  	           IF NOT $IN[I_SZ3_Auto] THEN
+  	             VAMsg(53,#StateMsg)
+              ENDIF
+	           ;SZ 3 Referenzieren falls erforderlich
+              IF Hibernate_2 AND ($mode_op == #EX) THEN
+                WAIT SEC 3
+              ENDIF
+   	        IF NOT $IN[I_SZ3_ref] THEN
+	             $OUT[O_SZ3_FRG]=TRUE
+	             $OUT[O_SZ3_ref]=TRUE
+	             WAIT FOR $IN[I_SZ3_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_SZ3_IPos_g]
+	             $OUT[O_SZ3_ref]=FALSE
+	             $OUT[O_SZ3_FRG]=FALSE
+              ENDIF
+              WAIT FOR $IN[I_SZ3_bereit] AND $IN[I_SZ3_IPos_g]
+            CASE 4 
+              ;NZ 1 nicht in Automatik
+	           IF NOT $IN[I_NZ1_Auto] THEN
+  	             VAMsg(54,#StateMsg)
+              ENDIF
+	           ;NZ 1 Referenzieren falls erforderlich
+              IF Hibernate_2 AND ($mode_op == #EX) THEN
+                WAIT SEC 3
+              ENDIF
+   	        IF NOT $IN[I_NZ1_ref] THEN
+	             $OUT[O_NZ1_FRG]=TRUE
+	             $OUT[O_NZ1_ref]=TRUE
+	             WAIT FOR $IN[I_NZ1_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_NZ1_IPos_g]
+	             $OUT[O_NZ1_ref]=FALSE
+	             $OUT[O_NZ1_FRG]=FALSE
+              ENDIF
+              WAIT FOR $IN[I_NZ1_bereit] AND $IN[I_NZ1_IPos_g]
+	         CASE 5 
+              ;NZ 2 nicht in Automatik
+	           IF NOT $IN[I_NZ2_Auto] THEN
+  	             VAMsg(55,#StateMsg)
+              ENDIF
+	           ;NZ 2 Referenzieren falls erforderlich
+              IF Hibernate_2 AND ($mode_op == #EX) THEN
+                WAIT SEC 3
+              ENDIF
+   	        IF NOT $IN[I_NZ2_ref] THEN
+	             $OUT[O_NZ2_FRG]=TRUE
+	             $OUT[O_NZ2_ref]=TRUE
+	             WAIT FOR $IN[I_NZ2_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_NZ2_IPos_g]
+	             $OUT[O_NZ2_ref]=FALSE
+	             $OUT[O_NZ2_FRG]=FALSE
+              ENDIF
+              WAIT FOR $IN[I_NZ2_bereit] AND $IN[I_NZ2_IPos_g]
+            CASE 6
+              ;CZ 1 nicht in Automatik
+  	           IF NOT $IN[I_CZ1_Auto] THEN
+  	             VAMsg(56,#StateMsg)
+              ENDIF
+	           ;CZ 1 Referenzieren falls erforderlich
+              IF Hibernate_2 AND ($mode_op == #EX) THEN
+                WAIT SEC 3
+              ENDIF
+   	        IF NOT $IN[I_CZ1_ref] THEN
+	             $OUT[O_CZ1_FRG]=TRUE
+	             $OUT[O_CZ1_ref]=TRUE
+	             WAIT FOR $IN[I_CZ1_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_CZ1_IPos_g]
+	             $OUT[O_CZ1_ref]=FALSE
+	             $OUT[O_CZ1_FRG]=FALSE
+              ENDIF
+              WAIT FOR $IN[I_CZ1_bereit] AND $IN[I_CZ1_IPos_g]
+            CASE 7
+              ;CZ 2 nicht in Automatik
+  	           IF NOT $IN[I_CZ2_Auto] THEN
+  	             VAMsg(57,#StateMsg)
+              ENDIF
+	           ;CZ 2 Referenzieren falls erforderlich
+              IF Hibernate_2 AND ($mode_op == #EX) THEN
+                WAIT SEC 3
+              ENDIF
+   	        IF NOT $IN[I_CZ2_ref] THEN
+	             $OUT[O_CZ2_FRG]=TRUE
+	             $OUT[O_CZ2_ref]=TRUE
+	             WAIT FOR $IN[I_CZ2_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_CZ2_IPos_g]
+	             $OUT[O_CZ2_ref]=FALSE
+	             $OUT[O_CZ2_FRG]=FALSE
+              ENDIF
+              WAIT FOR $IN[I_CZ2_bereit] AND $IN[I_CZ2_IPos_g]
+          ENDSWITCH
+        ENDIF
+      ENDIF
+    ENDFOR
+;
+    IF schleppfehler OR $softplcbool[5] THEN
+      SZInitR(1)
+    ENDIF
+;
+    IF NOT $softplcbool[1] THEN
+      SZInitR(2)
+    ENDIF
+;
+    SF_Vorwarnung=FALSE
+;
+    GLOBAL INTERRUPT DECL 6 WHEN SF_Vorwarnung DO SZIntR(9)
+    GLOBAL INTERRUPT DECL 7 WHEN $softplcint[30]>0 DO SZIntR(1)
+    GLOBAL INTERRUPT DECL 8 WHEN $softplcbool[5] DO SZIntR(7)
+    GLOBAL INTERRUPT DECL 21 WHEN NOT $softplcbool[1] DO SZIntR(8)
+    GLOBAL INTERRUPT DECL 22 WHEN Bahnhof_Feh DO SZIntR(6)
+    GLOBAL INTERRUPT DECL 23 WHEN Antriebe_Aus DO SZIntR(10)
+;
+    INTERRUPT ON 6
+    INTERRUPT ON 7
+    INTERRUPT ON 8
+    INTERRUPT ON 21
+    INTERRUPT ON 22
+    INTERRUPT ON 23
+;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------------
+  CASE #USR_ADV
+    ;FOLD Advance
+;
+;
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------------
+  CASE #USR_TRIG
+    ;FOLD Trig
+;    
+;    
+    ;ENDFOLD (TRIG)
+            
+;
+;-----------------------------------------------------------
+  CASE #USR_MAIN
+    ;FOLD Main
+;    
+;
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------------
+  DEFAULT
+;  
+  ENDSWITCH
+END
+;
+;ENDFOLD (VA Interface)
+;
+;------------------------------------------------------
+;FOLD Schleppfehler bei Programmstart
+DEF SZInitR(SZCmd:IN)
+INT SZCmd
+BOOL MSG_DEL, bRet
+;
+IF SZCmd==1 THEN
+  VAMsg(30,#StateMsg)
+  WAIT FOR NOT schleppfehler AND NOT $softplcbool[5]
+  bRet=Clear_KrlMsg(n_VAR_Handle[30])
+  n_VAR_Handle[30] = -1 
+ENDIF
+;
+IF SZCmd==2 THEN
+  WAIT FOR $softplcbool[1]
+ENDIF
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SZ-Schleppfehler im Programmbetrieb
+DEF SZIntR(SZCmd : IN)
+INT SZCmd, I
+BOOL MSG_DEL
+;
+SWITCH SZCmd
+  CASE 1
+    SWITCH $softplcint[30]
+      CASE 1
+        ;SZ 1
+        IF NOT $OUT[O_SZ1_FRG] AND NOT $IN[I_SZ1_IPos_g] AND ($softplcint[1]>0) THEN
+          BRAKE
+          ;SZ 1 Referenzieren falls erforderlich
+          IF Hibernate_2 AND ($mode_op == #EX) THEN
+            WAIT SEC 3
+          ENDIF
+          IF NOT $IN[I_SZ1_ref] AND (FRG_Referenzieren OR (FRG_Referenzieren2 AND $FLAG[F_SZ_AutoRef]) OR $OUT[O_R_PFO]) THEN
+            VAMsg(41,#StateMsg)
+            $OUT[O_SZ1_FRG]=TRUE
+            $OUT[O_SZ1_ref]=TRUE
+            WAIT FOR ($IN[I_SZ1_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_SZ1_IPos_g])
+            $OUT[O_SZ1_ref]=FALSE
+            $OUT[O_SZ1_FRG]=FALSE
+            SF_Vorwarnung=FALSE
+          ELSE
+            VAMsg(81,#StateMsg)
+          ENDIF
+          WAIT FOR $IN[I_SZ1_IPos_g]
+          $OUT[O_SZ1_F_Schl]=FALSE
+        ENDIF
+;
+      CASE 2
+        ;SZ 2
+        IF NOT $OUT[O_SZ2_FRG] AND NOT $IN[I_SZ2_IPos_g] AND ($softplcint[2]>0) THEN
+          BRAKE
+          ;SZ 2 Referenzieren falls erforderlich
+          IF Hibernate_2 AND ($mode_op == #EX) THEN
+            WAIT SEC 3
+          ENDIF
+          IF NOT $IN[I_SZ2_ref] AND (FRG_Referenzieren OR (FRG_Referenzieren2 AND $FLAG[F_SZ_AutoRef]) OR $OUT[O_R_PFO]) THEN	
+            VAMsg(42,#StateMsg)
+            $OUT[O_SZ2_FRG]=TRUE
+            $OUT[O_SZ2_ref]=TRUE
+            WAIT FOR ($IN[I_SZ2_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_SZ2_IPos_g])
+            $OUT[O_SZ2_ref]=FALSE
+            $OUT[O_SZ2_FRG]=FALSE
+            SF_Vorwarnung=FALSE
+          ELSE
+            VAMsg(82,#StateMsg)
+          ENDIF
+          WAIT FOR $IN[I_SZ2_IPos_g]
+          $OUT[O_SZ2_F_Schl]=FALSE
+        ENDIF
+;
+      CASE 3
+        ;SZ 3
+        IF NOT $OUT[O_SZ3_FRG] AND NOT $IN[I_SZ3_IPos_g] AND ($softplcint[3]>0) THEN
+          BRAKE
+          ;SZ 3 Referenzieren falls erforderlich
+          IF Hibernate_2 AND ($mode_op == #EX) THEN
+            WAIT SEC 3
+          ENDIF
+          IF NOT $IN[I_SZ3_ref] AND (FRG_Referenzieren OR (FRG_Referenzieren2 AND $FLAG[F_SZ_AutoRef]) OR $OUT[O_R_PFO]) THEN
+            VAMsg(43,#StateMsg)
+            $OUT[O_SZ3_FRG]=TRUE
+            $OUT[O_SZ3_ref]=TRUE
+            WAIT FOR ($IN[I_SZ3_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_SZ3_IPos_g])
+            $OUT[O_SZ3_ref]=FALSE
+            $OUT[O_SZ3_FRG]=FALSE
+            SF_Vorwarnung=FALSE
+          ELSE
+            VAMsg(83,#StateMsg)
+          ENDIF
+          WAIT FOR $IN[I_SZ3_IPos_g]
+          $OUT[O_SZ3_F_Schl]=FALSE
+        ENDIF
+;
+      CASE 4
+        ;NZ 1
+        IF NOT $OUT[O_NZ1_FRG] AND NOT $IN[I_NZ1_IPos_g] AND ($softplcint[4]>0) THEN
+          BRAKE
+          ;NZ 1 Referenzieren falls erforderlich
+          IF Hibernate_2 AND ($mode_op == #EX) THEN
+            WAIT SEC 3
+          ENDIF
+          IF NOT $IN[I_NZ1_ref] AND (FRG_Referenzieren OR (FRG_Referenzieren2 AND $FLAG[F_SZ_AutoRef]) OR $OUT[O_R_PFO]) THEN
+            VAMsg(44,#StateMsg)
+            $OUT[O_NZ1_FRG]=TRUE
+            $OUT[O_NZ1_ref]=TRUE
+            WAIT FOR ($IN[I_NZ1_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_NZ1_IPos_g])
+            $OUT[O_NZ1_ref]=FALSE
+            $OUT[O_NZ1_FRG]=FALSE
+            SF_Vorwarnung=FALSE
+          ELSE
+            VAMsg(84,#StateMsg)
+          ENDIF
+          WAIT FOR $IN[I_NZ1_IPos_g]
+        ENDIF
+;
+      CASE 5
+        ;NZ 2
+        IF NOT $OUT[O_NZ2_FRG] AND NOT $IN[I_NZ2_IPos_g] AND ($softplcint[5]>0) THEN
+          BRAKE
+          ;NZ 2 Referenzieren falls erforderlich
+          IF Hibernate_2 AND ($mode_op == #EX) THEN
+            WAIT SEC 3
+          ENDIF
+          IF NOT $IN[I_NZ2_ref] AND (FRG_Referenzieren OR (FRG_Referenzieren2 AND $FLAG[F_SZ_AutoRef]) OR $OUT[O_R_PFO]) THEN
+            VAMsg(45,#StateMsg)
+            $OUT[O_NZ2_FRG]=TRUE
+            $OUT[O_NZ2_ref]=TRUE
+            WAIT FOR ($IN[I_NZ2_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_NZ2_IPos_g])
+            $OUT[O_NZ2_ref]=FALSE
+            $OUT[O_NZ2_FRG]=FALSE
+            SF_Vorwarnung=FALSE
+            $softplcbool[125]=FALSE
+          ELSE
+            VAMsg(85,#StateMsg)
+          ENDIF
+          WAIT FOR $IN[I_NZ2_IPos_g]
+        ENDIF
+;
+      CASE 6
+        ;CZ 1
+        IF NOT $OUT[O_CZ1_FRG] AND NOT $IN[I_CZ1_IPos_g] AND ($softplcint[6]>0) THEN
+          BRAKE
+          ;CZ 1 Referenzieren falls erforderlich
+          IF Hibernate_2 AND ($mode_op == #EX) THEN
+            WAIT SEC 3
+          ENDIF
+          IF NOT $IN[I_CZ1_ref] AND (FRG_Referenzieren OR (FRG_Referenzieren2 AND $FLAG[F_SZ_AutoRef]) OR $OUT[O_R_PFO]) THEN
+            VAMsg(46,#StateMsg)
+            $OUT[O_CZ1_FRG]=TRUE
+            $OUT[O_CZ1_ref]=TRUE
+            WAIT FOR ($IN[I_CZ1_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_CZ1_IPos_g])
+            $OUT[O_CZ1_ref]=FALSE
+            $OUT[O_CZ1_FRG]=FALSE
+            SF_Vorwarnung=FALSE
+          ELSE
+            VAMsg(86,#StateMsg)
+          ENDIF
+          WAIT FOR $IN[I_CZ1_IPos_g]
+        ENDIF
+;
+      CASE 7
+        ;CZ 2
+        IF NOT $OUT[O_CZ2_FRG] AND NOT $IN[I_CZ2_IPos_g] AND ($softplcint[7]>0) THEN
+          BRAKE
+          ;CZ 2 Referenzieren falls erforderlich
+          IF Hibernate_2 AND ($mode_op == #EX) THEN
+            WAIT SEC 3
+          ENDIF
+          IF NOT $IN[I_CZ2_ref] AND (FRG_Referenzieren OR (FRG_Referenzieren2 AND $FLAG[F_SZ_AutoRef]) OR $OUT[O_R_PFO]) THEN
+            VAMsg(47,#StateMsg)
+            $OUT[O_CZ2_FRG]=TRUE
+            $OUT[O_CZ2_ref]=TRUE
+            WAIT FOR ($IN[I_CZ2_ref] AND ($softplcbool[6]==FALSE) AND $IN[I_CZ2_IPos_g])
+            $OUT[O_CZ2_ref]=FALSE
+            $OUT[O_CZ2_FRG]=FALSE
+            SF_Vorwarnung=FALSE
+          ELSE
+            VAMsg(87,#StateMsg)
+          ENDIF
+          WAIT FOR $IN[I_CZ2_IPos_g]
+        ENDIF
+;
+      DEFAULT
+        ;fehlerhafter Wert uebergeben
+        BRAKE
+        WAIT SEC 3
+      ENDSWITCH
+;
+  CASE 6
+    BRAKE
+    Bahnhof_Feh=FALSE	
+;
+  CASE 7
+    ;FOLD Interrupt durch Schleppfehler  bei SZ 1 ausgeloest
+    INTERRUPT OFF 8
+    IF NOT $OUT[O_SZ1_FRG] AND (abs($softplcreal[1])>max_sf)  AND ($softplcint[1]>0) THEN
+      BRAKE
+      IF ANTEIN_MERKER THEN
+        VAMsg(2,#NotifyMsg)
+        $OUT[O_SZ1_F_Schl]=TRUE
+	     WAIT FOR $softplcbool[6]==FALSE
+        SF_Vorwarnung=FALSE
+        WAIT FOR $IN[I_SZ1_IPos_g]
+      ELSE
+        IF (Handbetrieb==FALSE) THEN
+          F_Handbetrieb=TRUE
+;~~~~~~~~~VW-Teil-Anfang~~~~~~~~
+     ;-------------------------- Schleppfehler Wegmesssystem ------------------------
+          wait sec sf_peak_time
+          if (abs($softplcreal[1])>sf_peak_tol) then
+            IF ($softplcint[1]>0) THEN
+              $OUT[O_SZ1_F_Schl]=TRUE
+            ENDIF
+            VAMsg(1,#QuitMsg)
+            WHILE Handbetrieb==FALSE
+            ENDWHILE
+          ENDIF
+        else
+          goto wegmesssystem
+        endif
+      ;---------------------------------------------------------------------------------
+;~~~~~~~~~VW-Teil-Ende~~~~~~~~
+      ENDIF
+      IF NOT F_Handbetrieb AND $softplcbool[5] THEN
+         VAMsg(1,#QuitMsg)
+      ENDIF
+    ENDIF
+    ;ENDFOLD
+
+
+
+
+    ;FOLD Interrupt durch Schleppfehler  bei SZ 2 ausgeloest
+    IF NOT $OUT[O_SZ2_FRG] AND (abs($softplcreal[2])>max_sf) AND ($softplcint[2]>0) THEN
+      BRAKE
+      IF ANTEIN_MERKER THEN
+        VAMsg(2,#NotifyMsg)
+        $OUT[O_SZ2_F_Schl]=TRUE
+        WAIT FOR $softplcbool[6]==FALSE
+        SF_Vorwarnung=FALSE
+        WAIT FOR $IN[I_SZ2_IPos_g]
+      ELSE
+        IF (Handbetrieb==FALSE) THEN
+          F_Handbetrieb=TRUE
+;~~~~~~~~~VW-Teil-Anfang~~~~~~~~
+	;-------------------------- Schleppfehler Wegmesssystem ------------------------
+          wait sec sf_peak_time
+          if (abs($softplcreal[2])>sf_peak_tol) then
+            IF ($softplcint[2]>0) THEN
+              $OUT[O_SZ2_F_Schl]=TRUE
+            ENDIF
+            VAMsg(1,#QuitMsg)
+            WHILE Handbetrieb==FALSE
+            ENDWHILE
+          ENDIF
+        else
+          goto wegmesssystem
+        endif
+      ;---------------------------------------------------------------------------------
+;~~~~~~~~~VW-Teil-Ende~~~~~~~~
+      ENDIF
+      IF NOT F_Handbetrieb AND $softplcbool[5] THEN
+            VAMsg(1,#QuitMsg)
+      ENDIF
+    ENDIF
+    ;ENDFOLD
+
+
+
+
+    ;FOLD Interrupt durch Schleppfehler  bei SZ 3 ausgeloest
+    IF NOT $OUT[O_SZ3_FRG] AND (abs($softplcreal[3])>max_sf) AND ($softplcint[3]>0) THEN
+      BRAKE
+      IF ANTEIN_MERKER THEN
+        VAMsg(2,#NotifyMsg)
+        $OUT[O_SZ3_F_Schl]=TRUE
+	     WAIT FOR $softplcbool[6]==FALSE
+        SF_Vorwarnung=FALSE
+        WAIT FOR $IN[I_SZ3_IPos_g]
+      ELSE
+        IF (Handbetrieb==FALSE) THEN
+          F_Handbetrieb=TRUE
+;~~~~~~~~~VW-Teil-Anfang~~~~~~~~
+		;-------------------------- Schleppfehler Wegmesssystem ------------------------
+          wait sec sf_peak_time
+          if (abs($softplcreal[3])>sf_peak_tol) then
+            IF ($softplcint[3]>0) THEN
+              $OUT[O_SZ3_F_Schl]=TRUE
+            ENDIF
+            VAMsg(1,#QuitMsg)
+            WHILE Handbetrieb==FALSE
+            ENDWHILE
+          ENDIF
+        else
+          goto wegmesssystem
+        endif
+      ;---------------------------------------------------------------------------------
+;~~~~~~~~~VW-Teil-Ende~~~~~~~~
+      ENDIF
+      IF NOT F_Handbetrieb AND $softplcbool[5] THEN
+            VAMsg(1,#QuitMsg)
+      ENDIF
+    ENDIF 
+    ;ENDFOLD
+    ;FOLD Interrupt durch Schleppfehler  bei NZ 1 ausgeloest
+    IF NOT $OUT[O_NZ1_FRG] AND (abs($softplcreal[4])>max_sf) AND ($softplcint[4]>0) THEN
+      BRAKE
+      IF ANTEIN_MERKER THEN
+        VAMsg(30,#StateMsg)
+	     WAIT FOR $softplcbool[6]==FALSE
+        SF_Vorwarnung=FALSE
+        WAIT FOR $IN[I_NZ1_IPos_g]
+      ELSE
+        IF (Handbetrieb==FALSE) THEN
+          F_Handbetrieb=TRUE
+		    WHILE Handbetrieb==FALSE
+          ENDWHILE
+        ENDIF
+      ENDIF
+    ENDIF 
+    ;ENDFOLD
+    ;FOLD Interrupt durch Schleppfehler  bei NZ 2 ausgeloest
+    IF NOT $OUT[O_NZ2_FRG] AND (abs($softplcreal[5])>max_sf) AND ($softplcint[5]>0) THEN
+      BRAKE
+      IF ANTEIN_MERKER THEN
+        VAMsg(30,#StateMsg)
+	     WAIT FOR $softplcbool[6]==FALSE
+        SF_Vorwarnung=FALSE
+        WAIT FOR $IN[I_NZ2_IPos_g]
+      ELSE
+        IF (Handbetrieb==FALSE) THEN
+          F_Handbetrieb=TRUE
+		    WHILE Handbetrieb==FALSE
+          ENDWHILE
+        ENDIF
+      ENDIF
+    ENDIF 
+    ;ENDFOLD
+    ;FOLD Interrupt durch Schleppfehler  bei CZ 1 ausgeloest
+    IF NOT $OUT[O_CZ1_FRG] AND (abs($softplcreal[6])>max_sf) AND ($softplcint[6]>0) THEN
+      BRAKE
+      IF ANTEIN_MERKER THEN
+        VAMsg(30,#StateMsg)
+	     WAIT FOR $softplcbool[6]==FALSE
+        SF_Vorwarnung=FALSE
+        WAIT FOR $IN[I_CZ1_IPos_g]
+      ELSE
+        IF (Handbetrieb==FALSE) THEN
+          F_Handbetrieb=TRUE
+		    WHILE Handbetrieb==FALSE
+          ENDWHILE
+        ENDIF
+      ENDIF
+    ENDIF 
+    ;ENDFOLD
+    ;FOLD Interrupt durch Schleppfehler  bei CZ 2 ausgeloest
+    IF NOT $OUT[O_CZ2_FRG] AND (abs($softplcreal[7])>max_sf) AND ($softplcint[7]>0) THEN
+      BRAKE
+      IF ANTEIN_MERKER THEN
+        VAMsg(30,#StateMsg)
+	     WAIT FOR $softplcbool[6]==FALSE
+        SF_Vorwarnung=FALSE
+        WAIT FOR $IN[I_CZ2_IPos_g]
+      ELSE
+        IF (Handbetrieb==FALSE) THEN
+          F_Handbetrieb=TRUE
+		    WHILE Handbetrieb==FALSE
+          ENDWHILE
+        ENDIF
+      ENDIF
+    ENDIF 
+    ;ENDFOLD
+    WAIT FOR $softplcbool[6]==FALSE
+;~~~~~~~~~VW-Teil-Anfang~~~~~~~~  
+;xxxxxxxx WEGMESSSYSTEM    xxxxxxxxx
+  WEGMESSSYSTEM:
+;xxxxxxxxxxxxxxxxxxxxxxxxxxx
+;~~~~~~~~~VW-Teil-Ende~~~~~~~~
+    SF_Vorwarnung=FALSE
+    $softplcbool[125]=FALSE
+    $OUT[O_SZ1_F_Schl]=FALSE
+    $OUT[O_SZ2_F_Schl]=FALSE
+    $OUT[O_SZ3_F_Schl]=FALSE
+    F_Handbetrieb=FALSE
+    INTERRUPT ON 8
+;
+CASE 8
+  ;Interrupt durch Stop SoftSPS
+  BRAKE
+  WAIT SEC 2
+  WAIT FOR $softplcbool[1]
+;
+CASE 9
+  ;Interrupt durch Schleppfehler > 1 und < 15 ausgeloest
+;~~~~~~~~~VW-Teil-Anfang~~~~~~~~
+  IF $softplcbool[6] AND NOT $softplcbool[5] and (sz1_code<5) and (sz2_code<5) and (sz3_code<5) THEN
+    BRAKE
+    VAMsg(30,#StateMsg)
+    WAIT FOR $softplcbool[6]==FALSE
+    SF_Vorwarnung=FALSE
+  ELSE
+    if (abs($softplcreal[1])>sf_vorwarnung_tol) or (abs($softplcreal[2])>sf_vorwarnung_tol) or (abs($softplcreal[3])>sf_vorwarnung_tol) then
+      BRAKE
+	  if abs($softplcreal[1])>sf_vorwarnung_tol then
+        $OUT[O_SZ1_F_Schl]=TRUE
+	  endif
+	  if abs($softplcreal[2])>sf_vorwarnung_tol then
+        $OUT[O_SZ2_F_Schl]=TRUE
+	  endif
+	  if abs($softplcreal[3])>sf_vorwarnung_tol then
+        $OUT[O_SZ3_F_Schl]=TRUE
+	  endif
+      VAMsg(30,#StateMsg)
+      WAIT FOR (abs($softplcreal[1])<sf_vorwarnung_tol) and (abs($softplcreal[2])<sf_vorwarnung_tol) and (abs($softplcreal[3])<sf_vorwarnung_tol)
+      SF_Vorwarnung=FALSE
+      $OUT[O_SZ1_F_Schl]=FALSE
+      $OUT[O_SZ2_F_Schl]=FALSE
+      $OUT[O_SZ3_F_Schl]=FALSE
+    else
+      SF_Vorwarnung=FALSE
+    endif
+;~~~~~~~~~VW-Teil-Ende~~~~~~~~  
+  ENDIF
+  $OUT[O_SZ1_F_Schl]=FALSE
+  $OUT[O_SZ2_F_Schl]=FALSE
+  $OUT[O_SZ3_F_Schl]=FALSE
+;
+CASE 10
+  FOR i=1 to 6
+    $TORQMON[i]=(200-KOLL_RED)
+  ENDFOR
+  Antriebe_Aus=FALSE
+;
+DEFAULT
+;fehlerhafter Wert uebergeben
+BRAKE
+WAIT SEC 3
+ENDSWITCH
+;
+END
+;ENDFOLD
+;
+;------------------------------------------------------
+;FOLD FctFrgSZ
+DEFFCT BOOL FctFrgSZ(R_SZNr:IN)
+BOOL FctFrgSZVal
+INT R_SZNr
+SWITCH R_SZNr
+CASE 1
+FctFrgSZVal=$OUT[O_SZ1_FRG]
+CASE 2
+FctFrgSZVal=$OUT[O_SZ2_FRG]
+CASE 3
+FctFrgSZVal=$OUT[O_SZ3_FRG]
+  CASE 4
+    FctFrgSZVal=$OUT[O_NZ1_FRG]
+  CASE 5
+    FctFrgSZVal=$OUT[O_NZ2_FRG]
+  CASE 6
+    FctFrgSZVal=$OUT[O_CZ1_FRG]
+  CASE 7
+    FctFrgSZVal=$OUT[O_CZ2_FRG]	
+ENDSWITCH
+RETURN(FctFrgSZVal)
+ENDFCT
+;ENDFOLD
+;
+;------------------------------------------------------
+;FOLD VAchsen_Meldungen
+DEF VAMsg(Msg_nr :IN, MsgTyp :IN)
+INT msg_nr
+INT InputNo[5]
+DECL VAR_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "VA_R_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+SWITCH $SoftPlcint[21]
+  CASE 1
+    Par[1] = { Par_type #Value, Par_int 1 }
+    InputNo[5]= I_SZ1_Auto
+  CASE 2
+    Par[1] = { Par_type #Value, Par_int 2 }
+    InputNo[5]= I_SZ2_Auto
+  CASE 3
+    Par[1] = { Par_type #Value, Par_int 3 }
+    InputNo[5]= I_SZ3_Auto
+  CASE 4
+    Par[1] = { Par_type #Value, Par_int 4 }
+    InputNo[5]= I_NZ1_Auto
+  CASE 5
+    Par[1] = { Par_type #Value, Par_int 5 }
+    InputNo[5]= I_NZ2_Auto
+  CASE 6
+    Par[1] = { Par_type #Value, Par_int 6 }
+    InputNo[5]= I_CZ1_Auto
+  CASE 7
+    Par[1] = { Par_type #Value, Par_int 7 }
+    InputNo[5]= I_CZ2_Auto
+  DEFAULT
+    Par[1] = { Par_type #Value, Par_txt[] " " }
+    InputNo[5]= I_SZ1_Auto
+ENDSWITCH
+IF ((n_VAR_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+      SWITCH $SoftPlcint[21]
+        CASE 1
+          USER_MSG.MSG_TXT[]="SZ1 Schleppfehler im Programmbetrieb, Quittierung in Single-Step erforderlich !"
+        CASE 2
+          USER_MSG.MSG_TXT[]="SZ2 Schleppfehler im Programmbetrieb, Quittierung in Single-Step erforderlich !"
+        CASE 3
+          USER_MSG.MSG_TXT[]="SZ3 Schleppfehler im Programmbetrieb, Quittierung in Single-Step erforderlich !"
+        CASE 4
+          USER_MSG.MSG_TXT[]="NZ1 Schleppfehler im Programmbetrieb, Quittierung in Single-Step erforderlich !"
+        CASE 5
+        USER_MSG.MSG_TXT[]="NZ2 Schleppfehler im Programmbetrieb, Quittierung in Single-Step erforderlich !"
+        CASE 6
+          USER_MSG.MSG_TXT[]="CZ1 Schleppfehler im Programmbetrieb, Quittierung in Single-Step erforderlich !"
+        CASE 7
+          USER_MSG.MSG_TXT[]="CZ2 Schleppfehler im Programmbetrieb, Quittierung in Single-Step erforderlich !"
+        CASE 8
+          USER_MSG.MSG_TXT[]=" "
+        CASE 9
+          USER_MSG.MSG_TXT[]=" "
+        CASE 10
+          USER_MSG.MSG_TXT[]=" "
+        DEFAULT
+          USER_MSG.MSG_TXT[]="SZ Schleppfehler im Programmbetrieb, Quittierung in Single-Step erforderlich !"
+     ENDSWITCH
+    CASE 2
+      SWITCH $SoftPlcint[21]+10
+        CASE 11
+          USER_MSG.MSG_TXT[]="SZ1 Schleppfehler im Programmbetrieb"
+        CASE 12
+          USER_MSG.MSG_TXT[]="SZ2 Schleppfehler im Programmbetrieb"
+        CASE 13
+          USER_MSG.MSG_TXT[]="SZ3 Schleppfehler im Programmbetrieb"
+        CASE 14
+          USER_MSG.MSG_TXT[]="NZ1 Schleppfehler im Programmbetrieb"
+        CASE 15
+          USER_MSG.MSG_TXT[]="NZ2 Schleppfehler im Programmbetrieb"
+        CASE 16
+          USER_MSG.MSG_TXT[]="CZ1 Schleppfehler im Programmbetrieb"
+        CASE 17
+          USER_MSG.MSG_TXT[]="CZ2 Schleppfehler im Programmbetrieb"
+        CASE 18
+          USER_MSG.MSG_TXT[]=" "
+        CASE 19
+          USER_MSG.MSG_TXT[]=" "
+        CASE 20
+          USER_MSG.MSG_TXT[]=" "
+        DEFAULT
+          USER_MSG.MSG_TXT[]="SZ Schleppfehler im Programmbetrieb"
+     ENDSWITCH
+    CASE 30
+      SWITCH ($SoftPlcint[21]+30)
+        CASE 31
+          USER_MSG.MSG_TXT[]="SZ1 Schleppfehler, Warte bis kein Schleppfehler !"
+        CASE 32
+          USER_MSG.MSG_TXT[]="SZ2 Schleppfehler, Warte bis kein Schleppfehler !"
+        CASE 33
+          USER_MSG.MSG_TXT[]="SZ3 Schleppfehler, Warte bis kein Schleppfehler !"
+        CASE 34
+          USER_MSG.MSG_TXT[]="NZ1 Schleppfehler, Warte bis kein Schleppfehler !"
+        CASE 35
+          USER_MSG.MSG_TXT[]="NZ2 Schleppfehler, Warte bis kein Schleppfehler !"
+        CASE 36
+          USER_MSG.MSG_TXT[]="CZ1 Schleppfehler, Warte bis kein Schleppfehler !"
+        CASE 37
+          USER_MSG.MSG_TXT[]="CZ2 Schleppfehler, Warte bis kein Schleppfehler !"
+        CASE 38
+          USER_MSG.MSG_TXT[]=" "
+        CASE 39
+          USER_MSG.MSG_TXT[]=" "
+        CASE 40
+          USER_MSG.MSG_TXT[]=" "
+        DEFAULT
+          USER_MSG.MSG_TXT[]="SZ Schleppfehler, Warte bis kein Schleppfehler !"
+      ENDSWITCH
+    CASE 41
+      USER_MSG.MSG_TXT[]="SZ1, Warte bis Referenziert !"
+    CASE 42
+      USER_MSG.MSG_TXT[]="SZ2, Warte bis Referenziert !"
+    CASE 43
+      USER_MSG.MSG_TXT[]="SZ3, Warte bis Referenziert !"
+    CASE 44
+      USER_MSG.MSG_TXT[]="NZ1, Warte bis Referenziert !"
+    CASE 45
+      USER_MSG.MSG_TXT[]="NZ2, Warte bis Referenziert !"
+    CASE 46
+      USER_MSG.MSG_TXT[]="CZ1, Warte bis Referenziert !"
+    CASE 47
+      USER_MSG.MSG_TXT[]="CZ2, Warte bis Referenziert !"
+    CASE 48
+      USER_MSG.MSG_TXT[]=" "
+    CASE 49
+      USER_MSG.MSG_TXT[]=" "
+    CASE 50
+      USER_MSG.MSG_TXT[]=" "
+    CASE 51
+      USER_MSG.MSG_TXT[]="SZ1, Zangensteuerung nicht in Automatik !"
+    CASE 52
+      USER_MSG.MSG_TXT[]="SZ2, Zangensteuerung nicht in Automatik !"
+    CASE 53
+      USER_MSG.MSG_TXT[]="SZ3, Zangensteuerung nicht in Automatik !"
+    CASE 54
+      USER_MSG.MSG_TXT[]="NZ1, Zangensteuerung nicht in Automatik !"
+    CASE 55
+      USER_MSG.MSG_TXT[]="NZ2, Zangensteuerung nicht in Automatik !"
+    CASE 56
+      USER_MSG.MSG_TXT[]="CZ1, Zangensteuerung nicht in Automatik !"
+    CASE 57
+      USER_MSG.MSG_TXT[]="CZ2, Zangensteuerung nicht in Automatik !"
+    CASE 58
+      USER_MSG.MSG_TXT[]=" "
+    CASE 59
+      USER_MSG.MSG_TXT[]=" "
+    CASE 60
+      USER_MSG.MSG_TXT[]=" "
+    CASE 61
+      USER_MSG.MSG_TXT[]="Docking Alle Bahnhoefe belegt"
+    CASE 71
+      USER_MSG.MSG_TXT[]="Ungueltige Werkzeug Nummer"
+    CASE 81
+      USER_MSG.MSG_TXT[]="SZ1, Istposition ungueltig !"
+    CASE 82
+      USER_MSG.MSG_TXT[]="SZ2, Istposition ungueltig !"
+    CASE 83
+      USER_MSG.MSG_TXT[]="SZ3, Istposition ungueltig !"
+    CASE 84
+      USER_MSG.MSG_TXT[]="NZ1, Istposition ungueltig !"
+    CASE 85
+      USER_MSG.MSG_TXT[]="NZ2, Istposition ungueltig !"
+    CASE 86
+      USER_MSG.MSG_TXT[]="CZ1, Istposition ungueltig !"
+    CASE 87
+      USER_MSG.MSG_TXT[]="CZ2, Istposition ungueltig !"
+    CASE 88
+      USER_MSG.MSG_TXT[]=" "
+    CASE 89
+      USER_MSG.MSG_TXT[]=" "
+    CASE 90
+      USER_MSG.MSG_TXT[]=" "
+    DEFAULT
+      USER_MSG.MSG_TXT[]=" "
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_VAR_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_VAR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      WHILE ( Exists_KrlMsg(n_VAR_Handle[msg_nr]) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      ENDWHILE
+    CASE #NotifyMsg
+      n_VAR_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_VAR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD Option
+

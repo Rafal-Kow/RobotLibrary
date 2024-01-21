@@ -1,0 +1,1149 @@
+&ACCESS RVO
+&REL 38
+&COMMENT RS_1.10
+&PARAM DISKPATH = VW_User/Applikation/Vision/Cognex
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM EDITMASK = vw_cgx_user
+DEF vw_cgx_user( )
+;
+;*---------------------------------------------*
+;* Cognex                                      *
+;* Version 1.10     / VKRC 4                   *
+;* Bearbeitet am:                              *
+;* 10.01.2013 NI Grenzwertcheck nur bei IO-Wert*
+;* 01.02.2013 NI keine Korr, wenn keine Daten  *
+;* 07.10.2013 NI Funktionen neu strukturiert   *
+;* 07.10.2013 NI FLAGS 888 - 890 neu           *
+;* 24.06.2015 NI Realign Grenzwert Nr  PAR5    *
+;* 20.11.2014 NI Par 6 Pruef Rel/Kartesisch    *
+;* 17.03.2015 DB Fehlerkorrektur               *
+;* 05.10.2016 NI Grenzwert Fehler neues Frame  *
+;*---------------------------------------------*
+;
+END
+;
+; EKI-Schnittstelle KUKA_Cognex
+; PAR1 = Job Nummer + Kamerasystem - Nr
+; PAR2 = Mod_Id (Kalibrier, referezieren, validieren usw.)
+; PAR3 = Base Nummer (0...31)
+; PAR4 = Nummer des Korrekturpruef - Arrays
+; PAR5 = (nur bei Realign), Grenzwert Array Nummer
+; PAR6 = 1, Pruefung Korrwertw, = 2 Pruefung des korrigierten Frames
+
+GLOBAL DEF CGX_Intrface(USER_CMD :IN, CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN)
+  DECL VW_USER_CMD USER_CMD
+  INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+
+  DECL EKI_STATUS RET
+  INT i_ret
+  INT F_EKI_Rp_Act
+  INT F_EKI_MES_OK
+  INT F_EKI_Sp_Act
+  FRAME orig_pos
+  FRAME orig_base
+  BOOL B_realign
+  BOOL B_reposition
+  BOOL B_F_Range
+  
+  char XML_ch1_String[20]
+  char XML_ch2_String[20]
+
+  n_EKI_Handle = 0
+  B_realign    = FALSE
+  B_reposition = FALSE
+  B_F_Range = FALSE
+  $Flag[F_EKI_Mes1OK] = FALSE
+  $Flag[F_EKI_noErr]  = FALSE
+  $Flag[F_EKI_Err]    = FALSE
+  $Flag[F_EKI_RANGE]  = FALSE
+  $Flag[F_EKI_PING_S] = FALSE
+  F_EKI_Rp_Act = 0
+  F_EKI_Sp_Act = 0
+  F_EKI_MES_OK = 0
+  
+  realign_val = $NULLFRAME
+  eki_frame   = $NULLFRAME
+  Send_Val_Pos = $NULLFRAME
+  Get_Val_Pos = $NULLFRAME
+;
+; check correct JOB_ID
+  i_ret = get_system_info(PAR1, XML_ch1_String[], XML_ch2_String[], F_EKI_Rp_Act, F_EKI_MES_OK, F_EKI_Sp_Act)
+  IF (i_ret == -1) THEN
+    $Flag[F_EKI_Err] = TRUE
+    return
+  ENDIF
+  
+; check correct Base - number
+  
+  IF (PAR3 == 0) THEN   ; check valid Base number
+    i_base_eki = 31
+  ELSE
+    IF ((PAR3 > 0) AND (PAR3 < 33)) THEN
+      i_base_eki = PAR3
+    ELSE
+      i_base_eki = -1
+      CGX_MLD(44,#QuitMsg,0) ;Error ungueltige Base - Nummer - MSG Roboter PHG
+      $Flag[F_EKI_noErr]  = FALSE
+      $Flag[F_EKI_Mes1OK] = FALSE
+      $Flag[F_EKI_Err] = TRUE
+      RETURN
+    ENDIF
+  ENDIF
+
+  orig_pos  = $pos_act
+  orig_base = $BASE
+
+  REPEAT        ; REPEAT Realign
+    REPEAT        ;REPEAT EKI
+      REPEAT         ;REPEAT EKI
+
+        ;Initialize sample data
+        B_bRepeat    = FALSE
+        B_bAbort     = FALSE
+        B_READY      = FALSE
+        B_bDataValid = FALSE
+        B_bStatus_ID = FALSE
+        B_bTimeOut   = FALSE
+        Get_Val_Pos  = $NULLFRAME
+        B_bWaitMsg   = FALSE
+
+        ;--Data Transmission--
+        i_ret = CGX_Send_XML(RET, PAR1, PAR2, F_EKI_Rp_Act, F_EKI_Sp_Act, XML_ch1_String[], XML_ch2_String[])
+        IF (i_ret == -1) THEN
+          $Flag[F_EKI_Err] = TRUE
+          EXIT
+        ENDIF
+
+        IF (PAR2 == EKI_CALI_END) OR (PAR2 == EKI_VALI_END) OR (PAR2 == EKI_REFE_END) THEN ;End_Calibration
+          i_EKI_Timer = EKI_TimerIns
+          IF PAR2 == EKI_CALI_END THEN
+            B_bWaitMsg = TRUE
+            CGX_MLD(8,#NotifyMSG,0)
+          ENDIF
+          IF PAR2 == EKI_VALI_END THEN
+            B_bWaitMsg = TRUE
+            CGX_MLD(20,#NotifyMSG,0)
+          ENDIF
+          IF PAR2 == EKI_REFE_END THEN
+            B_bWaitMsg = TRUE
+            CGX_MLD(24,#NotifyMSG,0)
+          ENDIF
+        ELSE
+          i_EKI_Timer = EKI_TimerClc    ;normal Timeout
+        ENDIF
+        
+        ;--Data Receive--
+        i_ret = CGX_Recv_XML(RET, F_EKI_MES_OK, PAR2, XML_ch2_String[])
+        IF (i_ret == -1) THEN
+          $Flag[F_EKI_Err] = TRUE
+          EXIT
+        ENDIF
+
+        ;EXIT with Abort AND REPEAT by USER
+      UNTIL  ((NOT B_bRepeat) AND (NOT B_bAbort))
+      IF NOT B_bRepeat AND B_bAbort THEN
+        EXIT
+      ENDIF
+    UNTIL NOT B_bRepeat
+
+    IF((NOT B_bRepeat) AND (NOT B_bAbort)) THEN  ;Abort
+
+      SWITCH PAR2    ;PAR2: Mode_ID
+        CASE EKI_LIFE_BIT         ;Ping
+          Check_Ping()
+
+        CASE EKI_CANCEL        ;Cancel
+          counter_Vali = 0
+          counter_Cali = 0
+
+        CASE EKI_CALIBRAT        ;Calibration
+          counter_Cali = counter_Cali + 1
+          IF NOT B_bTimeOut THEN
+            Check_Status_ID(PAR2, B_realign)
+          ENDIF
+          IF (B_realign == FALSE) THEN
+            IF  (B_bStatus_ID) AND (NOT B_bTimeOut) THEN
+              $Flag[F_EKI_noErr] = TRUE
+              $Flag[F_EKI_Err]   = FALSE
+              CGX_MLD(7,#NotifyMSG,0)  ;Punkt angefahren
+            ELSE
+              $Flag[F_EKI_noErr] = FALSE
+              $Flag[F_EKI_Err]   = TRUE
+              CGX_MLD(2,#NotifyMSG,0)  ;Kalibrierung fehlgeschlagen
+            ENDIF
+          ENDIF
+
+        CASE EKI_CALI_END        ;Calibration END
+          counter_Cali = 0
+          IF NOT B_bTimeOut THEN
+            Check_Status_ID(PAR2, B_realign)
+          ENDIF
+          IF  (B_bStatus_ID) AND (NOT B_bTimeOut) THEN
+            $Flag[F_EKI_noErr] = TRUE
+            $Flag[F_EKI_Err]   = FALSE
+            CGX_MLD(3,#NotifyMSG,0)  ;Kalibrierung erfolgreich
+          ELSE
+            $Flag[F_EKI_noErr] = FALSE
+            $Flag[F_EKI_Err]   = TRUE
+            CGX_MLD(2,#QuitMSG,0)  ;Kalibrierung fehlgeschlagen
+          ENDIF
+
+        CASE EKI_VALIDAT        ;Validation
+          counter_Vali = counter_Vali+1
+          IF NOT B_bTimeOut THEN
+            Check_Status_ID(PAR2, B_realign)
+          ENDIF
+          IF (B_realign == FALSE) THEN
+            IF  (B_bStatus_ID) AND (NOT B_bTimeOut) THEN
+              $Flag[F_EKI_noErr] = TRUE
+              $Flag[F_EKI_Err]   = FALSE
+              CGX_MLD(19,#NotifyMSG,0)  ;Punkt angefahren
+            ELSE
+              $Flag[F_EKI_noErr] = FALSE
+              $Flag[F_EKI_Err]   = TRUE
+              CGX_MLD(17,#NotifyMSG,0)  ;Validierung fehlgeschlagen
+            ENDIF
+          ENDIF
+
+        CASE EKI_VALI_END        ;Validation END
+          counter_Vali = 0
+          IF NOT B_bTimeOut THEN
+            Check_Status_ID(PAR2, B_realign)
+          ENDIF
+          IF  (B_bStatus_ID) AND (NOT B_bTimeOut) THEN
+            $Flag[F_EKI_noErr] = TRUE
+            $Flag[F_EKI_Err]   = FALSE
+            CGX_MLD(18,#NotifyMSG,0)  ;Validierung erfolgreich
+          ELSE
+            $Flag[F_EKI_noErr] = FALSE
+            $Flag[F_EKI_Err]   = TRUE
+            CGX_MLD(17,#QuitMSG,0)  ;Validierung fehlgeschlagen
+          ENDIF
+
+        CASE EKI_VERIFIFY        ;Verification
+          IF NOT B_bTimeOut THEN
+            Check_Status_ID(PAR2, B_realign)
+          ENDIF
+          IF (B_realign == FALSE) THEN
+            IF  (B_bStatus_ID) AND (NOT B_bTimeOut) THEN
+              $Flag[F_EKI_noErr] = TRUE
+              $Flag[F_EKI_Err]   = FALSE
+              CGX_MLD(27,#NotifyMSG,0)  ;Punkt angefahren
+              Check_Verification()
+            ELSE
+              $Flag[F_EKI_noErr] = FALSE
+              $Flag[F_EKI_Err]   = TRUE
+              CGX_MLD(25,#QuitMSG,0)  ;Verifizierung fehlgeschlagen
+              B_bVerify_OK = FALSE
+            ENDIF
+          ENDIF
+
+        CASE EKI_VERI_END        ;Verification END
+          counter_Vali = 0
+          IF NOT B_bTimeOut AND B_bVerify_OK THEN
+            Check_Status_ID(PAR2, B_realign)
+          ENDIF
+          IF  (B_bStatus_ID) AND (NOT B_bTimeOut) THEN
+            $Flag[F_EKI_noErr] = TRUE
+            $Flag[F_EKI_Err]   = FALSE
+            CGX_MLD(26,#NotifyMSG,0)  ;Verifizierung erfolgreich
+          ELSE
+            $Flag[F_EKI_noErr] = FALSE
+            $Flag[F_EKI_Err]   = TRUE
+            CGX_MLD(25,#QuitMSG,0)  ;Verifizierung fehlgeschlagen
+          ENDIF
+
+        CASE EKI_REFERECE         ;Referencing
+          IF NOT B_bTimeOut THEN
+            Check_Status_ID(PAR2, B_realign)
+          ENDIF
+          IF (B_realign == FALSE) THEN
+            IF  (B_bStatus_ID) AND (NOT B_bTimeOut) THEN
+              $Flag[F_EKI_noErr] = TRUE
+              $Flag[F_EKI_Err]   = FALSE
+              CGX_MLD(23,#NotifyMSG,0)  ;Punkt angefahren
+            ELSE
+              $Flag[F_EKI_noErr] = FALSE
+              $Flag[F_EKI_Err]   = TRUE
+              CGX_MLD(21,#QuitMSG,0)  ;Referenzierung fehlgeschlagen
+            ENDIF
+          ENDIF
+
+        CASE EKI_REFE_END        ;Referencing END
+          IF NOT B_bTimeOut THEN
+            Check_Status_ID(PAR2, B_realign)
+          ENDIF
+          IF  (B_bStatus_ID) AND (NOT B_bTimeOut) THEN
+            $Flag[F_EKI_noErr] = TRUE
+            $Flag[F_EKI_Err]   = FALSE
+            CGX_MLD(22,#NotifyMSG,0)  ;Referenzierung erfolgreich
+          ELSE
+            $Flag[F_EKI_noErr] = FALSE
+            $Flag[F_EKI_Err]   = TRUE
+            CGX_MLD(21,#QuitMSG,0)  ;Referenzierung fehlgeschlagen
+          ENDIF
+
+        CASE EKI_PRODUCT        ;Production
+          IF NOT B_bTimeOut THEN
+            Check_Status_ID(PAR2, B_realign)
+            IF (B_realign == FALSE) THEN  ; Baseverschiebung nur, wenn kein Realign 
+              IF ( B_bStatus_ID == TRUE ) THEN
+                B_F_Range = Check_Max_Range(Par4, Par6)
+              ENDIF
+              IF (B_bDataValid == TRUE) AND (B_bStatus_ID == TRUE) AND (B_F_Range == FALSE) THEN
+                $Flag[F_EKI_Mes1OK] = TRUE
+                $Flag[F_EKI_noErr]  = TRUE
+                $Flag[F_EKI_Err]    = FALSE
+                Base_Data[i_base_eki] = $Nullframe
+                Base_Data[i_base_eki] = $BASE : Get_Val_Pos   ; BASE FRAME Relativ zu Nullframe
+                IF NOT ($EXT) THEN
+                  CGX_MLD(4,#NotifyMsg,0)
+                  CGX_MLD(5,#NotifyMsg,0)
+                  CGX_MLD(6,#NotifyMsg,0)
+                ENDIF 
+              ELSE
+                $Flag[F_EKI_noErr]  = FALSE
+                $Flag[F_EKI_Mes1OK] = FALSE
+                $Flag[F_EKI_Err]    = TRUE
+                IF (i_base_eki >= 0) THEN
+                  IF ($FLAG[F_EKI_NOWAIT] == FALSE) THEN
+                    CGX_MLD(43,#QuitMsg,0) ;Error keine Korrwerte Quit - MSG Roboter PHG
+                  ELSE
+                    CGX_MLD(43,#NotifyMsg,0) ;Error keine Korrwerte Notify - MSG Roboter PHG
+                  ENDIF
+                  Base_Data[i_base_eki] = $BASE
+                ENDIF
+              ENDIF
+            ENDIF
+          ENDIF
+
+        CASE EKI_PROD_END        ;Production END
+          IF NOT B_bTimeOut THEN
+            Check_Status_ID(PAR2, B_realign)
+          ENDIF
+
+        DEFAULT
+          CGX_MLD(29,#QuitMsg,0)   ;PAR2: falscher Wert Quit - MSG Roboter PHG
+      ENDSWITCH          ;PAR2: Mode_ID
+
+    ENDIF      ;Abort
+    if (B_realign == TRUE) THEN
+      B_realign = eki_realign(B_reposition, PAR5, orig_base)  ; B_realign = FALSE, fallss Umpositionierung nicht moeglich
+    ENDIF
+  UNTIL NOT B_realign
+  IF (B_reposition == TRUE) AND ($FLAG[F_EKI_NREPOS] == FALSE) THEN
+    $BASE = orig_base    ;zurueckpositionieren auf Ursprungskoordinaten
+    Wait SEC 0
+    IF (VW_MPARA_ACT.MOVE_TYPE==#PTP_MOTION) THEN
+      CONTINUE
+      PTP orig_pos
+    ELSE
+      IF (VW_MPARA_ACT.MOVE_TYPE==#PATH_MOTION) THEN
+        CONTINUE
+        LIN orig_pos
+      ELSE
+        IF (VW_MPARA_ACT.MOVE_TYPE==#GLUE_MOTION) THEN
+          LIN orig_pos
+        ELSE
+          CGX_MLD(61,#QuitMsg,0) ; unerlaubte Interpolationsart
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+END 
+
+DEF Count_Telegramm_ID()
+;Count_Telegramm_ID 
+
+  IF send_Tel_ID >= MAX_TEL_ID THEN
+    send_Tel_ID = 1
+  ELSE
+    send_Tel_ID = send_Tel_ID + 1
+  ENDIF
+;      
+END
+
+DEF Check_Telegramm_ID()
+;Check Telegramm_ID KUKA--Cognex
+
+  IF send_Tel_ID <> get_Telgr_ID THEN
+    B_bDataValid = FALSE
+    CGX_MLD(9,#QuitMsg,0) ;Error Check Telegramm_ID  Quit - MSG Roboter PHG
+  ELSE
+    B_bDataValid = TRUE
+  ENDIF
+
+END
+
+DEF Check_Status_ID(PAR2: IN, B_realign: OUT )
+  int PAR2
+  BOOL B_realign
+  ;Check Status_ID KUKA--Cognex
+
+  B_realign = FALSE
+  SWITCH get_Stat_ID
+    CASE EKI_STAT_ERR            ;Error
+      B_bStatus_ID = FALSE
+      Check_Error_ID()
+      CGX_MLD(12,#NotifyMsg,0) ;Error Check Status_ID   Notify - MSG - MSG Roboter PHG
+
+    CASE EKI_STAT_IO            ;OK
+      B_bStatus_ID = TRUE
+      
+    CASE EKI_STAT_REA          ; Realign
+      IF ((PAR2 == EKI_CALIBRAT) OR (PAR2 == EKI_REFERECE) OR (PAR2 == EKI_PRODUCT) OR (Par2 == EKI_VALIDAT) OR (PAR2 == EKI_VERIFIFY)) THEN
+        B_bStatus_ID = TRUE
+        B_realign = TRUE
+      ELSE
+        B_bStatus_ID = FALSE
+        B_realign = FALSE
+        CGX_MLD(46,#NotifyMsg,0) ;Error Realign in wrong case Notify - MSG Roboter PHG
+      ENDIF
+
+    DEFAULT
+      B_bStatus_ID = FALSE
+      CGX_MLD(12,#NotifyMsg,0) ;Error Check Status_ID Quit - MSG Roboter PHG
+
+  ENDSWITCH ;
+
+END
+
+DEF Check_Error_ID()
+;Check Error_ID from Cognex
+
+  IF get_Error_ID <> 0 THEN
+    B_bDataValid = FALSE
+    CGX_MLD(14,#NotifyMsg,0) ;Quit - MSG Roboter PHG geaendert NI #QuitMsg in #NotifyMsg
+  ELSE
+    B_bDataValid = TRUE
+  ENDIF
+
+END
+
+DEFFCT BOOL Check_Max_Range(array: IN, i_base_check: IN)
+  int array
+  int i_base_check
+  
+  BOOL  B_F_Range
+  FRAME temp_frame
+
+  B_F_Range = FALSE
+  IF (i_base_check == EKI_CHK_KORR) THEN
+    temp_frame = Get_Val_Pos
+  ELSE 
+    IF (i_base_check == EKI_CHK_FRAM) THEN
+      temp_frame = $BASE : Get_Val_Pos
+    ENDIF
+  ENDIF
+  
+  eki_frame = temp_frame ; debug
+  
+  IF ((Array > 0) AND (array < MAX_KORR_ARR)) THEN
+  
+;Check Max_Range
+    IF (temp_frame.X > CGX_Max[array].X) THEN
+      B_F_Range = TRUE
+      CGX_MLD(30,#NotifyMsg, array)
+    ENDIF
+    IF (temp_frame.Y > CGX_Max[array].Y) THEN
+      B_F_Range = TRUE
+      CGX_MLD(31,#NotifyMsg,array)
+    ENDIF
+    IF (temp_frame.Z > CGX_Max[array].Z) THEN
+      B_F_Range = TRUE
+      CGX_MLD(32,#NotifyMsg,array)
+    ENDIF
+    IF (temp_frame.A > CGX_Max[array].A) THEN
+      B_F_Range = TRUE
+      CGX_MLD(33,#NotifyMsg,array)
+    ENDIF
+    IF (temp_frame.B > CGX_Max[array].B) THEN
+      B_F_Range = TRUE
+      CGX_MLD(34,#NotifyMsg,array)
+    ENDIF
+    IF (temp_frame.C > CGX_Max[array].C) THEN
+      B_F_Range = TRUE
+      CGX_MLD(35,#NotifyMsg,array)
+    ENDIF
+    
+;Check Min_Range
+    IF (temp_frame.X < CGX_Min[array].X) THEN
+      B_F_Range = TRUE
+      CGX_MLD(36,#NotifyMsg,array)
+    ENDIF
+    IF (temp_frame.Y < CGX_Min[array].Y) THEN
+      B_F_Range = TRUE
+      CGX_MLD(37,#NotifyMsg,array)
+    ENDIF
+    IF (temp_frame.Z < CGX_Min[array].Z) THEN
+      B_F_Range = TRUE
+      CGX_MLD(38,#NotifyMsg,array)
+    ENDIF
+    IF (temp_frame.A < CGX_Min[array].A) THEN
+      B_F_Range = TRUE
+      CGX_MLD(39,#NotifyMsg,array)
+    ENDIF
+    IF (temp_frame.B < CGX_Min[array].B) THEN
+      B_F_Range = TRUE
+      CGX_MLD(40,#NotifyMsg,array)
+    ENDIF
+    IF (temp_frame.C < CGX_Min[array].C) THEN
+      B_F_Range = TRUE
+      CGX_MLD(41,#NotifyMsg,array)
+    ENDIF
+  ELSE
+    IF (Array == 0) THEN
+      B_F_Range = FALSE  ; keine Grenzwertueberwachung
+    ELSE
+      B_F_Range = TRUE  ; Par4 out of range
+    ENDIF
+  ENDIF
+  
+  IF (B_F_Range == TRUE) THEN
+    $FLAG[F_EKI_RANGE] = TRUE
+    B_bWaitMsg = TRUE
+    IF ($FLAG[F_EKI_NOWAIT] == TRUE) THEN
+      CGX_MLD(65,#NotifyMsg,0)
+    ELSE
+      CGX_MLD(1,#QuitMsg,0) ; Dialog MSG, ob trotzdem Werte übernommen werden sollen
+      B_bWaitMsg = FALSE
+      CGX_MLD(42,#DialogMsg,0)
+    ENDIF
+    IF (B_bRepeat) THEN
+;      WAIT FOR $OUT[O_R_Hand] AND NOT $COULD_START_MOTION
+      B_F_Range = FALSE
+    ELSE
+      Get_Val_Pos={X 0, Y 0, Z 0, A 0, B 0, C 0}
+    ENDIF
+  ELSE
+    $FLAG[F_EKI_RANGE] = FALSE
+  ENDIF
+  
+  IF (B_F_Range == TRUE) THEN
+    RETURN (TRUE)
+  ELSE
+    RETURN (FALSE)
+  ENDIF
+ENDFCT
+
+DEF  Check_Verification()
+  IF ((ABS (Get_Val_Pos.X) > CGX_X_MaxVer) OR (ABS (Get_Val_Pos.Y) > CGX_Y_MaxVer) OR (ABS (Get_Val_Pos.Z) > CGX_Z_MaxVer) OR (ABS (Get_Val_Pos.A) > CGX_A_MaxVer) OR (ABS (Get_Val_Pos.B) > CGX_B_MaxVer) OR (ABS (Get_Val_Pos.C) > CGX_C_MaxVer)) THEN
+    B_bVerify_OK = FALSE
+
+    CGX_MLD(28,#QuitMSG,0)  ;Verifizierung fehlgeschlagen Quit - MSG Roboter PHG
+  ELSE
+    B_bVerify_OK = TRUE
+  ENDIF
+
+END
+
+DEF Reset_Get_Values()
+;Reset Variables
+
+  get_Telgr_ID = 0
+  get_Error_ID = 0
+  Get_Err_Text[]="                             "
+  Get_Val_Pos  = $Nullframe
+  Get_Parametr[] = "                    "
+;      
+END
+
+DEF Check_Ping()
+;Check Ping KUKA--Cognex
+
+  IF (get_Stat_ID <> EKI_STAT_LBB) THEN    ; Lebensbit abfragen
+    CGX_MLD(15,#NotifyMsg,0) ; Quit - MSG Roboter PHG, NI - Notify MSG
+    $FLAG[F_EKI_PING_S] = FALSE
+  ELSE
+    $FLAG[F_EKI_PING_S] = TRUE
+    IF NOT ($EXT) THEN
+      CGX_MLD(16,#NotifyMsg,0)
+    ENDIF
+  ENDIF
+
+END
+
+;----------------------------------
+;---- Funktion: Send XML Daten ----
+;----------------------------------
+
+DEFFCT INT CGX_Send_XML(RET :OUT, PAR1 :IN, PAR2 :IN, F_EKI_Rp_Act :IN, F_EKI_Sp_Act :IN, XML_ch1_String[] :IN, XML_ch2_String[] :IN)
+  DECL EKI_STATUS RET
+  INT PAR1, PAR2, F_EKI_Rp_Act, F_EKI_Sp_Act
+  char XML_ch1_String[]
+  char XML_ch2_String[]
+    ;--Data Transmission--
+  INT i
+  
+  i_RobTimer  = $Rob_Timer
+  i_EKI_Timer = EKI_TimerClc    ;normal Timeout
+  B_bTimeOut  = FALSE
+  WHILE (NOT B_bTimeOut AND NOT $Flag[F_EKI_Sp_Act])
+    IF ($Rob_Timer - i_RobTimer > i_EKI_Timer) THEN  ;Timeout
+      B_bTimeOut = TRUE
+    ENDIF
+    IF NOT $Flag[F_EKI_Sp_Act] THEN
+      ;--Aenderung S.Thiele 20120615---
+      ;--mit neuer Version von EthernetKRL
+      ;--EKI_CLOSE und EKI_CLEAR auskommentieren!!!
+      ;--da sonst Fehler Verbindung.
+      RET = EKI_Close(XML_ch1_String[])
+      RET = EKI_Clear(XML_ch1_String[])
+      RET = EKI_Init(XML_ch1_String[])  ;INIT EKI
+      RET = EKI_Open(XML_ch1_String[])  ;OPEN EKI
+    ENDIF
+  ENDWHILE
+  IF B_bTimeOut THEN
+    IF ($FLAG[F_EKI_NOWAIT] == TRUE) THEN
+      CGX_MLD(10,#NotifyMsg,0)
+    ELSE
+      CGX_MLD(10,#DialogMsg,0) ; Quit - MSG Roboter PHG
+    ENDIF
+    RETURN(-1)    ;EXIT REPEAT EKI
+  ENDIF
+
+    ;IP 192.168.100.50  Define in XML_KUKA_Cognex_2  Port 3001
+  i_RobTimer = $Rob_Timer
+  i_EKI_Timer = EKI_TimerClc    ;normal Timeout
+  B_bTimeOut = FALSE
+  WHILE (NOT B_bTimeOut AND NOT $Flag[F_EKI_Rp_Act])
+    IF ($Rob_Timer - i_RobTimer > i_EKI_Timer) THEN  ;Timeout
+      B_bTimeOut = TRUE
+    ENDIF
+    IF NOT $Flag[F_EKI_Rp_Act] THEN
+      ;--mit neuer Version von EthernetKRL
+      ;--EKI_CLOSE und EKI_CLEAR auskommentieren!!!
+      ;--da sonst Fehler Verbindung.
+      RET = EKI_Close(XML_ch2_String[])
+      RET = EKI_Clear(XML_ch2_String[])
+      RET = EKI_Init(XML_ch2_String[])  ;INIT EKI
+      RET = EKI_Open(XML_ch2_String[])  ;OPEN EKI
+    ENDIF
+  ENDWHILE
+  IF B_bTimeOut THEN
+    IF ($FLAG[F_EKI_NOWAIT] == TRUE) THEN
+      CGX_MLD(11,#NotifyMsg,0)
+    ELSE
+      CGX_MLD(11,#DialogMsg,0)      ; Quit - MSG Roboter PHG
+    ENDIF
+    RETURN(-1)    ;EXIT REPEAT EKI
+  ENDIF
+  Count_Telegramm_ID()  ;Telegramm_ID hochzaehlen
+  send_Mode_ID = PAR2
+  send_Job_ID  = PAR1
+  Wait SEC 0            ;Vorlaufstop erzwingen
+  Send_Val_Pos = $Pos_Act
+
+  RET = EKI_SetInt(XML_ch1_String[],"ROBOT/TEL_ID", send_Tel_ID)
+  RET = EKI_SetInt(XML_ch1_String[],"ROBOT/M_ID",  send_Mode_ID)
+  RET = EKI_SetInt(XML_ch1_String[],"ROBOT/J_ID", send_Job_ID)
+  RET = EKI_SetFrame(XML_ch1_String[],"ROBOT/POS", Send_Val_Pos)
+  RET = EKI_SetString(XML_ch1_String[],"ROBOT/PAR",Send_Param[])
+  RET = EKI_SetString(XML_ch1_String[],"ROBOT/T",Send_Termina[])
+
+    ;Send XML_KUKA_Cognex with Data
+  RET = EKI_Lock(XML_ch1_String[]) ;Lock Channel
+  RET = EKI_Send(XML_ch1_String[],"ROBOT")  ;Send Data
+  RET = EKI_Unlock(XML_ch1_String[]) ;UnLock Channel
+  RET = EKI_ClearBuffer(XML_ch1_String[],"ROBOT") ;Clear Channel
+  
+  RETURN(0)
+ENDFCT
+
+;-------------------------------------
+;---- Funktion: Receive XML Daten ----
+;-------------------------------------
+
+DEFFCT INT CGX_Recv_XML(RET :OUT, F_EKI_MES_OK :IN, PAR2 :IN, XML_ch2_String[] :IN)
+  DECL EKI_STATUS RET
+  INT F_EKI_MES_OK, PAR2
+  char XML_ch2_String[]
+
+  i_RobTimer = $Rob_Timer
+  WHILE (NOT B_bTimeOut AND NOT $Flag[F_EKI_MES_OK])
+    IF ($Rob_Timer - i_RobTimer > i_EKI_Timer) THEN  ;Timeout
+      B_bTimeOut = TRUE
+    ENDIF
+    IF (Exists_KrlMsg(n_EKI_Handle) == FALSE) THEN
+      IF PAR2 == EKI_CALI_END THEN
+        CGX_MLD(8,#DialogMSG,0)
+      ENDIF
+      IF PAR2 == EKI_VALI_END THEN
+        CGX_MLD(20,#DialogMSG,0)
+      ENDIF
+      IF PAR2 == EKI_REFE_END THEN
+        CGX_MLD(24,#DialogMSG,0)
+      ENDIF
+    ENDIF
+  ENDWHILE
+  B_Result = Clear_KrlMSG(n_EKI_Handle)
+  B_bWaitMsg = FALSE
+  IF $Flag[F_EKI_MES_OK] THEN
+    Reset_Get_Values()
+    EKI_CHECK(RET,#QUIT)             ;CHECK Conection
+    RET = EKI_Lock(XML_ch2_String[]) ;Lock Channel
+    RET = EKI_GetInteger(XML_ch2_String[],"VISION/TEL_ID",get_Telgr_ID)
+    RET = EKI_GetInteger(XML_ch2_String[],"VISION/STAT_ID",get_Stat_ID)
+    RET = EKI_GetInteger(XML_ch2_String[],"VISION/ERR_ID",get_Error_ID)
+    RET = EKI_GetString(XML_ch2_String[],"VISION/ERR_TEXT",Get_Err_Text[])
+    RET = EKI_GetFrame(XML_ch2_String[],"VISION/POS",Get_Val_Pos)
+    RET = EKI_GetString(XML_ch2_String[],"VISION/PAR",Get_Parametr[])
+    RET = EKI_GetString(XML_ch2_String[],"VISION/T",Get_Terminat[])
+    RET = EKI_Unlock(XML_ch2_String[])                  ;UnLock Channel
+    RET = EKI_ClearBuffer(XML_ch2_String[],"VISION")    ;Clear Channel
+    $Flag[F_EKI_MES_OK] = FALSE   ;Reset Flag Data OK
+  ENDIF
+
+  IF (B_bTimeOut) AND ((PAR2 <> EKI_CALI_END) OR (PAR2 <> EKI_VALI_END) OR (PAR2 <> EKI_REFE_END)) THEN
+    IF ($FLAG[F_EKI_NOWAIT] == TRUE) THEN
+      CGX_MLD(13,#NotifyMsg,0)
+    ELSE
+      CGX_MLD(13,#QuitMSG,0)      ; Quit - MSG Roboter PHG
+    ENDIF
+    RETURN(-1)    ;EXIT REPEAT EKI
+  ENDIF
+  IF NOT B_bTimeOut THEN
+    Check_Telegramm_ID()
+  ENDIF
+  RETURN(0)
+ENDFCT
+
+; Funktion Realign - Kamera fordert Umpositionierung des Roboters
+DEFFCT BOOL eki_realign(B_reposition :OUT, PAR5 :IN, orig_base :IN)
+  BOOL B_reposition
+  INT PAR5
+  FRAME orig_base
+
+  int ret
+  BOOL B_new_mespos
+  FRAME temp_base
+  FRAME temp_pos
+  
+  temp_base = orig_base
+  Wait SEC 0
+  temp_base = temp_base : Get_Val_Pos
+  ret = Check_korr_frame(PAR5, temp_base)
+  IF (ret == 0) THEN
+    temp_pos = $pos_act
+    $BASE = temp_base
+    Wait SEC 0
+    IF (VW_MPARA_ACT.MOVE_TYPE == #PTP_MOTION) THEN
+      CONTINUE
+      PTP temp_pos
+    ELSE
+      IF (VW_MPARA_ACT.MOVE_TYPE == #PATH_MOTION) THEN
+        CONTINUE
+        LIN temp_pos
+      ELSE
+        IF (VW_MPARA_ACT.MOVE_TYPE == #GLUE_MOTION) THEN
+          CONTINUE
+          LIN temp_pos
+        ELSE
+          $BASE = orig_base
+          Wait SEC 0
+          CGX_MLD(61,#QuitMsg,0) ; unerlaubte Interpolationsart
+          $Flag[F_EKI_Err] = TRUE
+        ENDIF
+      ENDIF
+    ENDIF
+    Wait SEC 0
+    $BASE = orig_base
+    Wait SEC 0
+    CGX_MLD(62,#NotifyMsg, PAR5)
+    B_reposition = TRUE
+    B_new_mespos = TRUE
+  ELSE
+    B_new_mespos = FALSE  ; Abbruch, da Realin out of Range
+    CGX_MLD(63,#NotifyMsg, PAR5)
+  ENDIF
+  return(B_new_mespos)
+ENDFCT
+
+DEFFCT INT Check_korr_frame(PAR5 :IN, temp_base :IN)
+  INT PAR5
+  FRAME temp_base
+  
+  INT i_realign_err
+
+;Check Max_Range
+  realign_val = temp_base
+  i_realign_err = 0
+  IF ((PAR5 > 0) AND (PAR5 < MAX_KORR_ARR)) THEN
+    i_realign_err = 0
+    IF (temp_base.X > KORR_Max[PAR5].X) THEN
+      CGX_MLD(49,#NotifyMsg, PAR5)
+      i_realign_err = -1 ; 
+    ENDIF
+    IF (temp_base.Y > KORR_Max[PAR5].Y) THEN
+      CGX_MLD(50,#NotifyMsg, PAR5)
+      i_realign_err = -1 ; 
+    ENDIF
+    IF (temp_base.Z > KORR_Max[PAR5].Z) THEN
+      CGX_MLD(51,#NotifyMsg, PAR5)
+      i_realign_err = -1 ; 
+    ENDIF
+    IF (temp_base.A > KORR_Max[PAR5].A) THEN
+      CGX_MLD(52,#NotifyMsg, PAR5)
+      i_realign_err = -1 ; 
+    ENDIF
+    IF (temp_base.B > KORR_Max[PAR5].B) THEN
+      CGX_MLD(53,#NotifyMsg, PAR5)
+      i_realign_err = -1 ; 
+    ENDIF
+    IF (temp_base.C > KORR_Max[PAR5].C) THEN
+      CGX_MLD(54,#NotifyMsg, PAR5)
+      i_realign_err = -1 ; 
+    ENDIF
+      
+  ;Check Min_Range
+    IF (temp_base.X < KORR_Min[PAR5].X) THEN
+      CGX_MLD(55,#NotifyMsg, PAR5)
+      i_realign_err = -1 ; 
+    ENDIF
+    IF (temp_base.Y < KORR_Min[PAR5].Y) THEN
+      CGX_MLD(56,#NotifyMsg, PAR5)
+      i_realign_err = -1 ; 
+    ENDIF
+    IF (temp_base.Z < KORR_Min[PAR5].Z) THEN
+      CGX_MLD(57,#NotifyMsg, PAR5)
+      i_realign_err = -1 ; 
+    ENDIF
+    IF (temp_base.A < KORR_Min[PAR5].A) THEN
+      CGX_MLD(58,#NotifyMsg, PAR5)
+      i_realign_err = -1 ; 
+    ENDIF
+    IF (temp_base.B < KORR_Min[PAR5].B) THEN
+      CGX_MLD(59,#NotifyMsg, PAR5)
+      i_realign_err = -1 ; 
+    ENDIF
+    IF (temp_base.C < KORR_Min[PAR5].C) THEN
+      CGX_MLD(60,#NotifyMsg, PAR5)
+      i_realign_err = -1 ; 
+    ENDIF
+  ELSE
+    IF (PAR5 == 0) THEN
+      return(0)
+    ELSE
+      CGX_MLD(64,#NotifyMsg, PAR5)
+      return(-1)
+    ENDIF
+  ENDIF
+  IF (i_realign_err == 0) THEN
+    $Flag[F_EKI_REALI] = FALSE  ; no Realign Error, check successfull
+    return(0)
+  ELSE
+    CGX_MLD(48,#NotifyMsg,0)  ; Massage "Realign out of range"
+    IF ($FLAG[F_EKI_NOWAIT] == TRUE) THEN
+      $Flag[F_EKI_REALI] = TRUE  ; Realign Error
+      return(-1)
+    ELSE
+      CGX_MLD(1,#QuitMsg,0) ; Dialog MSG, ob trotzdem Werte übernommen werden sollen
+      CGX_MLD(42,#DialogMsg,0) ; "Crashgefahr"
+    ENDIF  
+    IF (B_bRepeat) THEN
+      $Flag[F_EKI_REALI] = FALSE  ; Realign out of range, aber doch anwenden (Quit weiter)
+      return(0)
+    ELSE
+      $Flag[F_EKI_REALI] = TRUE  ; Realign out of range, aber nicht anwenden (Abbruch)
+      return(-1)
+    ENDIF
+  ENDIF  
+ENDFCT
+
+
+DEFFCT INT get_system_info(PAR1 :IN, XML_ch1_String[] :OUT, XML_ch2_String[] :OUT, F_EKI_Rp_Act :OUT, F_EKI_MES_OK :OUT, F_EKI_Sp_Act :OUT)
+  INT PAR1
+  CHAR XML_ch1_String[]
+  CHAR XML_ch2_String[]
+  INT F_EKI_Rp_Act
+  INT F_EKI_MES_OK
+  INT F_EKI_Sp_Act
+  ; Check Job_ID -- xyy
+  ;                 \\_Kamera Job Nr (yy = 1..99)
+  ;                  \_Kamera System Nr (x = 0 -> KAM 1, x = 1 -> KAM 2..)
+  IF ((PAR1 > KAM0_PRG_NR) AND (PAR1 < KAM1_PRG_NR)) THEN        ; KAM System 1 Job 01-99
+    XML_ch1_String[] = "XML_KUKA_Cognex_1" 
+    XML_ch2_String[] = "XML_KUKA_Cognex_2"
+    F_EKI_Sp_Act = F_EKI_SP1Act 
+    F_EKI_Rp_Act = F_EKI_Rp1Act
+    F_EKI_MES_OK = F_EKI_Dat1OK
+  ELSE
+    IF ((PAR1 > KAM1_PRG_NR) AND (PAR1 < KAM2_PRG_NR)) THEN      ; KAM System 2 Job 01-99
+      XML_ch1_String[] = "XML_KUKA_Cognex_3" 
+      XML_ch2_String[] = "XML_KUKA_Cognex_4"
+      F_EKI_Sp_Act = F_EKI_SP2Act 
+      F_EKI_Rp_Act = F_EKI_Rp2Act
+      F_EKI_MES_OK = F_EKI_Dat2OK
+    ELSE
+      IF ((PAR1 > KAM2_PRG_NR) AND (PAR1 < KAM3_PRG_NR)) THEN       ; KAM System 3 Job 01-99
+        XML_ch1_String[] = "XML_KUKA_Cognex_5" 
+        XML_ch2_String[] = "XML_KUKA_Cognex_6"
+        F_EKI_Sp_Act = F_EKI_SP3Act 
+        F_EKI_Rp_Act = F_EKI_Rp3Act
+        F_EKI_MES_OK = F_EKI_Dat3OK
+      ELSE
+        IF ((PAR1 > KAM3_PRG_NR) AND (PAR1 < KAM4_PRG_NR)) THEN       ; KAM System 4 Job 01-99
+          XML_ch1_String[] = "XML_KUKA_Cognex_7" 
+          XML_ch2_String[] = "XML_KUKA_Cognex_8"
+          F_EKI_Sp_Act = F_EKI_SP4Act 
+          F_EKI_Rp_Act = F_EKI_Rp4Act
+          F_EKI_MES_OK = F_EKI_Dat4OK
+        ELSE 
+          IF ((PAR1 > KAM4_PRG_NR) AND (PAR1 < KAM5_PRG_NR)) THEN        ; KAM System 5 Job 01-99
+            XML_ch1_String[] = "XML_KUKA_Cognex_9" 
+            XML_ch2_String[] = "XML_KUKA_Cognex_10"
+            F_EKI_Sp_Act = F_EKI_SP5Act 
+            F_EKI_Rp_Act = F_EKI_Rp5Act
+            F_EKI_MES_OK = F_EKI_Dat5OK
+          ELSE
+            ; erweiterter Job - Bereich (VMT Bratislava)
+            ; Check Job_ID -- xyyy
+            ;                 \\_Kamera Job Nr (yyy = 1..999)
+            ;                  \_Kamera System Nr (x = 1 -> KAM 1, x = 2 -> KAM 2..)
+            IF ((PAR1 > KAM00_PRG_NR) AND (PAR1 < KAM11_PRG_NR)) THEN        ; KAM System 1 JOB 001-999
+              XML_ch1_String[] = "XML_KUKA_Cognex_1" 
+              XML_ch2_String[] = "XML_KUKA_Cognex_2"
+              F_EKI_Sp_Act = F_EKI_SP1Act 
+              F_EKI_Rp_Act = F_EKI_Rp1Act
+              F_EKI_MES_OK = F_EKI_Dat1OK
+            ELSE
+              IF ((PAR1 > KAM11_PRG_NR) AND (PAR1 < KAM22_PRG_NR)) THEN      ; KAM System 2 Job 001-999
+                XML_ch1_String[] = "XML_KUKA_Cognex_3" 
+                XML_ch2_String[] = "XML_KUKA_Cognex_4"
+                F_EKI_Sp_Act = F_EKI_SP2Act 
+                F_EKI_Rp_Act = F_EKI_Rp2Act
+                F_EKI_MES_OK = F_EKI_Dat2OK
+              ELSE
+                IF ((PAR1 > KAM22_PRG_NR) AND (PAR1 < KAM33_PRG_NR)) THEN       ; KAM System 3 Job 001-999
+                  XML_ch1_String[] = "XML_KUKA_Cognex_5" 
+                  XML_ch2_String[] = "XML_KUKA_Cognex_6"
+                  F_EKI_Sp_Act = F_EKI_SP3Act 
+                  F_EKI_Rp_Act = F_EKI_Rp3Act
+                  F_EKI_MES_OK = F_EKI_Dat3OK
+                ELSE
+                  IF ((PAR1 > KAM33_PRG_NR) AND (PAR1 < KAM44_PRG_NR)) THEN       ; KAM System 4 Job 001-999
+                    XML_ch1_String[] = "XML_KUKA_Cognex_7" 
+                    XML_ch2_String[] = "XML_KUKA_Cognex_8"
+                    F_EKI_Sp_Act = F_EKI_SP4Act 
+                    F_EKI_Rp_Act = F_EKI_Rp4Act
+                    F_EKI_MES_OK = F_EKI_Dat4OK
+                  ELSE 
+                    IF ((PAR1 > KAM44_PRG_NR) AND (PAR1 < KAM55_PRG_NR)) THEN        ; KAM System 5 Job 001-999
+                      XML_ch1_String[] = "XML_KUKA_Cognex_9" 
+                      XML_ch2_String[] = "XML_KUKA_Cognex_10"
+                      F_EKI_Sp_Act = F_EKI_SP5Act 
+                      F_EKI_Rp_Act = F_EKI_Rp5Act
+                      F_EKI_MES_OK = F_EKI_Dat5OK
+                    ELSE
+                      CGX_MLD(29,#QuitMsg,0)   ;PAR1: falscher Wert Quit - MSG Roboter PHG
+                      return(-1)
+                    ENDIF
+                  ENDIF
+                ENDIF
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+  RETURN(0)
+ENDFCT
+
+
+;FOLD Message
+DEF  CGX_MLD(MLD_NR :IN, MsgTyp :IN, nr :IN)
+  INT MLD_NR
+  INT OFFSET
+  INT nr
+  DECL EKI_MsgType MsgTyp
+  DECL KrlMsg_T USER_MSG
+  DECL KrlMsgPar_T Par[3]
+  DECL KrlMsgOpt_T Opt
+  DECL KrlMsgDlgSK_T SK[7]
+  DECL STATE_T Stat 
+  
+  USER_MSG = { Modul[] "vw_cgx_user", Nr -1, Msg_txt[] " "}
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+  Opt = { VL_Stop TRUE, Clear_P_Reset TRUE, Log_To_DB FALSE }
+  USER_MSG.Nr = MLD_NR
+  OFFSET = 0
+  SWITCH  MLD_NR
+
+    CASE 1
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Wert ausser Toleranz! Job_ID %.3d. Verschiebewert anwenden ?",send_Job_ID)  ;Error max. Correction 
+    CASE 2
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Kalibrierung fehlgeschlagen! Job_ID %.3d. :-(",send_Job_ID)  ;Error Calibration
+    CASE 3
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Kalibrierung erfolgreich durchgefuehrt! Job_ID %.3d. :-)",send_Job_ID)  ;Calibration OK 
+    CASE 4
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Verschiebung1 X=%7.2f,Y=%7.2f,Z=%7.2f,A=%7.2f,B=%7.2f,C=%7.2f ",Get_Val_Pos.X,Get_Val_Pos.Y,Get_Val_Pos.Z,Get_Val_Pos.A,Get_Val_Pos.B,Get_Val_Pos.C)
+    CASE 5
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Base_data[%.2d] X=%7.2f,Y=%7.2f,Z=%7.2f,A=%7.2f,B=%7.2f,C=%7.2f ",i_base_eki,Base_data[i_base_eki].X,Base_data[i_base_eki].Y,Base_data[i_base_eki].Z,Base_data[i_base_eki].A,Base_data[i_base_eki].B,Base_data[i_base_eki].C)
+    CASE 6
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Verschiebung durchgefuehrt! Job_ID %.3d. :-)",send_Job_ID)  ;Correction OK 
+    CASE 7
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI: Kalibrierung Punkt %.3d angefahren und bearbeitet. Job_ID %.3d",counter_Cali,send_Job_ID)
+    CASE 8
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Kalibrierung wird berechnet.Bitte warten,nicht ausschalten!Job_ID %.3d. :-)",send_Job_ID)  ;Calibration 
+    CASE 9
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Check Telegramm_ID fehlgeschlagen! Job_ID %.3d. :-(",send_Job_ID)  ;Error Check Telegramm_ID 
+    CASE 10
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:TimeOUT Verbindung Sendeport! Job_ID %.3d. :-(",send_Job_ID)  ;Error Connection Sendport
+    CASE 11
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:TimeOUT Verbindung Empfangsport! Job_ID %.3d. :-(",send_Job_ID)  ;Error Connection Receiveport
+    CASE 12
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Check Status_ID fehlgeschlagen! Job_ID %.3d. :-(",send_Job_ID)  ;Error Check Status_ID 
+    CASE 13
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Time OUT beim Empfang der Daten! Job_ID %.3d. :-(",send_Job_ID)  ;Error Receive Data 
+    CASE 14
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI: Error_ID-Nr: %.3d %r",get_Error_ID,Get_Err_Text[])  ;Error Text from Vision
+    CASE 15
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Ping fehlgeschlagen! Job_ID %.3d. :-(",send_Job_ID)  ;Error Ping
+    CASE 16
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Ping erfolgreich ausgefuehrt! Job_ID %.3d. :-)",send_Job_ID)  ;Ping OK 
+    CASE 17
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Validierung fehlgeschlagen! Job_ID %.3d. :-(",send_Job_ID)  ;Error Validation
+    CASE 18
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Validierung erfolgreich durchgefuehrt! Job_ID %.3d. :-)",send_Job_ID)  ;Validation OK 
+    CASE 19
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Validierung Punkt %.1d angefahren und bearbeitet. Job_ID %.3d",counter_Vali,send_Job_ID)
+    CASE 20
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Validierung wird berechnet.Bitte warten,nicht ausschalten!!! Job_ID %.3d. :-)",send_Job_ID)  ;Validation 
+    CASE 21
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Referenzierung fehlgeschlagen! Job_ID %.3d. :-(",send_Job_ID)  ;Error Referencing
+    CASE 22
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Referenzierung erfolgreich durchgefuehrt! Job_ID %.3d. :-)",send_Job_ID)  ;Referencing OK 
+    CASE 23
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Referenzierung Punkt angefahren und bearbeitet! Job_ID %.3d. :-)",send_Job_ID)  ;Referencing 
+    CASE 24
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Referenzierung wird berechnet.Bitte warten,nicht ausschalten!Job_ID %.3d. :-(",send_Job_ID)  ;Referencing
+    CASE 25
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Verifizierung fehlgeschlagen! Job_ID %.3d. :-(",send_Job_ID)  ;Error Verification
+    CASE 26
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Verifizierung erfolgreich durchgefuehrt! Job_ID %.3d. :-)",send_Job_ID)  ;Verification OK 
+    CASE 27
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Verifizierung Punkt %.3d angefahren und bearbeitet. Job_ID %.3d",counter_Vali,send_Job_ID)
+    CASE 28
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Verifizierung fehlgeschlagen! Werte ausserhalb der Toleranz! Job_ID %.3d. :-(",send_Job_ID)  ;Error Verification
+    CASE 29
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:P1 Falscher Wert Job_ID %.3d. :-(",send_Job_ID)
+    CASE 30
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:%s X= %7.2fmm > %s %7.2fmm",korrwert_msg[], eki_frame.X, gwrt_max_msg[], CGX_Max[nr].X)
+    CASE 31
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:%s Y= %7.2fmm > %s %7.2fmm",korrwert_msg[], eki_frame.Y, gwrt_max_msg[], CGX_Max[nr].Y)
+    CASE 32
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:%s Z= %7.2fmm > %s %7.2fmm",korrwert_msg[], eki_frame.Z, gwrt_max_msg[], CGX_Max[nr].Z)
+    CASE 33
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:%s A= %7.2f > %s %7.2f Deg",korrwert_msg[], eki_frame.A, gwrt_max_msg[], CGX_Max[nr].A)
+    CASE 34
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:%s B= %7.2f > %s %7.2f Deg",korrwert_msg[], eki_frame.B, gwrt_max_msg[], CGX_Max[nr].B)
+    CASE 35
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:%s C= %7.2f > %s %7.2f Deg",korrwert_msg[], eki_frame.C, gwrt_max_msg[], CGX_Max[nr].C)
+    CASE 36
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:%s X= %7.2fmm < %s %7.2fmm",korrwert_msg[], eki_frame.X, gwrt_min_msg[], CGX_Min[nr].X)
+    CASE 37
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:%s Y= %7.2fmm < %s %7.2fmm",korrwert_msg[], eki_frame.Y, gwrt_min_msg[], CGX_Min[nr].Y)
+    CASE 38
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:%s Z= %7.2fmm < %s %7.2fmm",korrwert_msg[], eki_frame.Z, gwrt_min_msg[], CGX_Min[nr].Z)
+    CASE 39
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:%s A= %7.2f < %s %7.2f Deg",korrwert_msg[], eki_frame.A, gwrt_min_msg[], CGX_Min[nr].A)
+    CASE 40
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:%s B= %7.2f < %s %7.2f Deg",korrwert_msg[], eki_frame.B, gwrt_min_msg[], CGX_Min[nr].B)
+    CASE 41
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:%s C= %7.2f < %s %7.2f Deg",korrwert_msg[], eki_frame.C, gwrt_min_msg[], CGX_Min[nr].C)
+    CASE 42
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:ACHTUNG: bei - weiter - Crashgefahr, bei - Abbbruch - neue Messung")
+    CASE 43
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:KEINE Daten erhalten! Keine Entnahme Bauteil!")
+    CASE 44
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:ungueltige Base - Nummer !")
+    CASE 45
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Parameter PAR5 falscher Wert !")
+    CASE 46
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:unerlaubte Realign - Anforderung vom Camsystem !")
+    CASE 47
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Realign - Wert auser Toleranz Array = %.3d!",nr)
+    CASE 48
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Realign-Wert ausser Toleranz! Job_ID %.3d",send_Job_ID)  ;Error max. Correction 
+    CASE 49
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Array = %.3d %s X= %7.2fmm > %s %7.2fmm",nr, realign_msg[], realign_val.X, gwrt_max_msg[], KORR_Max[nr].X)
+    CASE 50
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Array = %.3d %s Y= %7.2fmm > %s %7.2fmm",nr, realign_msg[], realign_val.Y, gwrt_max_msg[], KORR_Max[nr].Y)
+    CASE 51
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Array = %.3d %s Z= %7.2fmm > %s %7.2fmm",nr ,realign_msg[], realign_val.Z, gwrt_max_msg[], KORR_Max[nr].Z)
+    CASE 52
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Array = %.3d %s A= %7.2f > %s %7.2f Deg",nr ,realign_msg[], realign_val.A, gwrt_max_msg[], KORR_Max[nr].A)
+    CASE 53
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Array = %.3d %s B= %7.2f > %s %7.2f Deg",nr, realign_msg[], realign_val.B, gwrt_max_msg[], KORR_Max[nr].B)
+    CASE 54
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Array = %.3d %s C= %7.2f > %s %7.2f Deg",nr, realign_msg[], realign_val.C, gwrt_max_msg[], KORR_Max[nr].C)
+    CASE 55
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Array = %.3d %s X= %7.2fmm < %s %7.2fmm",nr ,realign_msg[], realign_val.X, gwrt_min_msg[], KORR_Min[nr].X)
+    CASE 56
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Array = %.3d %s Y= %7.2fmm < %s %7.2fmm",nr ,realign_msg[], realign_val.Y, gwrt_min_msg[], KORR_Min[nr].Y)
+    CASE 57
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Array = %.3d %s Z= %7.2fmm < %s %7.2fmm",nr ,realign_msg[], realign_val.Z, gwrt_min_msg[], KORR_Min[nr].Z)
+    CASE 58
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Array = %.3d %s A= %7.2f < %s %7.2f Deg",nr ,realign_msg[], realign_val.A, gwrt_min_msg[], KORR_Min[nr].A)
+    CASE 59
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Array = %.3d %s B= %7.2f < %s %7.2f Deg",nr ,realign_msg[], realign_val.B, gwrt_min_msg[], KORR_Min[nr].B)
+    CASE 60
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Array = %.3d %s C= %7.2f < %s %7.2f Deg",nr ,realign_msg[], realign_val.C, gwrt_min_msg[], KORR_Min[nr].C)
+    CASE 61
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:unerlaubte Interpolationsart (nur LIN, KLIN, PTP)!")
+    CASE 62
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Realign ausgefuehrt")
+    CASE 63
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:kein Realign ausgefuehrt")
+    CASE 64
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Realign ungueltige Framenummer %.3d",nr)
+    CASE 65
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Wert ausser Toleranz! Job_ID %.3d",send_Job_ID)  ;Error max. Correction 
+    DEFAULT
+      USER_MSG.MSG_TXT[]="Meldung nicht Deklariert" ; Meldungsnummer nicht programmiert
+  ENDSWITCH
+
+  SWITCH MsgTyp
+    CASE #QuitMsg
+      n_EKI_Handle = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      WHILE ( Exists_KrlMsg(n_EKI_Handle) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      ENDWHILE
+    CASE #NotifyMsg
+      n_EKI_Handle = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+
+    CASE #DialogMsg
+      IF ((MLD_NR <> 8) OR (MLD_NR <> 20) OR (MLD_NR <> 24)) AND NOT B_bWaitMsg THEN
+        SK[1] = {SK_Type #Value,SK_txt[] "weiter"}
+        SK[2] = {SK_Type #Value,SK_txt[] "Abbruch"}
+        n_EKI_Handle = Set_KrlDlg( USER_MSG,  Par[],SK[], Opt) ;Ausgabe Dialogmeldung
+        IF (n_EKI_Handle > 0) THEN
+          n_Keynumber=0
+          WHILE(n_Keynumber==0)
+            WHILE(Exists_KrlDlg( n_EKI_Handle, n_KeyNumber))
+            ENDWHILE
+          WAIT SEC 0.1  ;Erforderlich fuer Ausgabe Meldung
+          SWITCH n_KeyNumber
+            CASE 1
+              B_bRepeat = TRUE
+              B_bAbort  = FALSE
+            EXIT
+            CASE 2
+              B_bRepeat = FALSE
+              B_bAbort  = TRUE
+            EXIT
+          ENDSWITCH
+          ENDWHILE
+            B_Result = Clear_KrlMSG( n_EKI_Handle)
+        ENDIF
+      ELSE
+        SK[1] = {SK_Type #Value,SK_txt[] "Continue"}
+        n_EKI_Handle = Set_KrlDlg( USER_MSG,  Par[],SK[], Opt) ;Ausgabe Dialogmeldung
+      ENDIF
+
+    DEFAULT
+      n_EKI_Handle = Set_KrlMsg(#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+END
+;ENDFOLD

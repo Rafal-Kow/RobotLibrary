@@ -1,0 +1,82 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/VirtualAxis
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_va_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Virtuelle Achsen                    *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.16 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD USER_Version
+STRUC _Tech_VAxis CHAR Name[20],INT Datum
+DECL _Tech_VAxis Tech_VAxis
+;ENDFOLD
+; 
+;FOLD Konfiguration Schleppfehler
+GLOBAL REAL MyZiel=3786.0
+;maximalerSchleppfehler
+GLOBAL REAL max_sf=15.0
+;Schleppfehler > 1 und < 15
+GLOBAL BOOL SF_Vorwarnung=FALSE
+;ENDFOLD
+; 
+;Uebergabe Istposition
+SIGNAL sig1_sollaus $OUT[729]  TO $OUT[736]
+SIGNAL sig1_istpos $IN[737]  TO $IN[751]
+SIGNAL sig2_sollpos $OUT[897]  TO $OUT[911]
+SIGNAL sig2_istpos $IN[897]  TO $IN[911]
+SIGNAL sig3_sollpos $OUT[1057]  TO $OUT[1071]
+SIGNAL sig3_istpos $IN[1057]  TO $IN[1071]
+SIGNAL sig4_sollpos $OUT[1217]  TO $OUT[1231]
+SIGNAL sig4_istpos $IN[1217]  TO $IN[1231]
+SIGNAL sig5_sollpos $OUT[1297]  TO $OUT[1311]
+SIGNAL sig5_istpos $IN[1297]  TO $IN[1311]
+SIGNAL sig6_sollpos $OUT[1377]  TO $OUT[1391]
+SIGNAL sig6_istpos $IN[1377]  TO $IN[1391]
+SIGNAL sig7_sollpos $OUT[1457]  TO $OUT[1471]
+SIGNAL sig7_istpos $IN[1457]  TO $IN[1471]
+; 
+;FOLD Behandlung Programmoverride
+GLOBAL INT OV_PRO_Old=100
+GLOBAL BOOL OV_RUECK=FALSE
+;ENDFOLD
+; 
+;FOLD Ausgabe von ProConOs Diagnose-Meldungen
+BOOL proconos_msg=TRUE
+BOOL async_active=FALSE
+BOOL pos_outofsoftend=FALSE
+GLOBAL BOOL schleppfehler=FALSE
+GLOBAL BOOL SF_Last=FALSE
+GLOBAL BOOL SF_bei_AntriebeAus=FALSE
+GLOBAL BOOL Handbetrieb=FALSE
+GLOBAL BOOL ANTEIN_MERKER=FALSE
+; 
+INT pcoBootTime=0
+INT plcdummy
+INT ErrSZNr=-1
+GLOBAL INT MaxSZNr=1
+GLOBAL INT SZAxConfig=-1
+; 
+GLOBAL ENUM _sf_prog_status prg_motion,driveoff_motion,man_motion,dest_invalid,user_act,SZ_io
+DECL GLOBAL _sf_prog_status sf_prog_status
+ENUM _SZCfgCmd StdInit,DockInit,DockCycle
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM VAS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_VAS_Handle[100]
+GLOBAL INT n_VAR_Handle[100]
+INT nMsgNum=-1
+INT RemMsgNum=0
+INT MsgNrOffSet=-1
+;ENDFOLD
+; 
+ENDDAT

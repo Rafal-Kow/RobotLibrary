@@ -1,0 +1,65 @@
+&ACCESS RVO2
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vw_userv
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM EDITMASK = vw_user
+DEF VW_USER(USER_CMD :IN, CMD_SEL :IN, PARA1 :IN,PARA2 :IN,PARA3 :IN,PARA4 :IN,PARA5 :IN,PARA6 :IN,PARA7 :IN )
+; FOLD ;%{H} %MKUKATPVW
+;VW_USER Call
+;SK 02.03.2010
+DECL VW_USER_CMD USER_CMD
+REAL PARA1,PARA2,PARA3,PARA4,PARA5,PARA6
+BOOL PARA7
+INT CMD_SEL
+SWITCH  USER_CMD
+CASE #USR_INIT
+USER_INIT ()
+CASE #USR_ADV
+USER_ADV (CMD_SEL,PARA1,PARA2,PARA3,PARA4,PARA5,PARA6,PARA7)
+CASE #USR_TRIG
+USER_TRIG (CMD_SEL,PARA1,PARA2,PARA3,PARA4,PARA5,PARA6,PARA7)
+CASE #USR_MAIN
+USER_MAIN (CMD_SEL,PARA1,PARA2,PARA3,PARA4,PARA5,PARA6,PARA7)
+CASE #USR_SAW
+USER_SAW ()
+CASE #USR_RESET
+USER_RESET ()
+CASE #USR_CANCEL
+USER_CANCEL ()
+DEFAULT
+ENDSWITCH
+END
+DEF  USER_INIT ()
+;Aufruf am Programmanfang
+END
+;----------------------------------------------------------------
+DEF  USER_ADV (CMD_SEL :IN,P1 :IN,P2 :IN, P3 :IN,P4 :IN,P5 :IN,P6 :IN,P7 :IN)
+;Aufruf im Vorlauf
+INT CMD_SEL,P1,P2,P3,P4,P5,P6
+BOOL P7
+END
+;----------------------------------------------------------------
+DEF  USER_TRIG (CMD_SEL :IN,P1 :IN,P2 :IN, P3 :IN,P4 :IN,P5 :IN,P6 :IN,P7 :IN)
+;Aufruf im Trigger der Punkt-SPS
+INT CMD_SEL,P1,P2,P3,P4,P5,P6
+BOOL P7
+END
+;-----------------------------------------------------------
+DEF  USER_MAIN (CMD_SEL :IN,P1 :IN,P2 :IN, P3 :IN,P4 :IN,P5 :IN,P6 :IN,P7 :IN)
+;Aufruf im Hauptlauf
+INT CMD_SEL,P1,P2,P3,P4,P5,P6
+BOOL P7
+END
+;----------------------------------------------------------------
+DEF  USER_SAW ()
+;Aufruf bei Verlust der Satzkoinzidenz (z.B. Satzanwahl)
+END
+;----------------------------------------------------------------
+DEF  USER_RESET ()
+;Aufruf bei Programmreset
+END
+;----------------------------------------------------------------
+DEF  USER_CANCEL ()
+;Aufruf bei Programmabwahl
+END
+;----------------------------------------------------------------
+;ENDFOLD

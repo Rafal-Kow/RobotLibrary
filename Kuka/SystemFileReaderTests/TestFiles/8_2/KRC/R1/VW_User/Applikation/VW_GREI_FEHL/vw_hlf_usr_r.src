@@ -1,0 +1,363 @@
+&ACCESS RVP1
+&REL 202
+&COMMENT KS24.24.000_VW
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM DISKPATH = VW_User / Applikation / VW_Grei_Fehl
+DEF vw_hlf_usr_r( )
+   ; 
+   ;*-----------------------------------------------------*
+   ;* Erstellt am:                                        *
+   ;* 2017.11.2003                                          *
+   ;*------------------------------------------------------
+   ; 
+END
+;
+;FOLD Handling Fehlerausauswertung
+   GLOBAL DEF HLG_Interfac(USER_CMD:IN, CMD_SEL:IN, PAR1:IN, PAR2:IN, PAR3:IN, PAR4:IN, PAR5:IN, PAR6:IN)
+   DECL VW_USER_CMD USER_CMD
+   INT CMD_SEL, PAR1, PAR2, PAR3, PAR4, PAR5, PAR6
+   INT i
+   INT j
+   INT Anz_Fehlerbit
+   ;
+   ;-----------------------------------------------------------
+   SWITCH USER_CMD
+         ;
+         ;-----------------------------------------------------------
+      CASE #USR_INIT
+         ;FOLD Init
+            ;
+            ;
+         ;ENDFOLD (Init)
+         ;
+         ;-----------------------------------------------------------
+      CASE #USR_ADV
+         ;FOLD Advance
+            ;    
+            ;
+         ;ENDFOLD (Advance)
+         ;
+         ;-----------------------------------------------------------
+      CASE #USR_TRIG
+         ;FOLD Trig
+		IF PAR1==0 THEN
+			HLF_OPT_SPS=PAR6
+			HLF_BGE_V_R=(HLF_OPT_SPS+9)
+			HLF_BGE_SP_A=(HLF_OPT_SPS+10)
+		ENDIF
+         ;
+			CONTINUE
+            IF (PAR2 <> 0) THEN
+
+               IF (PAR2 == 12) THEN ;Teilkontrolle, TEIL vorhanden
+                 IF (PAR1 > 50) AND (PAR1 < 66) THEN ; Teilkontrolle mit klein a und b
+				  HLF_BGETEILV[(PAR1-50)] = TRUE ;Erstes Bit Teilkontrolle, Startadresse
+				  HLF_BGEKONT[(PAR1-50)] = TRUE
+				 ENDIF
+			   ENDIF
+               IF (PAR2 == 13) THEN ;Teilkontrolle, kein TEIL vorhanden
+                 IF (PAR1 > 50) AND (PAR1 < 66) THEN ; Teilkontrolle mit klein a und b
+				  HLF_BGETEILV[(PAR1-50)] = FALSE ;Erstes Bit Teilkontrolle, Startadresse
+				  HLF_BGEKONT[(PAR1-50)] = TRUE
+				 ENDIF
+			   ENDIF
+               IF (PAR2 == 14) THEN ;Keine Teilkontrolle
+                 IF (PAR1 > 50) AND (PAR1 < 66) THEN ; Teilkontrolle mit klein a und b
+				  HLF_BGEKONT[(PAR1-50)] = FALSE ;Erstes Bit Teilkontrolle, Startadresse
+				 ENDIF
+			   ENDIF
+            ENDIF
+		 
+            ;    
+            ;
+         ;ENDFOLD (Trig)
+         ;
+         ;-----------------------------------------------------------
+      CASE #USR_MAIN
+         ;FOLD Main
+            ;    
+            
+            ;
+         ;ENDFOLD (Main)
+         ;
+         ;-----------------------------------------------------------
+;----------------------------------
+;-----------USR_MAKRO-----------------------
+;----------------------------------
+      CASE #USR_MAKRO
+         ;FOLD Makr
+         ;
+ 		IF PAR1==0 THEN
+			HLF_OPT_SPS=PAR6
+			HLF_BGE_V_R=(HLF_OPT_SPS+9)
+			HLF_BGE_SP_A=(HLF_OPT_SPS+10)
+		ENDIF
+
+            CONTINUE
+			IF (PAR2 <> 0) THEN
+               IF (PAR2 == 4) THEN ;Parametrieren Spanner Startadresse, Breite, erstes R Bit
+                  HLF_ST_ADR_SG[PAR1] = PAR3 ;Erstes Bit Spanner, Startadresse
+                  HLF_ANZ_SGRUP[PAR1] = PAR4 ;Breite in Bit
+                  IF (PAR5 == 1) THEN
+                     HLF_ERSBIT_R[PAR1] = TRUE ;Erstes Bit R Pos oder abblasen
+                  ELSE
+                     HLF_ERSBIT_R[PAR1] = FALSE ;Zweites Bit R Pos oder abblasen
+                  ENDIF
+               ENDIF
+               IF (PAR2 == 10) THEN ;Parametrieren Teilkontrolle, ohne klein a und b
+                 IF (PAR1 > 50) AND (PAR1 < 66) THEN ; Teilkontrolle mit klein a und b
+				  HLF_BGEBITA[(PAR1-50)] = PAR3 ;Erstes Bit Teilkontrolle, Startadresse
+				  HLF_BGEMITAB[(PAR1-50)] = FALSE
+				 ENDIF
+			   ENDIF
+			   IF (PAR2 == 11) THEN ;Parametrieren Teilkontrolle, klein a und b
+                 IF (PAR1 > 50) AND (PAR1 < 67) THEN ; Teilkontrolle mit klein a und b
+				  HLF_BGEBITA[(PAR1-50)] = PAR3 ;Erstes Bit Teilkontrolle, Startadresse
+                  HLF_BGEBITB[(PAR1-50)] = PAR6 ;
+				  HLF_BGEMITAB[(PAR1-50)] = TRUE
+				 ENDIF
+			   ENDIF
+               IF (PAR2 == 12) THEN ;Teilkontrolle, TEIL vorhanden
+                 IF (PAR1 > 50) AND (PAR1 < 66) THEN ; Teilkontrolle mit klein a und b
+				  HLF_BGETEILV[(PAR1-50)] = TRUE ;Erstes Bit Teilkontrolle, Startadresse
+				  HLF_BGEKONT[(PAR1-50)] = TRUE
+				 ENDIF
+			   ENDIF
+               IF (PAR2 == 13) THEN ;Teilkontrolle, kein TEIL vorhanden
+                 IF (PAR1 > 50) AND (PAR1 < 66) THEN ; Teilkontrolle mit klein a und b
+				  HLF_BGETEILV[(PAR1-50)] = FALSE ;Erstes Bit Teilkontrolle, Startadresse
+				  HLF_BGEKONT[(PAR1-50)] = TRUE
+				 ENDIF
+			   ENDIF
+               IF (PAR2 == 14) THEN ;Keine Teilkontrolle
+                 IF (PAR1 > 50) AND (PAR1 < 66) THEN ; Teilkontrolle mit klein a und b
+				  HLF_BGEKONT[(PAR1-50)] = FALSE ;Erstes Bit Teilkontrolle, Startadresse
+				 ENDIF
+			   ENDIF			   
+               IF (PAR2 == 342) THEN
+                  ;Greifer auf
+                  FOR I = 1 TO HLF_MAX_SPA_G
+                     CONTINUE
+					 IF ($FLAG[I] == TRUE) THEN
+
+					 HLF_SPGR_AUF[I] = TRUE
+						HLF_SPGR_AKT[I] = TRUE
+                     ENDIF
+                  ENDFOR		 
+               ENDIF
+               IF (PAR2 == 343) THEN
+                  ;Greifer zu
+                  FOR I = 1 TO HLF_MAX_SPA_G
+                     CONTINUE
+					 IF ($FLAG[I]==TRUE) THEN
+                        HLF_SPGR_AUF[I] = FALSE
+						HLF_SPGR_AKT[I] = TRUE
+                     ENDIF
+                  ENDFOR		 
+               ENDIF
+
+		    ELSE
+            ENDIF
+         ;
+         ;ENDFOLD (Makro)
+
+
+		 DEFAULT
+         ;  
+   ENDSWITCH
+END
+;
+;ENDFOLD ()
+;
+;-----------------------------------
+
+;FOLD Handling Funktionsbaustein
+   GLOBAL DEF HLF_Interfac(USER_CMD:IN, CMD_SEL:IN, PAR1:IN, PAR2:IN, PAR3:IN, PAR4:IN, PAR5:IN, PAR6:IN)
+   DECL VW_USER_CMD USER_CMD
+   INT CMD_SEL, PAR1, PAR2, PAR3, PAR4, PAR5, PAR6
+   INT i
+   INT j
+   INT Anz_Fehlerbit
+
+    HLF_USR_PARA[1]=PAR1
+	HLF_USR_PARA[2]=PAR2
+	HLF_USR_PARA[3]=PAR3
+	HLF_USR_PARA[4]=PAR4
+	HLF_USR_PARA[5]=PAR5
+	HLF_USR_PARA[6]=PAR6
+   ;-----------------------------------------------------------
+   SWITCH USER_CMD
+         ;
+         ;-----------------------------------------------------------
+      CASE #USR_INIT
+         ;FOLD Init
+            ;
+            ;
+         ;ENDFOLD (Init)
+         ;
+         ;-----------------------------------------------------------
+      CASE #USR_ADV
+         ;FOLD Advance
+            ;    
+            ;
+         ;ENDFOLD (Advance)
+         ;
+         ;-----------------------------------------------------------
+      CASE #USR_TRIG
+         ;FOLD Trig
+
+        SWITCH HLF_USR_PARA[1]
+		CASE 0 ;Spanngruppe passiv
+			FOR I = 2 TO 6	
+				IF (HLF_USR_PARA[I] > 0) AND (HLF_USR_PARA[I] < 23) THEN ; 
+					HLF_SPGR_AKT[(HLF_USR_PARA[I])] = FALSE
+				ENDIF
+			ENDFOR
+
+		CASE 1 ;Spanngruppe Aktiv
+			FOR I = 2 TO 6	
+				IF (HLF_USR_PARA[I] > 0) AND (HLF_USR_PARA[I] < 23) THEN ; 
+					HLF_SPGR_AKT[(HLF_USR_PARA[I])] = TRUE
+				ENDIF
+			ENDFOR
+		
+		CASE 12 ;BT Teil vorhanden
+			FOR I = 2 TO 6	
+				IF (HLF_USR_PARA[I] > 50) AND (HLF_USR_PARA[I] < 66) THEN ; 
+					HLF_BGETEILV[(HLF_USR_PARA[I]-50)] = TRUE 
+				  HLF_BGEKONT[(HLF_USR_PARA[I]-50)] = TRUE
+				ENDIF
+			ENDFOR
+ 		
+		CASE 13 ;BT Kein Teil vorhanden
+			FOR I = 2 TO 6	
+				IF (HLF_USR_PARA[I] > 50) AND (HLF_USR_PARA[I] < 66) THEN ; 
+					HLF_BGETEILV[(HLF_USR_PARA[I]-50)] = FALSE 
+					HLF_BGEKONT[(HLF_USR_PARA[I]-50)] = TRUE
+				ENDIF
+			ENDFOR
+			
+		CASE 14 ;BT Kontrolle aus
+
+			FOR I = 2 TO 6	
+				IF (HLF_USR_PARA[I] > 50) AND (HLF_USR_PARA[I] < 66) THEN 
+					HLF_BGEKONT[(HLF_USR_PARA[I]-50)] = FALSE 
+				ENDIF
+			ENDFOR
+		
+		CASE 342  ; Spanngruppe auf
+			FOR I = 1 TO HLF_MAX_SPA_G
+				CONTINUE
+				IF ($FLAG[I] == TRUE) THEN
+                    HLF_SPGR_AUF[I] = TRUE
+					HLF_SPGR_AKT[I] = TRUE
+                ENDIF
+            ENDFOR		 
+
+		CASE 343 ;Spanngruppe zu
+            ;Greifer zu
+            FOR I = 1 TO HLF_MAX_SPA_G
+				CONTINUE
+                IF ($FLAG[I]==TRUE) THEN
+                    HLF_SPGR_AUF[I] = FALSE
+					HLF_SPGR_AKT[I] = TRUE
+                ENDIF
+            ENDFOR		 
+		
+			DEFAULT    ;SWITCH CMD_SEL
+			;
+		ENDSWITCH  ;SWITCH CMD_SEL
+         ;
+         ;ENDFOLD (Trig)
+         ;
+         ;-----------------------------------------------------------
+      CASE #USR_MAIN
+         ;FOLD Main
+            ;    
+            ;
+         ;ENDFOLD (Main)
+        ;-----------------------------------------------------------
+		;----------------------------------
+		;-----------USR_MAKRO-----------------------
+		;----------------------------------
+      CASE #USR_MAKRO
+ 
+        SWITCH HLF_USR_PARA[1]
+		CASE 0 ;Spanngruppe passiv
+			FOR I = 2 TO 6	
+				IF (HLF_USR_PARA[I] > 0) AND (HLF_USR_PARA[I] < 23) THEN ; 
+					HLF_SPGR_AKT[(HLF_USR_PARA[I])] = FALSE
+				ENDIF
+			ENDFOR
+
+		CASE 1 ;Spanngruppe Aktiv
+			FOR I = 2 TO 6	
+				IF (HLF_USR_PARA[I] > 0) AND (HLF_USR_PARA[I] < 23) THEN ; 
+					HLF_SPGR_AKT[(HLF_USR_PARA[I])] = TRUE
+				ENDIF
+			ENDFOR
+		
+		CASE 12 ;BT Teil vorhanden
+			FOR I = 2 TO 6	
+				IF (HLF_USR_PARA[I] > 50) AND (HLF_USR_PARA[I] < 66) THEN ; 
+					HLF_BGETEILV[(HLF_USR_PARA[I]-50)] = TRUE 
+					HLF_BGEKONT[(HLF_USR_PARA[I]-50)] = TRUE
+				ENDIF
+			ENDFOR
+ 		
+		CASE 13 ;BT Kein Teil vorhanden
+			FOR I = 2 TO 6	
+				IF (HLF_USR_PARA[I] > 50) AND (HLF_USR_PARA[I] < 66) THEN ; 
+					HLF_BGETEILV[(HLF_USR_PARA[I]-50)] = FALSE 
+					HLF_BGEKONT[(HLF_USR_PARA[I]-50)] = FALSE
+				ENDIF
+			ENDFOR
+			
+		CASE 14 ;BT Kontrolle aus
+
+			FOR I = 2 TO 6	
+				IF (HLF_USR_PARA[I] > 50) AND (HLF_USR_PARA[I] < 66) THEN 
+					HLF_BGEKONT[(HLF_USR_PARA[I]-50)] = FALSE 
+				ENDIF
+			ENDFOR
+		
+		CASE 342  ; Spanngruppe auf
+			FOR I = 1 TO HLF_MAX_SPA_G
+				CONTINUE
+				IF ($FLAG[I] == TRUE) THEN
+                    HLF_SPGR_AUF[I] = TRUE
+					HLF_SPGR_AKT[I] = TRUE
+                ENDIF
+            ENDFOR		 
+
+		CASE 343 ;Spanngruppe zu
+            ;Greifer zu
+            FOR I = 1 TO HLF_MAX_SPA_G
+                CONTINUE
+				IF ($FLAG[I]==TRUE) THEN
+                    HLF_SPGR_AUF[I] = FALSE
+					HLF_SPGR_AKT[I] = TRUE
+                ENDIF
+            ENDFOR		 
+		
+			DEFAULT    ;SWITCH CMD_SEL
+			;
+		ENDSWITCH  ;SWITCH CMD_SEL
+
+
+
+         ;
+         ;ENDFOLD (Makro)
+
+
+		 DEFAULT
+         ;  
+   ENDSWITCH
+END
+;
+;ENDFOLD ()
+;
+
+
+
+

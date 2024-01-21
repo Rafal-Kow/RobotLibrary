@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PFODriver xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/PFO_Driver.xsd">
+  <Version Label="PFO_Driver V1.0">
+    <Info Version="KRC V8.2"/>
+    <Schema Version="1"/>
+  </Version>
+  <PFOConfig>
+    <Config 
+      Debug="false" 
+      WaitForIdle="1" 
+      MaxGeoTime="5"
+      Priority="184" />
+    <EtherCan LocAddr="172.20.3.3" NetAddr="172.20.3.99" NetPort="2209" />
+  </PFOConfig>
+</PFODriver>

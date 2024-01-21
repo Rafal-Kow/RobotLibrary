@@ -1,0 +1,76 @@
+&ACCESS RV
+&REL 16
+&COMMENT KS_1.0
+&PARAM DISKPATH = VW_User/Applikation/Vision/VW_XYZ_Scan
+&PARAM TPVW_VERSION = 8.1.8
+DEFDAT  vw_xyz_usr_conf PUBLIC
+; 
+;*-------------------------------------------------*
+;* Technologiepaket vw_xyz_Scan                    *
+;*                                                 *
+;* Konzernstandard                                 *
+;* Bearbeiter: B.Mildenberger PEF-2/E0A            *
+;*                                                 *
+;* Erstellt am:                                    *
+;* 2016.07.18 BM                                   *
+;*                                                 *
+;* Projektspezifische Applikationsdaten            *
+;*                                                 *
+;*-------------------------------------------------*
+;
+GLOBAL INT XYZ_vRED=6 ;PrgOv waehrend Suchfahrt in %
+;
+GLOBAL BOOL XYZ_KORR_DBG=FALSE ;Korrekturwerte anzeigen/nicht anzeigen
+;
+GLOBAL FRAME XYZ_MESS_POS[8,3]
+XYZ_MESS_POS[1,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[1,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[1,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[2,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[2,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[2,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[3,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[3,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[3,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[4,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[4,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[4,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[5,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[5,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[5,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[6,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[6,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[6,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[7,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[7,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[7,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[8,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[8,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_MESS_POS[8,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+GLOBAL FRAME XYZ_REF_POS[8,3]
+XYZ_REF_POS[1,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[1,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[1,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[2,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[2,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[2,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[3,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[3,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[3,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[4,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[4,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[4,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[5,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[5,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[5,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[6,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[6,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[6,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[7,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[7,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[7,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[8,1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[8,2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+XYZ_REF_POS[8,3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+; 
+ENDDAT

@@ -1,0 +1,573 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Reibelement
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEF vw_rw_usr_s( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Reibelement                         *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.20 LE                                       *
+;* 2016.06.02 EA Fehlerreset ( F489 )                  *
+;* 2016.06.22 EA Fehlerkorrektur (NEC)                 *
+;* 2017.01.08 MBA Schleppfehler auskommentiert		    *
+;* 2017.01.19 LZ "F_Fehl_Reset" aus Quit. Stoe. entfernt 
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD INIT Reibelement 
+GLOBAL DEF RW_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_Reibelement.Name[]="KS24.01.005_170119"
+;ENDFOLD
+;
+;FOLD Vorbesetzung Meldungsausgabe
+FOR i = 1 TO 100
+  n_RWS_Handle[i]=-1
+  n_RWR_Handle[i]=-1
+ENDFOR
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SAW Reibelement
+GLOBAL DEF RW_SAW( )
+INT i
+;
+$OUT[O_RW1_S_TPos]=FALSE
+$OUT[O_RW1_ref]=FALSE
+$OUT[O_RW1_FRG]=FALSE
+$OUT[O_RW1_t_auf]=FALSE
+$OUT[O_RW1_t_zu]=FALSE
+$OUT[O_RW1_D_Teach]=FALSE
+$OUT[O_RW1_S_TPos]=FALSE
+$OUT[O_RW1_TPos_u]=FALSE
+;
+$OUT[O_RW2_S_TPos]=FALSE
+$OUT[O_RW2_ref]=FALSE
+$OUT[O_RW2_FRG]=FALSE
+$OUT[O_RW2_t_auf]=FALSE
+$OUT[O_RW2_t_zu]=FALSE
+$OUT[O_RW2_D_Teach]=FALSE
+$OUT[O_RW2_S_TPos]=FALSE
+$OUT[O_RW2_TPos_u]=FALSE
+;
+HA1_FKT_RW1=FALSE
+HA2_FKT_RW1=FALSE
+HA1_FKT_RW2=FALSE
+HA2_FKT_RW2=FALSE
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RWET Reibelement
+GLOBAL DEF RW_RESET( )
+INT i
+;
+$OUT[O_RW1_S_TPos]=FALSE
+$OUT[O_RW1_ref]=FALSE
+$OUT[O_RW1_FRG]=FALSE
+$OUT[O_RW1_t_auf]=FALSE
+$OUT[O_RW1_t_zu]=FALSE
+$OUT[O_RW1_D_Teach]=FALSE
+$OUT[O_RW1_S_TPos]=FALSE
+$OUT[O_RW1_TPos_u]=FALSE
+;
+$OUT[O_RW2_S_TPos]=FALSE
+$OUT[O_RW2_ref]=FALSE
+$OUT[O_RW2_FRG]=FALSE
+$OUT[O_RW2_t_auf]=FALSE
+$OUT[O_RW2_t_zu]=FALSE
+$OUT[O_RW2_D_Teach]=FALSE
+$OUT[O_RW2_S_TPos]=FALSE
+$OUT[O_RW2_TPos_u]=FALSE
+;
+HA1_FKT_RW1=FALSE
+HA2_FKT_RW1=FALSE
+HA1_FKT_RW2=FALSE
+HA2_FKT_RW2=FALSE
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD CANCEL Reibelement 
+GLOBAL DEF RW_CANCEL( )
+INT i
+;
+$OUT[O_RW1_S_TPos]=FALSE
+$OUT[O_RW1_ref]=FALSE
+$OUT[O_RW1_FRG]=FALSE
+$OUT[O_RW1_t_auf]=FALSE
+$OUT[O_RW1_t_zu]=FALSE
+$OUT[O_RW1_D_Teach]=FALSE
+$OUT[O_RW1_S_TPos]=FALSE
+$OUT[O_RW1_TPos_u]=FALSE
+;
+$OUT[O_RW2_S_TPos]=FALSE
+$OUT[O_RW2_ref]=FALSE
+$OUT[O_RW2_FRG]=FALSE
+$OUT[O_RW2_t_auf]=FALSE
+$OUT[O_RW2_t_zu]=FALSE
+$OUT[O_RW2_D_Teach]=FALSE
+$OUT[O_RW2_S_TPos]=FALSE
+$OUT[O_RW2_TPos_u]=FALSE
+;
+HA1_FKT_RW1=FALSE
+HA2_FKT_RW1=FALSE
+HA1_FKT_RW2=FALSE
+HA2_FKT_RW2=FALSE
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Reibelement 1 
+GLOBAL DEF RW1_LOOP( )
+;
+;Vorwahl ohne Prozess
+$OUT[O_RW1_oh_Fue]=$IN[I_RW1_oh_Fue] OR $FLAG[F_o_Prozess]
+;
+;Betriebsarten
+;BA-Hand setzen
+IF $OUT[O_R_Hand] AND (NOT $COULD_START_MOTION OR TA1_AKT_RW1)  THEN
+  $OUT[O_RW1_R_Hand]=TRUE
+  $OUT[O_RW1_R_Auto]=FALSE
+ENDIF
+;
+;BA-AUTO an RW 1 setzen
+IF $OUT[O_R_Hand] AND NOT TA1_AKT_RW1 AND ($OUT[O_R_Proz_akt] OR $OUT[O_R_bewegt]  OR HA2_FKT_RW1) OR $OUT[O_R_Auto] THEN
+  $OUT[O_RW1_R_Hand]=FALSE
+  $OUT[O_RW1_R_Auto]=TRUE
+ENDIF
+;
+;Ausgabe Zangencode
+IF NOT Docking OR (Docking AND (ReserveBool[45]==FALSE)) THEN
+  RW1_ZCode=1
+ENDIF
+    
+;
+;RW 1 Anwahl Energiesparmodus 
+$OUT[O_RW1_E_Mode] = (($Brake_Sig==0) AND $timer_flag[TimerNr_E_Mo] AND e_Mode_Hilf2)  
+;  
+;Quittierung Stoerung
+$OUT[O_RW1_Fe_Res]=$IN[I_RW1_Sammel] AND ($IN[I_R_Quit_Wei] OR $IN[I_R_Quit_St])  
+;
+;Ausgabe Statusmeldungen an BMS
+;   
+;Reiben n.i.O.
+$OUT[O_RW1_nio]=$OUT[O_R_Auto] AND $FLAG[F_RW1_nio]
+;Vorwarnung Antrieb 
+$OUT[O_RW1_W_SZ]=$OUT[O_R_Auto] AND $IN[I_RW1_W_SZ]
+;Warnung Standzeit Werkzeug
+$OUT[O_RW1_W_Schm]=$OUT[O_R_Auto] AND $IN[I_RW1_W_Schm]
+;Fuellstandskontrolle
+$OUT[O_RW1_FKontr]=$OUT[O_R_Auto] AND $IN[I_RW1_FKontr]
+;Fehler Vakuum
+$OUT[O_RW1_F_Vak]=$OUT[O_R_Auto] AND $IN[I_RW1_F_Vak]
+;Fehler Wegmessung
+$OUT[O_RW1_F_Weg]=$OUT[O_R_Auto] AND $IN[I_RW1_F_Weg]
+;Prozessabbruch
+$OUT[O_RW1_F_PrzAb]=$OUT[O_R_Auto] AND $IN[I_RW1_F_PrzAb]
+;Fehler Vereinzelung
+$OUT[O_RW1_F_VEinz]=$OUT[O_R_Auto] AND $IN[I_RW1_F_VEinz]
+;Fehler Zufuehrschlauch
+$OUT[O_RW1_F_Zuf]=$OUT[O_R_Auto] AND $IN[I_RW1_F_Zuf]
+;Fehler Bremse
+$OUT[O_RW1_F_Brems]=$OUT[O_R_Auto] AND $IN[I_RW1_F_Brems]
+;Fehler Prozesssteuerung
+$OUT[O_RW1_F_PrzSt]=$OUT[O_R_Auto] AND $IN[I_RW1_F_PrzSt]
+;Fehler Ablaufsteuerung
+$OUT[O_RW1_F_AblSt]=$OUT[O_R_Auto] AND $IN[I_RW1_F_AblSt]
+;Sammelstoerung
+B_Hilfsmerk=($FLAG[F_RW1_Sammel] OR $IN[I_RW1_FKontr] OR $IN[I_RW1_F_Vak] OR $IN[I_RW1_F_Weg] OR $IN[I_RW1_F_PrzAb] OR $IN[I_RW1_F_VEinz] OR $IN[I_RW1_F_Zuf] OR $IN[I_RW1_F_Brems]OR $IN[I_RW1_F_PrzSt] OR $IN[I_RW1_F_AblSt] OR RW_LBitFeh[1])
+$OUT[O_RW1_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND B_Hilfsmerk AND $timer_flag[TimerNr_Ein]
+;
+;Sollwert Vorgabe und Sollposition gueltig
+IF (RW1_sollpos>=0) AND NOT TA1_AKT_RW1 THEN
+  $OUT[O_RW1_SPos_g]=TRUE
+ELSE
+  $OUT[O_RW1_SPos_g]=FALSE
+ENDIF
+;
+;Tastend ruecksetzen
+IF $OUT[O_R_Hand] AND TA1_AKT_RW1 AND NOT $OUT[O_RW1_t_auf] AND NOT $OUT[O_RW1_t_zu] THEN
+  TA1_AKT_RW1=FALSE
+  $OUT[O_RW1_FRG]=FALSE
+  $OUT[O_RW1_SPos_g]=FALSE
+ENDIF
+;
+;INIT Zangenfunktion
+IF $OUT[O_R_Hand] AND NOT $OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $OUT[O_R_Proz_akt] AND NOT $OUT[O_R_bewegt]) THEN
+  IF ($OUT[O_RW1_D_Teach] OR $OUT[O_RW1_D_Ref] OR $OUT[O_RW1_t_auf] OR $OUT[O_RW1_t_zu]) THEN 
+    RW_Z_Funkt(1)
+  ENDIF
+ENDIF
+;
+IF ($OUT[O_R_Hand] AND ( $PRO_MODE1==#BSTEP)) OR ($OUT[O_R_Hand] AND NOT $OUT[O_RW1_P_akt] AND $OUT[O_R_bewegt] ) OR ($OUT[O_R_Hand]  AND NOT $COULD_START_MOTION AND (HA2_FKT_RW1)) THEN
+  IF NOT $OUT[O_RW1_Re_aus] THEN
+    $OUT[O_RW1_S_TPos]=FALSE
+    $OUT[O_RW1_ref]=FALSE
+    $OUT[O_RW1_FRG]=FALSE
+    $OUT[O_RW1_t_auf]=FALSE
+    $OUT[O_RW1_t_zu]=FALSE
+    $OUT[O_RW1_D_Teach]=FALSE
+    $OUT[O_RW1_D_Ref]=FALSE
+  ENDIF
+  HA2_FKT_RW1=FALSE
+ENDIF
+;
+;Lebensbit-Ueberwachung  
+L_Bit_RW(1)
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Reibelement 2
+GLOBAL DEF RW2_LOOP( )
+;
+;Vorwahl ohne Prozess
+$OUT[O_RW2_oh_Fue]=$IN[I_RW2_oh_Fue] OR $FLAG[F_o_Prozess]
+;
+;Betriebsarten
+;BA-Hand setzen
+IF $OUT[O_R_Hand] AND (NOT $COULD_START_MOTION OR TA1_AKT_RW2) THEN
+  $OUT[O_RW2_R_Hand]=TRUE
+  $OUT[O_RW2_R_Auto]=FALSE
+ENDIF
+;
+;BA-AUTO an RW 2 setzen
+IF $OUT[O_R_Hand] AND NOT  TA1_AKT_RW2 AND ($OUT[O_R_Proz_akt] OR $OUT[O_R_bewegt] OR HA2_FKT_RW2) OR $OUT[O_R_Auto] THEN
+  $OUT[O_RW2_R_Hand]=FALSE
+  $OUT[O_RW2_R_Auto]=TRUE
+ENDIF
+;
+;Ausgabe Zangencode
+RW2_ZCode=1    
+;
+;RW 1 Anwahl Energiesparmodus 
+$OUT[O_RW2_E_Mode] = (($Brake_Sig==0) AND $timer_flag[TimerNr_E_Mo] AND e_Mode_Hilf2)    
+;  
+;Quittierung Stoerung
+$OUT[O_RW2_Fe_Res]=$IN[I_RW2_Sammel] AND ($IN[I_R_Quit_Wei] OR $IN[I_R_Quit_St])
+;
+;Ausgabe Statusmeldungen an BMS
+;   
+;Reiben n.i.O.
+$OUT[O_RW2_nio]=$OUT[O_R_Auto] AND $FLAG[F_RW2_nio]
+;Vorwarnung Antrieb 
+$OUT[O_RW2_W_SZ]=$OUT[O_R_Auto] AND $IN[I_RW2_W_SZ]
+;Warnung Standzeit Werkzeug
+$OUT[O_RW2_W_Schm]=$OUT[O_R_Auto] AND $IN[I_RW2_W_Schm]
+;Fuellstandskontrolle
+$OUT[O_RW2_FKontr]=$OUT[O_R_Auto] AND $IN[I_RW2_FKontr]
+;Fehler Vakuum
+$OUT[O_RW2_F_Vak]=$OUT[O_R_Auto] AND $IN[I_RW2_F_Vak]
+;Fehler Wegmessung
+$OUT[O_RW2_F_Weg]=$OUT[O_R_Auto] AND $IN[I_RW2_F_Weg]
+;Prozessabbruch
+$OUT[O_RW2_F_PrzAb]=$OUT[O_R_Auto] AND $IN[I_RW2_F_PrzAb]
+;Fehler Vereinzelung
+$OUT[O_RW2_F_VEinz]=$OUT[O_R_Auto] AND $IN[I_RW2_F_VEinz]
+;Fehler Zufuehrschlauch
+$OUT[O_RW2_F_Zuf]=$OUT[O_R_Auto] AND $IN[I_RW2_F_Zuf]
+;Fehler Bremse
+$OUT[O_RW2_F_Brems]=$OUT[O_R_Auto] AND $IN[I_RW2_F_Brems]
+;Fehler Prozesssteuerung
+$OUT[O_RW2_F_PrzSt]=$OUT[O_R_Auto] AND $IN[I_RW2_F_PrzSt]
+;Fehler Ablaufsteuerung
+$OUT[O_RW2_F_AblSt]=$OUT[O_R_Auto] AND $IN[I_RW2_F_AblSt]
+;Sammelstoerung
+B_Hilfsmerk=($FLAG[F_RW2_Sammel] OR $IN[I_RW2_FKontr] OR $IN[I_RW2_F_Vak] OR $IN[I_RW2_F_Weg] OR $IN[I_RW2_F_PrzAb] OR $IN[I_RW2_F_VEinz] OR $IN[I_RW2_F_Zuf] OR $IN[I_RW2_F_Brems]OR $IN[I_RW2_F_PrzSt] OR $IN[I_RW2_F_AblSt] OR RW_LBitFeh[2])
+$OUT[O_RW2_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND B_Hilfsmerk AND $timer_flag[TimerNr_Ein]
+;
+;Sollwert Vorgabe und Sollposition gueltig
+IF (RW2_sollpos>0) AND NOT TA1_AKT_RW2 THEN
+  $OUT[O_RW2_SPos_g]=TRUE
+ELSE
+  $OUT[O_RW2_SPos_g]=FALSE
+ENDIF
+;
+;Tastend ruecksetzen
+IF $OUT[O_R_Hand] AND TA1_AKT_RW2 AND NOT $OUT[O_RW2_t_auf] AND NOT $OUT[O_RW2_t_zu] THEN
+  TA1_AKT_RW2=FALSE
+  $OUT[O_RW2_FRG]=FALSE
+  $OUT[O_RW2_SPos_g]=FALSE
+ENDIF
+;
+;INIT Zangenfunktion
+IF $OUT[O_R_Hand] AND NOT $OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $OUT[O_R_Proz_akt] AND NOT $OUT[O_R_bewegt]) THEN
+  IF ($OUT[O_RW2_D_Teach] OR $OUT[O_RW2_D_Ref]  OR $OUT[O_RW2_t_auf] OR $OUT[O_RW2_t_zu]) THEN 
+    RW_Z_Funkt(2)
+  ENDIF
+ENDIF
+;
+IF ($OUT[O_R_Hand] AND ( $PRO_MODE1==#BSTEP)) OR ($OUT[O_R_Hand] AND NOT $OUT[O_RW2_P_akt] AND $OUT[O_R_bewegt] ) OR ($OUT[O_R_Hand] AND NOT $COULD_START_MOTION AND (HA2_FKT_RW2)) THEN
+  IF NOT $OUT[O_RW2_Re_aus] THEN
+    $OUT[O_RW2_S_TPos]=FALSE
+    $OUT[O_RW2_ref]=FALSE
+    $OUT[O_RW2_FRG]=FALSE
+    $OUT[O_RW2_t_auf]=FALSE
+    $OUT[O_RW2_t_zu]=FALSE
+    $OUT[O_RW2_D_Teach]=FALSE
+    $OUT[O_RW2_D_Ref]=FALSE
+  ENDIF
+  HA2_FKT_RW2=FALSE
+ENDIF
+;  
+;Lebensbit-Ueberwachung  
+L_Bit_RW(2)	
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+DEF RW_Z_Funkt(RW_Nr :IN)
+INT RW_Nr
+;
+SWITCH RW_Nr
+  CASE 1
+    ;RW1
+    ;RW 1 Fahrt auf Teachposition ausloesen
+    IF $OUT[O_RW1_D_Teach] THEN
+      $OUT[O_RW1_TPos_u]=FALSE
+      HA2_FKT_RW1=TRUE
+      $OUT[O_RW1_R_Hand]=FALSE
+      $OUT[O_RW1_R_Auto]=TRUE 
+      WAIT SEC 0.4
+      $OUT[O_RW1_FRG]=TRUE
+      $OUT[O_RW1_S_TPos]=TRUE
+      WAIT SEC 0.4
+      IF $IN[I_RW1_TPos_g] THEN
+        $OUT[O_RW1_S_TPos]=FALSE
+        $OUT[O_RW1_TPos_u]=TRUE
+        $OUT[O_RW1_D_Teach]=FALSE
+        sf_prog_status=#user_act
+        $OUT[O_RW1_SPos_g]=FALSE
+        ;schleppfehler=TRUE derzeit keine 7te Achse aktiv
+        WAIT SEC 0.2
+        $OUT[O_RW1_FRG]=FALSE
+        $OUT[O_RW1_TPos_u]=FALSE
+        HA2_FKT_RW1=FALSE
+        $OUT[O_RW1_R_Hand]=TRUE
+        $OUT[O_RW1_R_Auto]=FALSE
+        $OUT[O_RW1_D_Teach]=FALSE
+      ENDIF
+    ENDIF
+;
+    ;RW 1 Referenzieren 
+    IF $OUT[O_RW1_D_Ref] THEN
+      HA2_FKT_RW1=TRUE	
+      $OUT[O_RW1_R_Hand]=FALSE
+      $OUT[O_RW1_R_Auto]=TRUE 
+      WAIT SEC 0.2
+      $OUT[O_RW1_FRG]=TRUE
+      $OUT[O_RW1_ref]=TRUE
+      WAIT SEC 0.8
+      IF $IN[I_RW1_ref] AND $IN[I_RW1_IPos_g] THEN
+        $OUT[O_RW1_ref]=FALSE
+        $OUT[O_RW1_FRG]=FALSE
+        $OUT[O_RW1_D_Ref]=FALSE
+        HA2_FKT_RW1=FALSE
+        RW_Msg(2,#NotifyMsg)
+        $OUT[O_RW1_R_Hand]=TRUE
+        $OUT[O_RW1_R_Auto]=FALSE 
+        $OUT[O_RW1_D_Ref]=FALSE
+      ENDIF
+    ENDIF
+;
+    ;RW 1 Tastend Auf 
+    IF $OUT[O_RW1_t_auf] THEN	
+      TA1_AKT_RW1=TRUE
+      IF $OUT[O_RW1_R_Hand] AND $OUT[O_RW1_t_auf] THEN	
+        $OUT[O_RW1_FRG]=TRUE
+      ENDIF
+    ENDIF
+;
+    ;RW 1 Tastend Zu 
+    IF $OUT[O_RW1_t_zu] THEN	
+      TA1_AKT_RW1=TRUE
+      IF $OUT[O_RW1_R_Hand] AND $OUT[O_RW1_t_zu] THEN	
+        $OUT[O_RW1_FRG]=TRUE
+      ENDIF
+    ENDIF
+;
+  CASE 2
+    ;RW2
+    ;RW 2 Fahrt auf Teachposition ausloesen
+    IF $OUT[O_RW2_D_Teach] THEN
+      $OUT[O_RW2_TPos_u]=FALSE
+      HA2_FKT_RW2=TRUE
+      $OUT[O_RW2_R_Hand]=FALSE
+      $OUT[O_RW2_R_Auto]=TRUE 
+      WAIT SEC 0.4
+      $OUT[O_RW2_FRG]=TRUE
+      $OUT[O_RW2_S_TPos]=TRUE
+      WAIT SEC 0.4
+      IF $IN[I_RW2_TPos_g] THEN
+        $OUT[O_RW2_S_TPos]=FALSE
+        $OUT[O_RW2_TPos_u]=TRUE
+        $OUT[O_RW2_D_Teach]=FALSE
+        sf_prog_status=#user_act
+        $OUT[O_RW2_SPos_g]=FALSE
+        ;schleppfehler=TRUE derzeit keine 7te Achse aktiv
+        WAIT SEC 0.2
+        $OUT[O_RW2_FRG]=FALSE
+        $OUT[O_RW2_TPos_u]=FALSE
+        HA2_FKT_RW2=FALSE
+        $OUT[O_RW2_R_Hand]=TRUE
+        $OUT[O_RW2_R_Auto]=FALSE
+        $OUT[O_RW2_D_Teach]=FALSE
+      ENDIF
+    ENDIF
+; 
+    ;RW 2 Referenzieren 
+    IF $OUT[O_RW2_D_Ref] THEN
+      HA2_FKT_RW2=TRUE	
+      $OUT[O_RW2_R_Hand]=FALSE
+      $OUT[O_RW2_R_Auto]=TRUE 
+      WAIT SEC 0.2
+      $OUT[O_RW2_FRG]=TRUE
+      $OUT[O_RW2_ref]=TRUE
+      WAIT SEC 0.8
+      IF $IN[I_RW2_ref] AND $IN[I_RW2_IPos_g] THEN
+        $OUT[O_RW2_ref]=FALSE
+        $OUT[O_RW2_FRG]=FALSE
+        $OUT[O_RW2_D_Ref]=FALSE
+        HA2_FKT_RW2=FALSE
+        RW_Msg(3,#NotifyMsg)
+        $OUT[O_RW2_R_Hand]=TRUE
+        $OUT[O_RW2_R_Auto]=FALSE 
+        $OUT[O_RW2_D_Ref]=FALSE
+      ENDIF
+    ENDIF
+;
+    ;RW 2 Tastend Auf 
+    IF $OUT[O_RW2_t_auf] THEN	
+      TA1_AKT_RW2=TRUE
+      IF $OUT[O_RW2_R_Hand] AND $OUT[O_RW2_t_auf] THEN	
+        $OUT[O_RW2_FRG]=TRUE
+      ENDIF
+    ENDIF
+;
+    ;RW 2 Tastend Zu 
+    IF $OUT[O_RW2_t_zu] THEN	
+      TA1_AKT_RW2=TRUE
+      IF $OUT[O_RW2_R_Hand] AND $OUT[O_RW2_t_zu] THEN	
+        $OUT[O_RW2_FRG]=TRUE
+      ENDIF
+    ENDIF
+ENDSWITCH
+END
+;ENDFOLD (Zangenfunktion)
+;
+;-----------------------------------------------------------
+;FOLD Lebensbit_RW
+DEF L_Bit_RW(RWNr :IN)
+;Setzen / Rueksetzen Lebensbit Roboter
+INT RWNr
+BOOL LBitRW, LBitFault
+INT RobTimer
+BOOL ErrLBit, bRet
+ErrLBit = FALSE
+LBitFault=FALSE
+;Setzen - Rucksetzen  des Lebensbit an Zangensteuerung
+$OUT[LBitToRW[RWNr]] = NOT $IN[LBitFromRW[RWNr]]
+RobTimer = $ROB_TIMER	
+IF $IN[LBitFromRW[RWNr]] <> LBitState[RWNr] THEN
+  LBitTimeCnt[RWNr] = RobTimer
+ENDIF
+IF (RobTimer - LBitTimeCnt[RWNr]) > 5000 THEN
+  ErrLBit = TRUE
+  ErrRWNr = RWNr
+  RW_LBitFeh[RWNr]=TRUE
+ENDIF
+LBitState[RWNr] = $IN[LBitFromRW[RWNr]]
+IF ErrLBit THEN
+  RW_Msg(1,#StateMsg, ErrRWNr)
+ELSE
+  IF n_RWS_Handle[1]>-1 THEN
+    bRet=Clear_KrlMsg(n_RWS_Handle[1])
+  n_RWS_Handle[1]=-1
+    ErrRWNr = -1
+  ENDIF
+  RW_LBitFeh[RWNr]=FALSE
+ENDIF
+;  
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RW_Meldungen
+DEF RW_Msg(msg_nr :IN, MsgTyp :IN, RWNr :IN)
+INT msg_nr, RWNr, Answer
+DECL RWS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+;
+USER_MSG = { Modul[] "RW_S_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF Varstate("RWNr")==#initialized then
+  SWITCH RWNr
+    CASE 1
+      Par[1] = { Par_type #Value, Par_int 1 }
+    CASE 2
+      Par[1] = { Par_type #Value, Par_int 2 }
+    CASE 3
+      Par[1] = { Par_type #Value, Par_int 3 }
+    CASE 4
+      Par[1] = { Par_type #Value, Par_int 4 }
+    CASE 5
+      Par[1] = { Par_type #Value, Par_int 5 }
+    CASE 6
+      Par[1] = { Par_type #Value, Par_int 6 }
+    DEFAULT
+      Par[1] = { Par_type #Value, Par_txt[] " " }
+  ENDSWITCH
+ELSE
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+ENDIF
+;
+IF ((n_RWS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]="RW%1 :keine Antwort auf Lebensbit"
+    CASE 2
+	   USER_MSG.MSG_TXT[]="RW1 Zange ist referenziert"
+    CASE 3
+	   USER_MSG.MSG_TXT[]="RW2 Zange ist referenziert"
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "  
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+    n_RWS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+    n_RWS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+    n_RWS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+    n_RWS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (RW Meldungen)

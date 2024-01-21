@@ -1,0 +1,5 @@
+&ACCESS  R
+&PARAM DISKPATH = VW_User/Applikation/EthernetKRL
+&PARAM TPVW_VERSION = 8.3.0
+DEFDAT  vw_ethernetkrl_user
+ENDDAT

@@ -1,0 +1,59 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Nieten
+&PARAM TPVW_VERSION = 8.3.8
+&REL 202
+DEFDAT  vw_nz_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Nieten                              *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.09 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+; 
+;FOLD Nieten
+; 
+
+;Punkt- und Fzg-Typ-Nr an SPS
+SIGNAL P_PktNr_SPS $OUT[97]  TO $OUT[112]
+;Servo
+SIGNAL SNZ1_P_Nr $OUT[1201]  TO $OUT[1216]
+SIGNAL SNZ1_P2_Nr $OUT[1249]  TO $OUT[1264]
+;pneumohydraulisch
+SIGNAL PNZ1_P_Nr $OUT[1217]  TO $OUT[1232]
+;Punktnummer an SPS
+SIGNAL NZ_PktNr_SPS $OUT[97]  TO $OUT[112]
+;Sollposition Nieten
+SIGNAL NZ1_sollPos $OUT[1217]  TO $OUT[1232]
+;Istposition Nieten
+SIGNAL NZ1_istPos $IN[1217]  TO $IN[1232]
+; 
+;Servo
+SIGNAL SNZ2_P_Nr $OUT[1281]  TO $OUT[1296]
+SIGNAL SNZ2_P2_Nr $OUT[1329]  TO $OUT[1344]
+;pneumohydraulisch
+SIGNAL PNZ2_P_Nr $OUT[1297]  TO $OUT[1312]
+;Sollposition Nieten
+SIGNAL NZ2_sollPos $OUT[1297]  TO $OUT[1312]
+;Istposition Nieten
+SIGNAL NZ2_istPos $IN[1297]  TO $IN[1312]
+; 
+;TCP-Korrektur
+INT Weg=0
+INT Offset=0
+FRAME MyCorr
+FRAME MyCorrWeg
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM NZR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

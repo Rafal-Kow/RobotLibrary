@@ -1,0 +1,48 @@
+&ACCESS RV
+&REL 1
+&COMMENT GREIFER STATUS BMS
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrovorgabe.src
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM EDITMASK = Makro999[0-999]
+DEFFCT INT MAKRO341(ADV :IN)
+   ;FOLD Makro Anfang ;%{PSE}%MKUKATPVW
+      BOOL ADV
+      ; interface to basic routines
+      EXT  BAS (BAS_COMMAND  :IN,REAL  :IN )
+      ; interface to VW-standard routines
+      EXT VW (VW_COMMAND:IN, BOOL: IN, REAL:IN, REAL:IN, REAL:IN, REAL:IN, BOOL :IN, E6POS :IN )
+      ; interface select routine
+      EXTFCT INT  SELECT (SUBTYPE  :IN,INT  :IN,BOOL  :IN,ARI_TYP  :IN,INT  :IN,BOOL_TYP  :IN,INT  :IN,BOOL  :IN)
+      SPS_N=-1
+      ;FOLD ;%{H} %MKUKATPVW
+      IF VARSTATE ("ADV") <> #INITIALIZED THEN
+         ADV=FALSE
+      ENDIF
+      IF (NOT ADV) THEN
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Greifer Status an BMS spiegeln -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Greifer Status an BMS spiegeln --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- letzte  Aenderung  14.12.2018 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- letzte  Aenderung  14.12.2018 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD --  -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:--  --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- *********************************** -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- *********************************** --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Dieses Makro341 kann zum spiegeln -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Dieses Makro341 kann zum spiegeln --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- von Roboter Greifer E/A an die BMS -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- von Roboter Greifer E/A an die BMS --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- genutzt werden. -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- genutzt werden. --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- *********************************** -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- *********************************** --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Typ  an  BMS  uebermitteln -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Typ  an  BMS  uebermitteln --, 3: VW_COMMENT
+   ;ENDFOLD
+   ; FOLD ;%{H}
+   RETURN 1
+   ELSE
+   RETURN 1
+   ENDIF
+ENDFCT
+; ENDFOLD

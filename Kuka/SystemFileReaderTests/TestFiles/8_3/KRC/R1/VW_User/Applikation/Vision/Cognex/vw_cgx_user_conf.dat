@@ -1,0 +1,97 @@
+&ACCESS  RV
+&COMMENT KS_1.19
+&PARAM DISKPATH = VW_User/Applikation/Vision/Cognex
+&PARAM EDITMASK = vw_cgx_user_conf
+&PARAM TPVW_VERSION = 8.3.8
+&REL 36
+DEFDAT  vw_cgx_user_conf PUBLIC
+;-------- hier Max Werte fuer Basekorrektur Aufrufparameter PAR4
+GLOBAL FRAME CGX_Max[16]
+CGX_Max[1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[4]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[5]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[6]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[7]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[8]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[9]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[10]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[11]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[12]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[13]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[14]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[15]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Max[16]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+
+;-------- hier Min Werte fuer Basekorrektur Aufrufparameter PAR4
+
+GLOBAL FRAME CGX_Min[16]
+CGX_Min[1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[4]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[5]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[6]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[7]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[8]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[9]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[10]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[11]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[12]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[13]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[14]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[15]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+CGX_Min[16]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+
+;-------- hier Max Abweich - Werte fuer Verifikation eintragen
+
+DECL GLOBAL CONST REAL CGX_X_MaxVer=1.00000 ; [mm] Max Verification X
+DECL GLOBAL CONST REAL CGX_Y_MaxVer=1.00000 ; [mm] Max Verification Y
+DECL GLOBAL CONST REAL CGX_Z_MaxVer=1.00000 ; [mm] Max Verification Z
+DECL GLOBAL CONST REAL CGX_A_MaxVer=1.00000 ; [grad] Max Verification A
+DECL GLOBAL CONST REAL CGX_B_MaxVer=1.00000 ; [grad] Max Verification B
+DECL GLOBAL CONST REAL CGX_C_MaxVer=1.00000 ; [grad] Max Verification C
+
+;-------- hier Max Base - Werte fuer Realign Positionierung durch Kamera
+
+GLOBAL FRAME KORR_Max[16]
+KORR_Max[1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[4]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[5]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[6]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[7]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[8]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[9]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[10]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[11]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[12]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[13]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[14]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[15]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Max[16]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+
+;-------- hier Max Base - Werte fuer Realign Positionierung durch Kamera
+
+GLOBAL FRAME KORR_Min[16]
+KORR_Min[1]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[2]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[3]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[4]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[5]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[6]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[7]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[8]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[9]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[10]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[11]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[12]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[13]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[14]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[15]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+KORR_Min[16]={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+
+;------- end Changeable ------------
+ENDDAT

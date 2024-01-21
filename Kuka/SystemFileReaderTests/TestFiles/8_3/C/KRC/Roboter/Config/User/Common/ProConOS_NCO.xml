@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ProConOSNcoConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/ProConOS_NCO.xsd">
+   <Version Label="">
+      <Info Version="KUKA V8.3" />
+      <Schema Version="100" />
+   </Version>
+   <ConnectionSettings MaxNumConnections="0" DefaultSendMode="sync" Maxbandwidth_KLI="5" Maxbandwidth_VNET="5" Maxbandwidth_LOOP="5" />
+   <MemorySettings MaxUserDataSize="512" SpvQueueElements="30" />
+   <TaskSettings SendTaskPrio="200" RecvTaskPrio="200" />
+</ProConOSNcoConfig>

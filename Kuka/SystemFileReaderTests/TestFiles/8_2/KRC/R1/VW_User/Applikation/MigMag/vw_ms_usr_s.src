@@ -1,0 +1,428 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/MigMag
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEF vw_ms_usr_s( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket MIG/MAG                             *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.16 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD INIT MIG/MAG 
+GLOBAL DEF MS_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_MigMag.Name[]="KS24.01.002_161205"
+;ENDFOLD
+;
+;FOLD Vorbesetzung Meldungsausgabe
+FOR i = 1 TO 100
+  n_MSS_Handle[i]=-1
+  n_MSR_Handle[i]=-1
+ENDFOR
+;ENDFOLD
+;
+;FOLD Vorbesetzung TimeOut MS_HSS_HILF
+IF (ReserveInt[24]==0) THEN
+  ReserveInt[24]=1000
+ENDIF
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SAW MIG/MAG 
+GLOBAL DEF MS_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RESET MIG/MAG 
+GLOBAL DEF MS_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD CANCEL MIG/MAG 
+GLOBAL DEF MS_CANCEL( )
+INT i
+;
+;FOLD IO-Naehte MIG/MAG ruecksetzen
+FOR I=610 TO 670
+  $FLAG[I]=FALSE
+ENDFOR
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP MIG/MAG 1 
+GLOBAL DEF MS1_LOOP( )
+INT i
+;
+;Vorwahl ohne Prozess
+$OUT[O_MS1_o_Proz]=$IN[I_MS1_o_Proz] OR $FLAG[F_o_Prozess]
+;
+;Mit Naht-Wiederaufsetzen
+IF $FLAG[F_MS_A_Wied] THEN
+  MS_M_WIEDER=TRUE
+ELSE
+  MS_M_WIEDER=FALSE
+ENDIF  
+;
+;Mit MIG-Suchlauf ( Spaltvermessen)
+IF $FLAG[F_m_MS_Such] THEN
+  MIT_MIG_SUCH=TRUE
+ELSE
+  MIT_MIG_SUCH=FALSE
+ENDIF
+;
+;IO-Naehte MIG/MAG ruecksetzen
+IF $OUT[O_R_PFO] THEN
+  FOR I=610 TO 650
+    $FLAG[I]=FALSE
+  ENDFOR
+ENDIF
+;
+;Ausgabe Fehlermeldungen
+;
+;Wartungswarnung
+$OUT[O_MS1_W_akt]=$OUT[O_R_Auto] AND NOT $IN[I_MS1_W_akt]
+;Kuehlwasser fehlt
+$OUT[O_MS1_H2O_io]=$OUT[O_R_Auto] AND NOT $IN[I_MS1_H2O_io]
+;Gasfehler
+$OUT[O_MS1_Gas_io]=$OUT[O_R_Auto] AND NOT $IN[I_MS1_Gas_io]
+;Drahtfehler
+$OUT[O_MS1_Draht_io]=$OUT[O_R_Auto] AND NOT $IN[I_MS1_Draht_io]
+;Sammelstoerung
+$OUT[O_MS1_S_St]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $IN[I_MS1_S_St] OR $FLAG[F_MS1_Sammel]) AND $timer_flag[TimerNr_Ein] 
+;
+;Ueberbrueckung Abfrage Hochstromsignal
+IF $FLAG[F_MS1_LB_Ein] AND $OUT[O_R_steht] THEN
+  Timer1_MS1=$ROB_TIMER ;Timer Hochstromsignal triggern
+ENDIF
+IF (($ROB_TIMER-Timer1_MS1)<ReserveInt[24]) THEN
+  MS_HSS_HILF=TRUE
+ELSE
+  MS_HSS_HILF=FALSE
+ENDIF
+;
+;Wiedereinschalten verzoegern
+IF $FLAG[F_MS1_LB_Ein] AND NOT $FLAG[F_MS_Ein_Ver] AND NOT $FLAG[F_FB_PSPS] THEN
+  $FLAG[F_MS_Ein_Ver]=TRUE
+  $FLAG[F_LB_Ein_Feh]=FALSE
+  Timer2_MS1=$ROB_TIMER ;Timer Wiedereinschalten triggern
+ENDIF
+;
+IF $FLAG[F_FB_PSPS] THEN
+  $FLAG[F_MS_Ein_Ver]=FALSE
+  $FLAG[F_LB_Ein_Feh]=FALSE
+  MS_FRG_SPERR=FALSE
+ENDIF
+IF $IN[I_R_Quit_St] AND $OUT[O_R_steht] THEN
+  MS_FRG_SPERR=FALSE
+ENDIF  
+;
+IF $FLAG[F_MS1_LB_Ein] AND (NOT $OUT[O_MS1_LB_ein] OR NOT $IN[I_MS1_L_steh] OR NOT $FLAG[F_OV_100] OR (NOT $IN[I_MS1_H_steh] AND NOT MS_HSS_HILF AND $OUT[O_R_bewegt])) THEN
+  $FLAG[F_MS_FB_Ein]=FALSE
+  IF $IN[I_MS1_bereit] AND $IN[I_MS1_S_St] AND $OUT[O_R_SG_gesp] AND $OUT[O_R_steht] AND NOT $OUT[O_R_WSLAV] AND $FLAG[F_OV_100] AND (($ROB_TIMER-Timer2_MS1)>5000) THEN
+    IF NOT MS_FRG_SPERR AND $OUT[O_R_Proz_akt] THEN
+      Timer3_MS1=$ROB_TIMER ;Timer Zuenden triggern
+      MS_FRG_SPERR=TRUE
+    ENDIF
+    IF (($ROB_TIMER-Timer3_MS1)<5000) THEN         
+      $FLAG[F_LB_Ein_Feh]=TRUE ;Freigabe Zuenden in Makro-SPS
+      $FLAG[F_MS1_Sammel]=FALSE
+    ELSE
+      $FLAG[F_LB_Ein_Feh]=FALSE ;Freigabe Zuenden in Makro-SPS
+      $FLAG[F_MS1_Sammel]=TRUE
+    ENDIF
+  ELSE
+    $FLAG[F_LB_Ein_Feh]=FALSE ;Freigabe Zuenden in Makro-SPS        
+  ENDIF
+ELSE
+  IF ($FLAG[F_MS1_LB_Ein] AND $OUT[O_MS1_LB_ein] AND $IN[I_MS1_L_steh] AND ($IN[I_MS1_H_steh] OR MS_HSS_HILF) AND $FLAG[F_OV_100]) OR (NOT $FLAG[F_MS1_LB_Ein] AND $IN[I_FT_o_BT]) THEN
+    $FLAG[F_MS_FB_Ein]=TRUE ;Freigabe Fahrbedingung
+  ENDIF
+ENDIF
+;
+;Fehlerspeicher MIG/MAG 1
+MS_TOUT=500
+IF MS_M_WIEDER AND $FLAG[F_MS_LB_Ein] AND $OUT[O_R_Auto] AND $OUT[O_MS1_P_akt] AND $OUT[O_R_bewegt] THEN
+  IF NOT $FLAG[F_MS_Aufz_St] THEN
+    Timer4_MS1=$ROB_TIMER ;Timer Aufzeichnung triggern
+    $FLAG[F_MS_Aufz_St]=TRUE
+  ENDIF
+;
+  ;INIT Timeout fuer Nahtunterbrechung
+  IF NOT $FLAG[F_MS_TOUT_Na] AND $FLAG[F_MS_LB_Ein] AND $FLAG[F_MS1_LB_Ein] THEN
+    IF ($IN[I_MS1_P_iTol] OR NOT MS_M_LIMIT1) AND $IN[I_MS1_B_Abs] THEN
+      Timer5_MS1=$ROB_TIMER ;Timer Nahtunterbrechung triggern
+    ENDIF
+    IF (($ROB_TIMER-Timer5_MS1)>MS_TOUT) THEN
+      $FLAG[F_MS_TOUT_Na]=TRUE ;Nahtunterbrechung>MS_TOUT ms
+    ENDIF
+  ENDIF
+;
+  ;Naht-Fehler Merken
+  IF NOT $FLAG[F_MS_Fe_merk] AND (NOT $IN[I_MS1_bereit] OR NOT $IN[I_MS1_S_St] OR $FLAG[F_MS_TOUT_Na]) THEN
+    $FLAG[F_MS_Fe_merk]=TRUE
+    $FLAG[F_MS1_LB_Ein]=FALSE ;Loeten Aus
+    Timer6_MS1=($ROB_TIMER-Timer4_MS1)
+    $FLAG[F_MS_N_nio]= TRUE ;Loetung n.i.O.
+    $FLAG[F_MS1_Re_erf]= TRUE ;Reinigung erforderlich
+  ENDIF
+ENDIF
+;
+;Naht-Wiederaufsetzen MIG/MAG 1
+IF $FLAG[F_MS_N_Wied] AND $OUT[O_R_Auto] AND $OUT[O_MS1_P_akt] THEN
+  IF $OUT[O_R_bewegt] AND (Timer6_MS1<($ROB_TIMER-Timer4_MS1)) THEN
+    $FLAG[F_MS_FB_Wied]=FALSE ;Fahrbedingung aus
+    Timer4_MS1=$ROB_TIMER
+  ENDIF
+  IF $OUT[O_R_steht] THEN
+    $FLAG[F_MS1_LB_Ein]=TRUE ;Freigabe Loeten
+    IF $IN[I_MS1_L_steh] AND $IN[I_MS1_H_steh] AND $IN[I_MS1_S_St] THEN
+      $FLAG[F_MS_FB_Wied]=TRUE ;Fahrbedingung ein
+      $FLAG[F_MS_N_Wied]=FALSE ;Vorwahl Wiederaufsetzen aus
+    ENDIF
+  ENDIF
+ENDIF
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP MIG/MAG 2
+GLOBAL DEF MS2_LOOP( )
+INT i
+;
+;Vorwahl ohne Prozess
+$OUT[O_MS2_o_Proz]=$IN[I_MS2_o_Proz] OR $FLAG[F_o_Prozess]
+;    
+;IO-Naehte MIG/MAG ruecksetzen
+IF $OUT[O_R_PFO] THEN
+  FOR I=610 TO 650
+    $FLAG[I]=FALSE
+  ENDFOR
+ENDIF    
+;
+;Ausgabe Fehlermeldungen
+;
+;Wartungswarnung
+$OUT[O_MS2_W_akt]=$OUT[O_R_Auto] AND NOT $IN[I_MS2_W_akt]
+;Kuehlwasser fehlt
+$OUT[O_MS2_H2O_io]=$OUT[O_R_Auto] AND NOT $IN[I_MS2_H2O_io]
+;Gasfehler
+$OUT[O_MS2_Gas_io]=$OUT[O_R_Auto] AND NOT $IN[I_MS2_Gas_io]
+;Drahtfehler
+$OUT[O_MS2_Draht_io]=$OUT[O_R_Auto] AND NOT $IN[I_MS2_Draht_io]
+;Sammelstoerung
+$OUT[O_MS2_S_St]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $IN[I_MS2_S_St] OR $FLAG[F_MS2_Sammel]) AND $timer_flag[TimerNr_Ein]
+;
+;Ueberbrueckung Abfrage Hochstromsignal
+IF $FLAG[F_MS2_LB_Ein] AND $FLAG[F_FB_PSPS] AND $OUT[O_R_steht] THEN
+  Timer1_MS2=$ROB_TIMER ;Timer Hochstromsignal triggern
+ENDIF
+IF (($ROB_TIMER-Timer1_MS2)<ReserveInt[24]) THEN
+  MS_HSS_HILF=TRUE
+ELSE
+  MS_HSS_HILF=FALSE
+ENDIF
+;
+;Wiedereinschalten verzoegern
+IF $FLAG[F_MS2_LB_Ein] AND NOT $FLAG[F_MS_Ein_Ver] AND NOT $FLAG[F_FB_PSPS] AND NOT MS_HSS_HILF THEN
+  $FLAG[F_MS_Ein_Ver]=TRUE
+  $FLAG[F_LB_Ein_Feh]=FALSE
+  Timer2_MS2=$ROB_TIMER ;Timer Wiedereinschalten triggern
+ENDIF
+;
+IF $FLAG[F_FB_PSPS] THEN
+  $FLAG[F_MS_Ein_Ver]=FALSE
+  $FLAG[F_LB_Ein_Feh]=FALSE
+ENDIF
+;
+IF $FLAG[F_MS2_LB_Ein] AND (NOT $OUT[O_MS2_LB_ein] OR NOT $IN[I_MS2_L_steh] OR NOT $FLAG[F_OV_100] OR (NOT $IN[I_MS2_H_steh] AND NOT MS_HSS_HILF AND $OUT[O_R_bewegt])) THEN
+  $FLAG[F_MS_FB_Ein]=FALSE
+  IF $IN[I_MS2_bereit] AND $IN[I_MS2_S_St] AND $OUT[O_R_SG_gesp] AND $OUT[O_R_steht] AND NOT $OUT[O_R_WSLAV] AND $FLAG[F_OV_100] AND (($ROB_TIMER-Timer2_MS2)>5000) THEN
+    IF NOT MS_FRG_SPERR AND $OUT[O_R_Proz_akt] THEN
+      Timer3_MS2=$ROB_TIMER ;Timer Zuenden triggern
+      MS_FRG_SPERR=TRUE
+    ENDIF
+    IF (($ROB_TIMER-Timer3_MS2)<5000) THEN         
+      $FLAG[F_LB_Ein_Feh]=TRUE ;Freigabe Zuenden in Makro-SPS
+      $FLAG[F_MS2_Sammel]=FALSE
+    ELSE
+      $FLAG[F_LB_Ein_Feh]=FALSE ;Freigabe Zuenden in Makro-SPS
+      $FLAG[F_MS2_Sammel]=TRUE
+    ENDIF
+  ELSE
+    $FLAG[F_LB_Ein_Feh]=FALSE ;Freigabe Zuenden in Makro-SPS        
+  ENDIF
+ELSE
+  IF ($FLAG[F_MS2_LB_Ein] AND $OUT[O_MS2_LB_ein] AND $IN[I_MS2_L_steh] AND ($IN[I_MS2_H_steh] OR MS_HSS_HILF) AND $FLAG[F_OV_100]) OR (NOT $FLAG[F_MS2_LB_Ein] AND $IN[I_FT_o_BT]) THEN
+    $FLAG[F_MS_FB_Ein]=TRUE ;Freigabe Fahrbedingung
+  ENDIF
+ENDIF
+;
+;Fehlerspeicher MIG/MAG 2
+MS_TOUT=500
+IF $FLAG[F_MS_LB_Ein] AND $OUT[O_R_Auto] AND $OUT[O_MS2_P_akt] AND $OUT[O_R_bewegt] THEN
+  IF NOT $FLAG[F_MS_Aufz_St] THEN
+    Timer4_MS2=$ROB_TIMER ;Timer Aufzeichnung triggern
+    $FLAG[F_MS_Aufz_St]=TRUE
+  ENDIF
+;
+  ;INIT Timeout fuer Nahtunterbrechung
+  IF NOT $FLAG[F_MS_TOUT_Na] AND $FLAG[F_MS_LB_Ein] AND $FLAG[F_MS2_LB_Ein] THEN
+    IF ($IN[I_MS2_P_iTol] OR NOT MS_M_LIMIT2) AND $IN[I_MS2_B_Abs] THEN
+      Timer5_MS2=$ROB_TIMER ;Timer Nahtunterbrechung triggern
+    ENDIF
+    IF (($ROB_TIMER-Timer5_MS2)>MS_TOUT) THEN
+      $FLAG[F_MS_TOUT_Na]=TRUE ;Nahtunterbrechung>MS_TOUT ms
+    ENDIF
+  ENDIF
+;
+  ;Naht-Fehler Merken
+  IF NOT $FLAG[F_MS_Fe_merk] AND (NOT $IN[I_MS2_bereit] OR NOT $IN[I_MS2_S_St] OR $FLAG[F_MS_TOUT_Na]) THEN
+    $FLAG[F_MS_Fe_merk]=TRUE
+    $FLAG[F_MS2_LB_Ein]=FALSE ;Loeten Aus
+    Timer6_MS2=($ROB_TIMER-Timer4_MS2)
+    $FLAG[F_MS_N_nio]= TRUE ;Loetung n.i.O.
+    $FLAG[F_MS2_Re_erf]= TRUE ;Reinigung erforderlich
+  ENDIF
+ENDIF
+;
+;Naht-Wiederaufsetzen MIG/MAG 2
+IF $FLAG[F_MS_N_Wied] AND $OUT[O_R_Auto] AND $OUT[O_MS2_P_akt] THEN
+  IF $OUT[O_R_bewegt] AND (Timer6_MS2<($ROB_TIMER-Timer4_MS2)) THEN
+    $FLAG[F_MS_FB_Wied]=FALSE ;Fahrbedingung aus
+    Timer4_MS2=$ROB_TIMER
+  ENDIF
+  IF $OUT[O_R_steht] THEN
+    $FLAG[F_MS2_LB_Ein]=TRUE ;Freigabe Loeten
+    IF $IN[I_MS2_L_steh] AND $IN[I_MS2_H_steh] AND $IN[I_MS2_S_St] THEN
+      $FLAG[F_MS_FB_Wied]=TRUE ;Fahrbedingung ein
+      $FLAG[F_MS_N_Wied]=FALSE ;Vorwahl Wiederaufsetzen aus
+    ENDIF
+  ENDIF
+ENDIF
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD Lebensbit MS
+DEF L_Bit_MS(MSNr :IN)
+;Setzen / Rueksetzen Lebensbit Roboter
+INT MSNr
+BOOL LBitMS, LBitFault
+INT RobTimer
+BOOL ErrLBit, bRet
+ErrLBit = FALSE
+LBitFault=FALSE
+;Setzen - Rucksetzen  des Lebensbit an Zangensteuerung
+$OUT[LBitToMS[MSNr]] = NOT $IN[LBitFromMS[MSNr]]
+RobTimer = $ROB_TIMER	
+IF $IN[LBitFromMS[MSNr]] <> LBitState[MSNr] THEN
+  LBitTimeCnt[MSNr] = RobTimer
+ENDIF
+IF (RobTimer - LBitTimeCnt[MSNr]) > 5000 THEN
+  ErrLBit = TRUE
+  ErrMSNr = MSNr
+  MS_LBitFeh[MSNr]=TRUE
+ENDIF
+LBitState[MSNr] = $IN[LBitFromMS[MSNr]]
+IF ErrLBit THEN
+  MigMag_Msg(1,#StateMsg, MSNr)
+ELSE
+  IF n_MSS_Handle[1]>-1 THEN
+    bRet=Clear_KrlMsg(n_MSS_Handle[1])
+    n_MSS_Handle[1]=-1
+    ErrMSNr = -1
+  ENDIF
+  MS_LBitFeh[MSNr]=FALSE
+ENDIF
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD MS_Meldungen
+DEF MigMag_Msg(msg_nr :IN, MsgTyp :IN, MSNr :IN)
+INT msg_nr, MSNr, Answer
+DECL MSS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+;
+USER_MSG = { Modul[] "MS_S_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF Varstate("MSNr")==#initialized then
+  SWITCH MSNr
+    CASE 1
+      Par[1] = { Par_type #Value, Par_int 1 }
+    CASE 2
+      Par[1] = { Par_type #Value, Par_int 2 }
+    CASE 3
+      Par[1] = { Par_type #Value, Par_int 3 }
+    CASE 4
+      Par[1] = { Par_type #Value, Par_int 4 }
+    CASE 5
+      Par[1] = { Par_type #Value, Par_int 5 }
+    CASE 6
+      Par[1] = { Par_type #Value, Par_int 6 }
+    DEFAULT
+      Par[1] = { Par_type #Value, Par_txt[] " " }
+  ENDSWITCH
+ELSE
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+ENDIF
+;
+IF ((n_MSS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]="MS%1 :keine Antwort auf Lebensbit"
+    CASE 2
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 3
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_MSS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_MSS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      n_MSS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_MSS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (MS Meldungen)

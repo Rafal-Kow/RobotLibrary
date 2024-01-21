@@ -1,0 +1,20 @@
+&ACCESS R
+&PARAM TPVW_VERSION=8.3.18
+&PARAM SUPPRESS = LoosOfPrecision UnswitchedEnum UnusedFunctionParameter
+DEF VW_ServoGun_Interface_s ( )
+   
+END
+
+;FOLD interface VW - Servogun Basic --> DO NOT DELETE THIS LINE #INSERTMARKER
+   
+   GLOBAL DEF VW_SGB_SAW ( )
+   END 
+   
+   GLOBAL DEF VW_SGB_S_INIT ( )
+   END    
+   
+   GLOBAL DEF VW_SGB_S_LOOP ( )
+   END
+   
+;ENDFOLD interface VW - Servogun Basic --> DO NOT DELETE THIS LINE #INSERTMARKER
+         

@@ -1,0 +1,192 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Schrauben
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEF vw_sr_usr_s( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Schrauben                           *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.17 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD INIT Schrauben 
+GLOBAL DEF SR_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_Schrauben.Name[]="KS24.01.001_150617"
+;ENDFOLD
+;
+;FOLD Vorbesetzung Meldungsausgabe
+FOR i = 1 TO 100
+  n_SRS_Handle[i]=-1
+  n_SRR_Handle[i]=-1
+ENDFOR
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SAW Schrauben 
+GLOBAL DEF SR_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RESET Schrauben 
+GLOBAL DEF SR_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD CANCEL Schrauben 
+GLOBAL DEF SR_CANCEL( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Schrauben
+GLOBAL DEF SR_LOOP( )
+;
+;Ausgabe Fehlermeldungen Schrauber 1
+;Vorwarnung Schraubzufuehrung
+$OUT[O_SR1_VSZF]=$OUT[O_R_Auto] AND $IN[I_SR1_VSZF]
+;Schraubzufuehrung leer
+$OUT[O_SR1_SZFle]=$OUT[O_R_Auto] AND $IN[I_SR1_SZFle]
+;  
+;Ausgabe Fehlermeldungen Schrauber 2
+;Vorwarnung Schraubzufuehrung
+$OUT[O_SR2_VSZF]=$OUT[O_R_Auto] AND $IN[I_SR2_VSZF]
+;Schraubzufuehrung leer
+$OUT[O_SR2_SZFle]=$OUT[O_R_Auto] AND $IN[I_SR2_SZFle]
+;  
+;Ausgabe Fehlermeldungen Schrauber 3
+;Vorwarnung Schraubzufuehrung
+$OUT[O_SR3_VSZF]=$OUT[O_R_Auto] AND $IN[I_SR3_VSZF]
+;Schraubzufuehrung leer
+$OUT[O_SR3_SZFle]=$OUT[O_R_Auto] AND $IN[I_SR3_SZFle]
+;  
+;Ausgabe Fehlermeldungen Schrauber 4
+;Vorwarnung Schraubzufuehrung
+$OUT[O_SR4_VSZF]=$OUT[O_R_Auto] AND $IN[I_SR4_VSZF]
+;Schraubzufuehrung leer
+$OUT[O_SR4_SZFle]=$OUT[O_R_Auto] AND $IN[I_SR4_SZFle]    
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD Lebensbit SR
+DEF L_Bit_SR(SRNr :IN)
+;Setzen / Rueksetzen Lebensbit Roboter
+INT SRNr
+BOOL LBitSR, LBitFault
+INT RobTimer
+BOOL ErrLBit, bRet
+ErrLBit = FALSE
+LBitFault=FALSE
+;Setzen - Rucksetzen  des Lebensbit an Zangensteuerung
+$OUT[LBitToSR[SRNr]] = NOT $IN[LBitFromSR[SRNr]]
+RobTimer = $ROB_TIMER	
+IF $IN[LBitFromSR[SRNr]] <> LBitState[SRNr] THEN
+  LBitTimeCnt[SRNr] = RobTimer
+ENDIF
+IF (RobTimer - LBitTimeCnt[SRNr]) > 5000 THEN
+  ErrLBit = TRUE
+  ErrSRNr = SRNr
+  SR_LBitFeh[SRNr]=TRUE
+ENDIF
+LBitState[SRNr] = $IN[LBitFromSR[SRNr]]
+IF ErrLBit THEN
+  Schrauben_Msg(1,#StateMsg, ErrSRNr)
+ELSE
+  IF n_SRS_Handle[1]>-1 THEN
+    bRet=Clear_KrlMsg(n_SRS_Handle[1])
+    n_SRS_Handle[1]=-1
+    ErrSRNr = -1
+  ENDIF
+  SR_LBitFeh[SRNr]=FALSE
+ENDIF
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SR_Meldungen
+DEF Schrauben_Msg(msg_nr :IN, MsgTyp :IN, SRNr :IN)
+INT msg_nr, SRNr, Answer
+DECL SRS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+;
+USER_MSG = { Modul[] "SR_S_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF Varstate("SRNr")==#initialized then
+  SWITCH SRNr
+    CASE 1
+      Par[1] = { Par_type #Value, Par_int 1 }
+    CASE 2
+      Par[1] = { Par_type #Value, Par_int 2 }
+    CASE 3
+      Par[1] = { Par_type #Value, Par_int 3 }
+    CASE 4
+      Par[1] = { Par_type #Value, Par_int 4 }
+    CASE 5
+      Par[1] = { Par_type #Value, Par_int 5 }
+    CASE 6
+      Par[1] = { Par_type #Value, Par_int 6 }
+    DEFAULT
+      Par[1] = { Par_type #Value, Par_txt[] " " }
+  ENDSWITCH
+ELSE
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+ENDIF
+;
+IF ((n_SRS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]="SR%1 :keine Antwort auf Lebensbit"
+    CASE 2
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 3
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_SRS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_SRS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      n_SRS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_SRS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (SR Meldungen)

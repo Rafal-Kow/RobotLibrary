@@ -1,0 +1,57 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vw_usr_rv
+&PARAM EDITMASK = vw_usr_r
+&PARAM TPVW_VERSION=8.3.8
+DEF VW_VMLOG()
+
+END
+
+;FOLD VektorMoveLogging
+
+GLOBAL DEF VektorMoveLogging()
+
+IF VM_Logging_Aktiv THEN
+   IF Varstate("$VMState") == #initialized THEN
+      IF $VMState.Active THEN
+      
+         IF (VM_Value_Sum_Square_Cond <= 3.4E+30) AND (VM_Value_Sum_Cond <= 3.4E+30) AND (VM_Value_Sum_Square_Stab <= 3.4E+30)  AND (VM_Value_Sum_Cond <= 3.4E+30) AND (VM_Count <= 2147483647) THEN 
+           ;Punkte zählen
+           VM_Count = VM_Count + 1
+         
+           ;Summe und Summe der Quadtrate bilden
+           VM_Value_Sum_Cond = VM_Value_Sum_Cond + $VMState.Condition
+           VM_Value_Sum_Square_Cond = VM_Value_Sum_Square_Cond + $VMState.Condition * $VMState.Condition
+           VM_Value_Sum_Stab = VM_Value_Sum_Stab + $VMState.Stability
+           VM_Value_Sum_Square_Stab = VM_Value_Sum_Square_Stab + $VMState.Stability * $VMState.Stability
+         ENDIF
+         
+         ;Worst Case fuer Condition-Werte schreiben
+         IF $VMState.Condition < VM_StateCondition THEN
+            VM_StateCondition = $VMState.Condition
+            SatzNr_Condition = $PRO_IP.SNR_C_TRL
+            Prog_Name_Condition[] = $PRO_IP.Name_C_TRL[]
+            VM_POS_Condition = $POS_ACT
+            VM_AXIS_Condition = $AXIS_ACT
+            VM_AXIS_Antrieb_Cond = $AXIS_ACT_MEAS
+            VMState_Condition = $VMState
+         ENDIF
+
+         ;Worst Case fuer Stability-Werte schreiben         
+         IF $VMState.Stability < VM_StateStability THEN
+            VM_StateStability = $VMState.Stability
+            SatzNr_Stability = $PRO_IP.SNR_C_TRL
+            Prog_Name_Stability[] = $PRO_IP.Name_C_TRL[]
+            VM_POS_Stability = $POS_ACT
+            VM_AXIS_Stability = $AXIS_ACT
+            VM_AXIS_Antrieb_Stab = $AXIS_ACT_MEAS
+            VMState_Stability = $VMState
+         ENDIF 
+      ENDIF
+   ENDIF  
+ENDIF
+
+END
+;ENDFOLD (VektorMoveLogging)
+
+

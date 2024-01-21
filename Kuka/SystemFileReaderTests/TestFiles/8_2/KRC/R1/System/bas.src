@@ -1,0 +1,850 @@
+&ACCESS R
+&COMMENT BASIS package
+&PARAM TPVW_VERSION =8.1.8
+DEF  BAS (COMMAND :IN,REAL_PAR :IN )
+; FOLD ;%{H} %MKUKATPVW
+DECL BAS_COMMAND COMMAND
+REAL REAL_PAR
+SWITCH  COMMAND
+CASE #INITMOV
+INITMOV ( )
+CASE #INITMOVEUP
+INITMOVEUP ( )
+CASE #ACC_CP
+ACC_CP (REAL_PAR )
+CASE #ACC_PTP
+ACC_PTP (REAL_PAR )
+CASE #VEL_CP
+VEL_CP (REAL_PAR )
+CASE #VEL_PTP
+VEL_PTP (REAL_PAR )
+CASE #TOOL
+TOOL (REAL_PAR )
+CASE #BASE
+BASE (REAL_PAR )
+CASE #EX_BASE
+EX_BASE (REAL_PAR )
+CASE #LK_BASE
+LK_BASE(REAL_PAR )
+CASE #PTP_DAT
+PTP_DAT ( )
+CASE #CP_DAT
+CP_DAT ( )
+ENDSWITCH
+END
+DEF  INITMOV ( )
+INT I
+; PTP-Parameters:
+ACC_PTP (100.0 ) ; ptp acceleration 100% = DEF_ACC_PTP
+VEL_PTP (100.0 ) ; ptp velocity 100% = DEF_VEL_PTP
+; CP-Parameters:
+ACC_CP (100.0 ) ; path acceleration 100%  =  DEF_ACC_CP
+$ACC.ORI1=DEF_ACC_ORI1 ; swivel acceleration
+$ACC.ORI2=DEF_ACC_ORI2 ; rotation acceleration
+VEL_CP (DEF_VEL_CP ) ; path velocity
+$VEL.ORI1=DEF_VEL_ORI1 ; swivel velocity
+$VEL.ORI2=DEF_VEL_ORI2 ; rotation velocity
+; Parameters for Approximation:
+$APO.CPTP=DEF_APO_CPTP ; PTP-Approximation
+$APO.CDIS=DEF_APO_CDIS ; Distance-Approximation
+$APO.CVEL=DEF_APO_CVEL ; Speed-Approximation
+$APO.CORI=DEF_APO_CORI ; Orientation-Approximation
+$FILTER=$DEF_FLT_PTP ; filter
+$ADVANCE=DEF_ADVANCE ; advance
+$ORI_TYPE=#VAR ; variable orientation
+$CIRC_TYPE=DEF_CIRC_TYPE ; CIRC-orientation
+IF $KINCLASS<>#NONE THEN
+BASE (0 ) ; Activating Base $WORLD
+TOOL (0 ) ; Activating Tool and Default-Load
+ENDIF
+IF $TCP_IPO==TRUE THEN
+$IPO_MODE=#BASE
+ENDIF
+IF $ADAP_ACC<>#NONE THEN
+IF LOAD_A1_DATA.M<0 THEN
+$LOAD_A1.M=0
+$LOAD_A1.CM={X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0}
+$LOAD_A1.J={X 0.0, Y 0.0, Z 0.0}
+ELSE
+$LOAD_A1.M=LOAD_A1_DATA.M
+$LOAD_A1.CM=LOAD_A1_DATA.CM
+$LOAD_A1.J=LOAD_A1_DATA.J
+ENDIF
+IF LOAD_A2_DATA.M<0 THEN
+$LOAD_A2.M=0
+$LOAD_A2.CM={X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0}
+$LOAD_A2.J={X 0.0, Y 0.0, Z 0.0}
+ELSE
+$LOAD_A2.M=LOAD_A2_DATA.M
+$LOAD_A2.CM=LOAD_A2_DATA.CM
+$LOAD_A2.J=LOAD_A2_DATA.J
+ENDIF
+IF LOAD_A3_DATA.M<0 THEN
+$LOAD_A3.M=$DEF_LA3_M
+$LOAD_A3.CM=$DEF_LA3_CM
+$LOAD_A3.J=$DEF_LA3_J
+ELSE
+$LOAD_A3.M=LOAD_A3_DATA.M
+$LOAD_A3.CM=LOAD_A3_DATA.CM
+$LOAD_A3.J=LOAD_A3_DATA.J
+IF (($LOAD_A3.M<>0) AND ($LOAD_A3.J.X==0) AND ($LOAD_A3.J.Y==0) AND ($LOAD_A3.J.Z==0)) THEN
+$LOAD_A3.J=$DEF_LA3_J
+ENDIF
+ENDIF
+ENDIF
+; standard group definition
+COMPL_GROUP=1
+FOR I=1 TO  $EX_AX_NUM
+COMPL_GROUP=COMPL_GROUP*2+1
+ENDFOR
+$ACT_GROUP=COMPL_GROUP
+END
+DEF  INITMOVEUP ( )
+INT I
+; PTP-Parameters:
+ACC_PTP (100.0 ) ; ptp acceleration 100% = DEF_ACC_PTP
+VEL_PTP (100.0 ) ; ptp velocity 100% = DEF_VEL_PTP
+; CP-Parameters:
+ACC_CP (100.0 ) ; path acceleration 100%  =  DEF_ACC_CP
+$ACC.ORI1=DEF_ACC_ORI1 ; swivel acceleration
+$ACC.ORI2=DEF_ACC_ORI2 ; rotation acceleration
+VEL_CP (DEF_VEL_CP ) ; path velocity
+$VEL.ORI1=DEF_VEL_ORI1 ; swivel velocity
+$VEL.ORI2=DEF_VEL_ORI2 ; rotation velocity
+; Parameters for Approximation:
+$APO.CPTP=DEF_APO_CPTP ; PTP-Approximation
+$APO.CDIS=DEF_APO_CDIS ; Distance-Approximation
+$APO.CVEL=DEF_APO_CVEL ; Speed-Approximation
+$APO.CORI=DEF_APO_CORI ; Orientation-Approximation
+$ADVANCE=DEF_ADVANCE ; advance
+$ORI_TYPE=#VAR ; variable orientation
+$CIRC_TYPE=DEF_CIRC_TYPE ; CIRC-orientation
+IF  NOT CALLBYSELECT THEN
+$FILTER=$DEF_FLT_PTP ; filter
+IF $KINCLASS<>#NONE THEN
+BASE (0 ) ; Activating Base $WORLD
+TOOL (0 ) ; Activating Tool and Default-Load
+ENDIF
+IF $TCP_IPO==TRUE THEN
+$IPO_MODE=#BASE
+ENDIF
+IF $ADAP_ACC<>#NONE THEN
+IF LOAD_A1_DATA.M<0 THEN
+$LOAD_A1.M=0
+$LOAD_A1.CM={X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0}
+$LOAD_A1.J={X 0.0, Y 0.0, Z 0.0}
+ELSE
+$LOAD_A1.M=LOAD_A1_DATA.M
+$LOAD_A1.CM=LOAD_A1_DATA.CM
+$LOAD_A1.J=LOAD_A1_DATA.J
+ENDIF
+IF LOAD_A2_DATA.M<0 THEN
+$LOAD_A2.M=0
+$LOAD_A2.CM={X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0}
+$LOAD_A2.J={X 0.0, Y 0.0, Z 0.0}
+ELSE
+$LOAD_A2.M=LOAD_A2_DATA.M
+$LOAD_A2.CM=LOAD_A2_DATA.CM
+$LOAD_A2.J=LOAD_A2_DATA.J
+ENDIF
+IF LOAD_A3_DATA.M<0 THEN
+$LOAD_A3.M=$DEF_LA3_M
+$LOAD_A3.CM=$DEF_LA3_CM
+$LOAD_A3.J=$DEF_LA3_J
+ELSE
+$LOAD_A3.M=LOAD_A3_DATA.M
+$LOAD_A3.CM=LOAD_A3_DATA.CM
+$LOAD_A3.J=LOAD_A3_DATA.J
+IF (($LOAD_A3.M<>0) AND ($LOAD_A3.J.X==0) AND ($LOAD_A3.J.Y==0) AND ($LOAD_A3.J.Z==0)) THEN
+$LOAD_A3.J=$DEF_LA3_J
+ENDIF
+ENDIF
+ENDIF
+; standard group definition
+COMPL_GROUP=1
+FOR I=1 TO  $EX_AX_NUM
+COMPL_GROUP=COMPL_GROUP*2+1
+ENDFOR
+$ACT_GROUP=COMPL_GROUP
+ENDIF
+CALLBYSELECT=FALSE
+END
+DEF  ACC_CP (ACC_FACTOR :IN )
+REAL ACC_FACTOR ; [%]
+IF ACC_FACTOR>100.0 THEN
+$ACC.CP=DEF_ACC_CP
+$ACC.ORI1=DEF_ACC_ORI1
+$ACC.ORI2=DEF_ACC_ORI2
+ELSE
+$ACC.CP=DEF_ACC_CP*ACC_FACTOR/100.0
+$ACC.ORI1=DEF_ACC_ORI1*ACC_FACTOR/100.0
+$ACC.ORI2=DEF_ACC_ORI2*ACC_FACTOR/100.0
+ENDIF
+END
+DEF  ACC_PTP (ACC_FACTOR :IN )
+REAL ACC_FACTOR ; [%]
+REAL ACC
+INT I
+CONTINUE
+IF $ADAP_ACC==#NONE THEN
+IF DEF_ACC_PTP>100 THEN
+DEF_ACC_PTP=100
+ENDIF
+IF ACC_FACTOR>100.0 THEN
+ACC=DEF_ACC_PTP
+ELSE
+ACC=DEF_ACC_PTP*ACC_FACTOR/100.0
+ENDIF
+ELSE
+ACC=ACC_FACTOR
+ENDIF
+FOR I=1 TO  6
+$ACC_AXIS[I]=ACC
+ENDFOR
+FOR I=1 TO  $EX_AX_NUM
+$ACC_EXTAX[I]=ACC
+ENDFOR
+END
+DEF  VEL_CP (VEL_VALUE :IN )
+REAL VEL_VALUE ; [m/s]
+IF VEL_VALUE>DEF_VEL_CP THEN
+$VEL.CP=DEF_VEL_CP
+ELSE
+$VEL.CP=VEL_VALUE*DEF_VEL_FACT
+ENDIF
+END
+DEF  VEL_PTP (VEL_FACTOR :IN )
+REAL VEL_FACTOR ; [%]
+REAL VEL
+INT I
+IF VEL_FACTOR>100.0 THEN
+VEL=DEF_VEL_PTP
+ELSE
+VEL=DEF_VEL_PTP*VEL_FACTOR/100.0
+ENDIF
+FOR I=1 TO  6
+$VEL_AXIS[I]=VEL
+ENDFOR
+FOR I=1 TO  $EX_AX_NUM
+$VEL_EXTAX[I]=VEL
+ENDFOR
+END
+DEF  TOOL (TOOL_NO :IN )
+INT TOOL_NO
+IF (TOOL_NO==0) THEN
+$TOOL=$NULLFRAME
+IF $ADAP_ACC<>#NONE THEN
+$LOAD.M=$DEF_L_M
+$LOAD.CM=$DEF_L_CM
+$LOAD.J=$DEF_L_J
+ENDIF
+ELSE
+CONTINUE
+$TOOL=TOOL_DATA[TOOL_NO]
+IF $ADAP_ACC<>#NONE THEN
+IF LOAD_DATA[TOOL_NO].M<0 THEN
+$LOAD.M=$DEF_L_M
+$LOAD.CM=$DEF_L_CM
+$LOAD.J=$DEF_L_J
+ELSE
+$LOAD.M=LOAD_DATA[TOOL_NO].M
+$LOAD.CM=LOAD_DATA[TOOL_NO].CM
+$LOAD.J=LOAD_DATA[TOOL_NO].J
+IF (($LOAD.M<>0) AND ($LOAD.J.X==0) AND ($LOAD.J.Y==0) AND ($LOAD.J.Z==0)) THEN
+$LOAD.J=$DEF_L_J
+ENDIF
+ENDIF
+ENDIF
+ENDIF
+CONTINUE
+$ACT_TOOL=TOOL_NO
+END
+DEF  BASE (BASE_NO :IN )
+INT BASE_NO
+IF (BASE_NO==0) THEN
+CONTINUE
+$BASE=$WORLD
+ELSE
+CONTINUE
+$BASE=BASE_DATA[BASE_NO]
+ENDIF
+CONTINUE
+$ACT_BASE=BASE_NO ; Storing actual Base-Number in global variable
+CONTINUE
+$ACT_EX_AX=-1
+END
+DEF  EX_BASE (BASE_NO :IN )
+INT BASE_NO
+INT MACH_INDEX
+CONTINUE
+IF BASE_NO>0 THEN
+MACH_INDEX = MACHINE_FRAME_DAT[BASE_NO].MACH_DEF_INDEX
+IF MACH_INDEX > 0 THEN
+$BASE=EK(MACHINE_DEF[MACH_INDEX].ROOT,MACHINE_DEF[MACH_INDEX].MECH_TYPE,BASE_DATA[BASE_NO])
+ENDIF
+ENDIF
+CONTINUE
+$ACT_BASE=-1
+CONTINUE
+$ACT_EX_AX=BASE_NO
+END
+DEF  PTP_DAT ( )
+VEL_PTP (PDAT_ACT.VEL )
+ACC_PTP (PDAT_ACT.ACC )
+$APO.CPTP=PDAT_ACT.APO_DIST
+END
+DEF  CP_DAT ( )
+VEL_CP (LDAT_ACT.VEL )
+ACC_CP (LDAT_ACT.ACC )
+$APO.CDIS=LDAT_ACT.APO_DIST
+END
+DEF  LK_BASE (BASE_NO : IN )
+INT MACH_IDX, BASE_NO, COOP_KRC_INDEX
+DECL ESYS MECH_TYPE
+MACH_IDX = MACHINE_FRAME_DAT[BASE_NO].MACH_DEF_INDEX
+IF (MACH_IDX > 0) Then
+MECH_TYPE = MACHINE_DEF[MACH_IDX].MECH_TYPE
+COOP_KRC_INDEX = MACHINE_DEF[MACH_IDX].COOP_KRC_INDEX
+ELSE
+MECH_TYPE = #NONE
+COOP_KRC_INDEX = 0
+ENDIF
+IF (MECH_TYPE == #ROBOT) THEN
+IF (COOP_KRC_INDEX > 1) THEN
+; Linking to a frame - end-of-arm tool
+$BASE=LK(MACHINE_DEF[MACH_IDX].ROOT, $COOP_KRC[MACHINE_DEF[MACH_IDX].COOP_KRC_INDEX].IP_ADDR[], BASE_DATA[BASE_NO], MACHINE_DEF[MACH_IDX].MECH_TYPE)
+ELSE
+IF (COOP_KRC_INDEX == 1) THEN
+$BASE=BASE_DATA[BASE_NO]
+ENDIF
+ENDIF
+ELSE
+IF (MECH_TYPE == #NONE) THEN
+IF (BASE_NO <= MAX_BASE) THEN
+$BASE=BASE_DATA[BASE_NO]
+ENDIF
+ELSE
+; The base is relative to an external axis - need to determine if it is a local
+; external axis or a remote one and call EK/LK appropriately.  A COOP_KRC_INDEX
+; of 1 signifies it is a local external axis.
+IF (MECH_TYPE == #CONVEYOR) THEN
+;EB_BASE()
+ELSE
+IF (COOP_KRC_INDEX == 1) THEN
+EX_BASE(BASE_NO)
+ELSE
+$BASE=LK(MACHINE_DEF[MACH_IDX].ROOT, $COOP_KRC[MACHINE_DEF[MACH_IDX].COOP_KRC_INDEX].IP_ADDR[], BASE_DATA[BASE_NO], MACHINE_DEF[MACH_IDX].MECH_TYPE)
+ENDIF
+ENDIF
+ENDIF
+ENDIF
+CONTINUE
+$ACT_EX_AX=-1
+CONTINUE
+$ACT_BASE=BASE_NO
+END
+GLOBAL DEF MsgNotify(sText[]:IN, sModul[]:IN, nNumPar:IN, sTextPar[]:IN, nMsgNr:IN)
+;************************************************************
+;Function: Executes a Message Send of the notify message
+;************************************************************
+Decl CHAR sText[], sModul[], sTextPar[]
+Decl KrlMsg_T Msg
+Decl EKrlMsgType MsgType
+Decl KrlMsgParType_T MsgParType
+Decl KrlMsgPar_T MsgPar[3]
+Decl KrlMsgOpt_T MsgOpt
+Decl State_T State
+Decl Int count, len, offset, nNumPar, nHandle, nMsgNr
+MsgType=#Notify
+Msg.Nr=1
+Err_Clear($Err)
+On_Error_Proceed
+Msg.Nr=nMsgNr
+len=Strlen(sText[])
+if len>0 then
+if len>80 then
+len=80
+endif
+for count=1 to len
+Msg.Msg_txt[count]=sText[count]
+endfor
+else
+Msg.Msg_txt[]="parameter sText[] is missing"
+endif
+len=Strlen(sModul[])
+if len>0 then
+if len>24 then
+len=24
+endif
+for count=1 to len
+Msg.Modul[count]=sModul[count]
+endfor
+else
+Msg.Modul[]="Appl"
+endif
+Err_Clear($Err)
+On_Error_Proceed
+offset=nNumPar
+if $Err.Number==0 then
+offset=0
+MsgPar[1].Par_Txt[]=" "
+SWRITE(MsgPar[1].Par_Txt[], State, Offset, "%d", nNumPar)
+MsgPar[1].Par_type=#Value
+else
+Err_Clear($Err)
+On_Error_Proceed
+len=Strlen(sTextPar[])
+if len>0 then
+if len>26 then
+len=26
+endif
+for count=1 to len
+MsgPar[1].Par_Txt[count]=sTextPar[count]
+endfor
+MsgPar[1].Par_type=#Value
+endif
+endif
+MsgOpt={ VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+nHandle=Set_KrlMsg (MsgType, Msg, MsgPar[], MsgOpt)
+END
+GLOBAL DEF MsgQuit(sText[]:IN, sModul[]:IN, nNumPar:IN, sTextPar[]:IN, nMsgNr:IN)
+;************************************************************
+;Function: Executes a Message Send of the quit message
+;************************************************************
+Decl CHAR sText[], sModul[], sTextPar[]
+Decl KrlMsg_T Msg
+Decl EKrlMsgType MsgType
+Decl KrlMsgParType_T MsgParType
+Decl KrlMsgPar_T MsgPar[3]
+Decl KrlMsgOpt_T MsgOpt
+Decl State_T State
+Decl Int count, len, offset, nNumPar, nHandle, nMsgNr
+MsgType=#Quit
+Msg.Nr=1
+Err_Clear($Err)
+On_Error_Proceed
+Msg.Nr=nMsgNr
+len=Strlen(sText[])
+if len>0 then
+if len>80 then
+len=80
+endif
+for count=1 to len
+Msg.Msg_txt[count]=sText[count]
+endfor
+else
+Msg.Msg_txt[]="parameter sText[] is missing"
+endif
+len=Strlen(sModul[])
+if len>0 then
+if len>24 then
+len=24
+endif
+for count=1 to len
+Msg.Modul[count]=sModul[count]
+endfor
+else
+Msg.Modul[]="Appl"
+endif
+Err_Clear($Err)
+On_Error_Proceed
+offset=nNumPar
+if $Err.Number==0 then
+offset=0
+MsgPar[1].Par_Txt[]=" "
+SWRITE(MsgPar[1].Par_Txt[], State, offset, "%d", nNumPar)
+MsgPar[1].Par_type=#Value
+else
+Err_Clear($Err)
+len=Strlen(sTextPar[])
+if len>0 then
+if len>26 then
+len=26
+endif
+for count=1 to len
+MsgPar[1].Par_Txt[count]=sTextPar[count]
+endfor
+MsgPar[1].Par_type=#Value
+endif
+endif
+MsgOpt={ VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+nHandle=Set_KrlMsg (MsgType, Msg, MsgPar[], MsgOpt)
+while ( Exists_KrlMsg(nHandle) )
+wait sec 0.1
+endwhile
+END
+GLOBAL DEF MsgState(nHandle:OUT, sText[]:IN, sModul[]:IN, nNumPar:IN, sTextPar[]:IN, nMsgNr:IN)
+;************************************************************
+;Function: Executes a Message Send of the state message
+;************************************************************
+Decl CHAR sText[], sModul[], sTextPar[]
+Decl KrlMsg_T Msg
+Decl EKrlMsgType MsgType
+Decl KrlMsgParType_T MsgParType
+Decl KrlMsgPar_T MsgPar[3]
+Decl KrlMsgOpt_T MsgOpt
+Decl State_T State
+Decl Int count, len, offset, nNumPar, nHandle, nMsgNr
+MsgType=#State
+Msg.Nr=1
+Err_Clear($Err)
+On_Error_Proceed
+Msg.Nr=nMsgNr
+len=Strlen(sText[])
+if len>0 then
+if len>80 then
+len=80
+endif
+for count=1 to len
+Msg.Msg_txt[count]=sText[count]
+endfor
+else
+Msg.Msg_txt[]="parameter sText[] is missing"
+endif
+len=Strlen(sModul[])
+if len>0 then
+if len>24 then
+len=24
+endif
+for count=1 to len
+Msg.Modul[count]=sModul[count]
+endfor
+else
+Msg.Modul[]="Appl"
+endif
+Err_Clear($Err)
+On_Error_Proceed
+offset=nNumPar
+if $Err.Number==0 then
+offset=0
+MsgPar[1].Par_Txt[]=" "
+SWRITE(MsgPar[1].Par_Txt[], State, offset, "%d", nNumPar)
+MsgPar[1].Par_type=#Value
+else
+Err_Clear($Err)
+len=Strlen(sTextPar[])
+if len>0 then
+if len>26 then
+len=26
+endif
+for count=1 to len
+MsgPar[1].Par_Txt[count]=sTextPar[count]
+endfor
+MsgPar[1].Par_type=#Value
+endif
+endif
+MsgOpt={ VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+nHandle=Set_KrlMsg (MsgType, Msg, MsgPar[], MsgOpt)
+END
+GLOBAL DEF MsgLoop(sText[]:IN,sModul[]:IN)
+;************************************************************
+;Function: Executes a Message Send of the loop message
+;************************************************************
+Decl CHAR sText[], sModul[]
+Decl CHAR sMsg[80]
+Decl CHAR sMod[24]
+Decl Int count,len
+len=Strlen(sText[])
+if len>0 then
+if len>80 then
+len=80
+endif
+for count=1 to len
+sMsg[count]=sText[count]
+endfor
+endif
+len=Strlen(sModul[])
+if len>0 then
+if len>24 then
+len=24
+endif
+for count=1 to len
+sMod[count]=sModul[count]
+endfor
+else
+sMod[]="Appl"
+endif
+if (Strlen(sMsg[])>0) then
+if lnHandle>0 then
+wait for Clear_KrlMsg (lnHandle) OR TRUE
+lnHandle=0
+endif
+for count=1 to Strlen(sMsg[])
+if sMsg[count]<>" " then
+MsgState(lnHandle, sMsg[], sMod[])
+	  EXIT
+endif
+endfor
+endif
+END
+GLOBAL DEF MsgDialog(nAnswer:OUT,sText[]:IN,sModul[]:IN,sTextPar[]:IN,sDialogSK1[]:IN,sDialogSK2[]:IN,sDialogSK3[]:IN,sDialogSK4[]:IN,sDialogSK5[]:IN,sDialogSK6[]:IN,sDialogSK7[]:IN,NoBrakes:IN, nMsgNr:IN)
+;************************************************************
+;Function: Executes a dialog
+;parameter NoBrakes causes the robot to leave brakes open
+;************************************************************
+Decl KrlMsg_T Msg
+Decl EKrlMsgType MsgType
+Decl KrlMsgPar_T MsgPar[3]
+Decl KrlMsgOpt_T MsgOpt
+DECL KrlMsgDlgSK_T Msg_SOFTKEY[7]
+Decl Int count, len, nHandle, nAnswer, nMsgNr
+Decl BOOL NoBrakes
+Decl CHAR sText[], sModul[], sTextPar[], sDialogSK1[], sDialogSK2[], sDialogSK3[], sDialogSK4[], sDialogSK5[], sDialogSK6[], sDialogSK7[]
+Decl CHAR sMsg[80]
+Msg.Nr=1
+Err_Clear($Err)
+On_Error_Proceed
+Msg.Nr=nMsgNr
+len=Strlen(sText[])
+if len>0 then
+if len>80 then
+len=80
+endif
+for count=1 to len
+Msg.Msg_txt[count]=sText[count]
+endfor
+else
+Msg.Msg_txt[]="parameter sText[] is missing"
+endif
+len=Strlen(sModul[])
+if len>0 then
+if len>24 then
+len=24
+endif
+for count=1 to len
+Msg.Modul[count]=sModul[count]
+endfor
+else
+Msg.Modul[]="Appl"
+endif
+Err_Clear($Err)
+On_Error_Proceed
+len=Strlen(sDialogSK1[])
+if $Err.Number==0 then
+if len > 0 then
+if len>24 then
+len=24
+endif
+Msg_SOFTKEY[7].Sk_Type = #KEY
+for count=1 to len
+Msg_SOFTKEY[7].Sk_txt[count] = sDialogSK1[count]
+endfor
+endif
+else
+for count=1 to 24
+Msg_SOFTKEY[7].Sk_txt[count] = " "
+endfor
+endif
+Err_Clear($Err)
+On_Error_Proceed
+len=Strlen(sDialogSK2[])
+if $Err.Number==0 then
+len=Strlen(sDialogSK2[])
+if len > 0 then
+if len>24 then
+len=24
+endif
+Msg_SOFTKEY[6].Sk_Type = #KEY
+for count=1 to len
+Msg_SOFTKEY[6].Sk_txt[count] = sDialogSK2[count]
+endfor
+endif
+else
+for count=1 to 24
+Msg_SOFTKEY[6].Sk_txt[count] = " "
+endfor
+endif
+Err_Clear($Err)
+On_Error_Proceed
+len=Strlen(sDialogSK3[])
+if $Err.Number==0 then
+len=Strlen(sDialogSK3[])
+if len > 0 then
+if len>24 then
+len=24
+endif
+Msg_SOFTKEY[5].Sk_Type = #KEY
+for count=1 to len
+Msg_SOFTKEY[5].Sk_txt[count] = sDialogSK3[count]
+endfor
+endif
+else
+for count=1 to 24
+Msg_SOFTKEY[5].Sk_txt[count] = " "
+endfor
+endif
+Err_Clear($Err)
+On_Error_Proceed
+len=Strlen(sDialogSK4[])
+if $Err.Number==0 then
+len=Strlen(sDialogSK4[])
+if len > 0 then
+if len>24 then
+len=24
+endif
+Msg_SOFTKEY[4].Sk_Type = #KEY
+for count=1 to len
+Msg_SOFTKEY[4].Sk_txt[count] = sDialogSK4[count]
+endfor
+endif
+else
+for count=1 to 24
+Msg_SOFTKEY[4].Sk_txt[count] = " "
+endfor
+endif
+Err_Clear($Err)
+On_Error_Proceed
+len=Strlen(sDialogSK5[])
+if $Err.Number==0 then
+len=Strlen(sDialogSK5[])
+if len > 0 then
+if len>24 then
+len=24
+endif
+Msg_SOFTKEY[3].Sk_Type = #KEY
+for count=1 to len
+Msg_SOFTKEY[3].Sk_txt[count] = sDialogSK5[count]
+endfor
+endif
+else
+for count=1 to 24
+Msg_SOFTKEY[3].Sk_txt[count] = " "
+endfor
+endif
+Err_Clear($Err)
+On_Error_Proceed
+len=Strlen(sDialogSK6[])
+if $Err.Number==0 then
+len=Strlen(sDialogSK6[])
+if len > 0 then
+if len>24 then
+len=24
+endif
+Msg_SOFTKEY[2].Sk_Type = #KEY
+for count=1 to len
+Msg_SOFTKEY[2].Sk_txt[count] = sDialogSK6[count]
+endfor
+endif
+else
+for count=1 to 24
+Msg_SOFTKEY[2].Sk_txt[count] = " "
+endfor
+endif
+Err_Clear($Err)
+On_Error_Proceed
+len=Strlen(sDialogSK7[])
+if $Err.Number==0 then
+len=Strlen(sDialogSK7[])
+if len > 0 then
+if len>24 then
+len=24
+endif
+Msg_SOFTKEY[1].Sk_Type = #KEY
+for count=1 to len
+Msg_SOFTKEY[1].Sk_txt[count] = sDialogSK7[count]
+endfor
+endif
+else
+for count=1 to 24
+Msg_SOFTKEY[1].Sk_txt[count] = " "
+endfor
+endif
+len=Strlen(sTextPar[])
+if len>0 then
+if len>26 then
+len=26
+endif
+for count=1 to len
+MsgPar[1].Par_Txt[count]=sTextPar[count]
+endfor
+MsgPar[1].Par_type=#Value
+endif
+MsgOpt={ VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+nHandle=SET_KRLDLG(Msg, MsgPar[], Msg_SOFTKEY[], MsgOpt)
+Err_Clear($Err)
+On_Error_Proceed
+NoBrakes=NoBrakes
+if NOT($Err.Number==0) then
+NoBrakes=FALSE
+endif
+If (nHandle > 0) Then
+WHILE (Exists_KrlDlg(nHandle, nAnswer))
+WAIT SEC 0.5
+if NoBrakes then
+PTP $AXIS_ACT
+endif
+ENDWHILE
+endif
+END
+GLOBAL DEF MsgNotifyTextPar(sText[]:IN, sModul[]:IN, nNumPar:IN, sTextPar[]:IN, sTextPar2[]:IN, nMsgNr:IN)
+;************************************************************
+;Function: Executes a Message Send of the notify message with text parameter
+;************************************************************
+Decl CHAR sText[], sModul[], sTextPar[], sTextPar2[]
+Decl KrlMsg_T Msg
+Decl EKrlMsgType MsgType
+Decl KrlMsgParType_T MsgParType
+Decl KrlMsgPar_T MsgPar[3]
+Decl KrlMsgOpt_T MsgOpt
+Decl State_T State
+Decl Int count, len, offset, nNumPar, nHandle, nMsgNr
+MsgType=#Notify
+Msg.Nr=1
+Err_Clear($Err)
+On_Error_Proceed
+Msg.Nr=nMsgNr
+len=Strlen(sText[])
+if len>0 then
+if len>80 then
+len=80
+endif
+for count=1 to len
+Msg.Msg_txt[count]=sText[count]
+endfor
+else
+Msg.Msg_txt[]="parameter sText[] is missing"
+endif
+len=Strlen(sModul[])
+if len>0 then
+if len>24 then
+len=24
+endif
+for count=1 to len
+Msg.Modul[count]=sModul[count]
+endfor
+else
+Msg.Modul[]="Appl"
+endif
+offset=nNumPar
+if nNumPar==0 then
+; �bergebener Parameter 1
+len=Strlen(sTextPar[])
+if len>0 then
+if len>26 then
+len=26
+endif
+for count=1 to len
+MsgPar[1].Par_Txt[count]=sTextPar[count]
+endfor
+MsgPar[1].Par_type=#Value
+endif
+; �bergebener Parameter 2
+len=Strlen(sTextPar2[])
+if len>0 then
+if len>26 then
+len=26
+endif
+for count=1 to len
+MsgPar[2].Par_Txt[count]=sTextPar2[count]
+endfor
+MsgPar[2].Par_type=#Value
+endif
+else
+offset=0
+MsgPar[1].Par_Txt[]=" "
+SWRITE(MsgPar[1].Par_Txt[], State, Offset, "%d", nNumPar)
+MsgPar[1].Par_type=#Value
+endif
+MsgOpt={ VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+nHandle=Set_KrlMsg (MsgType, Msg, MsgPar[], MsgOpt)
+END 

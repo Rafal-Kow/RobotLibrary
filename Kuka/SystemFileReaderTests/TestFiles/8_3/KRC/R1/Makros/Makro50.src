@@ -1,0 +1,101 @@
+&ACCESS RV1
+&REL 16
+&COMMENT INITIALISIERUNG MERKER
+&PARAM EDITMASK = Makro999[0-999]
+&PARAM TPVW_VERSION = 8.3.18
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrovorgabe.src
+&PARAM DISKPATH = Makros
+DEFFCT INT MAKRO50(ADV :IN)
+   ;FOLD Makro Anfang ;%{PSE}%MKUKATPVW
+      BOOL ADV
+      ; interface to basic routines
+      EXT  BAS (BAS_COMMAND  :IN,REAL  :IN )
+      ; interface to VW-standard routines
+      EXT VW (VW_COMMAND:IN, BOOL: IN, REAL:IN, REAL:IN, REAL:IN, REAL:IN, BOOL :IN, E6POS :IN )
+      ; interface select routine
+      EXTFCT INT  SELECT (SUBTYPE  :IN,INT  :IN,BOOL  :IN,ARI_TYP  :IN,INT  :IN,BOOL_TYP  :IN,INT  :IN,BOOL  :IN)
+      SPS_N=-1
+      ;FOLD ;%{H} %MKUKATPVW
+      IF VARSTATE ("ADV") <> #INITIALIZED THEN
+         ADV=FALSE
+      ENDIF
+      IF (NOT ADV) THEN
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Merkerdefinitionen -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Merkerdefinitionen --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Greifer 3 VW380 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Greifer 3 VW380 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- mit Bauteil -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- mit Bauteil --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M2 = E603 & E605 & E607 + E15 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M2 = E603 & E605 & E607 + E15, 3: BOASG
+      $CYCFLAG[2] = $IN[603] AND $IN[605] AND $IN[607] OR $IN[15]
+   ;ENDFOLD
+   ;FOLD -- ohne teil -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- ohne teil --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M13 = !E603 & !E605 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M13 = !E603 & !E605, 3: BOASG
+      $CYCFLAG[13] = NOT $IN[603] AND NOT $IN[605]
+   ;ENDFOLD
+   ;FOLD -- Abfrage Spanngruppen -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Abfrage Spanngruppen --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Haltezylinder MZ13 AUF -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Haltezylinder MZ13 AUF --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M31 = E579 & !E580 & E581 & !E582 & E583 & !E584 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M31 = E579 & !E580 & E581 & !E582 & E583 & !E584, 3: BOASG
+      $CYCFLAG[31] = $IN[579] AND NOT $IN[580] AND $IN[581] AND NOT $IN[582] AND $IN[583] AND NOT $IN[584]
+   ;ENDFOLD
+   ;FOLD -- Halteezylinder MZ13 ZU -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Halteezylinder MZ13 ZU --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M32 = !E579 & E580 & !E581 & E582 & !E583 & E584 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M32 = !E579 & E580 & !E581 & E582 & !E583 & E584, 3: BOASG
+      $CYCFLAG[32] = NOT $IN[579] AND $IN[580] AND NOT $IN[581] AND $IN[582] AND NOT $IN[583] AND $IN[584]
+   ;ENDFOLD
+   ;FOLD -- Klinkenoeffner vor -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Klinkenoeffner vor --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M33 = E586 & !E585 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M33 = E586 & !E585, 3: BOASG
+      $CYCFLAG[33] = $IN[586] AND NOT $IN[585]
+   ;ENDFOLD
+   ;FOLD -- Klinkenoeffner rueck -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Klinkenoeffner rueck --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M34 = E585 & !E586 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M34 = E585 & !E586, 3: BOASG
+      $CYCFLAG[34] = $IN[585] AND NOT $IN[586]
+   ;ENDFOLD
+   ;FOLD -- Saugkreis 1 EIN -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Saugkreis 1 EIN --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M63 = E617 + E15 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M63 = E617 + E15, 3: BOASG
+      $CYCFLAG[63] = $IN[617] OR $IN[15]
+   ;ENDFOLD
+   ;FOLD -- Saugkreis 2 EIN -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Saugkreis 2 EIN --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M64 = E619 + E15 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M64 = E619 + E15, 3: BOASG
+      $CYCFLAG[64] = $IN[619] OR $IN[15]
+   ;ENDFOLD
+   ;FOLD -- Typenmeldung G3 VW380 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Typenmeldung G3 VW380 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M197 = M2 & !M13 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M197 = M2 & !M13, 3: BOASG
+      $CYCFLAG[197] = $CYCFLAG[2] AND NOT $CYCFLAG[13]
+   ;ENDFOLD
+   ;FOLD -- Maschinelle Sicherheit -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Maschinelle Sicherheit --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M30 = E14 & E24 & E516 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M30 = E14 & E24 & E516, 3: BOASG
+      $CYCFLAG[30] = $IN[14] AND $IN[24] AND $IN[516]
+   ;ENDFOLD
+   ;FOLD -- Kleben -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Kleben --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- KL1 Bereit / Materialdruck erreicht -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Bereit / Materialdruck erreicht --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M146 = E1529 + E15 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M146 = E1529 + E15, 3: BOASG
+      $CYCFLAG[146] = $IN[1529] OR $IN[15]
+   ;ENDFOLD
+   ;FOLD -- ********************************* -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- ********************************* --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Aufruf Makro57 "diverse Anwahlen" -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Aufruf Makro57 "diverse Anwahlen" --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD SPSMAKRO57 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VMAKRO %P 2:SPSMAKRO57 = EIN, 3: MAKRO
+      SEL_RES=SELECT(#MAKRO,57,TRUE,,,,,FALSE)
+   ;ENDFOLD
+   ; FOLD ;%{H}
+   RETURN 1
+   ELSE
+   RETURN SELECT(#MAKRO,57,TRUE,,,,,TRUE)
+   ENDIF
+ENDFCT
+; ENDFOLD

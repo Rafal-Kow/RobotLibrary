@@ -1,0 +1,109 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/SmartRay
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEFDAT  vw_sv_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket SmartRay                            *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.17 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD USER_Version
+STRUC _Tech_SmartRay CHAR Name[20],INT Datum
+DECL _Tech_SmartRay Tech_SmartRay
+;ENDFOLD
+; 
+;FOLD SmartRay Version1
+GLOBAL BOOL MIT_SV1=FALSE
+GLOBAL BOOL LBitSV1Rem=FALSE
+GLOBAL BOOL SV1_LBitFeh=FALSE
+; 
+GLOBAL INT TimerNr_SV1=10000
+; 
+GLOBAL INT F_m_SV1=708
+; 
+GLOBAL INT I_SV1_LBit=2579
+GLOBAL INT I_SV1_Ein=2586
+GLOBAL INT I_SV1_ST_NiO=2592
+GLOBAL INT I_SV1_ST_iO=2591
+GLOBAL INT I_SV1_StoKli=2605
+GLOBAL INT I_SV1_Sto24V=2606
+GLOBAL INT I_SV1_StoMes=2607
+; 
+GLOBAL INT O_SV1_LBit=2579
+GLOBAL INT O_SV1_E_Mode=2588
+GLOBAL INT O_SV1_ST_Akt=2589
+GLOBAL INT O_SV1_P_Akt=193
+GLOBAL INT O_SV1_Af_Asf=196
+GLOBAL INT O_SV1_Feh_ST=197
+GLOBAL INT O_SV1_Sammel=200
+;ENDFOLD
+; 
+;FOLD SmartRay Version2
+GLOBAL BOOL MIT_SV2=FALSE
+GLOBAL BOOL LBitSV2Rem=FALSE
+GLOBAL BOOL SV2_LBitFeh=FALSE
+; 
+GLOBAL INT TimerNr_SV2=10000
+; 
+GLOBAL INT F_m_SV2=709
+; 
+GLOBAL INT I_SV2_o_Pro=193
+GLOBAL INT I_SV2_LBit=2579
+GLOBAL INT I_SV2_Ein=2585
+GLOBAL INT I_SV2_ST_NiO=2592
+GLOBAL INT I_SV2_ST_iO=2591
+GLOBAL INT I_SV2_StoKli=2606
+GLOBAL INT I_SV2_Sto24V=2607
+GLOBAL INT I_SV2_Sammel=2608
+; 
+GLOBAL INT O_SV2_o_Pro=2578
+GLOBAL INT O_SV2_LBit=2579
+GLOBAL INT O_SV2_E_Mode=2590
+GLOBAL INT O_SV2_ST_Akt=2591
+GLOBAL INT O_SV2_P_Akt=193
+GLOBAL INT O_SV2_Af_Asf=196
+GLOBAL INT O_SV2_Feh_ST=197
+GLOBAL INT O_SV2_Sammel=200
+;ENDFOLD
+; 
+;FOLD Lebensbit SV
+BOOL LBitState[2]
+LBitState[1]=FALSE
+LBitState[2]=FALSE
+BOOL SV_LBitFeh[2]
+SV_LBitFeh[1]=FALSE
+SV_LBitFeh[2]=FALSE
+; 
+;Lebensbit an SV-Steuerung --- Ausgaenge
+INT LBitToSV[2]
+LBitToSV[1]=2579
+LBitToSV[2]=2579
+; 
+;Lebensbit von SV-Steuerung --- Eingaenge
+INT LBitFromSV[2]
+LBitFromSV[1]=2579
+LBitFromSV[2]=2579
+; 
+INT LBitTimeCnt[2]
+LBitTimeCnt[1]=-1
+LBitTimeCnt[2]=-1
+INT ErrSVNr=-1
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM SVS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_SVS_Handle[100]
+GLOBAL INT n_SVR_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+
+ENDDAT

@@ -1,0 +1,231 @@
+&ACCESS RVO7
+&COMMENT ROBOTER VERRIEGELUNGEN
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrovorgabe.src
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM EDITMASK = Makro999[0-999]
+DEFFCT INT MAKRO20(ADV :IN)
+   ;FOLD Makro Anfang ;%{PSE}%MKUKATPVW
+      BOOL ADV
+      ; interface to basic routines
+      EXT  BAS (BAS_COMMAND  :IN,REAL  :IN )
+      ; interface to VW-standard routines
+      EXT VW (VW_COMMAND:IN, BOOL: IN, REAL:IN, REAL:IN, REAL:IN, REAL:IN, BOOL :IN, E6POS :IN )
+      ; interface select routine
+      EXTFCT INT  SELECT (SUBTYPE  :IN,INT  :IN,BOOL  :IN,ARI_TYP  :IN,INT  :IN,BOOL_TYP  :IN,INT  :IN,BOOL  :IN)
+      SPS_N=-1
+      ;FOLD ;%{H} %MKUKATPVW
+      IF VARSTATE ("ADV") <> #INITIALIZED THEN
+         ADV=FALSE
+      ENDIF
+      IF (NOT ADV) THEN
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Roboter Verriegelungen -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Roboter Verriegelungen --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- KS24 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KS24 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Version: 01 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Version: 01 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Stand: 001 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Stand: 001 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- letzte Aenderung 11.06.2014 PK -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- letzte Aenderung 11.06.2014 PK --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD A41 = A41 + A81 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A41 = A41 + A81, 3: BOASG
+      $OUT[41] = $OUT[41] OR $OUT[81]
+   ;ENDFOLD
+   ;FOLD A42 = A42 + A82 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A42 = A42 + A82, 3: BOASG
+      $OUT[42] = $OUT[42] OR $OUT[82]
+   ;ENDFOLD
+   ;FOLD A43 = A43 + A83 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A43 = A43 + A83, 3: BOASG
+      $OUT[43] = $OUT[43] OR $OUT[83]
+   ;ENDFOLD
+   ;FOLD A44 = A44 + A84 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A44 = A44 + A84, 3: BOASG
+      $OUT[44] = $OUT[44] OR $OUT[84]
+   ;ENDFOLD
+   ;FOLD A45 = A45 + A85 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A45 = A45 + A85, 3: BOASG
+      $OUT[45] = $OUT[45] OR $OUT[85]
+   ;ENDFOLD
+   ;FOLD A46 = A46 + A86 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A46 = A46 + A86, 3: BOASG
+      $OUT[46] = $OUT[46] OR $OUT[86]
+   ;ENDFOLD
+   ;FOLD A47 = A47 + A87 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A47 = A47 + A87, 3: BOASG
+      $OUT[47] = $OUT[47] OR $OUT[87]
+   ;ENDFOLD
+   ;FOLD A48 = A48 + A88 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A48 = A48 + A88, 3: BOASG
+      $OUT[48] = $OUT[48] OR $OUT[88]
+   ;ENDFOLD
+   ;FOLD A49 = A49 + A89 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A49 = A49 + A89, 3: BOASG
+      $OUT[49] = $OUT[49] OR $OUT[89]
+   ;ENDFOLD
+   ;FOLD A50 = A50 + A90 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A50 = A50 + A90, 3: BOASG
+      $OUT[50] = $OUT[50] OR $OUT[90]
+   ;ENDFOLD
+   ;FOLD A51 = A51 + A91 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A51 = A51 + A91, 3: BOASG
+      $OUT[51] = $OUT[51] OR $OUT[91]
+   ;ENDFOLD
+   ;FOLD A52 = A52 + A92 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A52 = A52 + A92, 3: BOASG
+      $OUT[52] = $OUT[52] OR $OUT[92]
+   ;ENDFOLD
+   ;FOLD A53 = A53 + A93 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A53 = A53 + A93, 3: BOASG
+      $OUT[53] = $OUT[53] OR $OUT[93]
+   ;ENDFOLD
+   ;FOLD A54 = A54 + A94 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A54 = A54 + A94, 3: BOASG
+      $OUT[54] = $OUT[54] OR $OUT[94]
+   ;ENDFOLD
+   ;FOLD A55 = A55 + A95 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A55 = A55 + A95, 3: BOASG
+      $OUT[55] = $OUT[55] OR $OUT[95]
+   ;ENDFOLD
+   ;FOLD A56 = A56 + A96 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A56 = A56 + A96, 3: BOASG
+      $OUT[56] = $OUT[56] OR $OUT[96]
+   ;ENDFOLD
+   ;FOLD WARTE BIS (E81 + !A81) & (E82 + !A82) & (E83 + !A83) & (E84 + !A84) & (E85 + !A85) ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS (E81 + !A81) & (E82 + !A82) & (E83 + !A83) & (E84 + !A84) & (E85 + !A85), 3: WBOASG
+      $LOOP_MSG[]="(E81 + !A81) & (E82 + !A82) & (E83 + !A83) & (E84 + !A84) & (E85 + !A85)"
+      $LOOP_CONT=TRUE
+      WAIT FOR (($IN[81] OR NOT $OUT[81]) AND ($IN[82] OR NOT $OUT[82]) AND ($IN[83] OR NOT $OUT[83]) AND ($IN[84] OR NOT $OUT[84]) AND ($IN[85] OR NOT $OUT[85])) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS (E86 + !A86) & (E87 + !A87) & (E88 + !A88) & (E89 + !A89) & (E90 + !A90) ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS (E86 + !A86) & (E87 + !A87) & (E88 + !A88) & (E89 + !A89) & (E90 + !A90), 3: WBOASG
+      $LOOP_MSG[]="(E86 + !A86) & (E87 + !A87) & (E88 + !A88) & (E89 + !A89) & (E90 + !A90)"
+      $LOOP_CONT=TRUE
+      WAIT FOR (($IN[86] OR NOT $OUT[86]) AND ($IN[87] OR NOT $OUT[87]) AND ($IN[88] OR NOT $OUT[88]) AND ($IN[89] OR NOT $OUT[89]) AND ($IN[90] OR NOT $OUT[90])) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS (E91 + !A91) & (E92 + !A92) & (E93 + !A93) & (E94 + !A94) & (E95 + !A95) ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS (E91 + !A91) & (E92 + !A92) & (E93 + !A93) & (E94 + !A94) & (E95 + !A95), 3: WBOASG
+      $LOOP_MSG[]="(E91 + !A91) & (E92 + !A92) & (E93 + !A93) & (E94 + !A94) & (E95 + !A95)"
+      $LOOP_CONT=TRUE
+      WAIT FOR (($IN[91] OR NOT $OUT[91]) AND ($IN[92] OR NOT $OUT[92]) AND ($IN[93] OR NOT $OUT[93]) AND ($IN[94] OR NOT $OUT[94]) AND ($IN[95] OR NOT $OUT[95])) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS (E96 + !A96) ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS (E96 + !A96), 3: WBOASG
+      $LOOP_MSG[]="(E96 + !A96)"
+      $LOOP_CONT=TRUE
+      WAIT FOR (($IN[96] OR NOT $OUT[96])) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS (E41 + !A81) & (E42 + !A82) & (E43 + !A83) & (E44 + !A84) & (E45 + !A85) ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS (E41 + !A81) & (E42 + !A82) & (E43 + !A83) & (E44 + !A84) & (E45 + !A85), 3: WBOASG
+      $LOOP_MSG[]="(E41 + !A81) & (E42 + !A82) & (E43 + !A83) & (E44 + !A84) & (E45 + !A85)"
+      $LOOP_CONT=TRUE
+      WAIT FOR (($IN[41] OR NOT $OUT[81]) AND ($IN[42] OR NOT $OUT[82]) AND ($IN[43] OR NOT $OUT[83]) AND ($IN[44] OR NOT $OUT[84]) AND ($IN[45] OR NOT $OUT[85])) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS (E46 + !A86) & (E47 + !A87) & (E48 + !A88) & (E49 + !A89) & (E50 + !A90) ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS (E46 + !A86) & (E47 + !A87) & (E48 + !A88) & (E49 + !A89) & (E50 + !A90), 3: WBOASG
+      $LOOP_MSG[]="(E46 + !A86) & (E47 + !A87) & (E48 + !A88) & (E49 + !A89) & (E50 + !A90)"
+      $LOOP_CONT=TRUE
+      WAIT FOR (($IN[46] OR NOT $OUT[86]) AND ($IN[47] OR NOT $OUT[87]) AND ($IN[48] OR NOT $OUT[88]) AND ($IN[49] OR NOT $OUT[89]) AND ($IN[50] OR NOT $OUT[90])) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS (E51 + !A91) & (E52 + !A92) & (E53 + !A93) & (E54 + !A94) & (E55 + !A95) ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS (E51 + !A91) & (E52 + !A92) & (E53 + !A93) & (E54 + !A94) & (E55 + !A95), 3: WBOASG
+      $LOOP_MSG[]="(E51 + !A91) & (E52 + !A92) & (E53 + !A93) & (E54 + !A94) & (E55 + !A95)"
+      $LOOP_CONT=TRUE
+      WAIT FOR (($IN[51] OR NOT $OUT[91]) AND ($IN[52] OR NOT $OUT[92]) AND ($IN[53] OR NOT $OUT[93]) AND ($IN[54] OR NOT $OUT[94]) AND ($IN[55] OR NOT $OUT[95])) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS (E56 + !A96) ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS (E56 + !A96), 3: WBOASG
+      $LOOP_MSG[]="(E56 + !A96)"
+      $LOOP_CONT=TRUE
+      WAIT FOR (($IN[56] OR NOT $OUT[96])) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD A41 = A41 & !A81 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A41 = A41 & !A81, 3: BOASG
+      $OUT[41] = $OUT[41] AND NOT $OUT[81]
+   ;ENDFOLD
+   ;FOLD A42 = A42 & !A82 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A42 = A42 & !A82, 3: BOASG
+      $OUT[42] = $OUT[42] AND NOT $OUT[82]
+   ;ENDFOLD
+   ;FOLD A43 = A43 & !A83 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A43 = A43 & !A83, 3: BOASG
+      $OUT[43] = $OUT[43] AND NOT $OUT[83]
+   ;ENDFOLD
+   ;FOLD A44 = A44 & !A84 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A44 = A44 & !A84, 3: BOASG
+      $OUT[44] = $OUT[44] AND NOT $OUT[84]
+   ;ENDFOLD
+   ;FOLD A45 = A45 & !A85 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A45 = A45 & !A85, 3: BOASG
+      $OUT[45] = $OUT[45] AND NOT $OUT[85]
+   ;ENDFOLD
+   ;FOLD A46 = A46 & !A86 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A46 = A46 & !A86, 3: BOASG
+      $OUT[46] = $OUT[46] AND NOT $OUT[86]
+   ;ENDFOLD
+   ;FOLD A47 = A47 & !A87 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A47 = A47 & !A87, 3: BOASG
+      $OUT[47] = $OUT[47] AND NOT $OUT[87]
+   ;ENDFOLD
+   ;FOLD A48 = A48 & !A88 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A48 = A48 & !A88, 3: BOASG
+      $OUT[48] = $OUT[48] AND NOT $OUT[88]
+   ;ENDFOLD
+   ;FOLD A49 = A49 & !A89 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A49 = A49 & !A89, 3: BOASG
+      $OUT[49] = $OUT[49] AND NOT $OUT[89]
+   ;ENDFOLD
+   ;FOLD A50 = A50 & !A90 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A50 = A50 & !A90, 3: BOASG
+      $OUT[50] = $OUT[50] AND NOT $OUT[90]
+   ;ENDFOLD
+   ;FOLD A51 = A51 & !A91 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A51 = A51 & !A91, 3: BOASG
+      $OUT[51] = $OUT[51] AND NOT $OUT[91]
+   ;ENDFOLD
+   ;FOLD A52 = A52 & !A92 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A52 = A52 & !A92, 3: BOASG
+      $OUT[52] = $OUT[52] AND NOT $OUT[92]
+   ;ENDFOLD
+   ;FOLD A53 = A53 & !A93 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A53 = A53 & !A93, 3: BOASG
+      $OUT[53] = $OUT[53] AND NOT $OUT[93]
+   ;ENDFOLD
+   ;FOLD A54 = A54 & !A94 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A54 = A54 & !A94, 3: BOASG
+      $OUT[54] = $OUT[54] AND NOT $OUT[94]
+   ;ENDFOLD
+   ;FOLD A55 = A55 & !A95 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A55 = A55 & !A95, 3: BOASG
+      $OUT[55] = $OUT[55] AND NOT $OUT[95]
+   ;ENDFOLD
+   ;FOLD A56 = A56 & !A96 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A56 = A56 & !A96, 3: BOASG
+      $OUT[56] = $OUT[56] AND NOT $OUT[96]
+   ;ENDFOLD
+   ;FOLD A81 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A81 = AUS, 3: BOASG
+      $OUT[81] = FALSE
+   ;ENDFOLD
+   ;FOLD A82 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A82 = AUS, 3: BOASG
+      $OUT[82] = FALSE
+   ;ENDFOLD
+   ;FOLD A83 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A83 = AUS, 3: BOASG
+      $OUT[83] = FALSE
+   ;ENDFOLD
+   ;FOLD A84 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A84 = AUS, 3: BOASG
+      $OUT[84] = FALSE
+   ;ENDFOLD
+   ;FOLD A85 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A85 = AUS, 3: BOASG
+      $OUT[85] = FALSE
+   ;ENDFOLD
+   ;FOLD A86 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A86 = AUS, 3: BOASG
+      $OUT[86] = FALSE
+   ;ENDFOLD
+   ;FOLD A87 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A87 = AUS, 3: BOASG
+      $OUT[87] = FALSE
+   ;ENDFOLD
+   ;FOLD A88 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A88 = AUS, 3: BOASG
+      $OUT[88] = FALSE
+   ;ENDFOLD
+   ;FOLD A89 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A89 = AUS, 3: BOASG
+      $OUT[89] = FALSE
+   ;ENDFOLD
+   ;FOLD A90 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A90 = AUS, 3: BOASG
+      $OUT[90] = FALSE
+   ;ENDFOLD
+   ;FOLD A91 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A91 = AUS, 3: BOASG
+      $OUT[91] = FALSE
+   ;ENDFOLD
+   ;FOLD A92 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A92 = AUS, 3: BOASG
+      $OUT[92] = FALSE
+   ;ENDFOLD
+   ;FOLD A93 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A93 = AUS, 3: BOASG
+      $OUT[93] = FALSE
+   ;ENDFOLD
+   ;FOLD A94 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A94 = AUS, 3: BOASG
+      $OUT[94] = FALSE
+   ;ENDFOLD
+   ;FOLD A95 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A95 = AUS, 3: BOASG
+      $OUT[95] = FALSE
+   ;ENDFOLD
+   ;FOLD A96 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A96 = AUS, 3: BOASG
+      $OUT[96] = FALSE
+   ;ENDFOLD
+   ; FOLD ;%{H}
+   RETURN 1
+   ELSE
+   RETURN 0
+   ENDIF
+ENDFCT
+; ENDFOLD

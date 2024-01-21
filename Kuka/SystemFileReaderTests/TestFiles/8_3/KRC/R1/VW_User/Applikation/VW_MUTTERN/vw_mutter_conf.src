@@ -1,0 +1,16 @@
+&ACCESS  RV
+&COMMENT KS_17.5
+&PARAM DISKPATH = VW_User/Applikation/VW_MUTTERN
+&PARAM EDITMASK = vw_Mutter_conf
+&PARAM TPVW_VERSION = 8.3.8
+&REL 40
+DEF vw_Mutter_conf( )
+;
+;*---------------------------------------------*
+;* Mutter TCP                                     *
+;* Version 1.0     / VKRC 4                    *
+;* Bearbeitet am:                              *
+;* 06.03.2015 NI/AK neu erstellt               *
+;*---------------------------------------------*
+;
+END

@@ -1,0 +1,160 @@
+&ACCESS RV
+&REL 3
+&COMMENT KS_1.0
+&PARAM DISKPATH = VW_User/Applikation/Blindnietmuttern
+&PARAM TPVW_VERSION = 8.1.8
+DEF VW_BN_USR_R( )
+;FOLD Aenderungsjournal
+;*-------------------------------------------------*
+;*Technologiepaket Blindnietmuttern                *
+;*                                                 *
+;*Konzernstandard                                  *
+;*Bearbeiter: B.Mildenberger PEF-2/E0A             *
+;*                                                 *
+;* Erstellt am:                                    *
+;* 2016.02.19 BM                                   *
+;*                                                 *
+;* Aenderungsjournal                               *
+;*                                                 *
+;*-------------------------------------------------*
+;ENDFOLD Aenderungsjournal
+END
+GLOBAL DEF BN_Interface(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+INT I
+;
+;--------------------------------------------------
+;
+SWITCH USER_CMD
+;
+;--------------------------------------------------
+;
+  CASE #USR_INIT
+    ;FOLD Init
+    ;
+    ;
+    ;ENDFOLD (Init)
+;
+;--------------------------------------------------
+;
+  CASE #USR_ADV
+    ;FOLD Advance
+    ;	
+    ;PunktNr an BMS	
+	CONTINUE
+    P_PktNr_SPS=PAR6	
+	;Programmnummer an BN
+    CONTINUE
+	SWITCH PAR2
+      CASE 1
+        CONTINUE
+        Prog_Nr_BN1=PAR3 ;BN1 Ausgabe Programm-Nr
+      CASE 2
+        CONTINUE
+        ;Prog_Nr_BN2=PAR3 ;Vorhaltung BN2 Ausgabe Programm-Nr
+    ENDSWITCH
+	;Ueberwachung Mehrfachsetzen von Blindniet
+	IF (PAR6==$COUNT_I[I_Arbpkt_Nr]) AND NOT (PAR6==0) THEN
+      BN_Msg(1,#QuitMsg) ;Punkt bereits genietet
+    ENDIF
+	;Vorspannung X+
+	IF ($PRO_MODE<>#MSTEP) THEN
+      BN_CORR_WEG_X=PAR5
+	  IF (BN_CORR_WEG_X>=0) AND (BN_CORR_WEG_X<11) THEN
+        MyCorrWeg=$NULLFRAME
+        MyCorrWeg.X=-1*(BN_CORR_WEG_X*0.1)
+		$TOOL=$TOOL:MyCorrWeg
+	  ELSE
+	    BN_Msg(2,#QuitMsg) ;Korrektur im unzulaessigen Bereich
+	  ENDIF
+	ENDIF
+    ;	
+    ;ENDFOLD (Advance)
+;
+;--------------------------------------------------
+;
+  CASE #USR_TRIG
+    ;FOLD Trig
+    ;
+    ;
+    ;ENDFOLD (Trig)
+;
+;--------------------------------------------------
+;
+  CASE #USR_MAIN
+    ;FOLD Main
+    ;
+	;Arbeitspunktnummer hochzaehlen
+	$COUNT_I[I_Arbpkt_Nr]=PAR6
+	;Programmnummer an BN
+    CONTINUE
+	SWITCH PAR2
+      CASE 1
+        CONTINUE
+        Prog_Nr_BN1=PAR3 ;BN1 Ausgabe Programm-Nr
+      CASE 2
+        CONTINUE
+        ;Prog_Nr_BN2=PAR3 ;Vorhaltung BN2 Ausgabe Programm-Nr
+    ENDSWITCH
+    ;
+    ;ENDFOLD (Main)
+;
+;--------------------------------------------------
+;
+  CASE #USR_MAKRO
+    ;FOLD Makro
+    ;
+    ;
+    ;ENDFOLD (Makro)
+;
+;--------------------------------------------------
+  DEFAULT
+;  
+  ENDSWITCH
+END
+;--------------------------------------------------
+;--------------------------------------------------
+;
+;FOLD Blindnietmuttern Meldungen
+;
+DEF BN_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr, nHandle, Answer, OFFSET
+DECL BN_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "BN (R_Msg)", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+OFFSET=0
+USER_MSG.Nr = msg_nr
+SWITCH msg_nr
+  CASE 1
+    USER_MSG.MSG_TXT[]="Blindniet wurde schon geschweisst"
+  CASE 2
+    USER_MSG.MSG_TXT[]="Vorspannwert PAR5 im unzulaessigen Bereich"
+  DEFAULT
+    USER_MSG.MSG_TXT[]="unbekannte Meldung"   
+ENDSWITCH
+SWITCH MsgTyp
+  CASE #StateMsg
+    nHandle = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+  CASE #QuitMsg
+    nHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    While ( Exists_KrlMsg(nHandle) )  ;Warten bis der Anwender quittiert
+      Wait Sec 0.1
+    Endwhile
+  CASE #NotifyMsg
+    nHandle = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+  DEFAULT
+    nHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+ENDSWITCH
+END
+;
+;ENDFOLD (Blindnietmuttern Meldungen)
+;
+;--------------------------------------------------

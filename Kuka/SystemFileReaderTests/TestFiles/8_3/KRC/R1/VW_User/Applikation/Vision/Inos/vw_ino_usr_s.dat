@@ -1,0 +1,90 @@
+&ACCESS  R
+&COMMENT KS_1.2
+&PARAM DISKPATH = VW_User/Applikation/Vision/Inos
+&PARAM TPVW_VERSION = 8.3.8
+&REL 1
+DEFDAT  vw_ino_usr_s PUBLIC
+; 
+;*---------------------------------------------*
+;* INOS GmbH                                   *
+;*                                             *
+;* Bearbeitet am:                              *
+;*                                             *
+;* 24.04.2012 MAT (inos)                       *
+;* 07.11.2012 MAT (inos) Init Wert N_INO_CLVFL *
+;*---------------------------------------------*
+; 
+;FOLD USER_Version
+GLOBAL INT Version_Tech_INO=20120320
+;ENDFOLD
+; 
+;FOLD Variablen
+; 
+;FOLD Flags
+;=================================================
+; Konstanten fuer den Zugriff auf $FLAG
+;=================================================
+GLOBAL INT F_m_INO=230 ; Flag zur aktivierung von inos
+GLOBAL INT F_INO_RFOK=495 ; Vision Messung iO
+GLOBAL INT F_INO_RFNOK=496 ; Vision Messung NiO
+GLOBAL INT F_INO_ER=497 ; Sammelstoerrung 
+GLOBAL INT F_INO_ER_IO=498 ; Fehler an PC Kommunikationsschnittstelle 
+GLOBAL INT F_INO_ERMMOV=499 ; Maximaler Regelweg 
+GLOBAL INT F_INO_ERMSTP=500 ; Maximale Anzahl Regelschritte
+GLOBAL INT F_INO_ERFEAT=501 ; Zu wenig Merkmale
+GLOBAL INT F_INO_ERF_GR=502 ; Fehler bei Roboteroperation (Greifen bzw. Fuegen)
+GLOBAL INT F_INO_ERMEAS=503 ; Fehler beim Q-Messen
+GLOBAL INT F_INO_ER_LIF=504 ; LifeBit Flag
+GLOBAL INT F_INO_ALCMOK=505 ; Alle Kameras ok
+GLOBAL INT F_INO_ALLSOK=506 ; Alle Laser ok
+GLOBAL INT F_INO_SYSCAL=507 ; System kallibriert
+;ENDFOLD (Flags)
+; 
+;FOLD Integers
+GLOBAL INT N_INO_CLVFL=0
+GLOBAL INT N_INO_USERFB=1
+GLOBAL INT N_INO_TL=-1000
+GLOBAL INT N_INO_TN=54
+GLOBAL INT N_INO_BSNR=31
+GLOBAL INT NA_INO_DLGHD[3]
+;ENDFOLD (Integers)
+; 
+;FOLD Boolean
+GLOBAL BOOL B_MIT_INOS=FALSE
+GLOBAL BOOL B_INO_LVBT=TRUE
+GLOBAL BOOL B_INO_MSGLV=FALSE
+;ENDFOLD (Boolean)
+; 
+;FOLD Signale
+;FOLD IN-Signale
+; Kommunikationssignale
+; IN-Signale im Datenbereich 1953 - 2073 (eigentliche Definition) 
+SIGNAL I_INO_LVB $IN[2073]
+;ENDFOLD (IN-Signale)
+; 
+;FOLD OUT-Signale 
+GLOBAL INT O_INO_Me_nio=220
+GLOBAL INT O_INO_Betr_f=223
+GLOBAL INT O_INO_Sammel=224
+; Kommunikationssignale
+; OUT-Signale im Datenbereich 1953 - 2065 (eigentliche Definition) 
+SIGNAL O_INO_CTRL $OUT[2049]  TO $OUT[2064] ; Handshake
+SIGNAL O_INO_LVB $OUT[2073]
+;ENDFOLD (OUT-Signale)
+; 
+;ENDFOLD (Signale) 
+; 
+;ENDFOLD (Variablen)
+; 
+;FOLD Frames
+; 
+GLOBAL FRAME FR_INO_NLLPS={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+; 
+;ENDFOLD
+; 
+;FOLD Message Handling
+ENUM INO_MsgTyp StatMsg,QuitMsg,NotifyMsg,WaitMsg,DlgMsg
+DECL INO_MsgTyp INO_MLD_TYP=#NotifyMsg
+;ENDFOLD (Message Handling)
+; 
+ENDDAT

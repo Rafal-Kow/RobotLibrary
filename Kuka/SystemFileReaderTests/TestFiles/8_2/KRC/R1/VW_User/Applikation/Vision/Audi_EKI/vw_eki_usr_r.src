@@ -1,0 +1,1942 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Vision/Audi_EKI
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEF vw_eki_usr_r( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Audi_EKI                            *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.17 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD AudiEKI_Interface
+GLOBAL DEF EKI_Interfac(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+INT i
+;
+;-----------------------------------------------------------
+SWITCH USER_CMD
+;
+;-----------------------------------------------------------
+  CASE #USR_INIT
+    ;FOLD Init
+;
+;
+    AuftragsNr=0
+    Out_Typ=0
+    Out_OP_A=0
+    In_Typ=-1
+    In_OP_A=-1
+    In_Status=-1
+    Kalib_Pos = $NULLFRAME
+    Kalib_Pos_A = $NULLFRAME
+    Kalib_Pos_B = $NULLFRAME
+    ;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------------
+  CASE #USR_ADV
+    ;FOLD Advance
+;    
+     
+;
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------------
+  CASE #USR_TRIG
+    ;FOLD Trig
+;    
+    SWITCH PAR1
+      CASE 1,2,3,4,5,6
+        SWITCH PAR2
+          CASE 1,2
+            CognexAudi(CMD_SEL, PAR1, PAR2, PAR3, PAR4, PAR5, PAR6) ;Daten holen
+          CASE 3,4
+          DEFAULT
+            AudiEKI_Msg(21,#QuitMsg) ;P2 falscher Wert  
+        ENDSWITCH    
+      DEFAULT
+        AudiEKI_Msg(20,#QuitMsg) ;P1 falscher Wert
+    ENDSWITCH
+;
+    ;ENDFOLD (Trig)
+;
+;-----------------------------------------------------------
+  CASE #USR_MAIN
+    ;FOLD Main
+;    
+    SWITCH PAR1
+      CASE 1,2,3,4,5,6
+        SWITCH PAR2
+          CASE 1,2
+          CASE 3,4
+            CognexAudi(CMD_SEL, PAR1, PAR2, PAR3, PAR4, PAR5, PAR6) ;Daten holen
+          DEFAULT
+            AudiEKI_Msg(21,#QuitMsg) ;P2 falscher Wert  
+        ENDSWITCH    
+      DEFAULT
+        AudiEKI_Msg(20,#QuitMsg) ;P1 falscher Wert
+    ENDSWITCH
+;
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------------
+  DEFAULT
+;  
+  ENDSWITCH
+END
+;
+;ENDFOLD (AudiEKI Interface)
+;
+;-----------------------------------------------------------
+;FOLD EKI_Meldungen
+DEF AudiEKI_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr, Answer, OFFSET
+DECL EKIR_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "EKI_R_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+OFFSET=0
+IF ((n_EKIR_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+      USER_MSG.MSG_TXT[]="EKI Verschiebewerte zu gross"
+    CASE 2
+      USER_MSG.MSG_TXT[]="EKI keine Verschiebung durchgefuehrt"
+    CASE 3
+      USER_MSG.MSG_TXT[]="EKI falsche OP angewaehlt"
+    CASE 4
+      USER_MSG.MSG_TXT[]="EKI falscher Typ angewaehlt"
+    CASE 5
+      USER_MSG.MSG_TXT[]="EKI kein Bauteil gefunden"
+    CASE 6
+      USER_MSG.MSG_TXT[]="EKI Kalibration erfolgreich"
+    CASE 7
+      USER_MSG.MSG_TXT[]="EKI TimeOut / Cognex Offline"
+    CASE 8
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:DatensatzA X=%7.2f,Y=%7.2f,Z=%7.2f,A=%7.2f,B=%7.2f,C=%7.2f ",EKI_A.X,EKI_A.Y,EKI_A.Z,EKI_A.A,EKI_A.B,EKI_A.C)
+    CASE 9
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:DatensatzB X=%7.2f,Y=%7.2f,Z=%7.2f,A=%7.2f,B=%7.2f,C=%7.2f ",EKI_B.X,EKI_B.Y,EKI_B.Z,EKI_B.A,EKI_B.B,EKI_B.C)
+    CASE 10
+      SWRITE(USER_MSG.MSG_TXT[],stat,offset,"EKI:Base_data[31] X=%7.2f,Y=%7.2f,Z=%7.2f,A=%7.2f,B=%7.2f,C=%7.2f ",Base_data[31].X,Base_data[31].Y,Base_data[31].Z,Base_data[31].A,Base_data[31].B,Base_data[31].C)
+    CASE 11
+      USER_MSG.MSG_TXT[]="EKI Verschiebung durchgefuehrt"
+    CASE 12
+      USER_MSG.MSG_TXT[]="EKI Kalibrierungs-Pos A gespeichert"
+    CASE 13
+      USER_MSG.MSG_TXT[]="EKI Kalibrierungs-Pos B gespeichert"
+    CASE 14
+      USER_MSG.MSG_TXT[]="EKI Cognex verarbeitet Daten"
+    CASE 15
+      USER_MSG.MSG_TXT[]="EKI keine Merkmale gefunden"
+    CASE 16
+      USER_MSG.MSG_TXT[]="EKI Kamerajob nun manuell speichern"
+    CASE 17
+      USER_MSG.MSG_TXT[]=" "
+    CASE 18
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 19
+	   USER_MSG.MSG_TXT[]="Falsche Gruppen-Auswahl"  
+    CASE 20
+	   USER_MSG.MSG_TXT[]="P1: Falsche Auswahl"
+    CASE 21
+	   USER_MSG.MSG_TXT[]="P2: Falsche Auswahl" 
+    CASE 22
+	   USER_MSG.MSG_TXT[]="P3: Falsche Auswahl"    
+    DEFAULT
+      USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_EKIR_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_EKIR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      While ( Exists_KrlMsg(n_EKIR_Handle[msg_nr]) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      Endwhile
+    CASE #NotifyMsg
+      n_EKIR_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_EKIR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF  
+END
+;
+;ENDFOLD (EKI Meldungen)
+;
+;-----------------------------------------------------------
+;FOLD EKI-Schnittstelle
+DEF CognexAudi(CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN)
+  ;FOLD Declaration
+  INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+  DECL EKI_STATUS RET
+  INT cx_valid,I
+  BOOL bDataValid
+  BOOL bDataValid_A
+  BOOL bDataValid_B
+  BOOL bDataValid_F
+  BOOL bTimeOut
+  INT iRobTimer
+  DECL E6POS vis_PosWorld
+  DECL E6POS vis_Posact
+  DECL FRAME vis_base
+  ;ENDFOLD
+;
+  SWITCH PAR1
+    ;FOLD Kamera 1
+    CASE 1 ; Auswahl Kamera 1
+      ;Initialize sample data
+      cx_valid=0
+      B_EKI_READY=FALSE
+      bDataValid=FALSE
+      bDataValid_A=FALSE
+      bDataValid_B=FALSE
+      bDataValid_F=FALSE
+      bTimeOut=FALSE
+;      
+      SWITCH PAR2
+        CASE 1 ;Daten holen
+;
+          ;INIT Schnittstelle
+          RET=EKI_Init("CognexAudi_1")
+          RET=EKI_Open("CognexAudi_1")
+          EKI_CHECK(RET,#QUIT)
+;    
+          AuftragsNr=PAR4
+          Out_Typ=PAR5
+          Out_OP_A=PAR6
+          In_Typ=-1
+          In_OP_A=-1
+          In_Status=-1
+          Kalib_Pos = $NULLFRAME
+          Kalib_Pos_A = $NULLFRAME
+          Kalib_Pos_B = $NULLFRAME
+          EKI_A={X -999999, Y -999999, Z -999999, A -999999, B -999999, C -999999}
+          EKI_B={X -999999, Y -999999, Z -999999, A -999999, B -999999, C -999999}
+;            
+          iRobTimer=$rob_timer
+          WHILE (NOT bTimeOut AND NOT B_EKI_READY)
+            RET=EKI_GetInteger("CognexAudi_1","InSight/Status",In_Status)
+            RET=EKI_GetInteger("CognexAudi_1","InSight/Typ",In_Typ)
+            RET=EKI_GetInteger("CognexAudi_1","InSight/OperationA",In_OP_A)
+            RET=EKI_GetFrame("CognexAudi_1","InSight/DatensatzA",EKI_A)
+            RET=EKI_GetFrame("CognexAudi_1","InSight/DatensatzB",EKI_B)
+            RET=EKI_GetInteger("CognexAudi_1","InSight/Control/Valid",cx_valid)
+            B_EKI_A=((EKI_A.X<>-999999) AND (EKI_A.Y<>-999999) AND (EKI_A.Z<>-999999) AND(EKI_A.A<>-999999) AND(EKI_A.B<>-999999) AND(EKI_A.C<>-999999))
+            B_EKI_B=((EKI_B.X<>-999999) AND (EKI_B.Y<>-999999) AND (EKI_B.Z<>-999999) AND(EKI_B.A<>-999999) AND(EKI_B.B<>-999999) AND(EKI_B.C<>-999999))
+            IF B_EKI_A THEN
+              bDataValid_A=TRUE
+            ENDIF
+            IF B_EKI_B THEN
+              bDataValid_B=TRUE
+              TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+            ENDIF
+            IF B_EKI_A AND B_EKI_B AND ((In_Status==0) OR (In_Status==1)) THEN
+              B_EKI_READY=TRUE
+            ENDIF
+            IF B_EKI_A AND B_EKI_B AND (In_Status==1) THEN
+              IF ((ABS (EKI_A.X)>EKI_X_Max) OR (ABS (EKI_A.Y)>EKI_Y_Max) OR (ABS (EKI_A.A)>EKI_A_Max) OR (ABS (EKI_B.X)>EKI_X_Max) OR (ABS (EKI_B.Y)>EKI_Y_Max) OR (ABS (EKI_B.A)>EKI_A_Max)) THEN
+                EKI_F_Range=TRUE
+                B_EKI_z_gr=TRUE
+              ELSE
+                EKI_F_Range=FALSE
+                B_EKI_z_gr=FALSE
+              ENDIF
+              bDataValid=TRUE
+            ENDIF 
+            IF B_EKI_A AND B_EKI_B AND (In_Status==0) THEN
+              bDataValid_F=TRUE
+            ENDIF             
+            IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+              bTimeOut=TRUE
+            ENDIF
+          ENDWHILE
+;          
+          RET=EKI_Close("CognexAudi_1")
+          RET=EKI_Clear("CognexAudi_1")
+;          
+          IF EKI_F_Range THEN
+            B_EKI_z_gr=TRUE
+            AudiEKI_Msg(1,#QuitMsg)
+            B_EKI_z_gr=FALSE
+            EKI_A={X -9999, Y -9999, Z 0, A -9999, B 0, C 0}
+            EKI_B={X -9999, Y -9999, Z 0, A -9999, B 0, C 0}
+          ENDIF  
+          IF B_EKI_READY AND bDataValid_F THEN
+            B_EKI_k_BT=TRUE
+            AudiEKI_Msg(5,#QuitMsg)
+            B_EKI_k_BT=FALSE
+          ENDIF
+          IF B_EKI_READY AND (In_OP_A<>Out_OP_A) THEN
+            B_EKI_f_OP=TRUE
+            AudiEKI_Msg(3,#QuitMsg)
+            B_EKI_f_OP=FALSE
+          ENDIF
+          IF B_EKI_READY AND (In_Typ<>Out_Typ) THEN
+            B_EKI_f_Ty=TRUE
+            AudiEKI_Msg(4,#QuitMsg)
+            B_EKI_f_Ty=FALSE
+          ENDIF 
+          IF bTimeOut THEN
+            B_EKI_T_Ou=TRUE
+            AudiEKI_Msg(7,#QuitMsg)
+            B_EKI_T_Ou=FALSE
+            EKI_A=$NULLFRAME
+            EKI_B=$NULLFRAME
+          ENDIF
+          IF bDataValid_A THEN
+            IF NOT ($EXT) THEN
+              AudiEKI_Msg(8,#NotifyMsg)
+            ENDIF
+          ENDIF 
+          IF bDataValid_B THEN
+            IF NOT ($EXT) THEN
+              AudiEKI_Msg(9,#NotifyMsg)
+            ENDIF
+          ENDIF 
+;
+        CASE 2 ;Daten verrechnen 
+          Out_Typ=PAR5
+          Out_OP_A=PAR6        
+          B_EKI_A=((EKI_A.X<>-999999) AND (EKI_A.Y<>-999999) AND (EKI_A.Z<>-999999) AND(EKI_A.A<>-999999) AND(EKI_A.B<>-999999) AND(EKI_A.C<>-999999))
+          B_EKI_B=((EKI_B.X<>-999999) AND (EKI_B.Y<>-999999) AND (EKI_B.Z<>-999999) AND(EKI_B.A<>-999999) AND(EKI_B.B<>-999999) AND(EKI_B.C<>-999999))
+          SWITCH PAR3
+            CASE 1 ;Relative Daten A verarbeiten
+              IF B_EKI_A AND (In_OP_A==Out_OP_A) AND (In_Typ==Out_Typ) THEN
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO] : EKI_A
+                IF NOT ($EXT) THEN
+                  AudiEKI_Msg(11,#NotifyMsg)
+                  AudiEKI_Msg(10,#NotifyMsg)
+                ENDIF
+              ELSE
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+                B_EKI_k_Ve=TRUE
+                AudiEKI_Msg(2,#QuitMsg)
+                B_EKI_k_Ve=FALSE
+              ENDIF  
+            CASE 2 ;Relative Daten B verarbeiten
+              IF B_EKI_B AND (In_OP_A==Out_OP_A) AND (In_Typ==Out_Typ) THEN
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO] : EKI_B
+                IF NOT ($EXT) THEN
+                  AudiEKI_Msg(11,#NotifyMsg)
+                  AudiEKI_Msg(10,#NotifyMsg)
+                ENDIF 
+              ELSE
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+                B_EKI_k_Ve=TRUE
+                AudiEKI_Msg(2,#QuitMsg)
+                B_EKI_k_Ve=FALSE              
+              ENDIF  
+          ENDSWITCH ;PAR3 
+;
+        CASE 3 ;Daten senden
+          SWITCH PAR3
+            CASE 1,2,4,5
+            CASE 3 ;Relative Daten Pos A + B senden  
+              AuftragsNr=PAR4
+              In_Typ=-1
+              In_OP_A=-1
+              In_Status=-1
+              Kalib_Pos = $NULLFRAME
+              Kalib_Pos.X = Kalib_Pos_A.X
+              Kalib_Pos.Y = Kalib_Pos_A.Y
+              Kalib_Pos.A = Kalib_Pos_B.X
+              Kalib_Pos.B = Kalib_Pos_B.Y
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_2")
+              RET=EKI_Open("CognexAudi_2")
+              EKI_CHECK(RET,#QUIT) 
+;              
+              ; Sende Auftrag
+              RET=EKI_SetInt("CognexAudi_2","Robot/Auftrag",AuftragsNr)
+              ; Sende Frame
+              RET=EKI_SetFrame("CognexAudi_2","Robot/Data/Position", Kalib_Pos)
+;          
+              ;weg mit den Daten
+              RET = EKI_Send("CognexAudi_2","Robot")
+              WAIT SEC 2
+              RET=EKI_Close("CognexAudi_2")
+              RET=EKI_Clear("CognexAudi_2")
+              AudiEKI_Msg(14,#NotifyMsg)
+;              
+              WAIT SEC 5
+              In_Typ=-1
+              In_OP_A=-1
+              In_Status=-1
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_1")
+              RET=EKI_Open("CognexAudi_1")
+              EKI_CHECK(RET,#QUIT)
+;          
+              iRobTimer=$rob_timer
+              WHILE (NOT bTimeOut AND NOT bDataValid AND NOT bDataValid_F)
+                RET=EKI_GetInteger("CognexAudi_1","InSight/Status",In_Status)
+                IF (In_Status==3) THEN
+                  bDataValid=TRUE
+                  TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                ENDIF
+                IF (In_Status==6) THEN
+                  bDataValid_F=TRUE
+                  TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                ENDIF
+                IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+                  bTimeOut=TRUE
+                ENDIF
+              ENDWHILE
+              IF bTimeOut THEN
+                B_EKI_T_Ou=TRUE
+                AudiEKI_Msg(7,#QuitMsg)
+                B_EKI_T_Ou=FALSE
+              ENDIF
+              IF bDataValid_F THEN
+                AudiEKI_Msg(15,#QuitMsg)
+              ENDIF
+;
+              RET=EKI_Close("CognexAudi_1")
+              RET=EKI_Clear("CognexAudi_1") 
+              WAIT SEC 2              
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_2")
+              RET=EKI_Open("CognexAudi_2")
+              EKI_CHECK(RET,#QUIT)              
+;              
+              IF NOT bTimeOut AND NOT bDataValid_F THEN
+                ; Sende Auftrag
+                AuftragsNr=0
+                Kalib_Pos = $NULLFRAME
+                RET=EKI_SetInt("CognexAudi_2","Robot/Auftrag",AuftragsNr)
+                ; Sende Frame
+                RET=EKI_SetFrame("CognexAudi_2","Robot/Data/Position", Kalib_Pos)
+                ;weg mit den Daten
+                RET = EKI_Send("CognexAudi_2","Robot")
+                WAIT SEC 2
+;                
+                RET=EKI_Close("CognexAudi_2")
+                RET=EKI_Clear("CognexAudi_2")
+;              
+                WAIT SEC 2
+                In_Typ=-1
+                In_OP_A=-1
+                In_Status=-1
+;                
+                ;INIT Schnittstelle
+                RET=EKI_Init("CognexAudi_1")
+                RET=EKI_Open("CognexAudi_1")
+                EKI_CHECK(RET,#QUIT)
+;              
+                bTimeOut=FALSE 
+                bDataValid=FALSE
+                iRobTimer=$rob_timer
+                WHILE (NOT bTimeOut AND NOT bDataValid)
+                  RET=EKI_GetInteger("CognexAudi_1","InSight/Status",In_Status)
+                  IF (In_Status==0) THEN
+                    bDataValid=TRUE
+                    TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                  ENDIF
+                  IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+                    bTimeOut=TRUE
+                  ENDIF
+                ENDWHILE
+                RET=EKI_Close("CognexAudi_1")
+                RET=EKI_Clear("CognexAudi_1") 
+                IF bDataValid AND NOT bDataValid_F THEN
+                  AudiEKI_Msg(6,#NotifyMsg)
+                  AudiEKI_Msg(16,#QuitMsg)
+                ENDIF
+                IF bTimeOut THEN
+                  B_EKI_T_Ou=TRUE
+                  AudiEKI_Msg(7,#QuitMsg)
+                  B_EKI_T_Ou=FALSE
+                ENDIF
+              ENDIF                
+          ENDSWITCH ;PAR3    
+;
+        CASE 4 ;Daten speichern
+          SWITCH PAR3
+            CASE 1,2,3
+            CASE 4 ;Relative Daten Pos A speichern  
+              Kalib_Pos_A = $NULLFRAME
+              Kalib_Pos_A = $POS_ACT
+              AudiEKI_Msg(12,#NotifyMsg)
+            CASE 5 ;Relative Daten Pos B speichern 
+              Kalib_Pos_B = $NULLFRAME
+              Kalib_Pos_B = $POS_ACT 
+              AudiEKI_Msg(13,#NotifyMsg)              
+          ENDSWITCH ;PAR3
+;
+        DEFAULT
+          AudiEKI_Msg(21,#QuitMsg) ;P2 Falscher Wert
+      ENDSWITCH ;PAR2
+    ;ENDFOLD  
+;
+    ;FOLD Kamera 2
+    CASE 2 ; Auswahl Kamera 2
+      ;Initialize sample data
+      cx_valid=0
+      B_EKI_READY=FALSE
+      bDataValid=FALSE
+      bDataValid_A=FALSE
+      bDataValid_B=FALSE
+      bDataValid_F=FALSE
+      bTimeOut=FALSE
+;      
+      SWITCH PAR2
+        CASE 1 ;Daten holen
+;
+          ;INIT Schnittstelle
+          RET=EKI_Init("CognexAudi_3")
+          RET=EKI_Open("CognexAudi_3")
+          EKI_CHECK(RET,#QUIT)
+;    
+          AuftragsNr=PAR4
+          Out_Typ=PAR5
+          Out_OP_A=PAR6
+          In_Typ=-1
+          In_OP_A=-1
+          In_Status=-1
+          Kalib_Pos = $NULLFRAME
+          Kalib_Pos_A = $NULLFRAME
+          Kalib_Pos_B = $NULLFRAME
+          EKI_A={X -999999, Y -999999, Z -999999, A -999999, B -999999, C -999999}
+          EKI_B={X -999999, Y -999999, Z -999999, A -999999, B -999999, C -999999}
+;            
+          iRobTimer=$rob_timer
+          WHILE (NOT bTimeOut AND NOT B_EKI_READY)
+            RET=EKI_GetInteger("CognexAudi_3","InSight/Status",In_Status)
+            RET=EKI_GetInteger("CognexAudi_3","InSight/Typ",In_Typ)
+            RET=EKI_GetInteger("CognexAudi_3","InSight/OperationA",In_OP_A)
+            RET=EKI_GetFrame("CognexAudi_3","InSight/DatensatzA",EKI_A)
+            RET=EKI_GetFrame("CognexAudi_3","InSight/DatensatzB",EKI_B)
+            RET=EKI_GetInteger("CognexAudi_3","InSight/Control/Valid",cx_valid)
+            B_EKI_A=((EKI_A.X<>-999999) AND (EKI_A.Y<>-999999) AND (EKI_A.Z<>-999999) AND(EKI_A.A<>-999999) AND(EKI_A.B<>-999999) AND(EKI_A.C<>-999999))
+            B_EKI_B=((EKI_B.X<>-999999) AND (EKI_B.Y<>-999999) AND (EKI_B.Z<>-999999) AND(EKI_B.A<>-999999) AND(EKI_B.B<>-999999) AND(EKI_B.C<>-999999))
+            IF B_EKI_A THEN
+              bDataValid_A=TRUE
+            ENDIF
+            IF B_EKI_B THEN
+              bDataValid_B=TRUE
+              TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+            ENDIF
+            IF B_EKI_A AND B_EKI_B AND ((In_Status==0) OR (In_Status==1)) THEN
+              B_EKI_READY=TRUE
+            ENDIF
+            IF B_EKI_A AND B_EKI_B AND (In_Status==1) THEN
+              IF ((ABS (EKI_A.X)>EKI_X_Max) OR (ABS (EKI_A.Y)>EKI_Y_Max) OR (ABS (EKI_A.A)>EKI_A_Max) OR (ABS (EKI_B.X)>EKI_X_Max) OR (ABS (EKI_B.Y)>EKI_Y_Max) OR (ABS (EKI_B.A)>EKI_A_Max)) THEN
+                EKI_F_Range=TRUE
+                B_EKI_z_gr=TRUE
+              ELSE
+                EKI_F_Range=FALSE
+                B_EKI_z_gr=FALSE
+              ENDIF
+              bDataValid=TRUE
+            ENDIF 
+            IF B_EKI_A AND B_EKI_B AND (In_Status==0) THEN
+              bDataValid_F=TRUE
+            ENDIF             
+            IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+              bTimeOut=TRUE
+            ENDIF
+          ENDWHILE
+;          
+          RET=EKI_Close("CognexAudi_3")
+          RET=EKI_Clear("CognexAudi_3")
+;          
+          IF EKI_F_Range THEN
+            B_EKI_z_gr=TRUE
+            AudiEKI_Msg(1,#QuitMsg)
+            B_EKI_z_gr=FALSE
+            EKI_A={X -9999, Y -9999, Z 0, A -9999, B 0, C 0}
+            EKI_B={X -9999, Y -9999, Z 0, A -9999, B 0, C 0}
+          ENDIF  
+          IF B_EKI_READY AND bDataValid_F THEN
+            B_EKI_k_BT=TRUE
+            AudiEKI_Msg(5,#QuitMsg)
+            B_EKI_k_BT=FALSE
+          ENDIF
+          IF B_EKI_READY AND (In_OP_A<>Out_OP_A) THEN
+            B_EKI_f_OP=TRUE
+            AudiEKI_Msg(3,#QuitMsg)
+            B_EKI_f_OP=FALSE
+          ENDIF
+          IF B_EKI_READY AND (In_Typ<>Out_Typ) THEN
+            B_EKI_f_Ty=TRUE
+            AudiEKI_Msg(4,#QuitMsg)
+            B_EKI_f_Ty=FALSE
+          ENDIF 
+          IF bTimeOut THEN
+            B_EKI_T_Ou=TRUE
+            AudiEKI_Msg(7,#QuitMsg)
+            B_EKI_T_Ou=FALSE
+            EKI_A=$NULLFRAME
+            EKI_B=$NULLFRAME
+          ENDIF
+          IF bDataValid_A THEN
+            IF NOT ($EXT) THEN
+              AudiEKI_Msg(8,#NotifyMsg)
+            ENDIF
+          ENDIF 
+          IF bDataValid_B THEN
+            IF NOT ($EXT) THEN
+              AudiEKI_Msg(9,#NotifyMsg)
+            ENDIF
+          ENDIF 
+;
+        CASE 2 ;Daten verrechnen 
+          Out_Typ=PAR5
+          Out_OP_A=PAR6        
+          B_EKI_A=((EKI_A.X<>-999999) AND (EKI_A.Y<>-999999) AND (EKI_A.Z<>-999999) AND(EKI_A.A<>-999999) AND(EKI_A.B<>-999999) AND(EKI_A.C<>-999999))
+          B_EKI_B=((EKI_B.X<>-999999) AND (EKI_B.Y<>-999999) AND (EKI_B.Z<>-999999) AND(EKI_B.A<>-999999) AND(EKI_B.B<>-999999) AND(EKI_B.C<>-999999))
+          SWITCH PAR3
+            CASE 1 ;Relative Daten A verarbeiten
+              IF B_EKI_A AND (In_OP_A==Out_OP_A) AND (In_Typ==Out_Typ) THEN
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO] : EKI_A
+                IF NOT ($EXT) THEN
+                  AudiEKI_Msg(11,#NotifyMsg)
+                  AudiEKI_Msg(10,#NotifyMsg)
+                ENDIF
+              ELSE
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+                B_EKI_k_Ve=TRUE
+                AudiEKI_Msg(2,#QuitMsg)
+                B_EKI_k_Ve=FALSE
+              ENDIF  
+            CASE 2 ;Relative Daten B verarbeiten
+              IF B_EKI_B AND (In_OP_A==Out_OP_A) AND (In_Typ==Out_Typ) THEN
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO] : EKI_B
+                IF NOT ($EXT) THEN
+                  AudiEKI_Msg(11,#NotifyMsg)
+                  AudiEKI_Msg(10,#NotifyMsg)
+                ENDIF 
+              ELSE
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+                B_EKI_k_Ve=TRUE
+                AudiEKI_Msg(2,#QuitMsg)
+                B_EKI_k_Ve=FALSE                
+              ENDIF  
+          ENDSWITCH ;PAR3 
+;
+        CASE 3 ;Daten senden
+          SWITCH PAR3
+            CASE 1,2,4,5
+            CASE 3 ;Relative Daten Pos A + B senden  
+              AuftragsNr=PAR4
+              In_Typ=-1
+              In_OP_A=-1
+              In_Status=-1
+              Kalib_Pos = $NULLFRAME
+              Kalib_Pos.X = Kalib_Pos_A.X
+              Kalib_Pos.Y = Kalib_Pos_A.Y
+              Kalib_Pos.A = Kalib_Pos_B.X
+              Kalib_Pos.B = Kalib_Pos_B.Y
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_4")
+              RET=EKI_Open("CognexAudi_4")
+              EKI_CHECK(RET,#QUIT) 
+;              
+              ; Sende Auftrag
+              RET=EKI_SetInt("CognexAudi_4","Robot/Auftrag",AuftragsNr)
+              ; Sende Frame
+              RET=EKI_SetFrame("CognexAudi_4","Robot/Data/Position", Kalib_Pos)
+;          
+              ;weg mit den Daten
+              RET = EKI_Send("CognexAudi_4","Robot")
+              WAIT SEC 2
+              RET=EKI_Close("CognexAudi_4")
+              RET=EKI_Clear("CognexAudi_4")
+              AudiEKI_Msg(14,#NotifyMsg)
+;              
+              WAIT SEC 5
+              In_Typ=-1
+              In_OP_A=-1
+              In_Status=-1
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_3")
+              RET=EKI_Open("CognexAudi_3")
+              EKI_CHECK(RET,#QUIT)
+;          
+              iRobTimer=$rob_timer
+              WHILE (NOT bTimeOut AND NOT bDataValid AND NOT bDataValid_F)
+                RET=EKI_GetInteger("CognexAudi_3","InSight/Status",In_Status)
+                IF (In_Status==3) THEN
+                  bDataValid=TRUE
+                  TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                ENDIF
+                IF (In_Status==6) THEN
+                  bDataValid_F=TRUE
+                  TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                ENDIF
+                IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+                  bTimeOut=TRUE
+                ENDIF
+              ENDWHILE
+              IF bTimeOut THEN
+                B_EKI_T_Ou=TRUE
+                AudiEKI_Msg(7,#QuitMsg)
+                B_EKI_T_Ou=FALSE
+              ENDIF
+              IF bDataValid_F THEN
+                AudiEKI_Msg(15,#QuitMsg)
+              ENDIF
+;
+              RET=EKI_Close("CognexAudi_3")
+              RET=EKI_Clear("CognexAudi_3") 
+              WAIT SEC 2              
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_4")
+              RET=EKI_Open("CognexAudi_4")
+              EKI_CHECK(RET,#QUIT)              
+;              
+              IF NOT bTimeOut AND NOT bDataValid_F THEN
+                ; Sende Auftrag
+                AuftragsNr=0
+                Kalib_Pos = $NULLFRAME
+                RET=EKI_SetInt("CognexAudi_4","Robot/Auftrag",AuftragsNr)
+                ; Sende Frame
+                RET=EKI_SetFrame("CognexAudi_4","Robot/Data/Position", Kalib_Pos)
+                ;weg mit den Daten
+                RET = EKI_Send("CognexAudi_4","Robot")
+                WAIT SEC 2
+;                
+                RET=EKI_Close("CognexAudi_4")
+                RET=EKI_Clear("CognexAudi_4")
+;              
+                WAIT SEC 2
+                In_Typ=-1
+                In_OP_A=-1
+                In_Status=-1
+;                
+                ;INIT Schnittstelle
+                RET=EKI_Init("CognexAudi_3")
+                RET=EKI_Open("CognexAudi_3")
+                EKI_CHECK(RET,#QUIT)
+;              
+                bTimeOut=FALSE 
+                bDataValid=FALSE
+                iRobTimer=$rob_timer
+                WHILE (NOT bTimeOut AND NOT bDataValid)
+                  RET=EKI_GetInteger("CognexAudi_3","InSight/Status",In_Status)
+                  IF (In_Status==0) THEN
+                    bDataValid=TRUE
+                    TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                  ENDIF
+                  IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+                    bTimeOut=TRUE
+                  ENDIF
+                ENDWHILE
+                RET=EKI_Close("CognexAudi_3")
+                RET=EKI_Clear("CognexAudi_3") 
+                IF bDataValid AND NOT bDataValid_F THEN
+                  AudiEKI_Msg(6,#NotifyMsg)
+                  AudiEKI_Msg(16,#QuitMsg)
+                ENDIF
+                IF bTimeOut THEN
+                  B_EKI_T_Ou=TRUE
+                  AudiEKI_Msg(7,#QuitMsg)
+                  B_EKI_T_Ou=FALSE
+                ENDIF
+              ENDIF                
+          ENDSWITCH ;PAR3    
+;
+        CASE 4 ;Daten speichern
+          SWITCH PAR3
+            CASE 1,2,3
+            CASE 4 ;Relative Daten Pos A speichern  
+              Kalib_Pos_A = $NULLFRAME
+              Kalib_Pos_A = $POS_ACT
+              AudiEKI_Msg(12,#NotifyMsg)
+            CASE 5 ;Relative Daten Pos B speichern 
+              Kalib_Pos_B = $NULLFRAME
+              Kalib_Pos_B = $POS_ACT 
+              AudiEKI_Msg(13,#NotifyMsg)              
+          ENDSWITCH ;PAR3
+;
+        DEFAULT
+          AudiEKI_Msg(21,#QuitMsg) ;P2 Falscher Wert
+      ENDSWITCH ;PAR2
+    ;ENDFOLD  
+;
+    ;FOLD Kamera 3
+    CASE 3 ; Auswahl Kamera 3
+      ;Initialize sample data
+      cx_valid=0
+      B_EKI_READY=FALSE
+      bDataValid=FALSE
+      bDataValid_A=FALSE
+      bDataValid_B=FALSE
+      bDataValid_F=FALSE
+      bTimeOut=FALSE
+;      
+      SWITCH PAR2
+        CASE 1 ;Daten holen
+;
+          ;INIT Schnittstelle
+          RET=EKI_Init("CognexAudi_5")
+          RET=EKI_Open("CognexAudi_5")
+          EKI_CHECK(RET,#QUIT)
+;    
+          AuftragsNr=PAR4
+          Out_Typ=PAR5
+          Out_OP_A=PAR6
+          In_Typ=-1
+          In_OP_A=-1
+          In_Status=-1
+          Kalib_Pos = $NULLFRAME
+          Kalib_Pos_A = $NULLFRAME
+          Kalib_Pos_B = $NULLFRAME
+          EKI_A={X -999999, Y -999999, Z -999999, A -999999, B -999999, C -999999}
+          EKI_B={X -999999, Y -999999, Z -999999, A -999999, B -999999, C -999999}
+;            
+          iRobTimer=$rob_timer
+          WHILE (NOT bTimeOut AND NOT B_EKI_READY)
+            RET=EKI_GetInteger("CognexAudi_5","InSight/Status",In_Status)
+            RET=EKI_GetInteger("CognexAudi_5","InSight/Typ",In_Typ)
+            RET=EKI_GetInteger("CognexAudi_5","InSight/OperationA",In_OP_A)
+            RET=EKI_GetFrame("CognexAudi_5","InSight/DatensatzA",EKI_A)
+            RET=EKI_GetFrame("CognexAudi_5","InSight/DatensatzB",EKI_B)
+            RET=EKI_GetInteger("CognexAudi_5","InSight/Control/Valid",cx_valid)
+            B_EKI_A=((EKI_A.X<>-999999) AND (EKI_A.Y<>-999999) AND (EKI_A.Z<>-999999) AND(EKI_A.A<>-999999) AND(EKI_A.B<>-999999) AND(EKI_A.C<>-999999))
+            B_EKI_B=((EKI_B.X<>-999999) AND (EKI_B.Y<>-999999) AND (EKI_B.Z<>-999999) AND(EKI_B.A<>-999999) AND(EKI_B.B<>-999999) AND(EKI_B.C<>-999999))
+            IF B_EKI_A THEN
+              bDataValid_A=TRUE
+            ENDIF
+            IF B_EKI_B THEN
+              bDataValid_B=TRUE
+              TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+            ENDIF
+            IF B_EKI_A AND B_EKI_B AND ((In_Status==0) OR (In_Status==1)) THEN
+              B_EKI_READY=TRUE
+            ENDIF
+            IF B_EKI_A AND B_EKI_B AND (In_Status==1) THEN
+              IF ((ABS (EKI_A.X)>EKI_X_Max) OR (ABS (EKI_A.Y)>EKI_Y_Max) OR (ABS (EKI_A.A)>EKI_A_Max) OR (ABS (EKI_B.X)>EKI_X_Max) OR (ABS (EKI_B.Y)>EKI_Y_Max) OR (ABS (EKI_B.A)>EKI_A_Max)) THEN
+                EKI_F_Range=TRUE
+                B_EKI_z_gr=TRUE
+              ELSE
+                EKI_F_Range=FALSE
+                B_EKI_z_gr=FALSE
+              ENDIF
+              bDataValid=TRUE
+            ENDIF 
+            IF B_EKI_A AND B_EKI_B AND (In_Status==0) THEN
+              bDataValid_F=TRUE
+            ENDIF             
+            IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+              bTimeOut=TRUE
+            ENDIF
+          ENDWHILE
+;          
+          RET=EKI_Close("CognexAudi_5")
+          RET=EKI_Clear("CognexAudi_5")
+;          
+          IF EKI_F_Range THEN
+            B_EKI_z_gr=TRUE
+            AudiEKI_Msg(1,#QuitMsg)
+            B_EKI_z_gr=FALSE
+            EKI_A={X -9999, Y -9999, Z 0, A -9999, B 0, C 0}
+            EKI_B={X -9999, Y -9999, Z 0, A -9999, B 0, C 0}
+          ENDIF  
+          IF B_EKI_READY AND bDataValid_F THEN
+            B_EKI_k_BT=TRUE
+            AudiEKI_Msg(5,#QuitMsg)
+            B_EKI_k_BT=FALSE
+          ENDIF
+          IF B_EKI_READY AND (In_OP_A<>Out_OP_A) THEN
+            B_EKI_f_OP=TRUE
+            AudiEKI_Msg(3,#QuitMsg)
+            B_EKI_f_OP=FALSE
+          ENDIF
+          IF B_EKI_READY AND (In_Typ<>Out_Typ) THEN
+            B_EKI_f_Ty=TRUE
+            AudiEKI_Msg(4,#QuitMsg)
+            B_EKI_f_Ty=FALSE
+          ENDIF 
+          IF bTimeOut THEN
+            B_EKI_T_Ou=TRUE
+            AudiEKI_Msg(7,#QuitMsg)
+            B_EKI_T_Ou=FALSE
+            EKI_A=$NULLFRAME
+            EKI_B=$NULLFRAME
+          ENDIF
+          IF bDataValid_A THEN
+            IF NOT ($EXT) THEN
+              AudiEKI_Msg(8,#NotifyMsg)
+            ENDIF
+          ENDIF 
+          IF bDataValid_B THEN
+            IF NOT ($EXT) THEN
+              AudiEKI_Msg(9,#NotifyMsg)
+            ENDIF
+          ENDIF 
+;
+        CASE 2 ;Daten verrechnen 
+          Out_Typ=PAR5
+          Out_OP_A=PAR6        
+          B_EKI_A=((EKI_A.X<>-999999) AND (EKI_A.Y<>-999999) AND (EKI_A.Z<>-999999) AND(EKI_A.A<>-999999) AND(EKI_A.B<>-999999) AND(EKI_A.C<>-999999))
+          B_EKI_B=((EKI_B.X<>-999999) AND (EKI_B.Y<>-999999) AND (EKI_B.Z<>-999999) AND(EKI_B.A<>-999999) AND(EKI_B.B<>-999999) AND(EKI_B.C<>-999999))
+          SWITCH PAR3
+            CASE 1 ;Relative Daten A verarbeiten
+              IF B_EKI_A AND (In_OP_A==Out_OP_A) AND (In_Typ==Out_Typ) THEN
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO] : EKI_A
+                IF NOT ($EXT) THEN
+                  AudiEKI_Msg(11,#NotifyMsg)
+                  AudiEKI_Msg(10,#NotifyMsg)
+                ENDIF
+              ELSE
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+                B_EKI_k_Ve=TRUE
+                AudiEKI_Msg(2,#QuitMsg)
+                B_EKI_k_Ve=FALSE
+              ENDIF  
+            CASE 2 ;Relative Daten B verarbeiten
+              IF B_EKI_B AND (In_OP_A==Out_OP_A) AND (In_Typ==Out_Typ) THEN
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO] : EKI_B
+                IF NOT ($EXT) THEN
+                  AudiEKI_Msg(11,#NotifyMsg)
+                  AudiEKI_Msg(10,#NotifyMsg)
+                ENDIF 
+              ELSE
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+                B_EKI_k_Ve=TRUE
+                AudiEKI_Msg(2,#QuitMsg)
+                B_EKI_k_Ve=FALSE               
+              ENDIF  
+          ENDSWITCH ;PAR3 
+;
+        CASE 3 ;Daten senden
+          SWITCH PAR3
+            CASE 1,2,4,5
+            CASE 3 ;Relative Daten Pos A + B senden  
+              AuftragsNr=PAR4
+              In_Typ=-1
+              In_OP_A=-1
+              In_Status=-1
+              Kalib_Pos = $NULLFRAME
+              Kalib_Pos.X = Kalib_Pos_A.X
+              Kalib_Pos.Y = Kalib_Pos_A.Y
+              Kalib_Pos.A = Kalib_Pos_B.X
+              Kalib_Pos.B = Kalib_Pos_B.Y
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_6")
+              RET=EKI_Open("CognexAudi_6")
+              EKI_CHECK(RET,#QUIT) 
+;              
+              ; Sende Auftrag
+              RET=EKI_SetInt("CognexAudi_6","Robot/Auftrag",AuftragsNr)
+              ; Sende Frame
+              RET=EKI_SetFrame("CognexAudi_6","Robot/Data/Position", Kalib_Pos)
+;          
+              ;weg mit den Daten
+              RET = EKI_Send("CognexAudi_6","Robot")
+              WAIT SEC 2
+              RET=EKI_Close("CognexAudi_6")
+              RET=EKI_Clear("CognexAudi_6")
+              AudiEKI_Msg(14,#NotifyMsg)
+;              
+              WAIT SEC 5
+              In_Typ=-1
+              In_OP_A=-1
+              In_Status=-1
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_5")
+              RET=EKI_Open("CognexAudi_5")
+              EKI_CHECK(RET,#QUIT)
+;          
+              iRobTimer=$rob_timer
+              WHILE (NOT bTimeOut AND NOT bDataValid AND NOT bDataValid_F)
+                RET=EKI_GetInteger("CognexAudi_5","InSight/Status",In_Status)
+                IF (In_Status==3) THEN
+                  bDataValid=TRUE
+                  TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                ENDIF
+                IF (In_Status==6) THEN
+                  bDataValid_F=TRUE
+                  TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                ENDIF
+                IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+                  bTimeOut=TRUE
+                ENDIF
+              ENDWHILE
+              IF bTimeOut THEN
+                B_EKI_T_Ou=TRUE
+                AudiEKI_Msg(7,#QuitMsg)
+                B_EKI_T_Ou=FALSE
+              ENDIF
+              IF bDataValid_F THEN
+                AudiEKI_Msg(15,#QuitMsg)
+              ENDIF
+;
+              RET=EKI_Close("CognexAudi_5")
+              RET=EKI_Clear("CognexAudi_5") 
+              WAIT SEC 2              
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_6")
+              RET=EKI_Open("CognexAudi_6")
+              EKI_CHECK(RET,#QUIT)              
+;              
+              IF NOT bTimeOut AND NOT bDataValid_F THEN
+                ; Sende Auftrag
+                AuftragsNr=0
+                Kalib_Pos = $NULLFRAME
+                RET=EKI_SetInt("CognexAudi_6","Robot/Auftrag",AuftragsNr)
+                ; Sende Frame
+                RET=EKI_SetFrame("CognexAudi_6","Robot/Data/Position", Kalib_Pos)
+                ;weg mit den Daten
+                RET = EKI_Send("CognexAudi_6","Robot")
+                WAIT SEC 2
+;                
+                RET=EKI_Close("CognexAudi_6")
+                RET=EKI_Clear("CognexAudi_6")
+;              
+                WAIT SEC 2
+                In_Typ=-1
+                In_OP_A=-1
+                In_Status=-1
+;                
+                ;INIT Schnittstelle
+                RET=EKI_Init("CognexAudi_5")
+                RET=EKI_Open("CognexAudi_5")
+                EKI_CHECK(RET,#QUIT)
+;              
+                bTimeOut=FALSE 
+                bDataValid=FALSE
+                iRobTimer=$rob_timer
+                WHILE (NOT bTimeOut AND NOT bDataValid)
+                  RET=EKI_GetInteger("CognexAudi_5","InSight/Status",In_Status)
+                  IF (In_Status==0) THEN
+                    bDataValid=TRUE
+                    TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                  ENDIF
+                  IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+                    bTimeOut=TRUE
+                  ENDIF
+                ENDWHILE
+                RET=EKI_Close("CognexAudi_5")
+                RET=EKI_Clear("CognexAudi_5") 
+                IF bDataValid AND NOT bDataValid_F THEN
+                  AudiEKI_Msg(6,#NotifyMsg)
+                  AudiEKI_Msg(16,#QuitMsg)
+                ENDIF
+                IF bTimeOut THEN
+                  B_EKI_T_Ou=TRUE
+                  AudiEKI_Msg(7,#QuitMsg)
+                  B_EKI_T_Ou=FALSE
+                ENDIF
+              ENDIF                
+          ENDSWITCH ;PAR3    
+;
+        CASE 4 ;Daten speichern
+          SWITCH PAR3
+            CASE 1,2,3
+            CASE 4 ;Relative Daten Pos A speichern  
+              Kalib_Pos_A = $NULLFRAME
+              Kalib_Pos_A = $POS_ACT
+              AudiEKI_Msg(12,#NotifyMsg)
+            CASE 5 ;Relative Daten Pos B speichern 
+              Kalib_Pos_B = $NULLFRAME
+              Kalib_Pos_B = $POS_ACT 
+              AudiEKI_Msg(13,#NotifyMsg)              
+          ENDSWITCH ;PAR3
+;
+        DEFAULT
+          AudiEKI_Msg(21,#QuitMsg) ;P2 Falscher Wert
+      ENDSWITCH ;PAR2
+    ;ENDFOLD  
+;
+    ;FOLD Kamera 4
+    CASE 4 ; Auswahl Kamera 4
+      ;Initialize sample data
+      cx_valid=0
+      B_EKI_READY=FALSE
+      bDataValid=FALSE
+      bDataValid_A=FALSE
+      bDataValid_B=FALSE
+      bDataValid_F=FALSE
+      bTimeOut=FALSE
+;      
+      SWITCH PAR2
+        CASE 1 ;Daten holen
+;
+          ;INIT Schnittstelle
+          RET=EKI_Init("CognexAudi_7")
+          RET=EKI_Open("CognexAudi_7")
+          EKI_CHECK(RET,#QUIT)
+;    
+          AuftragsNr=PAR4
+          Out_Typ=PAR5
+          Out_OP_A=PAR6
+          In_Typ=-1
+          In_OP_A=-1
+          In_Status=-1
+          Kalib_Pos = $NULLFRAME
+          Kalib_Pos_A = $NULLFRAME
+          Kalib_Pos_B = $NULLFRAME
+          EKI_A={X -999999, Y -999999, Z -999999, A -999999, B -999999, C -999999}
+          EKI_B={X -999999, Y -999999, Z -999999, A -999999, B -999999, C -999999}
+;            
+          iRobTimer=$rob_timer
+          WHILE (NOT bTimeOut AND NOT B_EKI_READY)
+            RET=EKI_GetInteger("CognexAudi_7","InSight/Status",In_Status)
+            RET=EKI_GetInteger("CognexAudi_7","InSight/Typ",In_Typ)
+            RET=EKI_GetInteger("CognexAudi_7","InSight/OperationA",In_OP_A)
+            RET=EKI_GetFrame("CognexAudi_7","InSight/DatensatzA",EKI_A)
+            RET=EKI_GetFrame("CognexAudi_7","InSight/DatensatzB",EKI_B)
+            RET=EKI_GetInteger("CognexAudi_7","InSight/Control/Valid",cx_valid)
+            B_EKI_A=((EKI_A.X<>-999999) AND (EKI_A.Y<>-999999) AND (EKI_A.Z<>-999999) AND(EKI_A.A<>-999999) AND(EKI_A.B<>-999999) AND(EKI_A.C<>-999999))
+            B_EKI_B=((EKI_B.X<>-999999) AND (EKI_B.Y<>-999999) AND (EKI_B.Z<>-999999) AND(EKI_B.A<>-999999) AND(EKI_B.B<>-999999) AND(EKI_B.C<>-999999))
+            IF B_EKI_A THEN
+              bDataValid_A=TRUE
+            ENDIF
+            IF B_EKI_B THEN
+              bDataValid_B=TRUE
+              TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+            ENDIF
+            IF B_EKI_A AND B_EKI_B AND ((In_Status==0) OR (In_Status==1)) THEN
+              B_EKI_READY=TRUE
+            ENDIF
+            IF B_EKI_A AND B_EKI_B AND (In_Status==1) THEN
+              IF ((ABS (EKI_A.X)>EKI_X_Max) OR (ABS (EKI_A.Y)>EKI_Y_Max) OR (ABS (EKI_A.A)>EKI_A_Max) OR (ABS (EKI_B.X)>EKI_X_Max) OR (ABS (EKI_B.Y)>EKI_Y_Max) OR (ABS (EKI_B.A)>EKI_A_Max)) THEN
+                EKI_F_Range=TRUE
+                B_EKI_z_gr=TRUE
+              ELSE
+                EKI_F_Range=FALSE
+                B_EKI_z_gr=FALSE
+              ENDIF
+              bDataValid=TRUE
+            ENDIF 
+            IF B_EKI_A AND B_EKI_B AND (In_Status==0) THEN
+              bDataValid_F=TRUE
+            ENDIF             
+            IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+              bTimeOut=TRUE
+            ENDIF
+          ENDWHILE
+;          
+          RET=EKI_Close("CognexAudi_7")
+          RET=EKI_Clear("CognexAudi_7")
+;          
+          IF EKI_F_Range THEN
+            B_EKI_z_gr=TRUE
+            AudiEKI_Msg(1,#QuitMsg)
+            B_EKI_z_gr=FALSE
+            EKI_A={X -9999, Y -9999, Z 0, A -9999, B 0, C 0}
+            EKI_B={X -9999, Y -9999, Z 0, A -9999, B 0, C 0}
+          ENDIF  
+          IF B_EKI_READY AND bDataValid_F THEN
+            B_EKI_k_BT=TRUE
+            AudiEKI_Msg(5,#QuitMsg)
+            B_EKI_k_BT=FALSE
+          ENDIF
+          IF B_EKI_READY AND (In_OP_A<>Out_OP_A) THEN
+            B_EKI_f_OP=TRUE
+            AudiEKI_Msg(3,#QuitMsg)
+            B_EKI_f_OP=FALSE
+          ENDIF
+          IF B_EKI_READY AND (In_Typ<>Out_Typ) THEN
+            B_EKI_f_Ty=TRUE
+            AudiEKI_Msg(4,#QuitMsg)
+            B_EKI_f_Ty=FALSE
+          ENDIF 
+          IF bTimeOut THEN
+            B_EKI_T_Ou=TRUE
+            AudiEKI_Msg(7,#QuitMsg)
+            B_EKI_T_Ou=FALSE
+            EKI_A=$NULLFRAME
+            EKI_B=$NULLFRAME
+          ENDIF
+          IF bDataValid_A THEN
+            IF NOT ($EXT) THEN
+              AudiEKI_Msg(8,#NotifyMsg)
+            ENDIF
+          ENDIF 
+          IF bDataValid_B THEN
+            IF NOT ($EXT) THEN
+              AudiEKI_Msg(9,#NotifyMsg)
+            ENDIF
+          ENDIF 
+;
+        CASE 2 ;Daten verrechnen 
+          Out_Typ=PAR5
+          Out_OP_A=PAR6        
+          B_EKI_A=((EKI_A.X<>-999999) AND (EKI_A.Y<>-999999) AND (EKI_A.Z<>-999999) AND(EKI_A.A<>-999999) AND(EKI_A.B<>-999999) AND(EKI_A.C<>-999999))
+          B_EKI_B=((EKI_B.X<>-999999) AND (EKI_B.Y<>-999999) AND (EKI_B.Z<>-999999) AND(EKI_B.A<>-999999) AND(EKI_B.B<>-999999) AND(EKI_B.C<>-999999))
+          SWITCH PAR3
+            CASE 1 ;Relative Daten A verarbeiten
+              IF B_EKI_A AND (In_OP_A==Out_OP_A) AND (In_Typ==Out_Typ) THEN
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO] : EKI_A
+                IF NOT ($EXT) THEN
+                  AudiEKI_Msg(11,#NotifyMsg)
+                  AudiEKI_Msg(10,#NotifyMsg)
+                ENDIF
+              ELSE
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+                B_EKI_k_Ve=TRUE
+                AudiEKI_Msg(2,#QuitMsg)
+                B_EKI_k_Ve=FALSE
+              ENDIF  
+            CASE 2 ;Relative Daten B verarbeiten
+              IF B_EKI_B AND (In_OP_A==Out_OP_A) AND (In_Typ==Out_Typ) THEN
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO] : EKI_B
+                IF NOT ($EXT) THEN
+                  AudiEKI_Msg(11,#NotifyMsg)
+                  AudiEKI_Msg(10,#NotifyMsg)
+                ENDIF 
+              ELSE
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+                B_EKI_k_Ve=TRUE
+                AudiEKI_Msg(2,#QuitMsg)
+                B_EKI_k_Ve=FALSE                
+              ENDIF  
+          ENDSWITCH ;PAR3 
+;
+        CASE 3 ;Daten senden
+          SWITCH PAR3
+            CASE 1,2,4,5
+            CASE 3 ;Relative Daten Pos A + B senden  
+              AuftragsNr=PAR4
+              In_Typ=-1
+              In_OP_A=-1
+              In_Status=-1
+              Kalib_Pos = $NULLFRAME
+              Kalib_Pos.X = Kalib_Pos_A.X
+              Kalib_Pos.Y = Kalib_Pos_A.Y
+              Kalib_Pos.A = Kalib_Pos_B.X
+              Kalib_Pos.B = Kalib_Pos_B.Y
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_8")
+              RET=EKI_Open("CognexAudi_8")
+              EKI_CHECK(RET,#QUIT) 
+;              
+              ; Sende Auftrag
+              RET=EKI_SetInt("CognexAudi_8","Robot/Auftrag",AuftragsNr)
+              ; Sende Frame
+              RET=EKI_SetFrame("CognexAudi_8","Robot/Data/Position", Kalib_Pos)
+;          
+              ;weg mit den Daten
+              RET = EKI_Send("CognexAudi_8","Robot")
+              WAIT SEC 2
+              RET=EKI_Close("CognexAudi_8")
+              RET=EKI_Clear("CognexAudi_8")
+              AudiEKI_Msg(14,#NotifyMsg)
+;              
+              WAIT SEC 5
+              In_Typ=-1
+              In_OP_A=-1
+              In_Status=-1
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_7")
+              RET=EKI_Open("CognexAudi_7")
+              EKI_CHECK(RET,#QUIT)
+;          
+              iRobTimer=$rob_timer
+              WHILE (NOT bTimeOut AND NOT bDataValid AND NOT bDataValid_F)
+                RET=EKI_GetInteger("CognexAudi_7","InSight/Status",In_Status)
+                IF (In_Status==3) THEN
+                  bDataValid=TRUE
+                  TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                ENDIF
+                IF (In_Status==6) THEN
+                  bDataValid_F=TRUE
+                  TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                ENDIF
+                IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+                  bTimeOut=TRUE
+                ENDIF
+              ENDWHILE
+              IF bTimeOut THEN
+                B_EKI_T_Ou=TRUE
+                AudiEKI_Msg(7,#QuitMsg)
+                B_EKI_T_Ou=FALSE
+              ENDIF
+              IF bDataValid_F THEN
+                AudiEKI_Msg(15,#QuitMsg)
+              ENDIF
+;
+              RET=EKI_Close("CognexAudi_7")
+              RET=EKI_Clear("CognexAudi_7") 
+              WAIT SEC 2              
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_8")
+              RET=EKI_Open("CognexAudi_8")
+              EKI_CHECK(RET,#QUIT)              
+;              
+              IF NOT bTimeOut AND NOT bDataValid_F THEN
+                ; Sende Auftrag
+                AuftragsNr=0
+                Kalib_Pos = $NULLFRAME
+                RET=EKI_SetInt("CognexAudi_8","Robot/Auftrag",AuftragsNr)
+                ; Sende Frame
+                RET=EKI_SetFrame("CognexAudi_8","Robot/Data/Position", Kalib_Pos)
+                ;weg mit den Daten
+                RET = EKI_Send("CognexAudi_8","Robot")
+                WAIT SEC 2
+;                
+                RET=EKI_Close("CognexAudi_8")
+                RET=EKI_Clear("CognexAudi_8")
+;              
+                WAIT SEC 2
+                In_Typ=-1
+                In_OP_A=-1
+                In_Status=-1
+;                
+                ;INIT Schnittstelle
+                RET=EKI_Init("CognexAudi_7")
+                RET=EKI_Open("CognexAudi_7")
+                EKI_CHECK(RET,#QUIT)
+;              
+                bTimeOut=FALSE 
+                bDataValid=FALSE
+                iRobTimer=$rob_timer
+                WHILE (NOT bTimeOut AND NOT bDataValid)
+                  RET=EKI_GetInteger("CognexAudi_7","InSight/Status",In_Status)
+                  IF (In_Status==0) THEN
+                    bDataValid=TRUE
+                    TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                  ENDIF
+                  IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+                    bTimeOut=TRUE
+                  ENDIF
+                ENDWHILE
+                RET=EKI_Close("CognexAudi_7")
+                RET=EKI_Clear("CognexAudi_7") 
+                IF bDataValid AND NOT bDataValid_F THEN
+                  AudiEKI_Msg(6,#NotifyMsg)
+                  AudiEKI_Msg(16,#QuitMsg)
+                ENDIF
+                IF bTimeOut THEN
+                  B_EKI_T_Ou=TRUE
+                  AudiEKI_Msg(7,#QuitMsg)
+                  B_EKI_T_Ou=FALSE
+                ENDIF
+              ENDIF                
+          ENDSWITCH ;PAR3    
+;
+        CASE 4 ;Daten speichern
+          SWITCH PAR3
+            CASE 1,2,3
+            CASE 4 ;Relative Daten Pos A speichern  
+              Kalib_Pos_A = $NULLFRAME
+              Kalib_Pos_A = $POS_ACT
+              AudiEKI_Msg(12,#NotifyMsg)
+            CASE 5 ;Relative Daten Pos B speichern 
+              Kalib_Pos_B = $NULLFRAME
+              Kalib_Pos_B = $POS_ACT 
+              AudiEKI_Msg(13,#NotifyMsg)              
+          ENDSWITCH ;PAR3
+;
+        DEFAULT
+          AudiEKI_Msg(21,#QuitMsg) ;P2 Falscher Wert
+      ENDSWITCH ;PAR2
+    ;ENDFOLD  
+;
+    ;FOLD Kamera 5
+    CASE 5 ; Auswahl Kamera 5
+      ;Initialize sample data
+      cx_valid=0
+      B_EKI_READY=FALSE
+      bDataValid=FALSE
+      bDataValid_A=FALSE
+      bDataValid_B=FALSE
+      bDataValid_F=FALSE
+      bTimeOut=FALSE
+;      
+      SWITCH PAR2
+        CASE 1 ;Daten holen
+;
+          ;INIT Schnittstelle
+          RET=EKI_Init("CognexAudi_9")
+          RET=EKI_Open("CognexAudi_9")
+          EKI_CHECK(RET,#QUIT)
+;    
+          AuftragsNr=PAR4
+          Out_Typ=PAR5
+          Out_OP_A=PAR6
+          In_Typ=-1
+          In_OP_A=-1
+          In_Status=-1
+          Kalib_Pos = $NULLFRAME
+          Kalib_Pos_A = $NULLFRAME
+          Kalib_Pos_B = $NULLFRAME
+          EKI_A={X -999999, Y -999999, Z -999999, A -999999, B -999999, C -999999}
+          EKI_B={X -999999, Y -999999, Z -999999, A -999999, B -999999, C -999999}
+;            
+          iRobTimer=$rob_timer
+          WHILE (NOT bTimeOut AND NOT B_EKI_READY)
+            RET=EKI_GetInteger("CognexAudi_9","InSight/Status",In_Status)
+            RET=EKI_GetInteger("CognexAudi_9","InSight/Typ",In_Typ)
+            RET=EKI_GetInteger("CognexAudi_9","InSight/OperationA",In_OP_A)
+            RET=EKI_GetFrame("CognexAudi_9","InSight/DatensatzA",EKI_A)
+            RET=EKI_GetFrame("CognexAudi_9","InSight/DatensatzB",EKI_B)
+            RET=EKI_GetInteger("CognexAudi_9","InSight/Control/Valid",cx_valid)
+            B_EKI_A=((EKI_A.X<>-999999) AND (EKI_A.Y<>-999999) AND (EKI_A.Z<>-999999) AND(EKI_A.A<>-999999) AND(EKI_A.B<>-999999) AND(EKI_A.C<>-999999))
+            B_EKI_B=((EKI_B.X<>-999999) AND (EKI_B.Y<>-999999) AND (EKI_B.Z<>-999999) AND(EKI_B.A<>-999999) AND(EKI_B.B<>-999999) AND(EKI_B.C<>-999999))
+            IF B_EKI_A THEN
+              bDataValid_A=TRUE
+            ENDIF
+            IF B_EKI_B THEN
+              bDataValid_B=TRUE
+              TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+            ENDIF
+            IF B_EKI_A AND B_EKI_B AND ((In_Status==0) OR (In_Status==1)) THEN
+              B_EKI_READY=TRUE
+            ENDIF
+            IF B_EKI_A AND B_EKI_B AND (In_Status==1) THEN
+              IF ((ABS (EKI_A.X)>EKI_X_Max) OR (ABS (EKI_A.Y)>EKI_Y_Max) OR (ABS (EKI_A.A)>EKI_A_Max) OR (ABS (EKI_B.X)>EKI_X_Max) OR (ABS (EKI_B.Y)>EKI_Y_Max) OR (ABS (EKI_B.A)>EKI_A_Max)) THEN
+                EKI_F_Range=TRUE
+                B_EKI_z_gr=TRUE
+              ELSE
+                EKI_F_Range=FALSE
+                B_EKI_z_gr=FALSE
+              ENDIF
+              bDataValid=TRUE
+            ENDIF 
+            IF B_EKI_A AND B_EKI_B AND (In_Status==0) THEN
+              bDataValid_F=TRUE
+            ENDIF             
+            IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+              bTimeOut=TRUE
+            ENDIF
+          ENDWHILE
+;          
+          RET=EKI_Close("CognexAudi_9")
+          RET=EKI_Clear("CognexAudi_9")
+;          
+          IF EKI_F_Range THEN
+            B_EKI_z_gr=TRUE
+            AudiEKI_Msg(1,#QuitMsg)
+            B_EKI_z_gr=FALSE
+            EKI_A={X -9999, Y -9999, Z 0, A -9999, B 0, C 0}
+            EKI_B={X -9999, Y -9999, Z 0, A -9999, B 0, C 0}
+          ENDIF  
+          IF B_EKI_READY AND bDataValid_F THEN
+            B_EKI_k_BT=TRUE
+            AudiEKI_Msg(5,#QuitMsg)
+            B_EKI_k_BT=FALSE
+          ENDIF
+          IF B_EKI_READY AND (In_OP_A<>Out_OP_A) THEN
+            B_EKI_f_OP=TRUE
+            AudiEKI_Msg(3,#QuitMsg)
+            B_EKI_f_OP=FALSE
+          ENDIF
+          IF B_EKI_READY AND (In_Typ<>Out_Typ) THEN
+            B_EKI_f_Ty=TRUE
+            AudiEKI_Msg(4,#QuitMsg)
+            B_EKI_f_Ty=FALSE
+          ENDIF 
+          IF bTimeOut THEN
+            B_EKI_T_Ou=TRUE
+            AudiEKI_Msg(7,#QuitMsg)
+            B_EKI_T_Ou=FALSE
+            EKI_A=$NULLFRAME
+            EKI_B=$NULLFRAME
+          ENDIF
+          IF bDataValid_A THEN
+            IF NOT ($EXT) THEN
+              AudiEKI_Msg(8,#NotifyMsg)
+            ENDIF
+          ENDIF 
+          IF bDataValid_B THEN
+            IF NOT ($EXT) THEN
+              AudiEKI_Msg(9,#NotifyMsg)
+            ENDIF
+          ENDIF 
+;
+        CASE 2 ;Daten verrechnen 
+          Out_Typ=PAR5
+          Out_OP_A=PAR6        
+          B_EKI_A=((EKI_A.X<>-999999) AND (EKI_A.Y<>-999999) AND (EKI_A.Z<>-999999) AND(EKI_A.A<>-999999) AND(EKI_A.B<>-999999) AND(EKI_A.C<>-999999))
+          B_EKI_B=((EKI_B.X<>-999999) AND (EKI_B.Y<>-999999) AND (EKI_B.Z<>-999999) AND(EKI_B.A<>-999999) AND(EKI_B.B<>-999999) AND(EKI_B.C<>-999999))
+          SWITCH PAR3
+            CASE 1 ;Relative Daten A verarbeiten
+              IF B_EKI_A AND (In_OP_A==Out_OP_A) AND (In_Typ==Out_Typ) THEN
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO] : EKI_A
+                IF NOT ($EXT) THEN
+                  AudiEKI_Msg(11,#NotifyMsg)
+                  AudiEKI_Msg(10,#NotifyMsg)
+                ENDIF
+              ELSE
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+                B_EKI_k_Ve=TRUE
+                AudiEKI_Msg(2,#QuitMsg)
+                B_EKI_k_Ve=FALSE
+              ENDIF  
+            CASE 2 ;Relative Daten B verarbeiten
+              IF B_EKI_B AND (In_OP_A==Out_OP_A) AND (In_Typ==Out_Typ) THEN
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO] : EKI_B
+                IF NOT ($EXT) THEN
+                  AudiEKI_Msg(11,#NotifyMsg)
+                  AudiEKI_Msg(10,#NotifyMsg)
+                ENDIF 
+              ELSE
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+                B_EKI_k_Ve=TRUE
+                AudiEKI_Msg(2,#QuitMsg)
+                B_EKI_k_Ve=FALSE               
+              ENDIF  
+          ENDSWITCH ;PAR3 
+;
+        CASE 3 ;Daten senden
+          SWITCH PAR3
+            CASE 1,2,4,5
+            CASE 3 ;Relative Daten Pos A + B senden  
+              AuftragsNr=PAR4
+              In_Typ=-1
+              In_OP_A=-1
+              In_Status=-1
+              Kalib_Pos = $NULLFRAME
+              Kalib_Pos.X = Kalib_Pos_A.X
+              Kalib_Pos.Y = Kalib_Pos_A.Y
+              Kalib_Pos.A = Kalib_Pos_B.X
+              Kalib_Pos.B = Kalib_Pos_B.Y
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_10")
+              RET=EKI_Open("CognexAudi_10")
+              EKI_CHECK(RET,#QUIT) 
+;              
+              ; Sende Auftrag
+              RET=EKI_SetInt("CognexAudi_10","Robot/Auftrag",AuftragsNr)
+              ; Sende Frame
+              RET=EKI_SetFrame("CognexAudi_10","Robot/Data/Position", Kalib_Pos)
+;          
+              ;weg mit den Daten
+              RET = EKI_Send("CognexAudi_10","Robot")
+              WAIT SEC 2
+              RET=EKI_Close("CognexAudi_10")
+              RET=EKI_Clear("CognexAudi_10")
+              AudiEKI_Msg(14,#NotifyMsg)
+;              
+              WAIT SEC 5
+              In_Typ=-1
+              In_OP_A=-1
+              In_Status=-1
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_9")
+              RET=EKI_Open("CognexAudi_9")
+              EKI_CHECK(RET,#QUIT)
+;          
+              iRobTimer=$rob_timer
+              WHILE (NOT bTimeOut AND NOT bDataValid AND NOT bDataValid_F)
+                RET=EKI_GetInteger("CognexAudi_9","InSight/Status",In_Status)
+                IF (In_Status==3) THEN
+                  bDataValid=TRUE
+                  TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                ENDIF
+                IF (In_Status==6) THEN
+                  bDataValid_F=TRUE
+                  TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                ENDIF
+                IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+                  bTimeOut=TRUE
+                ENDIF
+              ENDWHILE
+              IF bTimeOut THEN
+                B_EKI_T_Ou=TRUE
+                AudiEKI_Msg(7,#QuitMsg)
+                B_EKI_T_Ou=FALSE
+              ENDIF
+              IF bDataValid_F THEN
+                AudiEKI_Msg(15,#QuitMsg)
+              ENDIF
+;
+              RET=EKI_Close("CognexAudi_9")
+              RET=EKI_Clear("CognexAudi_9") 
+              WAIT SEC 2              
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_10")
+              RET=EKI_Open("CognexAudi_10")
+              EKI_CHECK(RET,#QUIT)              
+;              
+              IF NOT bTimeOut AND NOT bDataValid_F THEN
+                ; Sende Auftrag
+                AuftragsNr=0
+                Kalib_Pos = $NULLFRAME
+                RET=EKI_SetInt("CognexAudi_10","Robot/Auftrag",AuftragsNr)
+                ; Sende Frame
+                RET=EKI_SetFrame("CognexAudi_10","Robot/Data/Position", Kalib_Pos)
+                ;weg mit den Daten
+                RET = EKI_Send("CognexAudi_10","Robot")
+                WAIT SEC 2
+;                
+                RET=EKI_Close("CognexAudi_10")
+                RET=EKI_Clear("CognexAudi_10")
+;              
+                WAIT SEC 2
+                In_Typ=-1
+                In_OP_A=-1
+                In_Status=-1
+;                
+                ;INIT Schnittstelle
+                RET=EKI_Init("CognexAudi_9")
+                RET=EKI_Open("CognexAudi_9")
+                EKI_CHECK(RET,#QUIT)
+;              
+                bTimeOut=FALSE 
+                bDataValid=FALSE
+                iRobTimer=$rob_timer
+                WHILE (NOT bTimeOut AND NOT bDataValid)
+                  RET=EKI_GetInteger("CognexAudi_9","InSight/Status",In_Status)
+                  IF (In_Status==0) THEN
+                    bDataValid=TRUE
+                    TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                  ENDIF
+                  IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+                    bTimeOut=TRUE
+                  ENDIF
+                ENDWHILE
+                RET=EKI_Close("CognexAudi_9")
+                RET=EKI_Clear("CognexAudi_9") 
+                IF bDataValid AND NOT bDataValid_F THEN
+                  AudiEKI_Msg(6,#NotifyMsg)
+                  AudiEKI_Msg(16,#QuitMsg)
+                ENDIF
+                IF bTimeOut THEN
+                  B_EKI_T_Ou=TRUE
+                  AudiEKI_Msg(7,#QuitMsg)
+                  B_EKI_T_Ou=FALSE
+                ENDIF
+              ENDIF                
+          ENDSWITCH ;PAR3    
+;
+        CASE 4 ;Daten speichern
+          SWITCH PAR3
+            CASE 1,2,3
+            CASE 4 ;Relative Daten Pos A speichern  
+              Kalib_Pos_A = $NULLFRAME
+              Kalib_Pos_A = $POS_ACT
+              AudiEKI_Msg(12,#NotifyMsg)
+            CASE 5 ;Relative Daten Pos B speichern 
+              Kalib_Pos_B = $NULLFRAME
+              Kalib_Pos_B = $POS_ACT 
+              AudiEKI_Msg(13,#NotifyMsg)              
+          ENDSWITCH ;PAR3
+;
+        DEFAULT
+          AudiEKI_Msg(21,#QuitMsg) ;P2 Falscher Wert
+      ENDSWITCH ;PAR2
+    ;ENDFOLD  
+;
+    ;FOLD Kamera 6
+    CASE 6 ; Auswahl Kamera 6
+      ;Initialize sample data
+      cx_valid=0
+      B_EKI_READY=FALSE
+      bDataValid=FALSE
+      bDataValid_A=FALSE
+      bDataValid_B=FALSE
+      bDataValid_F=FALSE
+      bTimeOut=FALSE
+;      
+      SWITCH PAR2
+        CASE 1 ;Daten holen
+;
+          ;INIT Schnittstelle
+          RET=EKI_Init("CognexAudi_11")
+          RET=EKI_Open("CognexAudi_11")
+          EKI_CHECK(RET,#QUIT)
+;    
+          AuftragsNr=PAR4
+          Out_Typ=PAR5
+          Out_OP_A=PAR6
+          In_Typ=-1
+          In_OP_A=-1
+          In_Status=-1
+          Kalib_Pos = $NULLFRAME
+          Kalib_Pos_A = $NULLFRAME
+          Kalib_Pos_B = $NULLFRAME
+          EKI_A={X -999999, Y -999999, Z -999999, A -999999, B -999999, C -999999}
+          EKI_B={X -999999, Y -999999, Z -999999, A -999999, B -999999, C -999999}
+;            
+          iRobTimer=$rob_timer
+          WHILE (NOT bTimeOut AND NOT B_EKI_READY)
+            RET=EKI_GetInteger("CognexAudi_11","InSight/Status",In_Status)
+            RET=EKI_GetInteger("CognexAudi_11","InSight/Typ",In_Typ)
+            RET=EKI_GetInteger("CognexAudi_11","InSight/OperationA",In_OP_A)
+            RET=EKI_GetFrame("CognexAudi_11","InSight/DatensatzA",EKI_A)
+            RET=EKI_GetFrame("CognexAudi_11","InSight/DatensatzB",EKI_B)
+            RET=EKI_GetInteger("CognexAudi_11","InSight/Control/Valid",cx_valid)
+            B_EKI_A=((EKI_A.X<>-999999) AND (EKI_A.Y<>-999999) AND (EKI_A.Z<>-999999) AND(EKI_A.A<>-999999) AND(EKI_A.B<>-999999) AND(EKI_A.C<>-999999))
+            B_EKI_B=((EKI_B.X<>-999999) AND (EKI_B.Y<>-999999) AND (EKI_B.Z<>-999999) AND(EKI_B.A<>-999999) AND(EKI_B.B<>-999999) AND(EKI_B.C<>-999999))
+            IF B_EKI_A THEN
+              bDataValid_A=TRUE
+            ENDIF
+            IF B_EKI_B THEN
+              bDataValid_B=TRUE
+              TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+            ENDIF
+            IF B_EKI_A AND B_EKI_B AND ((In_Status==0) OR (In_Status==1)) THEN
+              B_EKI_READY=TRUE
+            ENDIF
+            IF B_EKI_A AND B_EKI_B AND (In_Status==1) THEN
+              IF ((ABS (EKI_A.X)>EKI_X_Max) OR (ABS (EKI_A.Y)>EKI_Y_Max) OR (ABS (EKI_A.A)>EKI_A_Max) OR (ABS (EKI_B.X)>EKI_X_Max) OR (ABS (EKI_B.Y)>EKI_Y_Max) OR (ABS (EKI_B.A)>EKI_A_Max)) THEN
+                EKI_F_Range=TRUE
+                B_EKI_z_gr=TRUE
+              ELSE
+                EKI_F_Range=FALSE
+                B_EKI_z_gr=FALSE
+              ENDIF
+              bDataValid=TRUE
+            ENDIF 
+            IF B_EKI_A AND B_EKI_B AND (In_Status==0) THEN
+              bDataValid_F=TRUE
+            ENDIF             
+            IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+              bTimeOut=TRUE
+            ENDIF
+          ENDWHILE
+;          
+          RET=EKI_Close("CognexAudi_11")
+          RET=EKI_Clear("CognexAudi_11")
+;          
+          IF EKI_F_Range THEN
+            B_EKI_z_gr=TRUE
+            AudiEKI_Msg(1,#QuitMsg)
+            B_EKI_z_gr=FALSE
+            EKI_A={X -9999, Y -9999, Z 0, A -9999, B 0, C 0}
+            EKI_B={X -9999, Y -9999, Z 0, A -9999, B 0, C 0}
+          ENDIF  
+          IF B_EKI_READY AND bDataValid_F THEN
+            B_EKI_k_BT=TRUE
+            AudiEKI_Msg(5,#QuitMsg)
+            B_EKI_k_BT=FALSE
+          ENDIF
+          IF B_EKI_READY AND (In_OP_A<>Out_OP_A) THEN
+            B_EKI_f_OP=TRUE
+            AudiEKI_Msg(3,#QuitMsg)
+            B_EKI_f_OP=FALSE
+          ENDIF
+          IF B_EKI_READY AND (In_Typ<>Out_Typ) THEN
+            B_EKI_f_Ty=TRUE
+            AudiEKI_Msg(4,#QuitMsg)
+            B_EKI_f_Ty=FALSE
+          ENDIF 
+          IF bTimeOut THEN
+            B_EKI_T_Ou=TRUE
+            AudiEKI_Msg(7,#QuitMsg)
+            B_EKI_T_Ou=FALSE
+            EKI_A=$NULLFRAME
+            EKI_B=$NULLFRAME
+          ENDIF
+          IF bDataValid_A THEN
+            IF NOT ($EXT) THEN
+              AudiEKI_Msg(8,#NotifyMsg)
+            ENDIF
+          ENDIF 
+          IF bDataValid_B THEN
+            IF NOT ($EXT) THEN
+              AudiEKI_Msg(9,#NotifyMsg)
+            ENDIF
+          ENDIF 
+;
+        CASE 2 ;Daten verrechnen 
+          Out_Typ=PAR5
+          Out_OP_A=PAR6        
+          B_EKI_A=((EKI_A.X<>-999999) AND (EKI_A.Y<>-999999) AND (EKI_A.Z<>-999999) AND(EKI_A.A<>-999999) AND(EKI_A.B<>-999999) AND(EKI_A.C<>-999999))
+          B_EKI_B=((EKI_B.X<>-999999) AND (EKI_B.Y<>-999999) AND (EKI_B.Z<>-999999) AND(EKI_B.A<>-999999) AND(EKI_B.B<>-999999) AND(EKI_B.C<>-999999))
+          SWITCH PAR3
+            CASE 1 ;Relative Daten A verarbeiten
+              IF B_EKI_A AND (In_OP_A==Out_OP_A) AND (In_Typ==Out_Typ) THEN
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO] : EKI_A
+                IF NOT ($EXT) THEN
+                  AudiEKI_Msg(11,#NotifyMsg)
+                  AudiEKI_Msg(10,#NotifyMsg)
+                ENDIF
+              ELSE
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+                B_EKI_k_Ve=TRUE
+                AudiEKI_Msg(2,#QuitMsg)
+                B_EKI_k_Ve=FALSE
+              ENDIF  
+            CASE 2 ;Relative Daten B verarbeiten
+              IF B_EKI_B AND (In_OP_A==Out_OP_A) AND (In_Typ==Out_Typ) THEN
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO] : EKI_B
+                IF NOT ($EXT) THEN
+                  AudiEKI_Msg(11,#NotifyMsg)
+                  AudiEKI_Msg(10,#NotifyMsg)
+                ENDIF 
+              ELSE
+                Base_Data[31] = BASE_DATA[VW_MPARA_ACT.BASE_NO]
+                B_EKI_k_Ve=TRUE
+                AudiEKI_Msg(2,#QuitMsg)
+                B_EKI_k_Ve=FALSE                
+              ENDIF  
+          ENDSWITCH ;PAR3 
+;
+        CASE 3 ;Daten senden
+          SWITCH PAR3
+            CASE 1,2,4,5
+            CASE 3 ;Relative Daten Pos A + B senden  
+              AuftragsNr=PAR4
+              In_Typ=-1
+              In_OP_A=-1
+              In_Status=-1
+              Kalib_Pos = $NULLFRAME
+              Kalib_Pos.X = Kalib_Pos_A.X
+              Kalib_Pos.Y = Kalib_Pos_A.Y
+              Kalib_Pos.A = Kalib_Pos_B.X
+              Kalib_Pos.B = Kalib_Pos_B.Y
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_12")
+              RET=EKI_Open("CognexAudi_12")
+              EKI_CHECK(RET,#QUIT) 
+;              
+              ; Sende Auftrag
+              RET=EKI_SetInt("CognexAudi_12","Robot/Auftrag",AuftragsNr)
+              ; Sende Frame
+              RET=EKI_SetFrame("CognexAudi_12","Robot/Data/Position", Kalib_Pos)
+;          
+              ;weg mit den Daten
+              RET = EKI_Send("CognexAudi_12","Robot")
+              WAIT SEC 2
+              RET=EKI_Close("CognexAudi_12")
+              RET=EKI_Clear("CognexAudi_12")
+              AudiEKI_Msg(14,#NotifyMsg)
+;              
+              WAIT SEC 5
+              In_Typ=-1
+              In_OP_A=-1
+              In_Status=-1
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_11")
+              RET=EKI_Open("CognexAudi_11")
+              EKI_CHECK(RET,#QUIT)
+;          
+              iRobTimer=$rob_timer
+              WHILE (NOT bTimeOut AND NOT bDataValid AND NOT bDataValid_F)
+                RET=EKI_GetInteger("CognexAudi_11","InSight/Status",In_Status)
+                IF (In_Status==3) THEN
+                  bDataValid=TRUE
+                  TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                ENDIF
+                IF (In_Status==6) THEN
+                  bDataValid_F=TRUE
+                  TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                ENDIF
+                IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+                  bTimeOut=TRUE
+                ENDIF
+              ENDWHILE
+              IF bTimeOut THEN
+                B_EKI_T_Ou=TRUE
+                AudiEKI_Msg(7,#QuitMsg)
+                B_EKI_T_Ou=FALSE
+              ENDIF
+              IF bDataValid_F THEN
+                AudiEKI_Msg(15,#QuitMsg)
+              ENDIF
+;
+              RET=EKI_Close("CognexAudi_11")
+              RET=EKI_Clear("CognexAudi_11") 
+              WAIT SEC 2              
+;
+              ;INIT Schnittstelle
+              RET=EKI_Init("CognexAudi_12")
+              RET=EKI_Open("CognexAudi_12")
+              EKI_CHECK(RET,#QUIT)              
+;              
+              IF NOT bTimeOut AND NOT bDataValid_F THEN
+                ; Sende Auftrag
+                AuftragsNr=0
+                Kalib_Pos = $NULLFRAME
+                RET=EKI_SetInt("CognexAudi_12","Robot/Auftrag",AuftragsNr)
+                ; Sende Frame
+                RET=EKI_SetFrame("CognexAudi_12","Robot/Data/Position", Kalib_Pos)
+                ;weg mit den Daten
+                RET = EKI_Send("CognexAudi_12","Robot")
+                WAIT SEC 2
+;                
+                RET=EKI_Close("CognexAudi_12")
+                RET=EKI_Clear("CognexAudi_12")
+;              
+                WAIT SEC 2
+                In_Typ=-1
+                In_OP_A=-1
+                In_Status=-1
+;                
+                ;INIT Schnittstelle
+                RET=EKI_Init("CognexAudi_11")
+                RET=EKI_Open("CognexAudi_11")
+                EKI_CHECK(RET,#QUIT)
+;              
+                bTimeOut=FALSE 
+                bDataValid=FALSE
+                iRobTimer=$rob_timer
+                WHILE (NOT bTimeOut AND NOT bDataValid)
+                  RET=EKI_GetInteger("CognexAudi_11","InSight/Status",In_Status)
+                  IF (In_Status==0) THEN
+                    bDataValid=TRUE
+                    TimeToValueValid=$rob_timer-iRobTimer ;nur Diagnose
+                  ENDIF
+                  IF ($rob_timer-iRobTimer > 5000) THEN ;Timeout nach 5000ms
+                    bTimeOut=TRUE
+                  ENDIF
+                ENDWHILE
+                RET=EKI_Close("CognexAudi_11")
+                RET=EKI_Clear("CognexAudi_11") 
+                IF bDataValid AND NOT bDataValid_F THEN
+                  AudiEKI_Msg(6,#NotifyMsg)
+                  AudiEKI_Msg(16,#QuitMsg)
+                ENDIF
+                IF bTimeOut THEN
+                  B_EKI_T_Ou=TRUE
+                  AudiEKI_Msg(7,#QuitMsg)
+                  B_EKI_T_Ou=FALSE
+                ENDIF
+              ENDIF                
+          ENDSWITCH ;PAR3    
+;
+        CASE 4 ;Daten speichern
+          SWITCH PAR3
+            CASE 1,2,3
+            CASE 4 ;Relative Daten Pos A speichern  
+              Kalib_Pos_A = $NULLFRAME
+              Kalib_Pos_A = $POS_ACT
+              AudiEKI_Msg(12,#NotifyMsg)
+            CASE 5 ;Relative Daten Pos B speichern 
+              Kalib_Pos_B = $NULLFRAME
+              Kalib_Pos_B = $POS_ACT 
+              AudiEKI_Msg(13,#NotifyMsg)              
+          ENDSWITCH ;PAR3
+;
+        DEFAULT
+          AudiEKI_Msg(21,#QuitMsg) ;P2 Falscher Wert
+      ENDSWITCH ;PAR2
+    ;ENDFOLD  
+;
+    DEFAULT
+      AudiEKI_Msg(20,#QuitMsg) ;P1 Falscher Wert  
+  ENDSWITCH ;PAR1
+END  
+;ENDFOLD
+
+

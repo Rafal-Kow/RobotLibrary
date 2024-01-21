@@ -1,0 +1,65 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Stanz_Mutter
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_sm_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket StanzMutter                         *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.16 LE                                       *
+;* 2016.03.16 EA Lebensbit korrigiert                  *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD USER_Version
+STRUC _Tech_StanzMutter CHAR Name[20],INT Datum
+DECL _Tech_StanzMutter Tech_StanzMutter
+;ENDFOLD
+; 
+;FOLD StanzMutter 1
+
+; 
+;ENDFOLD
+; 
+;FOLD StanzMutter 2
+
+;ENDFOLD
+; 
+;FOLD Lebensbit SM
+BOOL LBitState[2]
+LBitState[1]=FALSE
+LBitState[2]=FALSE
+BOOL SM_LBitFeh[2]
+SM_LBitFeh[1]=FALSE
+SM_LBitFeh[2]=FALSE
+; 
+;Lebensbit an SM-Steuerung --- Ausgaenge
+INT LBitToSM[2]
+LBitToSM[1]=1795
+LBitToSM[2]=1827
+; 
+;Lebensbit von SM-Steuerung --- Eingaenge
+INT LBitFromSM[2]
+LBitFromSM[1]=1795
+LBitFromSM[2]=1827
+; 
+INT LBitTimeCnt[2]
+LBitTimeCnt[1]=-1
+LBitTimeCnt[2]=-1
+INT ErrSMNr=-1
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM SMS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_SMS_Handle[100]
+GLOBAL INT n_SMR_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+
+ENDDAT

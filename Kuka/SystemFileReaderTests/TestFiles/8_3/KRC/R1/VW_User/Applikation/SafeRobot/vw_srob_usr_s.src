@@ -1,0 +1,169 @@
+&ACCESS  RV
+&COMMENT KS24.01.004
+&PARAM DISKPATH = VW_User/Applikation/SafeRobot
+&PARAM TPVW_VERSION = 8.3.8
+&REL 201
+DEF VW_SROB_USR_S( )
+; 
+;*---------------------------------------------------*
+;*Technologiepaket Safe_Robot                        *
+;*                                                   *
+;*Konzernstandard                                    *
+;*Bearbeiter: W. Lehmeier  I/PG-C61                  *
+;*                                                   *
+;* Erstellt am:                                      *
+;* 2015.01.08 LE                                     *
+;* 2015.03.25 LE Ausgabe SafeRobot-Status an BMS opt.*
+;*                                                   *
+;*---------------------------------------------------*
+; 
+END
+;
+;FOLD INIT Safe_Robot 
+GLOBAL DEF SRob_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_SRob.Name[]="KS24.01.004_161123"
+;ENDFOLD
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------
+;
+;FOLD SAW Safe_Robot
+GLOBAL DEF SRob_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------
+;
+;FOLD RESET Safe_Robot 
+GLOBAL DEF SRob_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------
+;
+;FOLD CANCEL Safe_Robot
+GLOBAL DEF SRob_CANCEL( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------
+;
+;FOLD LOOP Safe_Robot 
+GLOBAL DEF SRob_LOOP( )
+INT i
+;
+IF $MasteringTest_Req_Int OR $BrakeTest_Req_Int THEN ;Anforderung Bremsen oder Justagetest an BMS
+  $OUT[O_Safe_Anf] = TRUE
+ELSE
+  $OUT[O_Safe_Anf] = FALSE
+ENDIF
+IF ($BRAKETEST_WARN==TRUE) THEN  ;Vorwarnung Verschleiss Bremsen
+  $OUT[O_Safe_VW_Br] = TRUE
+ELSE
+  $OUT[O_Safe_VW_Br] = FALSE
+ENDIF
+IF ($BRAKES_OK==FALSE) THEN  ;Bremsentest n.i.O.
+  $OUT[O_Safe_B_nio] = TRUE
+ELSE
+  $OUT[O_Safe_B_nio] = FALSE
+ENDIF
+IF ($MasteringTest_Active AND NOT $MasteringTest_Switch_OK) THEN  ; Justage Referenzierung n.i.O.
+  $OUT[O_Safe_R_nio] = TRUE
+ELSE
+  $OUT[O_Safe_R_nio] = FALSE
+ENDIF
+IF ($OUT[O_Safe_B_nio] OR $OUT[O_Safe_R_nio] OR ($MasteringTest_Active AND NOT $MasteringTest_Switch_OK)) THEN  ; Sammelstoerung
+  $OUT[O_Safe_Samm] = TRUE
+ELSE
+  $OUT[O_Safe_Samm] = FALSE
+ENDIF
+;
+END
+;ENDFOLD (LOOP)
+;
+;-----------------------------------------------------
+;
+;FOLD Safe_Robot Meldungen
+;
+DEF SRob_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr
+DECL SRobS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+INT nHandle, Answer
+;
+USER_MSG = { Modul[] "SRob (S_Msg)", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF NOT MsgIsSet(msg_nr) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 2
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 3
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      nMsgHandle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      nMsgHandle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      nMsgHandle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      nMsgHandle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;-----------------------------------------------------------
+;
+DEFFCT BOOL MsgIsSet(MsgNr :IN)
+DECL MsgBuf_T Buffer[100]
+INT N,MsgNr,MeldCnt
+BOOL bRetVal
+MeldCnt = Get_MsgBuffer(Buffer[])
+bRetVal=FALSE
+FOR N=1 TO MeldCnt
+  IF (Buffer[N].Nr==MsgNr) THEN
+	 IF Buffer[N].Type==#Usr_State THEN
+	   bRetVal=TRUE
+	 ENDIF
+	 IF Buffer[N].Type==#Usr_Quit THEN
+	   bRetVal=TRUE
+	 ENDIF
+	 IF Buffer[N].Type==#Usr_Wait THEN
+	   bRetVal=TRUE
+	 ENDIF
+	 IF Buffer[N].Type==#Usr_Dlg THEN
+	   bRetVal=TRUE
+	 ENDIF
+  ENDIF
+ENDFOR
+RETURN(bRetVal)
+ENDFCT
+;
+;ENDFOLD (Safe_Robot Meldungen)

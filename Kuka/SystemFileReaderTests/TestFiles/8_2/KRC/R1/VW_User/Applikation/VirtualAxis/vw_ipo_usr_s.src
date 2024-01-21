@@ -1,0 +1,119 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/VirtualAxis
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEF VW_IPO_USR_S( )
+; 
+;*-----------------------------------------------------*
+;* Technologiepaket Docking                            *
+;*                                                     *
+;* Konzernstandard                                     *
+;* Bearbeiter: Chr. Eisenknappl I/PG-C61               *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2014.09.11 CE                                       *
+;*                                                     *
+;*-----------------------------------------------------*
+; 
+END
+;
+;FOLD INIT IPO 
+GLOBAL DEF IPO_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_IPO.Name[]="KS24.01.000_150905"
+;ENDFOLD
+;
+;FOLD Vorbesetzung Meldungsausgabe
+FOR i = 1 TO 100
+  n_IPOS_Handle[i]=-1
+  n_IPOR_Handle[i]=-1
+ENDFOR
+;ENDFOLD
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD SAW IPO 
+GLOBAL DEF IPO_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD RESET IPO 
+GLOBAL DEF IPO_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD CANCEL IPO 
+GLOBAL DEF IPO_CANCEL( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD LOOP IPO 
+GLOBAL DEF IPO_LOOP( )
+INT i
+;  
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD IPO Meldungen
+DEF IPO_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr, Answer
+DECL IPOS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+BOOL Result
+;
+USER_MSG = { Modul[] "IPO_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset FALSE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF ((n_IPOS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]="mehrere Bahnhoefe nicht belegt"
+    CASE 2
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 3
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_IPOS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_IPOS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      n_IPOS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_IPOS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (IPO Meldungen)

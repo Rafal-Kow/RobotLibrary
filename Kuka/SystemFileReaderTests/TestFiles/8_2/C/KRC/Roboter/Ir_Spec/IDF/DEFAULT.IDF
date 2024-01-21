@@ -1,0 +1,23 @@
+;Produced at: 28.04.10
+;                     14:00:00
+;
+;Type           : fast calculation
+;
+;Comment    : Default
+;
+0 ;min. A1
+0 ;max. A1
+-90 ;min. A2
+0 ;max. A2
+88 ;min. A3
+92 ;max. A3
+0 ;min. A4
+0 ;max. A4
+-40 ;min. A5
+40 ;max. A5
+-60 ;min. A6
+60 ;max. A6
+100 ;Mass [kg]
+1 ;Periods
+RobotType: #KR2210_2 S C4 FLR ZH210
+ToolType: 100

@@ -1,0 +1,40 @@
+&ACCESS  R
+&USER AVO
+&COMMENT Suchlauf
+&PARAM DISKPATH = VW_User/Applikation/Suchlauf
+&PARAM EDITMASK = Suchlauf
+&PARAM TPVW_VERSION = 8.1.8
+&REL 60
+DEFDAT  Suchlauf PUBLIC
+;********************************************************
+;* Programm      : Suchlauf                             *
+;* Filename      : Suchlauf.dat                         *
+;* Quelle        :                                      *
+;* Zielsystem    : VKRC4                                *
+;* Zielsoftware  :                                      *
+;* Kunde         : VW                                   *
+;* Autor         : A.V.                                 *
+;* Telefon       :                                      *
+;* (c)           :                                      *
+;*======================================================*
+
+;FOLD USER_Version
+INT Ver_Tech_Sta=20230601
+;ENDFOLD (USER_Version)
+
+;FOLD Feste Variablen
+INT App_Antw
+ENUM MsgType QuitMsg,NotifyMsg
+INT SL_OV_PRO=100
+
+;ENDFOLD (Feste Variablen);--- hier Werte fuer Variablen eintragen ---
+
+;FOLD Veraenderbare Variablen
+
+;ENDFOLD (veraenderbare Variablen)
+
+;FOLD Definition Struktur
+
+;ENDFOLD (DefinitionStruktur)
+
+ENDDAT

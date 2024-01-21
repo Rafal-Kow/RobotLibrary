@@ -1,0 +1,1506 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Roboter/Conveyor
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vw_usr_rv
+&PARAM EDITMASK = vw_usr_r
+&PARAM TPVW_VERSION = 8.3.8
+&REL 134
+DEF vw_conv_usr_r(USER_CMD :IN,CMD_SEL :IN, PARA1 :IN,PARA2 :IN,PARA3 :IN,PARA4 :IN,PARA5 :IN,PARA6 :IN,PARA7 :IN )
+;FOLD ;%{H}%MKUKATPVW
+;VW_USER Call
+;SK 02.03.2010
+;ENDFOLD
+DECL VW_USER_CMD USER_CMD
+REAL PARA1,PARA2,PARA3,PARA4,PARA5,PARA6
+BOOL PARA7
+INT CMD_SEL
+SWITCH  USER_CMD
+CASE #USR_INIT
+USER_INIT ()
+CASE #USR_ADV
+UP_CMD_SEL=CMD_SEL
+USER_ADV (CMD_SEL,PARA1,PARA2,PARA3,PARA4,PARA5,PARA6,PARA7)
+CASE #USR_TRIG
+UP_CMD_SEL=CMD_SEL
+USER_TRIG (CMD_SEL,PARA1,PARA2,PARA3,PARA4,PARA5,PARA6,PARA7)
+CASE #USR_MAIN
+UP_CMD_SEL=CMD_SEL
+USER_MAIN (CMD_SEL,PARA1,PARA2,PARA3,PARA4,PARA5,PARA6,PARA7)
+CASE #USR_MAKRO
+USER_MAKRO (CMD_SEL,PARA1,PARA2,PARA3,PARA4,PARA5,PARA6,PARA7)
+DEFAULT
+ENDSWITCH
+END
+;
+;
+;FOLD CONVEYOR COMMANDS
+;
+DEF  USER_INIT ()
+;----------------- ********************** ------------------
+END
+;
+DEF  USER_ADV (CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN,PAR7 :IN)
+;Aufruf im Vorlauf
+INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6,N
+BOOL PAR7
+SWITCH  PAR1
+   CASE 5 ;CONV_MESS
+      CONV_MSR ( )
+      loop
+         ;program abweahlen
+      endloop
+;
+   CASE 4 ;Check Tool and store it to tool_data 11 or 12 or 13
+      N=$ACT_TOOL
+      TOOL_DATA[10+PAR2]=TOOL_DATA[N] ;PAR2=Conveyor number
+      LOAD_DATA[10+PAR2]=LOAD_DATA[N] ;PAR2=Conveyor number
+      ;MACHINE_DEF[10+PAR2].ROOT=BASE_DATA[BASE_FUER_CONV]
+;
+   ;CASE 201
+ENDSWITCH ;PAR1
+END
+;
+DEF  USER_TRIG (CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN,PAR7 :IN)
+;Aufruf im Trigger der Punkt-SPS
+INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+BOOL PAR7
+;SWITCH  UP_CMD_SEL
+;CASE 201
+;ENDSWITCH
+END
+;
+DEF  USER_MAIN (CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN,PAR7 :IN)
+;Aufruf im Hauptlauf
+INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+BOOL PAR7
+SWITCH  PAR1
+   CASE 1 ;*************CONV_INI***************
+      CONV_INI ( )
+;
+   CASE 2 ;**************INI_OFF***************
+      CONV_INI_OFF(PAR2)
+;
+   CASE 3 ;****************ON******************
+      CONV_ON(PAR2)
+;
+   CASE 4 ;***************FOLLOW***************
+   
+   CONV_FOLLOW_MAIN (PAR1,PAR2,PAR3,PAR4,PAR5,PAR6,PAR7)
+    
+   CASE 6 ;*************Warte Conveyorweg*************
+      Schalter=FALSE
+      IF $MODE_OP<>#T1 THEN
+         REPEAT
+            IF $SEN_PREA_C[PAR2]>=PAR3 THEN
+            Schalter=TRUE
+            ENDIF
+         UNTIL Schalter==TRUE
+         ;WAIT FOR $SEN_PREA_C[PAR2]>=PAR3 ;mm
+         ;REPEAT
+         ;$Count_I[1]=$SEN_PREA_C[PAR2]
+         ;$Count_I[2]=PAR3
+         ;$Count_I[3]=$SEN_PREA_C[PAR2]-PAR3
+         ;UNTIL ($Count_I[3]>0)
+      ENDIF
+;
+   CASE 7 ;*************Abbruch*************
+      IF B_CALL_CONV_MOV==FALSE THEN
+         $FLAG[PAR6]=TRUE
+         sel_res=select(#UP,PAR3,TRUE)
+      ELSE
+         $FLAG[PAR6]=FALSE
+      ENDIF
+;
+   CASE 8 ;*************Stoerung*************
+      IF (B_QUIT_BECAUSE_EMS OR B_QUIT_BECAUSE_MAX_DIST) THEN
+         $FLAG[PAR6]=TRUE
+         sel_res=select(#UP,PAR3,TRUE)
+      ELSE
+         $FLAG[PAR6]=FALSE
+      ENDIF
+      
+   CASE 9 ;************* Setze MaxDist *************
+   
+      IF PAR3 <= MAX_DIST_ABS1 THEN
+         R_MAX_DIST_CONV[1] = PAR3
+      ELSE
+         R_MAX_DIST_CONV[1] = MAX_DIST_ABS1
+      ENDIF
+;
+ENDSWITCH ;PAR1
+CONTINUE
+END
+;
+DEF  USER_MAKRO (CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN,PAR7 :IN)
+;Aufruf im Vorlauf
+INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+BOOL PAR7
+END
+;
+;ENDFOLD (CONVEYOR COMMANDS)
+;
+;
+;FOLD PREINIT
+;*** lokale UP ********
+;
+DEF CONV_INI()
+CONV_REINIT_MD()
+;Alarm outputs initialisations
+$OUT[Z_EMS_OUT_NBR[1]]=TRUE
+$OUT[Z_DIST_ALARM_OUT_NBR[1]]=TRUE
+$OUT[Z_EMS_OUT_NBR[2]]=TRUE
+$OUT[Z_DIST_ALARM_OUT_NBR[2]]=TRUE
+$OUT[Z_EMS_OUT_NBR[3]]=TRUE
+$OUT[Z_DIST_ALARM_OUT_NBR[3]]=TRUE
+$ADVANCE=1
+END
+;
+;ENDFOLD (PREINIT)
+;
+;
+;FOLD DRIVER COMMANDS
+;
+DEF CONV_SET_STATE(Z_CONV_NBR:IN,ENUM_CONV_STATE:IN)
+INT Z_CONV_NBR
+DECL MD_STATE ENUM_CONV_STATE
+CONTINUE
+SWITCH Z_CONV_NBR
+CASE 1
+CONTINUE
+MD_SETSTATE(MACHINE_DEF[11].NAME[],ENUM_CONV_STATE)
+CASE 2
+CONTINUE
+MD_SETSTATE(MACHINE_DEF[12].NAME[],ENUM_CONV_STATE)
+CASE 3
+CONTINUE
+MD_SETSTATE(MACHINE_DEF[13].NAME[],ENUM_CONV_STATE)
+ENDSWITCH
+END
+;
+DEFFCT MD_STATE CONV_GET_STATE(Z_CONV_NBR:IN)
+INT Z_CONV_NBR
+CONTINUE
+SWITCH Z_CONV_NBR
+CASE 1
+CONTINUE
+RETURN(MD_GETSTATE(MACHINE_DEF[11].NAME[]))
+CASE 2
+CONTINUE
+RETURN(MD_GETSTATE(MACHINE_DEF[12].NAME[]))
+CASE 3
+CONTINUE
+RETURN(MD_GETSTATE(MACHINE_DEF[13].NAME[]))
+DEFAULT
+CONTINUE
+RETURN(#NOT_EXISTING)
+ENDSWITCH
+ENDFCT
+;
+;ENDFOLD (DRIVER COMMANDS)
+;
+;
+;FOLD INIOFF
+;
+DEF CONV_INI_OFF(Z_CONV_NBR:IN)
+INT Z_CONV_NBR
+CONV_SET_STATE(Z_CONV_NBR,#INITIALIZED)
+CONTINUE
+WAIT FOR ((CONV_GET_STATE(Z_CONV_NBR))==#INITIALIZED)
+CONTINUE
+WAIT FOR ($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]<ABS(R_CAL_DIG[Z_CONV_NBR]))
+END
+;
+;ENDFOLD (INIOFF)
+;
+;
+;FOLD CONV EIN
+;
+DEF CONV_ON(Z_CONV_NBR:IN)
+INT Z_CONV_NBR
+DECL MD_STATE MD_CONV_STATE
+CONV_SET_STATE(Z_CONV_NBR,#ACTIVE)
+CONTINUE
+WAIT FOR ((CONV_GET_STATE(Z_CONV_NBR))==#ACTIVE)
+END
+;
+;ENDFOLD (CONV EIN)
+;
+;
+;FOLD CONV_REINIT_MD
+;
+DEF  CONV_REINIT_MD ( )
+;*************************************
+; Conveyor Techware System
+; Funktion: Reinitialize MD parameters
+; Modtime: 15.10.2003  PB KUKA-B
+;*************************************
+INT Z_ZAEHLER
+FOR Z_ZAEHLER=1 TO 1
+;Necessary otherwise MD_CMD not possible
+CONV_SET_STATE(Z_ZAEHLER,#INITIALIZED)
+FOR Z_COUNTER=1 TO 10
+INT_ARRAY[Z_COUNTER]=0
+REAL_ARRAY[Z_COUNTER]=0.0
+ENDFOR
+;Read values from driver
+SWITCH Z_ZAEHLER
+CASE 1
+WHILE NOT (MD_CMD("CONV1","GETINITPARAM",INT_ARRAY[],REAL_ARRAY[])==0)
+;Error executing MD_CMD
+HALT
+ENDWHILE
+CASE 2
+WHILE NOT (MD_CMD("CONV2","GETINITPARAM",INT_ARRAY[],REAL_ARRAY[])==0)
+;Error executing MD_CMD
+HALT
+ENDWHILE
+CASE 3
+WHILE NOT (MD_CMD("CONV3","GETINITPARAM",INT_ARRAY[],REAL_ARRAY[])==0)
+;Error executing MD_CMD
+HALT
+ENDWHILE
+ENDSWITCH
+;Change parameter values
+REAL_ARRAY[1]=R_DELAY_TIME_CONV[Z_ZAEHLER]
+REAL_ARRAY[2]=R_CAL_DIG[Z_ZAEHLER]
+IF (COR_DIR[Z_ZAEHLER]==#X) THEN
+REAL_ARRAY[3]=1.0
+ELSE
+REAL_ARRAY[3]=0.0
+ENDIF
+REAL_ARRAY[4]=0.0
+REAL_ARRAY[5]=0.0
+REAL_ARRAY[6]=0.0
+REAL_ARRAY[7]=0.0
+IF (COR_DIR[Z_ZAEHLER]==#A) THEN
+REAL_ARRAY[8]=1.0
+ELSE
+REAL_ARRAY[8]=0.0
+ENDIF
+;Write values to driver
+SWITCH Z_ZAEHLER
+CASE 1
+WHILE NOT (MD_CMD("CONV1","SETINITPARAM",INT_ARRAY[],REAL_ARRAY[])==0)
+;Error executing MD_CMD
+HALT
+ENDWHILE
+CASE 2
+WHILE NOT (MD_CMD("CONV2","SETINITPARAM",INT_ARRAY[],REAL_ARRAY[])==0)
+;Error executing MD_CMD
+HALT
+ENDWHILE
+CASE 3
+WHILE NOT (MD_CMD("CONV3","SETINITPARAM",INT_ARRAY[],REAL_ARRAY[])==0)
+;Error executing MD_CMD
+HALT
+ENDWHILE
+ENDSWITCH
+ENDFOR
+CONTINUE
+END
+;
+;ENDFOLD (CONV_REINIT_MD)
+;
+
+;
+;FOLD CONV_FOLLOW_MAIN
+;
+
+DEF  CONV_FOLLOW_MAIN (PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN,PAR7 :IN)
+;Aufruf im Hauptlauf
+INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+BOOL PAR7
+
+  ;Interrupts Conveyor 1
+      INTERRUPT DECL Z_ALARM_DIST_INT_NBR[1] WHEN $SEN_PREA_C[Z_SEN_PREA_NBR[1]]>=R_ALARM_DIST_CONV[1] DO INT_CONV_ALARM(1)
+      INTERRUPT DECL Z_MAX_DIST_INT_NBR[1] WHEN $SEN_PREA_C[Z_SEN_PREA_NBR[1]]>=R_MAX_DIST_CONV[1] DO INT_CONV_MAX_DIST(1)
+      INTERRUPT DECL Z_EMS_INT_NBR[1] WHEN $STOPMESS==TRUE DO INT_CONV_EMS(1)
+      ;Interrupts Conveyor 2
+      INTERRUPT DECL Z_ALARM_DIST_INT_NBR[2] WHEN $SEN_PREA_C[Z_SEN_PREA_NBR[2]]>=R_ALARM_DIST_CONV[2] DO INT_CONV_ALARM(2)
+      INTERRUPT DECL Z_MAX_DIST_INT_NBR[2] WHEN $SEN_PREA_C[Z_SEN_PREA_NBR[2]]>=R_MAX_DIST_CONV[2] DO INT_CONV_MAX_DIST(2)
+      INTERRUPT DECL Z_EMS_INT_NBR[2] WHEN $STOPMESS==TRUE DO INT_CONV_EMS(2)
+      ;Interrupts Conveyor 3
+      INTERRUPT DECL Z_ALARM_DIST_INT_NBR[3] WHEN $SEN_PREA_C[Z_SEN_PREA_NBR[3]]>=R_ALARM_DIST_CONV[3] DO INT_CONV_ALARM(3)
+      INTERRUPT DECL Z_MAX_DIST_INT_NBR[3] WHEN $SEN_PREA_C[Z_SEN_PREA_NBR[3]]>=R_MAX_DIST_CONV[3] DO INT_CONV_MAX_DIST(3)
+      INTERRUPT DECL Z_EMS_INT_NBR[3] WHEN $STOPMESS==TRUE DO INT_CONV_EMS(3)
+      IF ((PAR2==1) OR (PAR2==2)) THEN
+         SWITCH PAR3
+            CASE 711,712,713,714,715,716,717,718,719,721,722,723
+               CONV_FOLLOW(PAR2,PAR3,PAR4,PAR5,PAR6,PAR7)
+               CONV_MOV(PAR2,PAR3)
+               CONV_QUIT(PAR2)
+            DEFAULT
+               ;CONV_MESS(123) ;"Conveyor UP() <> 711,712,713,714,715,716,717,718,719,721,722,723"
+               LOOP
+               ;
+               ENDLOOP
+         ENDSWITCH
+      ELSE
+         ;CONV_MESS(121) ;"Conveyornummer <> 1 oder 2"
+         LOOP
+         ;
+         ENDLOOP
+      ENDIF
+;
+
+END
+;
+;ENDFOLD (CONV_FOLLOW_MAIN)
+;
+
+
+;
+;FOLD WARTE SYNC
+;
+DEF CONV_FOLLOW(Z_CONV_NBR:IN,Z_MOV_NBR:IN,Z_INPUT_NBR:IN,Z_MAX_TIME:IN,Z_FLAG_NBR:IN,B_FLAG_LEVEL:IN)
+INT Z_CONV_NBR,Z_MOV_NBR,Z_MAX_TIME,Z_INPUT_NBR,Z_FLAG_NBR
+BOOL B_INPUT_LEVEL,B_FLAG_LEVEL
+REAL R_MINDIST,R_MAXDIST
+;Parameter list
+;--------------
+;Z_CONV_NBR ;Conveyor number
+;Z_MOV_NBR ;Conveyor movement group number
+;Z_MAX_TIME ;[msec] Max waiting for sync
+;Z_INPUT_NBR ;Input to skip conveyor
+;Z_FLAG_NBR ;Flag to skip conveyor movement
+;R_MINDIST ;[mm] Min displacement while synchronised
+;R_MAXDIST ;[mm] Max displacement while synchronised
+SWITCH Z_CONV_NBR
+   CASE 1
+      B_INPUT_LEVEL=B_INPUT_LEVEL1;jh
+      R_MINDIST=R_MINDIST1;jh
+      R_MAXDIST=R_MAXDIST1;jh
+;
+   CASE 2
+      B_INPUT_LEVEL=B_INPUT_LEVEL2;jh
+      R_MINDIST=R_MINDIST2;jh
+      R_MAXDIST=R_MAXDIST2;jh
+;
+   CASE 3
+      B_INPUT_LEVEL=B_INPUT_LEVEL3;jh
+      R_MINDIST=R_MINDIST3;jh
+      R_MAXDIST=R_MAXDIST3;jh
+;
+ENDSWITCH
+B_CALL_CONV_MOV=FALSE
+B_QUIT_BECAUSE_MAX_DIST=FALSE
+B_QUIT_BECAUSE_EMS=FALSE
+CONTINUE
+$OUT[Z_DIST_ALARM_OUT_NBR[1]]=TRUE
+CONTINUE
+$OUT[Z_DIST_ALARM_OUT_NBR[2]]=TRUE
+CONTINUE
+$OUT[Z_DIST_ALARM_OUT_NBR[3]]=TRUE
+CONTINUE
+$OUT[Z_EMS_OUT_NBR[1]]=TRUE
+CONTINUE
+$OUT[Z_EMS_OUT_NBR[2]]=TRUE
+CONTINUE
+$OUT[Z_EMS_OUT_NBR[3]]=TRUE
+CONTINUE
+IF (R_ALARM_DIST_CONV[Z_CONV_NBR]>R_MAX_DIST_CONV[Z_CONV_NBR]) THEN
+   R_ALARM_DIST_CONV[Z_CONV_NBR]=R_MAX_DIST_CONV[Z_CONV_NBR]
+   ;--- AlarmDistReducedToMaxDist ---
+   MsgNotify("AlarmDistReducedToMaxDist", "ConveyorTech")
+ENDIF
+;
+CONTINUE
+;
+IF (R_MAXDIST>R_ALARM_DIST_CONV[Z_CONV_NBR]) THEN
+   R_MAXDIST=R_ALARM_DIST_CONV[Z_CONV_NBR]
+   ;--- MaxSyncinDistReducedToAlarmDist ---
+   MsgNotify("MaxSyncinDistReducedToAlarmDist", "ConveyorTech")
+ENDIF
+;
+CONTINUE
+;
+IF $T1 THEN
+   ;--- TeachModusRequired ? ---
+   WAIT FOR TRUE
+   MsgDialog(Z_DIALOG_ANSWER, "TeachModusRequired", "ConveyorTech",,,,,,,"No","Yes")
+   ;
+   IF (Z_DIALOG_ANSWER==1) THEN
+      CONV_TEACH(Z_CONV_NBR,FALSE)
+      ;--- TeachConveyorMovements ---
+      MsgNotify("TeachConveyorMovements" , "ConveyorTech")
+      B_CALL_CONV_MOV=TRUE
+   ELSE
+      ;--- SkipConveyorT1WithoutTeach ---
+      MsgNotify("SkipConveyorT1WithoutTeach" , "ConveyorTech")
+   ENDIF
+;
+ELSE
+;
+   IF (Z_MAX_TIME>0) THEN
+      $TIMER[Z_CONV_TIMER_NBR]=-Z_MAX_TIME*1000
+      $TIMER_STOP[Z_CONV_TIMER_NBR]=FALSE
+   ELSE
+      ; No timeout check waiting for sync
+      $TIMER_STOP[Z_CONV_TIMER_NBR]=TRUE
+      $TIMER[1]=0
+   ENDIF
+;
+CONTINUE
+;
+   IF NOT (($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]>=(R_MINDIST+0.1)) OR ($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]>R_MAXDIST) OR ($FLAG[Z_FLAG_NBR]==B_FLAG_LEVEL) OR ($IN[Z_INPUT_NBR]==B_INPUT_LEVEL) OR $TIMER_FLAG[Z_CONV_TIMER_NBR]) THEN
+      REPEAT
+         CONTINUE
+      UNTIL (($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]>=(R_MINDIST+0.1)) OR ($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]>R_MAXDIST) OR ($FLAG[Z_FLAG_NBR]==B_FLAG_LEVEL) OR ($IN[Z_INPUT_NBR]==B_INPUT_LEVEL) OR $TIMER_FLAG[Z_CONV_TIMER_NBR])
+   ENDIF
+;
+CONTINUE
+;
+   IF (($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]>=(R_MINDIST+0.1)) AND ($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]<=R_MAXDIST) AND NOT ($FLAG[Z_FLAG_NBR]==B_FLAG_LEVEL) AND NOT ($IN[Z_INPUT_NBR]==B_INPUT_LEVEL) AND NOT $TIMER_FLAG[Z_CONV_TIMER_NBR]) THEN
+      $TIMER_STOP[Z_CONV_TIMER_NBR]=TRUE
+      B_CALL_CONV_MOV=TRUE
+   ELSE
+;
+      IF ($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]>R_MAXDIST) THEN
+         ;--- SkipConveyorMaxDist ---
+         MsgNotify("SkipConveyorMaxDistance", "ConveyorTech")
+      ENDIF
+;
+      IF $TIMER_FLAG[Z_CONV_TIMER_NBR] THEN
+         ;--- SkipConveyorTime ---
+         MsgNotify("SkipConveyorTime" , "ConveyorTech")
+         halt
+      ENDIF
+;
+      IF ($FLAG[Z_FLAG_NBR]==B_FLAG_LEVEL) THEN
+         ;--- SkipConveyorFlag ---
+         MsgNotify("SkipConveyorFlag" , "ConveyorTech")
+      ENDIF
+;
+      IF ($IN[Z_INPUT_NBR]==B_INPUT_LEVEL) THEN
+         ;--- SkipConveyorInput ---
+         MsgNotify("SkipConveyorInput", "ConveyorTech")
+      ENDIF
+;
+   ENDIF
+;
+ENDIF
+;
+CONTINUE
+;
+END
+;
+;ENDFOLD (WARTE SYNC)
+;
+;
+;FOLD CONV MOV
+;
+DEF CONV_MOV(Z_CONV_NBR:IN,Z_MOV_NBR:IN)
+INT Z_CONV_NBR,Z_MOV_NBR
+IF B_CALL_CONV_MOV THEN
+   CONTINUE
+   $OUT[Z_DIST_ALARM_OUT_NBR[1]]=TRUE
+   CONTINUE
+   $OUT[Z_DIST_ALARM_OUT_NBR[2]]=TRUE
+   CONTINUE
+   $OUT[Z_DIST_ALARM_OUT_NBR[3]]=TRUE
+   CONTINUE
+   $OUT[Z_EMS_OUT_NBR[1]]=TRUE
+   CONTINUE
+   $OUT[Z_EMS_OUT_NBR[2]]=TRUE
+   CONTINUE
+   $OUT[Z_EMS_OUT_NBR[3]]=TRUE
+   B_QUIT_BECAUSE_MAX_DIST=FALSE
+   B_QUIT_BECAUSE_EMS=FALSE
+;
+;
+   SWITCH Z_CONV_NBR
+      CASE 1 ;*** CONVEYOR 1 ***
+      CONTINUE
+      IF NOT $T1 THEN
+         INTERRUPT ON Z_ALARM_DIST_INT_NBR[1]
+         INTERRUPT ON Z_MAX_DIST_INT_NBR[1]
+         INTERRUPT ON Z_EMS_INT_NBR[1]
+      ENDIF
+;
+      SWITCH Z_MOV_NBR
+;
+         ;FOLD CONVEYOR 1 MOVEMENT GROUP 1
+         CASE 711
+         sel_res=select(#UP,711,TRUE)
+         ;ENDFOLD
+;
+         ;FOLD CONVEYOR 1 MOVEMENT GROUP 2
+         CASE 712
+         sel_res=select(#UP,712,TRUE)
+         ;ENDFOLD
+;
+         ;FOLD CONVEYOR 1 MOVEMENT GROUP 3
+         CASE 713
+         sel_res=select(#UP,713,TRUE)
+         ;ENDFOLD
+;
+         ;FOLD CONVEYOR 1 MOVEMENT GROUP 4
+         CASE 714
+         sel_res=select(#UP,714,TRUE)
+         ;ENDFOLD
+;
+         ;FOLD CONVEYOR 1 MOVEMENT GROUP 5
+         CASE 715
+         sel_res=select(#UP,715,TRUE)
+         ;ENDFOLD
+;
+         ;FOLD CONVEYOR 1 MOVEMENT GROUP 6
+         CASE 716
+         sel_res=select(#UP,716,TRUE)
+         ;ENDFOLD
+;
+         ;FOLD CONVEYOR 1 MOVEMENT GROUP 7
+         CASE 717
+         sel_res=select(#UP,717,TRUE)
+         ;ENDFOLD
+;
+         ;FOLD CONVEYOR 1 MOVEMENT GROUP 8
+         CASE 718
+         sel_res=select(#UP,718,TRUE)
+         ;ENDFOLD
+;
+         ;FOLD CONVEYOR 1 MOVEMENT GROUP 9
+         CASE 719
+         sel_res=select(#UP,719,TRUE)
+         ;ENDFOLD
+;
+      ENDSWITCH
+;
+;
+      CASE 2 ;*** CONVEYOR 2 ***
+      CONTINUE
+      IF NOT $T1 THEN
+         INTERRUPT ON Z_ALARM_DIST_INT_NBR[2]
+         INTERRUPT ON Z_MAX_DIST_INT_NBR[2]
+         INTERRUPT ON Z_EMS_INT_NBR[2]
+      ENDIF
+;
+      SWITCH Z_MOV_NBR
+;
+         ;FOLD CONVEYOR 2 MOVEMENT GROUP 1
+         CASE 721
+         sel_res=select(#UP,721,TRUE)
+         ;ENDFOLD
+;
+         ;FOLD CONVEYOR 2 MOVEMENT GROUP 2
+         CASE 722
+         sel_res=select(#UP,722,TRUE)
+         ;ENDFOLD
+;
+         ;FOLD CONVEYOR 2 MOVEMENT GROUP 3
+         CASE 723
+         sel_res=select(#UP,723,TRUE)
+         ;ENDFOLD
+;
+      ENDSWITCH
+;
+;
+      CASE 3 ;*** CONVEYOR 3 ***
+      CONTINUE
+      IF NOT $T1 THEN
+         INTERRUPT ON Z_ALARM_DIST_INT_NBR[3]
+         INTERRUPT ON Z_MAX_DIST_INT_NBR[3]
+         INTERRUPT ON Z_EMS_INT_NBR[3]
+      ENDIF
+;
+      SWITCH Z_MOV_NBR
+;
+         ;FOLD CONVEYOR 3 MOVEMENT GROUP 1
+         CASE 731
+         sel_res=select(#UP,731,TRUE)
+         ;ENDFOLD
+;
+         ;FOLD CONVEYOR 3 MOVEMENT GROUP 2
+         CASE 732
+         sel_res=select(#UP,732,TRUE)
+         ;ENDFOLD
+;
+         ;FOLD CONVEYOR 3 MOVEMENT GROUP 3
+         CASE 733
+         sel_res=select(#UP,733,TRUE)
+         ;ENDFOLD
+;
+      ENDSWITCH
+;
+   ENDSWITCH
+;
+   ;Position Vorlaufstop ausloesen wegen Interrupt Problematik
+   wait sec 0
+   ;--- StopCheckConveyorDistance ---
+   INTERRUPT OFF Z_ALARM_DIST_INT_NBR[1]
+   INTERRUPT OFF Z_MAX_DIST_INT_NBR[1]
+   INTERRUPT OFF Z_EMS_INT_NBR[1]
+   INTERRUPT OFF Z_ALARM_DIST_INT_NBR[2]
+   INTERRUPT OFF Z_MAX_DIST_INT_NBR[2]
+   INTERRUPT OFF Z_EMS_INT_NBR[2]
+   INTERRUPT OFF Z_ALARM_DIST_INT_NBR[3]
+   INTERRUPT OFF Z_MAX_DIST_INT_NBR[3]
+   INTERRUPT OFF Z_EMS_INT_NBR[3]
+ENDIF
+CONTINUE
+END
+;
+;ENDFOLD (CONV MOV)
+;
+;
+;FOLD Converter Quit
+;
+DEF CONV_QUIT(Z_CONV_NBR:IN)
+INT Z_CONV_NBR
+BOOL B_STOP_AFTER_LEAVING
+INT Z_ADVANCE_OLD
+SWITCH Z_CONV_NBR
+   CASE 1
+   B_STOP_AFTER_LEAVING=B_STOP_AFTER_LEAVING1
+   CASE 2
+   B_STOP_AFTER_LEAVING=B_STOP_AFTER_LEAVING2
+   CASE 3
+   B_STOP_AFTER_LEAVING=B_STOP_AFTER_LEAVING3
+ENDSWITCH
+Z_ADVANCE_OLD=$ADVANCE
+IF (B_QUIT_BECAUSE_EMS OR B_QUIT_BECAUSE_MAX_DIST) THEN
+;********************************************
+;Strategy for the robot to leave the conveyor
+;if there was an EMS or MAX_DIST reached
+;while synchronising.
+;********************************************
+   SWITCH Z_CONV_NBR
+      CASE 1
+         $BASE=$NULLFRAME
+         LIN_REL {Z 0.0}
+      CASE 2
+         $BASE=$NULLFRAME
+         LIN_REL {Z 0.0}
+      CASE 3
+         $BASE=$NULLFRAME
+         LIN_REL {Z 0.0}
+   ENDSWITCH
+;
+   IF B_STOP_AFTER_LEAVING THEN
+      ;*****************************
+      ;* Robot Stopped because of  *
+      ;* error while synchronising *
+      ;* EMS or MAX_DIST reached   *
+      ;*****************************
+      LOOP
+         HALT
+      ENDLOOP
+   ENDIF
+ENDIF
+;
+CONTINUE
+$ADVANCE=Z_ADVANCE_OLD
+CONTINUE
+END
+;
+DEF INT_CONV_MAX_DIST(Z_CONV_NBR:IN)
+INT Z_CONV_NBR
+B_QUIT_BECAUSE_MAX_DIST=TRUE
+SWITCH Z_CONV_NBR
+   CASE 1
+      INTERRUPT OFF Z_ALARM_DIST_INT_NBR[1]
+      INTERRUPT OFF Z_MAX_DIST_INT_NBR[1]
+      INTERRUPT OFF Z_EMS_INT_NBR[1]
+   CASE 2
+      INTERRUPT OFF Z_ALARM_DIST_INT_NBR[2]
+      INTERRUPT OFF Z_MAX_DIST_INT_NBR[2]
+      INTERRUPT OFF Z_EMS_INT_NBR[2]
+   CASE 3
+      INTERRUPT OFF Z_ALARM_DIST_INT_NBR[3]
+      INTERRUPT OFF Z_MAX_DIST_INT_NBR[3]
+      INTERRUPT OFF Z_EMS_INT_NBR[3]
+ENDSWITCH
+;CONV_MESS(119) ;--- AlarmConveyorMaxDist ---
+BRAKE
+RESUME
+END
+;
+DEF INT_CONV_EMS(Z_CONV_NBR:IN)
+INT Z_CONV_NBR
+CONTINUE
+$OUT[Z_EMS_OUT_NBR[Z_CONV_NBR]]=FALSE
+IF NOT B_CONTINUE_AFTER_EMS THEN
+   B_QUIT_BECAUSE_EMS=TRUE
+   SWITCH Z_CONV_NBR
+      CASE 1
+         INTERRUPT OFF Z_ALARM_DIST_INT_NBR[1]
+         INTERRUPT OFF Z_MAX_DIST_INT_NBR[1]
+         INTERRUPT OFF Z_EMS_INT_NBR[1]
+      CASE 2
+         INTERRUPT OFF Z_ALARM_DIST_INT_NBR[2]
+         INTERRUPT OFF Z_MAX_DIST_INT_NBR[2]
+         INTERRUPT OFF Z_EMS_INT_NBR[2]
+      CASE 3
+         INTERRUPT OFF Z_ALARM_DIST_INT_NBR[3]
+         INTERRUPT OFF Z_MAX_DIST_INT_NBR[3]
+         INTERRUPT OFF Z_EMS_INT_NBR[3]
+   ENDSWITCH
+   ;CONV_MESS(113) ;--- AlarmConveyorEMS ---
+   BRAKE
+   RESUME
+ENDIF
+;
+END
+;
+DEF INT_CONV_ALARM(Z_CONV_NBR:IN)
+INT Z_CONV_NBR
+SWITCH Z_CONV_NBR
+CASE 1
+INTERRUPT OFF Z_ALARM_DIST_INT_NBR[1]
+CONTINUE
+$OUT[Z_DIST_ALARM_OUT_NBR[1]]=FALSE
+CASE 2
+;INTERRUPT OFF Z_ALARM_DIST_INT_NBR[2]
+CONTINUE
+$OUT[Z_DIST_ALARM_OUT_NBR[2]]=FALSE
+CASE 3
+;INTERRUPT OFF Z_ALARM_DIST_INT_NBR[3]
+CONTINUE
+$OUT[Z_DIST_ALARM_OUT_NBR[3]]=FALSE
+ENDSWITCH
+;CONV_MESS(112) ;--- AlarmConveyorDistance ---
+END
+;
+DEF CONV_TEACH(Z_CONV_NBR:IN,B_CALDIG_CHK:IN)
+INT Z_CONV_NBR
+BOOL B_CALDIG_CHK
+REAL R_CONV_POS_OLD
+DECL CHAR cString[10]
+DECL INT OFFSET
+DECL STATE_T STATE
+REAL CALCPOS
+REPEAT
+CONV_REINIT_MD()
+;Reset CONV in case of not activ or CONV_TEACH called by CONV_MSR
+IF ((CONV_GET_STATE(Z_CONV_NBR)<>#ACTIVE) OR B_CALDIG_CHK) THEN
+;--- ResetCONV ---
+CONV_INI_OFF(Z_CONV_NBR)
+WAIT SEC 0.5
+CONV_ON(Z_CONV_NBR)
+ENDIF
+;--- WaitForSync ---
+IF(($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]/ABS(R_CAL_DIG[Z_CONV_NBR]))<5.0) THEN
+
+MsgNotify("WaitForSync" , "ConveyorTech")
+ENDIF
+REPEAT
+UNTIL (($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]/ABS(R_CAL_DIG[Z_CONV_NBR]))>5.0)
+;--- WaitConveyorStopped ---
+MsgNotify("WaitConveyorStopped" , "ConveyorTech")
+REPEAT
+R_CONV_POS_OLD = ($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]/ABS(R_CAL_DIG[Z_CONV_NBR]))
+WAIT SEC 0.1
+UNTIL((($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]/ABS(R_CAL_DIG[Z_CONV_NBR]))-R_CONV_POS_OLD)<0.03)
+WAIT SEC 0.5
+;--- CheckConveyorDistance ---
+R_CONV_POSI = $SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NBR]]
+;--- ProceedOrRepeat ---
+CALCPOS=R_CONV_POSI
+OFFSET=0
+SWRITE(cString[],STATE,OFFSET,"%5.1F",CALCPOS)
+MsgDialog(Z_DIALOG_ANSWER, "CheckConveyorDistance", "ConveyorTech", cString[] ,,,,,,"No","Yes")
+IF (Z_DIALOG_ANSWER<>1) THEN
+IF B_CALDIG_CHK THEN
+R_CONV_POS_OLD=R_CONV_POSI
+;--- OverwriteR_CONV_POSIWithExactDistance ---
+MsgNotify("OverwriteConvPosiWithExactDistance", "ConveyorTech")
+HALT
+R_CAL_DIG[Z_CONV_NBR] = R_CAL_DIG[Z_CONV_NBR]*R_CONV_POSI/R_CONV_POS_OLD
+;--- AdaptCaldigInEbDriverIni ---
+MsgNotify("AdaptCaldigInEbDriverIni", "ConveyorTech")
+ENDIF
+CONV_INI_OFF(Z_CONV_NBR)
+ENDIF
+UNTIL (Z_DIALOG_ANSWER==1)
+END
+;
+;ENDFOLD (Converter Quit)
+;
+;
+DEF  CONV_MSR ( )
+;********************************
+; Conveyor Techware System
+; Funktion: measurement routine
+; Modtime: 03.05.2011
+;********************************
+;FOLD INI
+;========
+;FOLD BASISTECH INI
+; GLOBAL INTERRUPT DECL 3 WHEN $STOPMESS==TRUE DO IR_STOPM ( )
+;INTERRUPT ON 3
+BAS (#INITMOV,0 )
+;ENDFOLD (BASISTECH INI)
+;FOLD USER INI
+;Make your modifications here
+;ENDFOLD (USER INI)
+CONV_REINIT_MD()
+;ENDFOLD (INI)
+;FOLD 1 Check Operation Mode
+;===========================
+WHILE  $MODE_OP<>#T1
+MsgNotify("NotInT1ForMeasurements", "ConveyorTech")
+HALT ;wrong operation mode must be in T1 to measure
+ENDWHILE
+;ENDFOLD
+;Fold 2 Number of TOOL used?
+;===========================
+;TOOL number 1-6 / more?
+MsgDialog(Z_DIALOG_ANSWER, "NumberOfTheMeasuredTool", "ConveyorTech",,"7-12","6","5","4","3","2","1")
+IF Z_DIALOG_ANSWER==7 THEN
+;TOOL number 7-12 /more?
+MsgDialog(Z_DIALOG_ANSWER, "NumberOfTheMeasuredTool", "ConveyorTech",,"13-16","12","11","10","9","8","7")
+IF Z_DIALOG_ANSWER==7 THEN
+;TOOL number 13-16?
+MsgDialog(Z_DIALOG_ANSWER, "NumberOfTheMeasuredTool", "ConveyorTech",,,,,"16","15","14","13")
+TOOL_NR=Z_DIALOG_ANSWER+12
+ELSE
+TOOL_NR=Z_DIALOG_ANSWER+6
+ENDIF
+ELSE
+TOOL_NR=Z_DIALOG_ANSWER
+ENDIF
+;Endfold
+;Fold 3 Conveyor / Part-BASE measurement / Calibration check?
+;============================================================
+;Conveyor - PartBASE - Calib chk?
+MsgDialog(Z_DIALOG_ANSWER, "WhatShouldBeMeasured", "ConveyorTech",,,,,,"Calib.chk","Part-BASE","Conveyor")
+;Endfold
+;Fold 3.1 Conveyor measurement
+;=============================
+SWITCH Z_DIALOG_ANSWER
+CASE 1 ;Conveyor
+;endfold
+;fold 3.1.1 Conveyor number and type?
+;====================================
+;Conveyor 1-3?
+MsgDialog(Z_DIALOG_ANSWER, "WhichConveyorShouldBeMeasured", "ConveyorTech",,,,,,,"2","1")
+Z_CONV_NUMBER=Z_DIALOG_ANSWER
+;Linear - Circular?
+MsgDialog(Z_DIALOG_ANSWER, "LinearOrRoundConveyor", "ConveyorTech",,,,,,,"CIRCular","LINear")
+CONV_TYP=Z_DIALOG_ANSWER
+BAS (#INITMOV,0 )
+BAS (#TOOL,TOOL_NR )
+;--- ResetCONV ---
+CONV_INI_OFF(Z_CONV_NUMBER)
+wait sec 0.5
+CONV_ON(Z_CONV_NUMBER)
+$base=$nullframe
+;--- WaitForSync ---
+IF (ABS($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NUMBER]])<0.1) THEN
+MsgNotify("WaitForSync" , "ConveyorTech")
+ENDIF
+REPEAT
+UNTIL (ABS($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NUMBER]])>0.1)
+;--- WaitConveyorStopped ---
+MsgNotify("WaitConveyorStopped" , "ConveyorTech")
+REPEAT
+R_CONV_POS_OLD=$SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NUMBER]]
+WAIT SEC 0.1
+UNTIL (ABS($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NUMBER]]-R_CONV_POS_OLD)<0.01)
+WAIT SEC 0.5
+SWITCH  CONV_TYP
+CASE 1 ; linear
+;endfold
+;fold 3.1.1.1 *** Linear Conveyor ***
+;====================================
+;move to fixed point on the conveyor (basepoint)
+;(this is normaly the synchronisation point)
+;move conveyor
+;move again to fixed point on the conveyor (x axis)
+;move upwards x-y plane (direction of y axis)
+;endfold
+;fold 3.1.1.1.1 Jog to origin of conveyor frame (P1)
+;===================================================
+; move TCP to basepoint --> START
+MsgNotify("JogTcpToAFixedPoint", "ConveyorTech")
+HALT
+PT_IN_WORLD[1]=$POS_ACT
+R_CONV_POS_OLD=$SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NUMBER]]
+;endfold
+;fold 3.1.1.1.2 Jog to point +X axis of conveyor frame (P2)
+;==========================================================
+REPEAT
+; move Conveyor and then TCP to measurement point
+MsgNotify("MoveConveyor", "ConveyorTech")
+HALT
+PT_IN_WORLD[2]=$POS_ACT
+P1P2=DIST_FRAME(PT_IN_WORLD[1],PT_IN_WORLD[2])
+IF (P1P2<D_MIN) THEN
+; Points to close to eachother
+MsgNotify("PointIsTooCloseToAPreviousPoint", "ConveyorTech")
+HALT
+ENDIF
+UNTIL (P1P2>=D_MIN)
+R_CAL_DIG[Z_CONV_NUMBER]=R_CAL_DIG[Z_CONV_NUMBER]*P1P2/($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NUMBER]]-R_CONV_POS_OLD)
+;endfold
+;fold 3.1.1.1.3 Jog to XY(+Y) plane of conveyor frame (P3)
+;=========================================================
+REPEAT
+REPEAT
+; move TCP in XY plane --> START
+MsgNotify("JogTcpToAnyPoint", "ConveyorTech")
+HALT
+PT_IN_WORLD[3]=$POS_ACT
+P1P3=DIST_FRAME(PT_IN_WORLD[1],PT_IN_WORLD[3])
+P2P3=DIST_FRAME(PT_IN_WORLD[2],PT_IN_WORLD[3])
+IF ((P1P3<D_MIN) OR (P2P3<D_MIN)) THEN
+; points to close to eachother
+MsgNotify("PointIsTooCloseToAPreviousPoint", "ConveyorTech")
+HALT
+ENDIF
+UNTIL ((P1P3>=D_MIN) AND (P2P3>=D_MIN))
+P_X[1]=PT_IN_WORLD[2].X-PT_IN_WORLD[1].X
+P_X[2]=PT_IN_WORLD[2].Y-PT_IN_WORLD[1].Y
+P_X[3]=PT_IN_WORLD[2].Z-PT_IN_WORLD[1].Z
+NORM_VEK (P_X[],3 )
+P_XY[1]=PT_IN_WORLD[3].X-PT_IN_WORLD[1].X
+P_XY[2]=PT_IN_WORLD[3].Y-PT_IN_WORLD[1].Y
+P_XY[3]=PT_IN_WORLD[3].Z-PT_IN_WORLD[1].Z
+NORM_VEK (P_XY[],3 )
+ALFA=ACOS(ABS(SKAL_PROD(P_X[],P_XY[],3)))
+IF (ALFA<ALFA_MIN) THEN
+; points on a line
+MsgNotify("ThePointsAreAlmostOnOneStraightLine", "ConveyorTech")
+HALT
+ENDIF
+UNTIL (ALFA>=ALFA_MIN)
+KREUZ_PROD (P_X[],P_XY[],P_Z[] )
+NORM_VEK (P_Z[],3 )
+KREUZ_PROD (P_Z[],P_X[],P_Y[] )
+FOR I=1 TO  3
+T[I,1]=P_X[I]
+T[I,2]=P_Y[I]
+T[I,3]=P_Z[I]
+ENDFOR
+MAT_TO_RPY (T[,],NEW_BASE.A,NEW_BASE.B,NEW_BASE.C )
+NEW_BASE.X=PT_IN_WORLD[1].X
+NEW_BASE.Y=PT_IN_WORLD[1].Y
+NEW_BASE.Z=PT_IN_WORLD[1].Z
+MACHINE_DEF[Z_CONV_NUMBER+10].ROOT=NEW_BASE
+COR_DIR[Z_CONV_NUMBER]=#X
+; Conveyor-Base ready
+MsgNotify("MeasuringConveyorBaseReady", "ConveyorTech")
+CASE 2 ; circular
+;endfold
+;fold 3.1.1.2 *** Circular conveyor ***
+;======================================
+;move to fixed point on the conveyor (first point on circle)
+; (this is normaly the synchronisation point)
+	;move conveyor
+	;move to fixed point again (second point on circle)
+	;move conveyor
+	;move to fixed point again (third point on circle)
+;endfold
+;fold 3.1.1.2.1 Jog to start point on conveyor (P1)
+;==================================================
+;move TCP to meas-point -> <START>
+MsgNotify("JogTcpToPosition1OnTheTable", "ConveyorTech")
+HALT
+PT_IN_WORLD[1]=$POS_ACT
+R_CONV_POS_OLD=$SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NUMBER]]
+;endfold
+;fold 3.1.1.2.2 Jog to half-way point on conveyor (P2)
+;=====================================================
+REPEAT
+;move conveyor and TCP to meas-point -> <START>
+MsgNotify("JogTcpToPosition2OnTheTable", "ConveyorTech")
+HALT
+PT_IN_WORLD[2]=$POS_ACT
+P1P2=DIST_FRAME(PT_IN_WORLD[1],PT_IN_WORLD[2])
+IF (P1P2<D_MIN) THEN
+; points to close to eachother
+MsgNotify("PointIsTooCloseToAPreviousPoint", "ConveyorTech")
+HALT
+ENDIF
+UNTIL (P1P2>=D_MIN)
+;endfold
+;fold 3.1.1.2.3 Jog to end point on conveyor (P3)
+;================================================
+REPEAT
+;move conveyor and TCP to meas-point -> <START>
+MsgNotify("JogTcpToPosition3OnTheTable", "ConveyorTech")
+HALT
+PT_IN_WORLD[3]=$POS_ACT
+P1P3=DIST_FRAME(PT_IN_WORLD[1],PT_IN_WORLD[3])
+P2P3=DIST_FRAME(PT_IN_WORLD[2],PT_IN_WORLD[3])
+IF ((P1P3<D_MIN) OR (P2P3<D_MIN)) THEN
+; points to close to eachother
+MsgNotify("PointIsTooCloseToAPreviousPoint", "ConveyorTech")
+HALT
+ENDIF
+UNTIL ((P1P3>=D_MIN) AND (P2P3>=D_MIN))
+RADIUS=SPHERE(PT_IN_WORLD[],CENTER)
+MACHINE_DEF[Z_CONV_NUMBER+10].ROOT=CENTER
+COR_DIR[Z_CONV_NUMBER]=#A
+P_X[1]=PT_IN_WORLD[1].X-CENTER.X
+P_X[2]=PT_IN_WORLD[1].Y-CENTER.Y
+P_X[3]=PT_IN_WORLD[1].Z-CENTER.Z
+NORM_VEK (P_X[],3 )
+P_XY[1]=PT_IN_WORLD[2].X-CENTER.X
+P_XY[2]=PT_IN_WORLD[2].Y-CENTER.Y
+P_XY[3]=PT_IN_WORLD[2].Z-CENTER.Z
+NORM_VEK (P_XY[],3 )
+ALFA1=ACOS(SKAL_PROD(P_X[],P_XY[],3))
+P_X[1]=PT_IN_WORLD[2].X-CENTER.X
+P_X[2]=PT_IN_WORLD[2].Y-CENTER.Y
+P_X[3]=PT_IN_WORLD[2].Z-CENTER.Z
+NORM_VEK (P_X[],3 )
+P_XY[1]=PT_IN_WORLD[3].X-CENTER.X
+P_XY[2]=PT_IN_WORLD[3].Y-CENTER.Y
+P_XY[3]=PT_IN_WORLD[3].Z-CENTER.Z
+NORM_VEK (P_XY[],3 )
+ALFA2=ACOS(SKAL_PROD(P_X[],P_XY[],3))
+P_X[1]=PT_IN_WORLD[1].X-CENTER.X
+P_X[2]=PT_IN_WORLD[1].Y-CENTER.Y
+P_X[3]=PT_IN_WORLD[1].Z-CENTER.Z
+NORM_VEK (P_X[],3 )
+P_XY[1]=PT_IN_WORLD[3].X-CENTER.X
+P_XY[2]=PT_IN_WORLD[3].Y-CENTER.Y
+P_XY[3]=PT_IN_WORLD[3].Z-CENTER.Z
+NORM_VEK (P_XY[],3 )
+ALFA3=ACOS(SKAL_PROD(P_X[],P_XY[],3))
+IF (ABS(ALFA3-ALFA2-ALFA1)<ALFA_ERR) THEN
+R_CAL_DIG[Z_CONV_NUMBER]=ALFA3*R_CAL_DIG[Z_CONV_NUMBER]/($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NUMBER]]-R_CONV_POS_OLD)
+ELSE
+IF (ABS(360.0-ALFA1-ALFA2-ALFA3)<ALFA_ERR) THEN
+R_CAL_DIG[Z_CONV_NUMBER]=(360.0-ALFA3)*R_CAL_DIG[Z_CONV_NUMBER]/($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NUMBER]]-R_CONV_POS_OLD)
+ELSE
+R_CAL_DIG[Z_CONV_NUMBER]=ALFA3*R_CAL_DIG[Z_CONV_NUMBER]/($SEN_PREA_C[Z_SEN_PREA_NBR[Z_CONV_NUMBER]]-R_CONV_POS_OLD)
+;R_CAL_DIG faulty
+MsgNotify("CALDIGcalculationError", "ConveyorTech")
+LOOP	
+HALT
+ENDLOOP
+ENDIF
+ENDIF
+;Conveyor-Base ready
+MsgNotify("MeasuringConveyorBaseReady", "ConveyorTech")
+DEFAULT
+;Wrong Conveyor type
+MsgNotify("WrongConveyorMeasType", "ConveyorTech")
+	LOOP	
+	  HALT
+	ENDLOOP
+ENDSWITCH
+;Endfold
+;Fold 3.2 Part-BASE measurement
+;==============================
+CASE 2 ; Part-BASE
+;endfold
+;fold 3.2.1 Conveyor number ?
+;============================
+;Part-BASE for Conveyor 1-3?
+MsgDialog(Z_DIALOG_ANSWER, "MeasuringBasePartConv1OrConv2", "ConveyorTech",,,,,,,"2","1")
+Z_CONV_NUMBER=Z_DIALOG_ANSWER
+;endfold
+;fold 3.2.2 Get into sync on selected conveyor
+;=============================================
+BAS (#INITMOV,0 )
+BAS (#TOOL,TOOL_NR )
+CONV_TEACH(Z_CONV_NUMBER,TRUE)
+;endfold
+;fold 3.2.3 Jog to origin of part-BASE frame (P4)
+;================================================
+; move TCP to base point of Part-BASE --> START
+MsgNotify("MoveTcpToOriginOfTheNewCoordinateSystem", "ConveyorTech")
+HALT
+PT_IN_WORLD[1]=$POS_ACT
+;endfold
+;fold 3.2.4 Jog to +X axis of part-BASE frame (P5)
+;=================================================
+REPEAT
+; move TCP to point on X-axis --> START
+MsgNotify("MoveTcpToAPointOnThePositiveXAxis", "ConveyorTech")
+HALT
+PT_IN_WORLD[2]=$POS_ACT
+P1P2=DIST_FRAME(PT_IN_WORLD[1],PT_IN_WORLD[2])
+IF (P1P2<D_MIN) THEN
+; points to close to eachother
+MsgNotify("PointIsTooCloseToAPreviousPoint", "ConveyorTech")
+HALT
+ENDIF
+UNTIL (P1P2>=D_MIN)
+;endfold
+;fold 3.2.5 Jog to XY(+Y) plane of part-BASE frame (P6)
+;======================================================
+REPEAT
+REPEAT
+; move TCP to point in XY-plane of Part-BASE --> START
+MsgNotify("MoveTcpToAPointOnTheXyPlane", "ConveyorTech")
+HALT
+PT_IN_WORLD[3]=$POS_ACT
+P1P3=DIST_FRAME(PT_IN_WORLD[1],PT_IN_WORLD[3])
+P2P3=DIST_FRAME(PT_IN_WORLD[2],PT_IN_WORLD[3])
+IF ((P1P3<D_MIN)OR(P2P3<D_MIN)) THEN
+; points to close to eachother
+MsgNotify("PointIsTooCloseToAPreviousPoint", "ConveyorTech")
+HALT
+ENDIF
+UNTIL ((P1P3>=D_MIN)AND(P2P3>=D_MIN))
+P_X[1]=PT_IN_WORLD[2].X-PT_IN_WORLD[1].X
+P_X[2]=PT_IN_WORLD[2].Y-PT_IN_WORLD[1].Y
+P_X[3]=PT_IN_WORLD[2].Z-PT_IN_WORLD[1].Z
+NORM_VEK (P_X[],3 )
+P_XY[1]=PT_IN_WORLD[3].X-PT_IN_WORLD[1].X
+P_XY[2]=PT_IN_WORLD[3].Y-PT_IN_WORLD[1].Y
+P_XY[3]=PT_IN_WORLD[3].Z-PT_IN_WORLD[1].Z
+NORM_VEK (P_XY[],3 )
+ALFA=ACOS(ABS(SKAL_PROD(P_X[],P_XY[],3)))
+IF (ALFA<ALFA_MIN) THEN
+; points on a line
+MsgNotify("ThePointsAreAlmostOnOneStraightLine", "ConveyorTech")
+HALT
+ENDIF
+UNTIL (ALFA>=ALFA_MIN)
+KREUZ_PROD (P_X[],P_XY[],P_Z[] )
+NORM_VEK (P_Z[],3 )
+KREUZ_PROD (P_Z[],P_X[],P_Y[] )
+FOR I=1 TO  3
+T[I,1]=P_X[I]
+T[I,2]=P_Y[I]
+T[I,3]=P_Z[I]
+ENDFOR
+MAT_TO_RPY (T[,],NEW_BASE.A,NEW_BASE.B,NEW_BASE.C )
+NEW_BASE.X=PT_IN_WORLD[1].X
+NEW_BASE.Y=PT_IN_WORLD[1].Y
+NEW_BASE.Z=PT_IN_WORLD[1].Z
+;correct for conveyor-base and conveyor movement
+CONVKORR (-R_CONV_POSI, Z_CONV_NUMBER)
+;Part-BASE ready
+MsgNotify("MeasuringBasePartReady", "ConveyorTech")
+;endfold
+;Fold 3.3 R_CAL_DIG[] check
+;========================
+CASE 3 ; R_CAL_DIG check
+;endfold
+;fold 3.3.1 Conveyor number ?
+;============================
+;R_CAL_DIG for Conveyor 1-3?
+MsgDialog(Z_DIALOG_ANSWER, "CaldigChkConveyor", "ConveyorTech",,,,,,,"2","1")
+Z_CONV_NUMBER=Z_DIALOG_ANSWER
+;endfold
+;fold 3.3.2 Get into sync on selected conveyor
+;=============================================
+BAS (#INITMOV,0 )
+BAS (#TOOL,TOOL_NR )
+CONV_TEACH(Z_CONV_NUMBER,TRUE)
+DEFAULT
+;Unexpected answer
+MsgNotify("UnexpectedAnswer", "ConveyorTech")
+ENDSWITCH
+;endfold
+END
+;
+;
+;FOLD *** READY ***
+;==================
+DEFFCT  REAL SPHERE(P[]:OUT,CENTER:IN)
+; Berechnen von Mittelpunkt und Radius einer Kreis im Raum, von der 3 Punkte
+; gegeben sind
+FRAME P[],CENTER
+REAL UU[3],VV[3],WW[3]
+REAL MM[3,3]
+REAL A[3,3],B[3],MITTEL[3],D[3],RADIUS
+REAL DET,DET_X,DET_Y,DET_Z
+INT J
+; UU = Vector P1 -> P2
+UU[1]=P[2].X-P[1].X
+UU[2]=P[2].Y-P[1].Y
+UU[3]=P[2].Z-P[1].Z
+; VV = Vector P1 -> P3
+VV[1]=P[3].X-P[1].X
+VV[2]=P[3].Y-P[1].Y
+VV[3]=P[3].Z-P[1].Z
+; WW perpendicular to UU - VV plane
+KREUZ_PROD (UU[],VV[],WW[] )
+NORM_VEK (UU[],3 )
+NORM_VEK (VV[],3 )
+NORM_VEK (WW[],3 )
+FOR J=1 TO  3
+A[1,J]=UU[J]
+A[2,J]=VV[J]
+A[3,J]=WW[J]
+ENDFOR
+MITTEL[1]=(P[2].X+P[1].X)/2
+MITTEL[2]=(P[2].Y+P[1].Y)/2
+MITTEL[3]=(P[2].Z+P[1].Z)/2
+B[1]=SKAL_PROD(MITTEL[],UU[],3)
+MITTEL[1]=(P[3].X+P[1].X)/2
+MITTEL[2]=(P[3].Y+P[1].Y)/2
+MITTEL[3]=(P[3].Z+P[1].Z)/2
+B[2]=SKAL_PROD(MITTEL[],VV[],3)
+MITTEL[1]=P[1].X
+MITTEL[2]=P[1].Y
+MITTEL[3]=P[1].Z
+B[3]=SKAL_PROD(MITTEL[],WW[],3)
+; Das lineare 3x3 Gleichungssystem  A x = b  wird mit der Cramer 'schen
+; Regel geloest. LOES_3X3_LGS(A[,],X[],B[])
+DET=A[1,1]*A[2,2]*A[3,3]+A[1,2]*A[2,3]*A[3,1]+A[1,3]*A[2,1]*A[3,2]
+DET=DET-A[3,1]*A[2,2]*A[1,3]-A[3,2]*A[2,3]*A[1,1]-A[3,3]*A[2,1]*A[1,2]
+DET_X=B[1]*A[2,2]*A[3,3]+A[1,2]*A[2,3]*B[3]+A[1,3]*B[2]*A[3,2]
+DET_X=DET_X-B[3]*A[2,2]*A[1,3]-A[3,2]*A[2,3]*B[1]-A[3,3]*B[2]*A[1,2]
+DET_Y=A[1,1]*B[2]*A[3,3]+B[1]*A[2,3]*A[3,1]+A[1,3]*A[2,1]*B[3]
+DET_Y=DET_Y-A[3,1]*B[2]*A[1,3]-B[3]*A[2,3]*A[1,1]-A[3,3]*A[2,1]*B[1]
+DET_Z=A[1,1]*A[2,2]*B[3]+A[1,2]*B[2]*A[3,1]+B[1]*A[2,1]*A[3,2]
+DET_Z=DET_Z-A[3,1]*A[2,2]*B[1]-A[3,2]*B[2]*A[1,1]-B[3]*A[2,1]*A[1,2]
+CENTER.X=DET_X/DET
+CENTER.Y=DET_Y/DET
+CENTER.Z=DET_Z/DET
+CENTER.A=0.0
+CENTER.B=0.0
+CENTER.C=0.0
+; Z-Vektor auf Tisch hier: WW[] (bereits normiert)
+; X-Vektor auf Tisch hier: UU[]
+UU[1]=CENTER.X-P[1].X
+UU[2]=CENTER.Y-P[1].Y
+UU[3]=CENTER.Z-P[1].Z
+NORM_VEK (UU[],3 )
+; Y-Vektor auf Tisch hier: VV[]
+KREUZ_PROD (WW[],UU[],VV[] )
+NORM_VEK (VV[],3 )
+; Matixbelegung MM[,]
+MM[1,1]=UU[1]
+MM[2,1]=UU[2]
+MM[3,1]=UU[3]
+MM[1,2]=VV[1]
+MM[2,2]=VV[2]
+MM[3,2]=VV[3]
+MM[1,3]=WW[1]
+MM[2,3]=WW[2]
+MM[3,3]=WW[3]
+; Winkelberechnung von A, B, C in Frame CENTER
+MAT_TO_RPY (MM[,],CENTER.A,CENTER.B,CENTER.C )
+D[1]=CENTER.X-P[1].X
+D[2]=CENTER.Y-P[1].Y
+D[3]=CENTER.Z-P[1].Z
+RADIUS=SQRT(SKAL_PROD(D[],D[],3))
+RETURN  (RADIUS)
+ENDFCT
+DEF  CONVKORR (NACHFUEHRWEG :IN, CONV_NO : IN)
+REAL NACHFUEHRWEG
+INT CONV_NO
+REAL O[3,3],MINUS_P[3],INV_P[3],SUM
+REAL COS_A,SIN_A,COS_B,SIN_B,COS_C,SIN_C
+INT I, J
+FRAME KORR_FRAME,HILFS_FRAME,GEOREF_FRAME
+GEOREF_FRAME={X 0.0,Y 0.0,Z 0.0,A 0.0,B 0.0,C 0.0}
+SWITCH  COR_DIR[CONV_NO]
+CASE #X
+GEOREF_FRAME.X=NACHFUEHRWEG
+CASE #Y
+GEOREF_FRAME.Y=NACHFUEHRWEG
+CASE #Z
+GEOREF_FRAME.Z=NACHFUEHRWEG
+CASE #A
+GEOREF_FRAME.A=NACHFUEHRWEG
+CASE #B
+GEOREF_FRAME.B=NACHFUEHRWEG
+CASE #C
+GEOREF_FRAME.C=NACHFUEHRWEG
+DEFAULT
+; faulty conveyor direction
+MsgNotify("WrongConveyorConfiguration", "ConveyorTech")
+HALT
+ENDSWITCH
+HILFS_FRAME=MACHINE_DEF[CONV_NO+10].ROOT
+; Orientierung invertieren:
+; Umwandlung von RPY-Winkeln A, B, C in eine Trafo-Matrix T
+; O = Rot_z(A) * Rot_y(B) * Rot_x(C)
+COS_A=COS(HILFS_FRAME.A)
+SIN_A=SIN(HILFS_FRAME.A)
+COS_B=COS(HILFS_FRAME.B)
+SIN_B=SIN(HILFS_FRAME.B)
+COS_C=COS(HILFS_FRAME.C)
+SIN_C=SIN(HILFS_FRAME.C)
+;orthogonalen 3x3-Orientierungsmatrix invertiert durch Transponieren
+O[1,1]=COS_A*COS_B
+O[2,1]=-SIN_A*COS_C+COS_A*SIN_B*SIN_C
+O[3,1]=SIN_A*SIN_C+COS_A*SIN_B*COS_C
+O[1,2]=SIN_A*COS_B
+O[2,2]=COS_A*COS_C+SIN_A*SIN_B*SIN_C
+O[3,2]=-COS_A*SIN_C+SIN_A*SIN_B*COS_C
+O[1,3]=-SIN_B
+O[2,3]=COS_B*SIN_C
+O[3,3]=COS_B*COS_C
+MAT_TO_RPY (O[,],HILFS_FRAME.A,HILFS_FRAME.B,HILFS_FRAME.C )
+; Ort invertieren:
+MINUS_P[1]=-HILFS_FRAME.X
+MINUS_P[2]=-HILFS_FRAME.Y
+MINUS_P[3]=-HILFS_FRAME.Z
+; b = A * x wird berechnet, wobei dim(A) = 3 x 3
+FOR I=1 TO  3
+SUM=0
+FOR J=1 TO 3
+SUM=SUM+O[I,J]*MINUS_P[J]
+ENDFOR
+INV_P[I]=SUM
+ENDFOR
+HILFS_FRAME.X=INV_P[1]
+HILFS_FRAME.Y=INV_P[2]
+HILFS_FRAME.Z=INV_P[3]
+KORR_FRAME=MACHINE_DEF[CONV_NO+10].ROOT:GEOREF_FRAME:HILFS_FRAME
+BASE_DATA[CONV_NO+10]=KORR_FRAME:NEW_BASE
+BASE_DATA[CONV_NO+10]=HILFS_FRAME:BASE_DATA[CONV_NO+10]
+END
+DEF  NORM_VEK (V[]:OUT,N :IN )
+; Der Vektor V wird durch seine Laenge dividiert, so dass er dann
+; Laenge 1 besitzt.
+REAL V[]
+INT N
+REAL LAENGE
+INT I
+LAENGE=SQRT(SKAL_PROD(V[],V[],N))
+FOR I=1 TO  N
+V[I]=V[I]/LAENGE
+ENDFOR
+END
+DEFFCT  REAL DIST_FRAME(P1:IN,P2:IN)
+; Berechnung des Abstandes zwischen 2 Positionen
+FRAME P1,P2
+REAL DIST_VEC[3]
+DIST_VEC[1]=P2.X-P1.X
+DIST_VEC[2]=P2.Y-P1.Y
+DIST_VEC[3]=P2.Z-P1.Z
+RETURN  (SQRT(SKAL_PROD(DIST_VEC[],DIST_VEC[],3)))
+ENDFCT
+DEFFCT  REAL SKAL_PROD(V[]:OUT,W[]:OUT,N :IN)
+; Berechnung des Skalarprodukts der beiden N-dimensionalen Vektoren
+; V und W
+REAL V[],W[]
+INT N
+REAL SK_PROD
+INT I
+SK_PROD=0
+FOR I=1 TO  N
+SK_PROD=SK_PROD+V[I]*W[I]
+ENDFOR
+RETURN  (SK_PROD)
+ENDFCT
+DEF  KREUZ_PROD (U[]:OUT,V[]:OUT,W[]:OUT )
+; Berechnung des Kreuzproduktes der 3-dim Vektoren U und V.
+; Das Ergebnis wird in W abgespeichert.
+REAL U[],V[],W[]
+W[1]=U[2]*V[3]-U[3]*V[2]
+W[2]=U[3]*V[1]-U[1]*V[3]
+W[3]=U[1]*V[2]-U[2]*V[1]
+END
+DEF conv_skip(Z_SKIP_NBR:IN,Z_CONV_NBR:IN,Z_MOV_NBR:IN,Z_MAX_TIME:IN,Z_INPUT_NBR:IN,B_INPUT_LEVEL:IN,Z_FLAG_NBR:IN,B_FLAG_LEVEL:IN,R_MINDIST:IN,R_MAXDIST:IN)
+INT Z_CONV_NBR,Z_MOV_NBR,Z_SKIP_NBR,Z_MAX_TIME,Z_INPUT_NBR,Z_FLAG_NBR
+REAL R_MINDIST,R_MAXDIST
+FRAME TESTEN
+BOOL TEIL_DA,B_INPUT_LEVEL,B_FLAG_LEVEL
+;Parameter list
+;--------------
+;Z_CONV_NBR ;Conveyor number
+;Z_MOV_NBR ;Conveyor movement group number
+;Z_SKIP_NBR ;number of part to skip
+;Z_MAX_TIME ;[msec] Max waiting for sync
+;Z_INPUT_NBR ;Input to skip conveyor
+;Z_FLAG_NBR ;Flag to skip conveyor movement
+;R_MINDIST ;[mm] Min displacement while synchronised
+;R_MAXDIST ;[mm] Max displacement while synchronised
+TEIL_DA=FALSE
+B_CALL_CONV_MOV=FALSE
+B_QUIT_BECAUSE_MAX_DIST=FALSE
+B_QUIT_BECAUSE_EMS=FALSE
+CONTINUE
+$OUT[Z_DIST_ALARM_OUT_NBR[1]]=TRUE
+CONTINUE
+$OUT[Z_DIST_ALARM_OUT_NBR[2]]=TRUE
+CONTINUE
+$OUT[Z_DIST_ALARM_OUT_NBR[3]]=TRUE
+CONTINUE
+$OUT[Z_EMS_OUT_NBR[1]]=TRUE
+CONTINUE
+$OUT[Z_EMS_OUT_NBR[2]]=TRUE
+CONTINUE
+$OUT[Z_EMS_OUT_NBR[3]]=TRUE
+CONTINUE
+IF (R_ALARM_DIST_CONV[Z_CONV_NBR]>R_MAX_DIST_CONV[Z_CONV_NBR]) THEN
+R_ALARM_DIST_CONV[Z_CONV_NBR]=R_MAX_DIST_CONV[Z_CONV_NBR]
+;--- AlarmDistReducedToMaxDist ---
+MsgNotify("AlarmDistReducedToMaxDist", "ConveyorTech")
+ENDIF
+CONTINUE
+IF (R_MAXDIST>R_ALARM_DIST_CONV[Z_CONV_NBR]) THEN
+R_MAXDIST=R_ALARM_DIST_CONV[Z_CONV_NBR]
+;--- MaxSyncinDistReducedToAlarmDist ---
+MsgNotify("MaxSyncinDistReducedToAlarmDist", "ConveyorTech")
+ENDIF
+CONTINUE
+IF $T1 THEN
+;--- TeachModusRequired ? ---
+WAIT FOR TRUE
+MsgDialog(Z_DIALOG_ANSWER, "TeachModusRequired", "ConveyorTech",,,,,,,"No","Yes")
+IF (Z_DIALOG_ANSWER==1) THEN
+CONV_TEACH(Z_CONV_NBR,FALSE)
+;--- TeachConveyorMovements ---
+MsgNotify("TeachConveyorMovements" , "ConveyorTech")
+B_CALL_CONV_MOV=TRUE
+ELSE
+;--- SkipConveyorT1WithoutTeach ---
+MsgNotify("SkipConveyorT1WithoutTeach" , "ConveyorTech")
+ENDIF
+ELSE
+$TIMER[Z_CONV_TIMER_NBR]=-Z_MAX_TIME*1000
+IF Z_MAX_TIME<>0.0 THEN
+$TIMER_STOP[Z_CONV_TIMER_NBR]=FALSE
+ENDIF
+CONTINUE
+REPEAT
+TESTEN=EB_TEST($nullframe,machine_def[11].name[],$nullframe,Z_SKIP_NBR,TEIL_DA)
+CONTINUE
+UNTIL (((TEIL_DA==TRUE) AND (TESTEN.X>=(R_MINDIST+0.1))) OR ((TESTEN.X>=R_MAXDIST) OR ($FLAG[Z_FLAG_NBR]==B_FLAG_LEVEL) OR ($IN[Z_INPUT_NBR]==B_INPUT_LEVEL) OR ($TIMER_FLAG[Z_CONV_TIMER_NBR]==TRUE)))
+machine_def[11].coop_krc_index=Z_SKIP_NBR
+CONTINUE
+IF ((TESTEN.X>=(R_MINDIST+0.1)) AND (TESTEN.X<=R_MAXDIST) AND NOT ($FLAG[Z_FLAG_NBR]==B_FLAG_LEVEL) AND NOT ($IN[Z_INPUT_NBR]==B_INPUT_LEVEL) AND NOT $TIMER_FLAG[Z_CONV_TIMER_NBR]==TRUE) THEN
+B_CALL_CONV_MOV=TRUE
+ELSE
+IF (TESTEN.X>R_MAXDIST) THEN
+;--- SkipConveyorMaxDist ---
+MsgNotify("SkipConveyorMaxDistance", "ConveyorTech")
+;Band stoppen je nach Anwendung
+;$OUT[55]=true ;je nach Anwendung
+;B_CALL_CONV_MOV=TRUE ;trotzdem am gestoppen Band arbeiten je nach Anwendung
+ENDIF
+IF $TIMER_FLAG[Z_CONV_TIMER_NBR] THEN
+	;--- SkipConveyorTime ---
+	MsgNotify("SkipConveyorTime" , "ConveyorTech")
+ENDIF
+IF ($FLAG[Z_FLAG_NBR]==B_FLAG_LEVEL) THEN
+	;--- SkipConveyorFlag ---
+MsgNotify("SkipConveyorFlag" , "ConveyorTech")
+ENDIF
+IF ($IN[Z_INPUT_NBR]==B_INPUT_LEVEL) THEN
+	;--- SkipConveyorInput ---
+MsgNotify("SkipConveyorInput", "ConveyorTech")
+ENDIF
+ENDIF
+ENDIF
+END
+DEF  MAT_TO_RPY (T[,]:OUT,A:OUT,B:OUT,C:OUT )
+; Umwandlung einer Trafo-Matrix T in die RPY-Winkel A, B, C
+; T = Rot_z(A) * Rot_y(B) * Rot_x(C)
+REAL T[,],A,B,C
+REAL SIN_A,COS_A,SIN_B,ABS_COS_B,SIN_C,COS_C
+A=ARCTAN2(T[2,1],T[1,1])
+SIN_A=SIN(A)
+COS_A=COS(A)
+SIN_B=-T[3,1]
+ABS_COS_B=COS_A*T[1,1]+SIN_A*T[2,1]
+B=ARCTAN2(SIN_B,ABS_COS_B) ;       Hier: -90 <= B <= +90 !!
+SIN_C=SIN_A*T[1,3]-COS_A*T[2,3]
+COS_C=-SIN_A*T[1,2]+COS_A*T[2,2]
+C=ARCTAN2(SIN_C,COS_C)
+END
+DEFFCT  REAL ARCTAN2(Y :IN,X :IN)
+; Arcustangens mit 2 Argumenten und Check, ob x und y numerisch 0 sind
+REAL X,Y
+REAL ATAN_EPS
+ATAN_EPS=0.00011
+IF ((ABS(X)<ATAN_EPS) AND (ABS(Y)<ATAN_EPS)) THEN
+RETURN  (0)
+ELSE
+RETURN  (ATAN2(Y,X))
+ENDIF
+ENDFCT
+;ENDFOLD

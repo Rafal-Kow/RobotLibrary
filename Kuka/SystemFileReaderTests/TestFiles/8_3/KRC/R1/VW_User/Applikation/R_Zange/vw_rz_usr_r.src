@@ -1,0 +1,70 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/R_Zange
+&PARAM TPVW_VERSION = 8.3.8
+&REL 223
+DEF VW_RZ_USR_R( )
+; 
+;*-------------------------------------------------------*
+;*Technologiepaket Docking                               *
+;*                                                       *
+;*Konzernstandard                                        *
+;*-------------------------------------------------------*
+;
+END
+;
+;FOLD RZ Interface
+GLOBAL DEF RZ_Interfac(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+BOOL PAR7
+INT ret, i
+;
+;-----------------------------------------------------
+;
+SWITCH USER_CMD
+;
+;-----------------------------------------------------
+;
+  CASE #USR_INIT
+    ;FOLD Init
+    ;
+    ;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------
+;
+  CASE #USR_ADV
+    ;FOLD Advance
+    ;
+    ;
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------
+;
+  CASE #USR_TRIG
+    ;FOLD Trig
+      ;
+    ;ENDFOLD (Trig)
+;
+;-----------------------------------------------------
+;
+  CASE #USR_MAIN
+    ;FOLD Main
+    ;
+    ;
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------
+;
+  CASE #USR_MAKRO
+    ;FOLD Makro
+    ;ENDFOLD (Makro)
+;
+;-----------------------------------------------------
+  DEFAULT
+;  
+ENDSWITCH
+END
+;
+;ENDFOLD (DK Interface)
+;

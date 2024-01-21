@@ -1,0 +1,71 @@
+&ACCESS RVP1
+&COMMENT TEIL_ARBEITSF_6
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrovorgabe.src
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM EDITMASK = Makro999[0-999]
+DEFFCT INT MAKRO6(ADV :IN)
+   ;FOLD Makro Anfang ;%{PSE}%MKUKATPVW
+      BOOL ADV
+      ; interface to basic routines
+      EXT  BAS (BAS_COMMAND  :IN,REAL  :IN )
+      ; interface to VW-standard routines
+      EXT VW (VW_COMMAND:IN, BOOL: IN, REAL:IN, REAL:IN, REAL:IN, REAL:IN, BOOL :IN, E6POS :IN )
+      ; interface select routine
+      EXTFCT INT  SELECT (SUBTYPE  :IN,INT  :IN,BOOL  :IN,ARI_TYP  :IN,INT  :IN,BOOL_TYP  :IN,INT  :IN,BOOL  :IN)
+      SPS_N=-1
+      ;FOLD ;%{H} %MKUKATPVW
+      IF VARSTATE ("ADV") <> #INITIALIZED THEN
+         ADV=FALSE
+      ENDIF
+      IF (NOT ADV) THEN
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Teil Arbeitsfertigmeldung 6 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Teil Arbeitsfertigmeldung 6 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- KS24 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KS24 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Version: 01 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Version: 01 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Stand: 001 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Stand: 001 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- letzte Aenderung 11.06.2014 PK -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- letzte Aenderung 11.06.2014 PK --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD WARTE BIS !F525 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !F525, 3: WBOASG
+      $LOOP_MSG[]="!F525"
+      $LOOP_CONT=TRUE
+      WAIT FOR (NOT $FLAG[525]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD -- Arbeitsfertigmeldung setzen -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Arbeitsfertigmeldung setzen --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD bin18 ( EIN ) = 6 ;%{E}%MKUKATPVW %CVW_SPS %VARIASG %P 2:bin18 ( EIN ) = 6, 3: ARIASG
+      VW(#BINOUT,TRUE,18,6)
+   ;ENDFOLD
+   ;FOLD -- Auf Rueckmeldung warten -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Auf Rueckmeldung warten --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD WARTE BIS !E33 & E34 & E35 & !E36 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E33 & E34 & E35 & !E36, 3: WBOASG
+      $LOOP_MSG[]="!E33 & E34 & E35 & !E36"
+      $LOOP_CONT=TRUE
+      WAIT FOR (NOT $IN[33] AND $IN[34] AND $IN[35] AND NOT $IN[36]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD -- Arbeitsfertigmeldung auf 0 setzen -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Arbeitsfertigmeldung auf 0 setzen --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD bin18 ( EIN ) = 0 ;%{E}%MKUKATPVW %CVW_SPS %VARIASG %P 2:bin18 ( EIN ) = 0, 3: ARIASG
+      VW(#BINOUT,TRUE,18,0)
+   ;ENDFOLD
+   ;FOLD -- Auf Rueckmeldung warten -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Auf Rueckmeldung warten --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD WARTE BIS !E33 & !E34 & !E35 & !E36 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E33 & !E34 & !E35 & !E36, 3: WBOASG
+      $LOOP_MSG[]="!E33 & !E34 & !E35 & !E36"
+      $LOOP_CONT=TRUE
+      WAIT FOR (NOT $IN[33] AND NOT $IN[34] AND NOT $IN[35] AND NOT $IN[36]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ; FOLD ;%{H}
+   RETURN 1
+   ELSE
+   RETURN 0
+   ENDIF
+ENDFCT
+; ENDFOLD

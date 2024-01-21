@@ -1,0 +1,91 @@
+&ACCESS RV
+&REL 6
+&COMMENT INITIALISIERUNG MERKER VW370
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrovorgabe.src
+&PARAM EDITMASK = Makro999[0-999]
+&PARAM TPVW_VERSION = 8.1.8
+DEFFCT INT MAKRO51(ADV :IN)
+   ;FOLD Makro Anfang ;%{PSE}%MKUKATPVW
+      BOOL ADV
+      ; interface to basic routines
+      EXT  BAS (BAS_COMMAND  :IN,REAL  :IN )
+      ; interface to VW-standard routines
+      EXT VW (VW_COMMAND:IN, BOOL: IN, REAL:IN, REAL:IN, REAL:IN, REAL:IN, BOOL :IN, E6POS :IN )
+      ; interface select routine
+      EXTFCT INT  SELECT (SUBTYPE  :IN,INT  :IN,BOOL  :IN,ARI_TYP  :IN,INT  :IN,BOOL_TYP  :IN,INT  :IN,BOOL  :IN)
+      SPS_N=-1
+      ;FOLD ;%{H} %MKUKATPVW
+      IF VARSTATE ("ADV") <> #INITIALIZED THEN
+         ADV=FALSE
+      ENDIF
+      IF (NOT ADV) THEN
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- ********** Greifer ********** -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- ********** Greifer ********** --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Greifer  1 VW370  4T -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Greifer  1 VW370  4T --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Greifer  VW370  4T  ohne Bauteil -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Greifer  VW370  4T  ohne Bauteil --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M13 = !E605 & !E607 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M13 = !E605 & !E607, 3: BOASG
+      $CYCFLAG[13] = NOT $IN[605] AND NOT $IN[607]
+   ;ENDFOLD
+   ;FOLD -- mit  Bauteil -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- mit  Bauteil --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M1 = E605 & E607 + E15 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M1 = E605 & E607 + E15, 3: BOASG
+      $CYCFLAG[1] = $IN[605] AND $IN[607] OR $IN[15]
+   ;ENDFOLD
+   ;FOLD -- Abfrage Spanngruppen -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Abfrage Spanngruppen --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Spannzylinder  11a-d  AUF -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Spannzylinder  11a-d  AUF --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M31 = E579 & !E580 & E581 & !E582 & E583 & !E584 & E585 & !E586 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M31 = E579 & !E580 & E581 & !E582 & E583 & !E584 & E585 & !E586, 3: BOASG
+      $CYCFLAG[31] = $IN[579] AND NOT $IN[580] AND $IN[581] AND NOT $IN[582] AND $IN[583] AND NOT $IN[584] AND $IN[585] AND NOT $IN[586]
+   ;ENDFOLD
+   ;FOLD -- Spannzylinder 11a-d ZU -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Spannzylinder 11a-d ZU --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M32 = !E579 & E580 & !E581 & E582 & !E583 & E584 & !E585 & E586 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M32 = !E579 & E580 & !E581 & E582 & !E583 & E584 & !E585 & E586, 3: BOASG
+      $CYCFLAG[32] = NOT $IN[579] AND $IN[580] AND NOT $IN[581] AND $IN[582] AND NOT $IN[583] AND $IN[584] AND NOT $IN[585] AND $IN[586]
+   ;ENDFOLD
+   ;FOLD -- Stiftziehzylinder 12a-b  Ausgefahren -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Stiftziehzylinder 12a-b  Ausgefahren --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M33 = !E587 & E588 & !E589 & E590 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M33 = !E587 & E588 & !E589 & E590, 3: BOASG
+      $CYCFLAG[33] = NOT $IN[587] AND $IN[588] AND NOT $IN[589] AND $IN[590]
+   ;ENDFOLD
+   ;FOLD -- Stiftziehzylinder  12a-b  Eingefahren -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Stiftziehzylinder  12a-b  Eingefahren --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M34 = E587 & !E588 & E589 & !E590 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M34 = E587 & !E588 & E589 & !E590, 3: BOASG
+      $CYCFLAG[34] = $IN[587] AND NOT $IN[588] AND $IN[589] AND NOT $IN[590]
+   ;ENDFOLD
+   ;FOLD -- *************************** -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- *************************** --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Sammelmerker Roboterverriegelungen -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Sammelmerker Roboterverriegelungen --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M20 = E42 & E44 & E47 & E49 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M20 = E42 & E44 & E47 & E49, 3: BOASG
+      $CYCFLAG[20] = $IN[42] AND $IN[44] AND $IN[47] AND $IN[49]
+   ;ENDFOLD
+   ;FOLD -- Sammelmerker Roboterverriegelungen -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Sammelmerker Roboterverriegelungen --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M21 = E43 & E45 & E52 & E54 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M21 = E43 & E45 & E52 & E54, 3: BOASG
+      $CYCFLAG[21] = $IN[43] AND $IN[45] AND $IN[52] AND $IN[54]
+   ;ENDFOLD
+   ;FOLD -- Typenmeldung G1 VW370 4T -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Typenmeldung G1 VW370 4T --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD M199 = M1 & !M13 & M76 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:M199 = M1 & !M13 & M76, 3: BOASG
+      $CYCFLAG[199] = $CYCFLAG[1] AND NOT $CYCFLAG[13] AND $CYCFLAG[76]
+   ;ENDFOLD
+   ;FOLD -- G KYP01E mit Rueckm. Steuerluft vorhanden -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- G KYP01E mit Rueckm. Steuerluft vorhanden --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F523 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F523 = EIN, 3: BOASG
+      $FLAG[523] = TRUE
+   ;ENDFOLD
+   ;FOLD F524 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F524 = AUS, 3: BOASG
+      $FLAG[524] = FALSE
+   ;ENDFOLD
+   ; FOLD ;%{H}
+   RETURN 1
+   ELSE
+   RETURN 1
+   ENDIF
+ENDFCT
+; ENDFOLD

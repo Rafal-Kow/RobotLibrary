@@ -1,0 +1,17 @@
+&ACCESS RV
+&PARAM TPVW_VERSION=8.3.18
+DEFDAT VW_CONFIG PUBLIC
+
+;FOLD USER GLOBALS;%E{E},%P___$$$___CONFIG.USB___start___
+;==================================
+; Userdefined Types 
+;==================================
+;==================================
+; Userdefined Externals 
+;==================================
+;==================================
+; Userdefined Variables 
+;==================================
+;ENDFOLD;___$$$___CONFIG.USB___end_____
+
+ENDDAT

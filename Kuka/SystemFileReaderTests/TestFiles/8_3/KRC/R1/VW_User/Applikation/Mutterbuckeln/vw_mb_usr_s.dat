@@ -1,0 +1,165 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Mutterbuckeln
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEFDAT  vw_mb_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Mutterbuckeln                       *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.16 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD USER_Version
+STRUC _Tech_MBuckeln CHAR Name[20],INT Datum
+DECL _Tech_MBuckeln Tech_MBuckeln
+;ENDFOLD
+; 
+;FOLD Mutterbuckeln 1 V1
+GLOBAL BOOL MIT_MB1=FALSE
+GLOBAL BOOL B_MB1_Hilf=FALSE
+; 
+GLOBAL INT F_MB1_nio=205
+GLOBAL INT F_MB1_Sammel=208
+GLOBAL INT F_m_MB1=531
+; 
+GLOBAL INT I_MB1_bereit=1793
+GLOBAL INT I_MB1_KW_vor=1798
+GLOBAL INT I_MB1_Mat=1813
+GLOBAL INT I_MB1_o_Proz=161
+; 
+GLOBAL INT O_MB1_P_akt=161
+GLOBAL INT O_MB1_nio=162
+GLOBAL INT O_MB1_Mat=165
+GLOBAL INT O_MB1_nBerei=167
+GLOBAL INT O_MB1_Samel2=168
+GLOBAL INT O_MB1_Hand=1796
+GLOBAL INT O_MB1_Auto=1797
+GLOBAL INT O_MB1_Antein=1798
+GLOBAL INT O_MB1_AH_auf=1802
+GLOBAL INT O_MB1_AH_zu=1803
+GLOBAL INT O_MB1_Zuf_zu=1804
+GLOBAL INT O_MB1_Zuf_vo=1805
+GLOBAL INT O_MB1_H_senk=1806
+GLOBAL INT O_MB1_H_heb=1807
+GLOBAL INT O_MB1_m_Proz=1817
+;ENDFOLD
+; 
+;FOLD Mutterbuckeln 1 V2
+GLOBAL BOOL MIT_MB1_N=FALSE
+; 
+GLOBAL INT F_m_MB1_N=690
+; 
+GLOBAL INT I_MB1_KW_v_N=1796
+GLOBAL INT I_MB1_Mat_N=1811
+GLOBAL INT I_MB1_V_Ka_N=1822
+GLOBAL INT I_MB1_M_Ka_N=1823
+; 
+GLOBAL INT O_MB1_nio_N=163
+GLOBAL INT O_MB1_V_Ka_N=164
+GLOBAL INT O_MB1_M_Ka_N=165
+GLOBAL INT O_MB1_Mat_N=166
+GLOBAL INT O_MB1_Hand_N=1794
+GLOBAL INT O_MB1_Auto_N=1795
+GLOBAL INT O_MB1_Antr_N=1796
+GLOBAL INT O_MB1_AH_a_N=1801
+GLOBAL INT O_MB1_AH_z_N=1802
+GLOBAL INT O_MB1_Zf_z_N=1803
+GLOBAL INT O_MB1_Zf_v_N=1804
+GLOBAL INT O_MB1_H_se_N=1805
+GLOBAL INT O_MB1_H_he_N=1806
+;ENDFOLD
+; 
+;FOLD Mutterbuckeln 2 V1
+GLOBAL BOOL MIT_MB2=FALSE
+GLOBAL BOOL B_MB2_Hilf=FALSE
+; 
+GLOBAL INT F_MB2_nio=216
+GLOBAL INT F_MB2_Sammel=219
+GLOBAL INT F_m_MB2=532
+; 
+GLOBAL INT I_MB2_bereit=1825
+GLOBAL INT I_MB2_KW_vor=1830
+GLOBAL INT I_MB2_Mat=1845
+GLOBAL INT I_MB2_o_Proz=201
+; 
+GLOBAL INT O_MB2_P_akt=201
+GLOBAL INT O_MB2_nio=202
+GLOBAL INT O_MB2_Mat=205
+GLOBAL INT O_MB2_nBerei=207
+GLOBAL INT O_MB2_Samel2=208
+GLOBAL INT O_MB2_Hand=1828
+GLOBAL INT O_MB2_Auto=1829
+GLOBAL INT O_MB2_Antein=1830
+GLOBAL INT O_MB2_AH_auf=1834
+GLOBAL INT O_MB2_AH_zu=1835
+GLOBAL INT O_MB2_Zuf_zu=1836
+GLOBAL INT O_MB2_Zuf_vo=1837
+GLOBAL INT O_MB2_H_senk=1838
+GLOBAL INT O_MB2_H_heb=1839
+GLOBAL INT O_MB2_m_Proz=1849
+;ENDFOLD
+; 
+;FOLD Mutterbuckeln 2 V2
+GLOBAL BOOL MIT_MB2_N=FALSE
+; 
+GLOBAL INT F_m_MB2_N=691
+; 
+GLOBAL INT I_MB2_KW_v_N=1828
+GLOBAL INT I_MB2_Mat_N=1843
+GLOBAL INT I_MB2_V_Ka_N=1854
+GLOBAL INT I_MB2_M_Ka_N=1855
+; 
+GLOBAL INT O_MB2_nio_N=203
+GLOBAL INT O_MB2_V_Ka_N=204
+GLOBAL INT O_MB2_M_Ka_N=205
+GLOBAL INT O_MB2_Mat_N=206
+GLOBAL INT O_MB2_Hand_N=1826
+GLOBAL INT O_MB2_Auto_N=1827
+GLOBAL INT O_MB2_Antr_N=1828
+GLOBAL INT O_MB2_AH_a_N=1833
+GLOBAL INT O_MB2_AH_z_N=1834
+GLOBAL INT O_MB2_Zf_z_N=1835
+GLOBAL INT O_MB2_Zf_v_N=1836
+GLOBAL INT O_MB2_H_se_N=1837
+GLOBAL INT O_MB2_H_he_N=1838
+;ENDFOLD
+; 
+;FOLD Lebensbit MB
+BOOL LBitState[2]
+LBitState[1]=FALSE
+LBitState[2]=FALSE
+BOOL MB_LBitFeh[2]
+MB_LBitFeh[1]=FALSE
+MB_LBitFeh[2]=FALSE
+; 
+;Lebensbit an MB-Steuerung --- Ausgaenge
+INT LBitToMB[2]
+LBitToMB[1]=-1
+LBitToMB[2]=-1
+; 
+;Lebensbit von MB-Steuerung --- Eingaenge
+INT LBitFromMB[2]
+LBitFromMB[1]=-1
+LBitFromMB[2]=-1
+; 
+INT LBitTimeCnt[2]
+LBitTimeCnt[1]=-1
+LBitTimeCnt[2]=-1
+INT ErrMBNr=-1
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM MBS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_MBS_Handle[100]
+GLOBAL INT n_MBR_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+
+ENDDAT

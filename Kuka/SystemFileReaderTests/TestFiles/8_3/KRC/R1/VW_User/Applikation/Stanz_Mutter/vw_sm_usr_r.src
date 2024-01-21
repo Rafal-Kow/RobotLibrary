@@ -1,0 +1,152 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Stanz_Mutter
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEF vw_sm_usr_r( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket StanzMutter                         *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.16 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD StanzMutter_Interface
+GLOBAL DEF SM_Interfac(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+INT i
+;
+;-----------------------------------------------------------
+SWITCH USER_CMD
+;
+;-----------------------------------------------------------
+  CASE #USR_INIT
+    ;FOLD Init
+;
+;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------------
+  CASE #USR_ADV
+    ;FOLD Advance
+;    
+    CONTINUE
+    SM_PktNr_SPS=PAR6
+    SWITCH PAR1
+      CASE 1
+        CONTINUE
+        SM1_P_Nr=PAR2 ;Programmanwahl an Stanz-Steuerung 1
+      CASE 2
+        CONTINUE
+        SM2_P_Nr=PAR2 ;Programmanwahl an Stanz-Steuerung 2
+      DEFAULT
+    ENDSWITCH      
+;
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------------
+  CASE #USR_TRIG
+    ;FOLD Trig
+;    
+    IF (PAR6==$COUNT_I[I_Arbpkt_Nr]) THEN
+      StanzMutter_Msg(1,#QuitMsg) ; Punkt schon gestanzt
+    ENDIF
+    SWITCH PAR1
+      CASE 1
+        IF (PAR2<>$B_IN[7]) THEN
+          StanzMutter_Msg(2,#QuitMsg) ; Quitt. Programmnummer falsch
+        ENDIF
+      CASE 2 
+        IF (PAR2<>$B_IN[8]) THEN
+          StanzMutter_Msg(3,#QuitMsg) ; Quitt. Programmnummer falsch
+        ENDIF
+      DEFAULT
+    ENDSWITCH  
+;
+    ;ENDFOLD (Trig)
+;
+;-----------------------------------------------------------
+  CASE #USR_MAIN
+    ;FOLD Main
+;    
+    $COUNT_I[I_Arbpkt_Nr]=PAR6
+;  
+    Weg=PAR5
+    ;+X Rueckbewegung
+    MyCorrWeg=$NULLFRAME
+    MyCorrWeg.X=-(Weg*0.1)
+    IF (Weg>9) THEN
+      LIN $Pos_act:MyCorrWeg C_VEL
+    ENDIF 
+;
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------------
+  DEFAULT
+;  
+  ENDSWITCH
+END
+;
+;ENDFOLD (StanzMutter Interface)
+;
+;-----------------------------------------------------------
+;FOLD SM_Meldungen
+DEF StanzMutter_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr
+DECL SMR_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "SM_R_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF ((n_SMR_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+      USER_MSG.MSG_TXT[]="Punkt schon gestanzt"
+    CASE 2
+	   USER_MSG.MSG_TXT[]="SM1: Quitt. Programmnummer falsch"
+    CASE 3
+      USER_MSG.MSG_TXT[]="SM2: Quitt. Programmnummer falsch"
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 19
+	   USER_MSG.MSG_TXT[]="Falsche Gruppen-Auswahl"  
+    CASE 20
+	   USER_MSG.MSG_TXT[]="P1: Falsche Auswahl"
+    CASE 21
+	   USER_MSG.MSG_TXT[]="P2: Falsche Auswahl" 
+    CASE 22
+	   USER_MSG.MSG_TXT[]="P3: Falsche Auswahl"    
+    DEFAULT
+      USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_SMR_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_SMR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      While ( Exists_KrlMsg(n_SMR_Handle[msg_nr]) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      Endwhile
+    CASE #NotifyMsg
+      n_SMR_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_SMR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF  
+END
+;
+;ENDFOLD (SM Meldungen)
+

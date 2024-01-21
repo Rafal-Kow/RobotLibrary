@@ -1,0 +1,787 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/VW_MUTTERN
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vw_usr_rv
+&PARAM TPVW_VERSION = 8.1.8
+&REL 119
+DEF vw_muttern_r(USER_CMD :IN,CMD_SEL :IN, PARA1 :IN,PARA2 :IN,PARA3 :IN,PARA4 :IN,PARA5 :IN,PARA6 :IN,PARA7 :IN )
+; FOLD ;%{H}%MKUKATPVW
+;VW_USER Call
+;SK 02.03.2010
+DECL VW_USER_CMD USER_CMD
+REAL PARA1,PARA2,PARA3,PARA4,PARA5,PARA6
+BOOL PARA7
+INT CMD_SEL
+SWITCH  USER_CMD
+CASE #USR_INIT
+USER_INIT ()
+CASE #USR_MAIN
+USER_MAIN (CMD_SEL,PARA1,PARA2,PARA3,PARA4,PARA5,PARA6,PARA7)
+DEFAULT
+ENDSWITCH
+END
+;ENDFOLD
+;;-----------------------------------------------------------
+DEF  USER_INIT ()
+;Aufruf am Programmanfang
+;*---------------------------------------------*
+;* Mutter TCP                                  *
+;* Version 1.0     / VKRC 4                    *
+;* Bearbeitet am:                              *
+;* 06.03.2015 NI/AK neu erstellt               *
+;*---------------------------------------------*
+
+  IRQTriggered             = {X False,Z1 False,Z2 False} ;  Reset: Erkannte Interrupts
+  MeasureInTolerance       = {X False,Z1 False,Z2 False} ;  Reset: Messung war in Toleranz
+  CurrentValue             = {XX 0.0,ZZ1 0.0,ZZ2 0.0}    ;  Reset: aktuelle Distanzwerte
+
+  CoordsMeasured = {X False,Z1 False,Z2 False}            ; Koordinaten wurden nicht vermessen
+  FirstUserCall  = False                                  ; Noch kein User-Aufruf seit Start
+
+  $Advance = 0 ; Vorlauf auf 1
+
+  TempTCP = $NULLFRAME
+  SomethingNotInTolerance = FALSE
+  
+END
+
+;-----------------------------------------------------------
+DEF  USER_MAIN (CMD_SEL :IN,PAR1 :IN,PAR2 :IN, PAR3 :IN,PAR4 :IN,PAR5 :IN,PAR6 :IN,PAR7 :IN)
+
+  ;Aufruf im Hauptlauf
+  INT CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+  BOOL PAR7
+
+  ;---------------------------------------------
+  ;Bedeutung der Parameter
+  ;PAR1 = 1: Ermittlung des X-Offset
+  ;PAR1 = 2: Ermittlung des Z-Offset
+  ;PAR1 = 3: Ermittlung des 2. Z-Offset
+  ;PAR2 = Greifernummer
+  ;PAR7 = TRUE: Urteil vermessen
+
+  ;Zaehler fuer Log-Eintraege ggf. korrigieren
+  IF ((LogCount > 500) OR (LogCount < 1)) THEN
+    LogCount = 1
+  ENDIF
+
+  ;Urteilvermessung?
+  IF $IN[InputBasicMeasure] THEN
+  BasicMeasure = TRUE
+  else
+  BasicMeasure = FALSE
+  ENDIF
+
+  IF (PAR1<1) OR (PAR1>8) THEN
+  
+    ;Meldung fuer ungueltige Aufgabe generieren
+    Meldung (1,1) ;"Par1: Aufgabe ist ungueltig!"
+    HALT
+  
+  ELSE
+  
+    IF (PAR2<1) OR (PAR2>8) THEN
+    
+      ;Meldung fuer ungueltigen Greifer generieren
+      Meldung (1,19) ;"Par2: Greifer ist ungueltig!"
+      HALT
+    
+    ELSE
+    
+      IF TRUE THEN ;Wenn TCP-Korrektur ein: ausfuehren
+        TCP_KORR (Par1, Par2) ;Sprung in die Korrekturroutine, Par 1 = Nummer der Messung, Par 2 = Greifer
+      ENDIF
+    
+    ENDIF
+  
+  ENDIF
+
+END
+;-----------------------------------------------------------
+DEF TCP_Korr (MeasureTypeIn :IN, GripperNumIn :IN)
+
+  ;Main der Korrekturroutinen
+
+  INT MeasureTypeIn
+  INT GripperNumIn
+
+  ;Greifernummer uebernehmen
+  GripperNum = GripperNumIn
+
+  ToolNr = GripperNum
+  BInputNumMoveNot=FALSE
+  BInputNumMoveON=FALSE
+  antwort=0
+  
+;Numerische Messaufgabe in Enums wandeln
+  SWITCH MeasureTypeIN
+  
+    CASE 1
+      MeasureType = #X
+      FirstUserCall  = False ; Noch kein User-Aufruf seit Start
+    
+    CASE 2
+      MeasureType = #Z1
+    
+    CASE 3
+      MeasureType = #Z2
+    
+    DEFAULT
+      HALT
+    
+  ENDSWITCH
+
+  IF  NOT $IN[MEAS_PULSE_N] THEN ;Taster OK?
+      Meldung(1,26) ;"Kein Signal vom Messtaster "
+    HALT
+  Endif 
+    
+
+  IF $IN[MEAS_PULSE_P] THEN ;Taster schon betaetigt?
+      Meldung(1,14) ;"Messtaster vor Vermessung betaetigt "
+    HALT
+  
+  ELSE
+  
+    IF $OV_PRO <> 100 THEN ;Wenn OV nicht 100, akt OV speichern und auf 100 setzen
+      Old_OV = $OV_PRO
+      $OV_PRO = 100
+    ELSE
+      Old_OV = 100
+    ENDIF
+  
+    CheckValues() ;Pruefen, ob Daten korrekt
+  
+    Init() ;Initialisieren der Messaufgabe
+  
+    ;Deklarieren des Messfahrt-IRQ
+    INTERRUPT DECL 15 WHEN $IN[MEAS_PULSE_P] DO SavePos ()
+    ;Auf Startposition fahren
+    LIN {X 0,Y 0,Z 0,A 0,B 0,C 0}
+    Wait Sec 0
+  
+    ;Falls Messtaster bereits ausgelenkt, Meldung
+    IF $IN[MEAS_PULSE_P] THEN
+       Meldung(1,14) ;"Messtaster vor Vermessung betaetigt "
+      HALT
+    ENDIF
+  
+    IF NOT SomethingNotInTolerance THEN
+	  ;Taster suchen
+      INTERRUPT ON 15
+      StartSearch ()
+      INTERRUPT OFF 15
+ 	
+      ;Auf Startposition fahren
+      LIN {X 0,Y 0,Z 0,A 0,B 0,C 0}
+      Wait Sec 0
+  
+      ;Eventuelle Fehler behandeln
+      ErrorTreatment()
+  
+      SWITCH MeasureType
+    
+        CASE #X
+          IF IRQTriggered.X AND (MeasureInTolerance.X OR BasicMeasure) THEN
+            Calculation () ;Berechnen wenn alles OK
+          ENDIF
+      
+        CASE #Z1
+          IF IRQTriggered.Z1 AND (MeasureInTolerance.Z1 OR BasicMeasure) THEN
+            Calculation () ;Berechnen wenn alles OK
+          ENDIF
+      
+        CASE #Z2
+          IF IRQTriggered.Z2 AND (MeasureInTolerance.Z2 OR BasicMeasure) THEN
+            Calculation () ;Berechnen wenn alles OK
+          ENDIF
+      
+        DEFAULT
+          HALT
+      
+      ENDSWITCH
+  
+      ;wenn alle Messungen erfolgreich abgeschlossen
+      If CoordsMeasured.X AND CoordsMeasured.Z1 AND CoordsMeasured.Z2 THEN
+        Move_TCP() ;TCP verschieben
+      ENDIF
+	  
+    ENDIF
+  ENDIF
+
+  $OV_PRO = Old_OV ;OV zurueckstellen
+  $Base = $NULLFRAME ;Base zurueck auf Welt
+
+  $Advance = 1 ; Vorlauf auf 1
+
+  ExitSub:
+  
+  IF NOT BasicMeasure THEN
+    IF SomethingNotInTolerance THEN
+       $OUT[OutputNumTolerance] = TRUE ;Meldung an SPS
+    ENDIF
+  ENDIF
+
+END
+
+DEF CheckValues ()
+
+	IF NOT SomethingNotInTolerance THEN
+
+	  IF IRQTriggered.Z1 AND NOT IRQTriggered.X THEN
+		Meldung(1,5) ;"Messreihenfolge falsch"
+		HALT
+	  ENDIF
+	  IF IRQTriggered.Z2 AND NOT IRQTriggered.X THEN
+		Meldung(1,5) ;"Messreihenfolge falsch"
+		HALT
+	  ENDIF
+	  IF IRQTriggered.Z2 AND NOT IRQTriggered.Z1 THEN
+		Meldung(1,5) ;"Messreihenfolge falsch"
+		HALT
+	  ENDIF
+	ENDIF
+
+END
+
+Def Init()
+
+Frame InvertedMeasureTool
+
+MeasureTool = Tool_Data[GripperMeasTool[GripperNum]] ; TCP des Vermessungstool holen
+
+  $Out[OutputNumTolerance]=false
+  $BASE = $POS_ACT                        ;Base auf aktuelle Position setzen
+  $Tool = MeasureTool                     ;Tool auf Messtool setzen
+  $VEL.CP = 0.005                         ;ganz langsam
+  $Advance = 0 
+                           ;Vorlauf aus
+                           
+                           
+
+  IF NOT FirstUserCall THEN
+  
+    IRQTriggered             = {X False,Z1 False,Z2 False} ;  Reset: Erkannte Interrupts
+    MeasureInTolerance       = {X False,Z1 False,Z2 False} ;  Reset: Messung war in Toleranz
+    CurrentValue             = {XX 0.0,ZZ1 0.0,ZZ2 0.0}    ;  Reset: aktuelle Distanzwerte
+
+    CoordsMeasured = {X False,Z1 False,Z2 False}            ; Koordinaten wurden nicht vermessen
+
+    $Advance = 0
+
+    TempTCP = $NULLFRAME
+
+    ;Umkehrvektor bestimmen
+    ;Dient dazu, den Mess-TCP auf den Handflansch auszurichten
+    InvertedMeasureTool = Inv_pos(MeasureTool)
+  
+    ;Differenzvektor berechnen
+    ;Der umgekehrte Vektor wird mit dem Fahrzeugkoordinatensystem addiert.
+    ;Ergebnis = Abstand des MessTools zum FKS
+    DiffTCPtoFKS = InvertedMeasureTool : Save_Tool_Data[GripperFKSTool[GripperNum]]
+  
+  
+    ;Tooldaten des Fahrzeugkoordinatensystems (FKS) werden aus sicherem Array geholt (dat)
+    Tool_Data[GripperFKSTool[GripperNum]] = Save_Tool_Data[GripperFKSTool[GripperNum]]
+
+  ENDIF
+
+  FirstUserCall = TRUE ;merken, dass User schon mal aufgerufen wurde
+
+  ;Werte zuruecksetzen
+  SWITCH MeasureType
+  
+    CASE #X
+      MeasureStartPos.X = $POS_ACT
+      MeasureInTolerance.X = FALSE
+      IRQTriggered.X = FALSE
+    
+    CASE #Z1
+      MeasureStartPos.Z1 = $POS_ACT
+      MeasureInTolerance.Z1 = FALSE
+      IRQTriggered.Z1 = FALSE
+    
+    CASE #Z2
+      MeasureStartPos.Z2 = $POS_ACT
+      MeasureInTolerance.Z2 = FALSE
+      IRQTriggered.Z2 = FALSE
+    
+    DEFAULT
+      HALT
+    
+  ENDSWITCH
+  
+  If BasicMeasure Then ;Wenn BasicMeasure aktiv
+    CleanLogEntries() ;LogDaten loeschen
+    Meldung(1,16) ;"BasicMeasure aktiv ! "
+  ENDIF
+
+END
+
+DEF CleanLogEntries ( )
+  INT i
+  ;Alle LogDaten loeschen
+
+  FOR i = 1 to 500
+    LogEntry[i] = {X 0.0, Z1 0.0, Z2 0.0,ToolNR 0 ,Jahr 2015,Mon 1, Tag 1, Std 0, Minu 0, Sek 0}
+  ENDFOR
+
+  ;Logzaehler wieder auf 1
+  LogCount = 1
+  LogCount_TCP[1]=0
+  LogCount_TCP[2]=0
+  LogCount_TCP[3]=0
+  LogCount_TCP[4]=0
+  LogCount_TCP[5]=0
+  LogCount_TCP[6]=0
+  LogCount_TCP[7]=0
+  LogCount_TCP[8]=0
+
+END
+
+DEF StartSearch ()
+
+  DECL FRAME SearchCoords
+
+  ;Ermitteln der Interruptposition
+
+  SearchCoords = $NULLFRAME
+
+  SWITCH MeasureType
+  
+    CASE #X
+      ;Vorbelegung der Suchrichtung mit maximalen Weg
+      SearchCoords.X = MaximumMeasDistance[GripperNum].XX
+      ;Suchweg fahren (IRQ wird erwartet)
+      LIN SearchCoords
+      Wait Sec 0
+    
+    CASE #Z1
+      SearchCoords.Z = MaximumMeasDistance[GripperNum].ZZ1
+      LIN SearchCoords
+      Wait Sec 0
+    
+    CASE #Z2
+      SearchCoords.Z = MaximumMeasDistance[GripperNum].ZZ2
+      LIN SearchCoords
+      Wait Sec 0
+    
+  ENDSWITCH
+
+  ;Vorlauf nicht ins HP springen lassen, sonst "Unzulaessige PRG-Struktur..."
+  WAIT SEC 0
+
+END
+
+DEF SAVEPOS()
+
+  FRAME InterruptPosition
+
+  INTERRUPT OFF 15
+
+  Brake F
+
+  InterruptPosition = $POS_INT ;Interruptposition speichern
+
+  SWITCH MeasureType
+  
+    CASE #X
+      CurrentValue.XX = InterruptPosition.X ; Interruptposition speichern
+      IRQTriggered.X = TRUE ;Merken: IRQ loeste aus
+    
+    CASE #Z1
+      CurrentValue.ZZ1 = InterruptPosition.Z
+      IRQTriggered.Z1 = TRUE
+    
+    CASE #Z2
+      CurrentValue.ZZ2 = InterruptPosition.Z
+      IRQTriggered.Z2 = TRUE
+    
+  ENDSWITCH
+
+  RESUME ; Abbruch des Programms Sensorfahrt()
+
+END
+
+DEF ErrorTreatment()
+
+  Real Difference
+
+  SWITCH MeasureType
+  
+    CASE #X
+    
+      IF NOT IRQTriggered.X THEN
+      
+        ;Meldungsausgabe falls Messtaster nicht betaetigt
+        Meldung(1,2)
+        Halt
+      
+      ELSE
+      
+        IF NOT BasicMeasure THEN ;nur bei Standard-Vermessung
+        
+          MeasureInTolerance.X = TRUE
+          ;Differenz zur Basisvermessung ermitteln
+          Difference = GripperBasicValue[GripperNum].XX - CurrentValue.XX
+          ;Pruefen, ob in Toleranz
+          IF ((Difference > OffsetLimits[GripperNum].X.Max) OR (Difference < OffsetLimits[GripperNum].X.Min)) THEN
+            MeasureInTolerance.X = FALSE ;   Merken, nicht in Toleranz
+            SomethingNotInTolerance = TRUE
+	      IRQTriggered.X = FALSE ;         IRQ nicht ausgeloest (nicht OK)
+            Meldung(1,8)
+			   MeasValues.Diff_XXX  = GripperBasicValue[GripperNum].XX  - CurrentValue.XX 
+            Meldung(1,22)
+            $Out[OutputNumTolerance]=TRUE
+            Meldung(3,1)
+            WAIT FOR BInputNumMoveOn OR BInputNumMoveNot
+            IF BInputNumMoveOn THEN;Obwohl die Toleranz zu groß ist soll verschoben werden
+            MeasureInTolerance.X = TRUE ;   Merken, nicht in Toleranz wieder auf OK
+            SomethingNotInTolerance = FALSE; Vom Bediener wierder auf OK
+	      IRQTriggered.X = TRUE ;         IRQ nicht ausgeloest (nicht OK) wieder auf OK
+            ENDIF
+          ENDIF
+        ENDIF
+      ENDIF
+    
+    CASE #Z1
+    
+      IF NOT IRQTriggered.Z1 THEN
+      
+        Meldung(1,3)
+        Halt
+      
+      ELSE
+      
+        IF NOT BasicMeasure THEN ;nur bei Standard-Vermessung
+        
+          MeasureInTolerance.Z1 = TRUE
+          Difference = GripperBasicValue[GripperNum].ZZ1 - CurrentValue.ZZ1
+          IF ((Difference > OffsetLimits[GripperNum].Z1.Max) OR (Difference < OffsetLimits[GripperNum].Z1.Min)) THEN
+            MeasureInTolerance.Z1 = FALSE
+            SomethingNotInTolerance = TRUE
+            IRQTriggered.Z1 = FALSE
+            Meldung(1,9)
+			   MeasValues.Diff_ZZZ1 = GripperBasicValue[GripperNum].ZZ1 - CurrentValue.ZZ1
+            Meldung(1,23)
+            $Out[OutputNumTolerance]=TRUE
+            Meldung(3,1)
+            WAIT FOR BInputNumMoveOn OR BInputNumMoveNot
+            IF BInputNumMoveOn THEN;Obwohl die Toleranz zu groß ist soll verschoben werden
+            MeasureInTolerance.Z1 = TRUE ;   Merken, nicht in Toleranz wieder auf OK
+            SomethingNotInTolerance = FALSE; Vom Bediener wierder auf OK
+	      IRQTriggered.Z1 = TRUE ;         IRQ nicht ausgeloest (nicht OK) wieder auf OK
+           ENDIF
+        ENDIF
+      ENDIF
+   ENDIF
+    
+   CASE #Z2
+    
+      IF NOT IRQTriggered.Z2 THEN
+      
+        Meldung(1,4)
+        Halt
+      
+      ELSE
+      
+        IF NOT BasicMeasure THEN ;nur bei Standard-Vermessung
+        
+          MeasureInTolerance.Z2 = TRUE
+          Difference = GripperBasicValue[GripperNum].ZZ2 - CurrentValue.ZZ2
+          IF ((Difference > OffsetLimits[GripperNum].Z2.Max) OR (Difference < OffsetLimits[GripperNum].Z2.Min)) THEN
+            MeasureInTolerance.Z2 = FALSE
+            SomethingNotInTolerance = TRUE
+            IRQTriggered.Z2 = FALSE
+            Meldung(1,10)
+			   MeasValues.Diff_ZZZ2 = GripperBasicValue[GripperNum].ZZ2 - CurrentValue.ZZ2
+            Meldung(1,24)
+            $Out[OutputNumTolerance]=TRUE
+              Meldung(3,1)
+            WAIT FOR BInputNumMoveOn OR  BInputNumMoveNot
+            IF BInputNumMoveOn THEN;Obwohl die Toleranz zu groß ist soll verschoben werden
+            MeasureInTolerance.Z1 = TRUE ;   Merken, nicht in Toleranz wieder auf OK 
+            SomethingNotInTolerance = FALSE; Vom Bediener wierder auf OK
+	      IRQTriggered.Z1 = TRUE ;         IRQ nicht ausgeloest (nicht OK) wieder auf OK
+            ENDIF
+           ENDIF
+         ENDIF
+      ENDIF
+            
+    DEFAULT
+      HALT
+    
+  ENDSWITCH
+
+END
+
+
+DEF Calculation ()
+
+  REAL Difference
+
+  IF NOT BasicMeasure THEN ;Bei BasicMeasure wird keine Berechnung ausgefuehrt
+  
+    SWITCH MeasureType
+    
+      CASE #X
+        Difference = GripperBasicValue[GripperNum].XX - CurrentValue.XX ; Differenz ermitteln
+        IF ABS(Difference) > MinChange[GripperNum].XX THEN ;      Nur verschieben, wenn Differenz nicht zu klein
+          TempTCP.X = Difference ;                               Differenzwert in Verschiebe-TCP speichern
+        ENDIF
+        CoordsMeasured.X = TRUE ;                                Koords gefunden
+        LogEntry[LogCount].X = Difference ;                      LogEintrag speichern
+      
+      CASE #Z1
+        Difference = GripperBasicValue[GripperNum].ZZ1 - CurrentValue.ZZ1
+        IF ABS(Difference) > MinChange[GripperNum].ZZ1 THEN        ;
+          TempTCP.Z = Difference
+        ENDIF
+        CoordsMeasured.Z1 = TRUE
+        LogEntry[LogCount].Z1 = Difference
+      
+      CASE #Z2
+        Difference = GripperBasicValue[GripperNum].ZZ2 - CurrentValue.ZZ2
+        CoordsMeasured.Z2 = TRUE
+        LogEntry[LogCount].Z2 = Difference
+      
+      DEFAULT
+        ;ungueltiger Wert fuer MeasureType
+        HALT
+      
+    ENDSWITCH
+  
+  ELSE  ;BasicMeasure ist TRUE
+  
+    ;Werte fuer Basisvermessung speichern
+    SWITCH MeasureType
+    
+      CASE #X
+        GripperBasicValue[GripperNum].XX = CurrentValue.XX
+      
+      CASE #Z1
+        GripperBasicValue[GripperNum].ZZ1 = CurrentValue.ZZ1
+      
+      CASE #Z2
+        GripperBasicValue[GripperNum].ZZ2 = CurrentValue.ZZ2
+      
+      DEFAULT
+        ;ungueltiger Wert fuer MeasureType
+        HALT
+      
+    ENDSWITCH
+  
+  ENDIF
+
+  ;Schreiben des Zeitstempels
+  TimeStamp = $DATE
+  LogEntry[LogCount].X = 0
+  LogEntry[LogCount].Z1 = 0
+  LogEntry[LogCount].Z2 = 0
+  LogEntry[LogCount].ToolNr = ToolNr
+  LogEntry[LogCount].Jahr = TimeStamp.YEAR
+  LogEntry[LogCount].Mon  = TimeStamp.MONTH
+  LogEntry[LogCount].Tag  = TimeStamp.DAY
+  LogEntry[LogCount].Std  = TimeStamp.HOUR
+  LogEntry[LogCount].Minu = TimeStamp.MIN
+  LogEntry[LogCount].Sek  = TimeStamp.SEC
+
+END
+
+
+DEF Move_TCP ()
+
+  ;Meldung(1,18)
+
+  ;Ursprungs-TCP (vom Messtool) um Korrekturwert verschieben
+  MeasureTool = MeasureTool : TempTCP
+
+  ;Abstandsvektor (Verschiebetool -> FKS-Tool) parallel verschieben um Differenzwert
+  ;Ergebnis: FKS wurde um Differenz verschoben
+  Tool_Data[GripperFKSTool[GripperNum]] = MeasureTool : DiffTCPtoFKS
+
+  If ShowMeasValues then
+  
+    ;aktuell gemessene Positionen als Meldung ausgeben
+    MeasValues.XXX  = CurrentValue.XX
+    MeasValues.ZZZ1 = CurrentValue.ZZ1
+    MeasValues.ZZZ2 = CurrentValue.ZZ2
+    Meldung(1,20)
+  
+    ;aktuell gemessene Distanzen als Meldung ausgeben
+    MeasValues.Diff_XXX  = GripperBasicValue[GripperNum].XX  - CurrentValue.XX 
+    MeasValues.Diff_ZZZ1 = GripperBasicValue[GripperNum].ZZ1 - CurrentValue.ZZ1
+    MeasValues.Diff_ZZZ2 = GripperBasicValue[GripperNum].ZZ2 - CurrentValue.ZZ2
+    Meldung(1,21)
+  
+  Endif
+
+  LogEntry[LogCount].ToolNr = ToolNr
+  LogEntry[LogCount].X = MeasValues.Diff_XXX 
+  LogEntry[LogCount].Z1 = MeasValues.Diff_ZZZ1
+  LogEntry[LogCount].Z2 = MeasValues.Diff_ZZZ2
+  
+  IF (GripperNum<8) OR (GripperNum>1) Then  
+  
+  IF  GripperNum==1 Then
+  LogCount_TCP[1]=LogCount_TCP[1] + 1
+  Endif
+  IF  GripperNum==2 Then
+  LogCount_TCP[2]=LogCount_TCP[2] + 1
+  Endif
+  IF  GripperNum==3 Then
+  LogCount_TCP[3]=LogCount_TCP[3] + 1
+  Endif
+  IF  GripperNum==4 Then
+  LogCount_TCP[4]=LogCount_TCP[4] + 1
+  Endif
+  IF  GripperNum==5 Then
+  LogCount_TCP[5]=LogCount_TCP[5] + 1
+  Endif
+  IF  GripperNum==6 Then
+  LogCount_TCP[6]=LogCount_TCP[6] + 1
+  Endif
+  IF  GripperNum==7 Then
+  LogCount_TCP[7]=LogCount_TCP[7] + 1
+  Endif
+  IF  GripperNum==8 Then
+  LogCount_TCP[8]=LogCount_TCP[8] + 1
+  Endif
+  
+  Else
+  
+  Endif
+    
+  LogCount = LogCount_TCP[1] + LogCount_TCP[2] + LogCount_TCP[3] + LogCount_TCP[4] + LogCount_TCP[5] + LogCount_TCP[6] +LogCount_TCP[7] + LogCount_TCP[8]
+
+  FirstUserCall = TRUE
+
+END
+
+DEF  Meldung (MELD_ART :IN,MELD_NR :IN )
+
+  DECL INT MELD_NR
+  DECL INT MELD_ART
+  DECL INT OFFSET
+  DECL STATE_T STATE
+  DECL KRLMSG_T USER_MSG
+  DECL KRLMSGPAR_T PAR[3]
+  DECL KRLMSGOPT_T OPT
+  DECL KrlMsgDlgSK_T SK[7]
+  INT nHandle, Answer
+  USER_MSG = { Modul[] "VW_USR_R", Nr 123, Msg_txt[] " "}
+  Par[1] = { Par_type #Value, Par_txt[] " " }
+  Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+  
+  SWITCH  MELD_ART
+  
+    CASE 1
+      ;Hinweismeldungen
+      SWITCH  MELD_NR
+        CASE 1
+          USER_MSG.MSG_TXT[]="Par1: Aufgabe ist ungueltig!"
+        CASE 2
+          USER_MSG.MSG_TXT[]="X-Richtung: Messtaster nicht betaetigt"
+        CASE 3
+          USER_MSG.MSG_TXT[]="Z1-Richtung: Messtaster nicht betaetigt"
+        CASE 4
+          USER_MSG.MSG_TXT[]="Z2-Richtung: Messtaster nicht betaetigt"
+        CASE 5
+          USER_MSG.MSG_TXT[]="Messreihenfolge falsch!"
+        CASE 8
+          USER_MSG.MSG_TXT[]="X-Richtung: zul. Abweichung ueberschritten"
+        CASE 9
+          USER_MSG.MSG_TXT[]="Z1-Richtung: zul. Abweichung ueberschritten"
+        CASE 10
+          USER_MSG.MSG_TXT[]="Z2-Richtung: zul. Abweichung ueberschritten"
+        CASE 14
+          USER_MSG.MSG_TXT[]="Messtaster vor Vermessung betaetigt"
+        CASE 15
+          USER_MSG.MSG_TXT[]="Aktuelle Werzeugnummer ungleich der konfigurierten"
+        CASE 16
+          USER_MSG.MSG_TXT[]="Neuvermessung aktiv !"
+        CASE 17
+          USER_MSG.MSG_TXT[]="Uebergebener Parameter entsprechen nicht der Deklaration"
+        CASE 18
+          USER_MSG.MSG_TXT[]="TCP Korrektur: Regelung aktiv"
+        CASE 19
+          USER_MSG.MSG_TXT[]="Par2: Greifer ist ungueltig!"
+        CASE 20
+          OFFSET=0
+          SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"X= %.2F Z1= %.2F Z2= %.2F Greifer= %.F", MeasValues.XXX, MeasValues.ZZZ1, MeasValues.ZZZ2,toolnr)
+        CASE 21
+          OFFSET=0
+          SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Offset X= %.2F Offset Z1= %.2F Offset Z2= %.2F Greifer= %.F", MeasValues.Diff_XXX, MeasValues.Diff_ZZZ1, MeasValues.Diff_ZZZ2,toolnr)
+        CASE 22
+          OFFSET=0
+          SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Offset X= %.2F", MeasValues.Diff_XXX)
+        CASE 23
+          OFFSET=0
+          SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Offset Z1= %.2F", MeasValues.Diff_ZZZ1)
+        CASE 24
+          OFFSET=0
+          SWRITE(USER_MSG.MSG_TXT[],STATE,OFFSET,"Offset Z2= %.2F", MeasValues.Diff_ZZZ2)
+       CASE 25
+          USER_MSG.MSG_TXT[]="Vom Bediener wurde weiter mit Verschieben angewaehlt"
+       CASE 26
+          USER_MSG.MSG_TXT[]="Kein Signal vom Messtaster vor dem Messen"         
+		
+         default
+          USER_MSG.MSG_TXT[]="Unbekannte Meldung"
+      ENDSWITCH
+      OFFSET=0
+      nHandle = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+      ;***********************************************************************************************
+      ;Fehlermeldungen
+    CASE 2
+      SWITCH  MELD_NR
+        CASE 1
+          USER_MSG.MSG_TXT[]=" "
+         default
+          USER_MSG.MSG_TXT[]="Keine Fehlermeldung programmiert !!"
+      ENDSWITCH
+      nHandle = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      While ( Exists_KrlMsg(nHandle) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      Endwhile
+      ;***********************************************************************************************
+      ; Dialogmeldungen
+    CASE 3
+      SWITCH  MELD_NR
+        CASE 1
+          
+          USER_MSG.MSG_TXT[]="VRSCHIEBUNG ZU GROSS !!!  Verschieben? Ja oder Nein"
+          SK[1] = { Sk_Type #Value, Sk_txt[] "Ja" }
+                          
+          SK[2] = { Sk_Type #Value, Sk_txt[] "NEIN" }
+        default
+          USER_MSG.MSG_TXT[]="Keine Dialogmeldung programmiert !!"
+      ENDSWITCH
+      
+      nHandle = Set_KrlDlg (USER_MSG, Par[], SK[], Opt)
+      
+      IF (nHandle > 0) Then
+        While ( Exists_KrlDlg(nHandle, Answer) )  ;Warten bis der Dialog beantwortet
+        
+          Wait Sec 0.1
+          antwort=answer
+        Endwhile
+      ENDIF
+          antwort=answer
+          If antwort==1 THEN
+          BInputNumMoveOn=TRUE
+          BInputNumMovenot=FALSE
+          Wait Sec 0.5
+          USER_MSG.MSG_TXT[]="Sie haben Verschieben angewaehlt!"
+          Wait Sec 0.5
+          ENDIF
+          If antwort==2 THEN
+          BInputNumMoveOn=FALSE
+          BInputNumMovenot=TRUE
+          Wait Sec 0.5
+          USER_MSG.MSG_TXT[]="Sie haben KEIN Verschieben angewaehlt!"
+          Wait Sec 0.5
+          ENDIF
+  ENDSWITCH
+;halt
+END

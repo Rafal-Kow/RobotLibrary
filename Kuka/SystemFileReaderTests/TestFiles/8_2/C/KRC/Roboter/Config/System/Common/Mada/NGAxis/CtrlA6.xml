@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CtrlParam xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/NGCtrl.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<!-- 2008.02.19 KSe: generated -->
+   <Version Label="1">
+      <Info Version="VW V8.2"/>
+      <Schema Version="1"/>
+   </Version>
+   <Machine Name="#KR210R3100 ULTRA C4 FLR"/>
+   <Controller ID="0"/>
+   <GlobalParameter Name="CmdPosDelay" Index="0" MinValue="0.0" MaxValue="0.0" EvalBoundary="Min" Access="ro" Value="3000.0"/>
+   <GlobalParameter Name="FFCVelocity" Index="1" MinValue="0.0" MaxValue="1.0" EvalBoundary="MinMax" Access="ro" Value="1.0"/>
+   <GlobalParameter Name="FFCTorque" Index="2" MinValue="0.0" MaxValue="1.0" EvalBoundary="MinMax" Access="ro" Value="0.0"/>
+   <GlobalParameter Name="CtrlCycle" Index="3" MinValue="1.0" MaxValue="0.0" EvalBoundary="Min" Access="ro" Value="1.0"/>
+   <GlobalParameter Name="CtrlOffset" Index="5" MinValue="0.0" MaxValue="0.0" EvalBoundary="Min" Access="ro" Value="0.0"/>
+   <Parameter Name="PosGain" Index="0" MinValue="0.0" MaxValue="0.0" EvalBoundary="Min" Access="rw">
+		<Set Name="PTP" Value="25.0"/>
+		<Set Name="CP" Value="25.0"/>
+	</Parameter>
+	<Parameter Name="PosIntTime" Index="1" MinValue="0.0" MaxValue="0.0" EvalBoundary="Min" Access="rw">
+		<Set Name="PTP" Value="0.0"/>
+		<Set Name="CP" Value="0.0"/>
+	</Parameter>
+	<Parameter Name="VelGain" Index="2" MinValue="0.0" MaxValue="0.0" EvalBoundary="Min" Access="rw">
+		<Set Name="PTP" Value="0.0045"/>
+		<Set Name="CP" Value="0.0045"/>
+	</Parameter>
+	<Parameter Name="VelIntTime" Index="3" MinValue="0.0" MaxValue="0.0" EvalBoundary="Min" Access="rw">
+		<Set Name="PTP" Value="0.4"/>
+		<Set Name="CP" Value="0.1"/>
+	</Parameter>
+	<DefaultController PosGain="25" PosIntTime="0.0" VelGain="0.0045" VelIntTime="0.4"/>
+</CtrlParam>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Driver busName="MainBoardDrv" fileVersion="1" xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/MainBoardDrv.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Version Label="">
+		<Info Version="KRC V8.2"/>
+		<Schema Version="100"/>
+	</Version>
+
+	<DriverInstance busInstanceName="MainBoardBus" cycleTime="1000" cycleReadActivated="1"/>
+</Driver>

@@ -1,0 +1,70 @@
+&ACCESS  R
+&COMMENT KS_1.1
+&PARAM DISKPATH = VW_User/Applikation/Vision/HGV
+&PARAM TPVW_VERSION = 8.3.8
+&REL 1
+DEF vw_hgv_usr_s( )
+;
+;*---------------------------------------------*
+;* HGV GmbH&Co.KG                              *
+;*                                             *
+;* Bearbeitet am:                              *
+;* 29.09.2011 PH                               *
+;*     Erstellt                                *
+;*---------------------------------------------*
+;
+END
+;
+;FOLD HGV_INIT
+GLOBAL DEF HGV_INIT()
+;USER Version
+Version_Tech_HGV=20120309
+;
+;Ruecksetzen Lebensbit
+O_HGV_Life               = FALSE
+$timer[N_HGV_TmLNr]      = N_HGV_TmL
+$timer_stop[N_HGV_TmLNr] = FALSE
+B_HGV_NoAns0             = FALSE
+B_HGV_NoAns1             = FALSE
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD HGV LifeBit
+GLOBAL DEF HGV_LBit()
+;
+IF $timer_flag[N_HGV_TmLNr] THEN
+  IF (O_HGV_Life == TRUE) AND (NOT B_HGV_NoAns0) AND (B_HGV_UseFct) THEN
+    IF (I_HGV_Life <> O_HGV_Life) THEN
+      IF NOT(B_HGV_NoAns1) THEN                  ; Vision-Lieferant not alive
+        B_HGV_NoAns1 = True        
+      ENDIF
+    ELSE
+      IF B_HGV_NoAns1 THEN
+        B_HGV_NoAns1 = FALSE                     ; Vision-Lieferant is alive
+      ENDIF
+    ENDIF
+  ENDIF
+  IF (O_HGV_Life == FALSE) AND (NOT B_HGV_NoAns1) AND (B_HGV_UseFct) THEN
+    IF I_HGV_Life <> O_HGV_Life THEN
+      IF NOT(B_HGV_NoAns0) THEN                  ; Vision-Lieferant not alive
+        B_HGV_NoAns0 = True           
+      ENDIF
+    ELSE
+      IF B_HGV_NoAns0 THEN
+        B_HGV_NoAns0 = FALSE                     ; Vision-Lieferant is alive
+      ENDIF
+    ENDIF
+  ENDIF
+  O_HGV_Life = NOT O_HGV_Life
+  $timer[N_HGV_TmLNr]=N_HGV_TmL
+  $timer_stop[N_HGV_TmLNr] = FALSE
+ENDIF
+$TIMER_STOP[N_HGV_TmM1Nr]  = TRUE
+$TIMER[N_HGV_TmM2Nr]       = $TIMER[N_HGV_TmM1Nr]
+$TIMER_STOP[N_HGV_TmM2Nr]  = TRUE
+;
+END
+;
+;ENDFOLD (HGV LifeBit)

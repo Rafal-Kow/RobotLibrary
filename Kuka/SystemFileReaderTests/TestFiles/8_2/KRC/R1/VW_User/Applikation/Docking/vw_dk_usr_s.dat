@@ -1,0 +1,195 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Docking
+&PARAM TPVW_VERSION = 8.1.8
+&REL 209
+DEFDAT  vw_dk_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Docking                             *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: Chr. Eisenknappl I/PG-C61                *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2014.09.11 CE                                       *
+;*                                                     *
+;*-----------------------------------------------------*
+; 
+;FOLD USER_Version
+STRUC _Tech_DK CHAR Name[20],INT Datum
+DECL _Tech_DK Tech_DK
+;ENDFOLD
+; 
+;FOLD DK
+; 
+GLOBAL INT F_m_flex_DK=733
+; 
+GLOBAL BOOL MIT_flex_DK=FALSE
+GLOBAL BOOL Dock_Init=FALSE
+GLOBAL BOOL DK_setzen=FALSE
+GLOBAL BOOL DK_KONFIG_NEU=FALSE
+GLOBAL BOOL DK_KONFIG_IO=FALSE
+GLOBAL BOOL B_PnetShare=FALSE ;Hilfsvariable, um zwischen Pnet-Treiberversion unterscheiden zu koennen
+; 
+GLOBAL BOOL Dock_Z1=FALSE
+GLOBAL BOOL Dock_Z2=FALSE
+GLOBAL BOOL Dock_Z3=FALSE
+GLOBAL BOOL Dock_Z4=FALSE
+; 
+GLOBAL BOOL AxFehler=FALSE
+GLOBAL BOOL ExtAx1Fehler1=FALSE
+GLOBAL BOOL ExtAx2Fehler1=FALSE
+GLOBAL BOOL ExtAx3Fehler1=FALSE
+GLOBAL BOOL ExtAx4Fehler1=FALSE
+GLOBAL BOOL ExtAx5Fehler1=FALSE
+GLOBAL BOOL ExtAx6Fehler1=FALSE
+; 
+GLOBAL BOOL ExtAx1Fehler2=FALSE
+GLOBAL BOOL ExtAx2Fehler2=FALSE
+GLOBAL BOOL ExtAx3Fehler2=FALSE
+GLOBAL BOOL ExtAx4Fehler2=FALSE
+GLOBAL BOOL ExtAx5Fehler2=FALSE
+GLOBAL BOOL ExtAx6Fehler2=FALSE
+; 
+GLOBAL BOOL ExtAx1Fehler3=FALSE
+GLOBAL BOOL ExtAx2Fehler3=FALSE
+GLOBAL BOOL ExtAx3Fehler3=FALSE
+GLOBAL BOOL ExtAx4Fehler3=FALSE
+GLOBAL BOOL ExtAx5Fehler3=FALSE
+GLOBAL BOOL ExtAx6Fehler3=FALSE
+; 
+GLOBAL BOOL Bahnhof_Feh=FALSE ;Downgrade Docking
+; 
+GLOBAL INT SZ_angedockt=537
+GLOBAL INT DocKBhf='B0000' ;Downgrade Docking
+GLOBAL INT Anz_BHF_FREI=0
+GLOBAL INT BHF_Off=220
+GLOBAL INT Anz_BHF=0
+GLOBAL INT PROC_HILF='B0000'
+GLOBAL INT AntTyp='B0000'
+GLOBAL INT ZangenNr='B0000'
+GLOBAL INT ExtAx='B0000'
+GLOBAL INT ExtAx1Hilf=0
+GLOBAL INT ExtAx2Hilf=0
+GLOBAL INT ExtAx3Hilf=0
+GLOBAL INT ExtAx4Hilf=0
+GLOBAL INT ExtAx5Hilf=0
+GLOBAL INT ExtAx6Hilf=0
+; 
+GLOBAL INT ANZ_EZ=0
+GLOBAL INT BHF_EZ_Z1=0
+GLOBAL INT BHF_EZ_Z2=0
+GLOBAL INT BHF_EZ_Z3=0
+GLOBAL INT BHF_EZ_Z4=0
+GLOBAL INT EZ_DockAxZ1=0
+GLOBAL INT EZ_DockAxZ2=0
+GLOBAL INT EZ_DockAxZ3=0
+GLOBAL INT EZ_DockAxZ4=0
+GLOBAL INT ANZ_NZ=0
+GLOBAL INT BHF_NZ_Serv_Z1=0
+GLOBAL INT BHF_NZ_Serv_Z2=0
+GLOBAL INT BHF_NZ_Serv_Z3=0
+GLOBAL INT BHF_NZ_Serv_Z4=0
+GLOBAL INT NZ_DockAxZ1=0
+GLOBAL INT NZ_DockAxZ2=0
+GLOBAL INT NZ_DockAxZ3=0
+GLOBAL INT NZ_DockAxZ4=0
+GLOBAL INT ANZ_NZ_hyd=0
+GLOBAL INT BHF_NZ_hyd_Z1=0
+GLOBAL INT BHF_NZ_hyd_Z2=0
+GLOBAL INT BHF_NZ_hyd_Z3=0
+GLOBAL INT BHF_NZ_hyd_Z4=0
+GLOBAL INT ANZ_CZ=0
+GLOBAL INT BHF_CZ_Serv_Z1=0
+GLOBAL INT BHF_CZ_Serv_Z2=0
+GLOBAL INT BHF_CZ_Serv_Z3=0
+GLOBAL INT BHF_CZ_Serv_Z4=0
+GLOBAL INT CZ_DockAxZ1=0
+GLOBAL INT CZ_DockAxZ2=0
+GLOBAL INT CZ_DockAxZ3=0
+GLOBAL INT CZ_DockAxZ4=0
+GLOBAL INT ANZ_RW=0
+GLOBAL INT BHF_RW_Serv_Z1=0
+GLOBAL INT BHF_RW_Serv_Z2=0
+GLOBAL INT BHF_RW_Serv_Z3=0
+GLOBAL INT BHF_RW_Serv_Z4=0
+GLOBAL INT RW_DockAxZ1=0
+GLOBAL INT RW_DockAxZ2=0
+GLOBAL INT RW_DockAxZ3=0
+GLOBAL INT RW_DockAxZ4=0
+; 
+GLOBAL INT IN_BHF_belegt[36]
+IN_BHF_belegt[1]=4081
+IN_BHF_belegt[2]=4081
+IN_BHF_belegt[3]=4081
+IN_BHF_belegt[4]=4081
+IN_BHF_belegt[5]=4081
+IN_BHF_belegt[6]=4081
+IN_BHF_belegt[7]=4081
+IN_BHF_belegt[8]=4081
+IN_BHF_belegt[9]=4081
+IN_BHF_belegt[10]=4081
+IN_BHF_belegt[11]=4081
+IN_BHF_belegt[12]=4081
+IN_BHF_belegt[13]=4081
+IN_BHF_belegt[14]=4081
+IN_BHF_belegt[15]=4081
+IN_BHF_belegt[16]=4081
+IN_BHF_belegt[17]=4081
+IN_BHF_belegt[18]=4081
+IN_BHF_belegt[19]=4081
+IN_BHF_belegt[20]=4081
+IN_BHF_belegt[21]=4081
+IN_BHF_belegt[22]=4081
+IN_BHF_belegt[23]=4081
+IN_BHF_belegt[24]=4081
+IN_BHF_belegt[25]=4081
+IN_BHF_belegt[26]=4081
+IN_BHF_belegt[27]=4081
+IN_BHF_belegt[28]=4081
+IN_BHF_belegt[29]=4081
+IN_BHF_belegt[30]=4081
+IN_BHF_belegt[31]=4081
+IN_BHF_belegt[32]=4081
+IN_BHF_belegt[33]=4081
+IN_BHF_belegt[34]=4081
+IN_BHF_belegt[35]=4081
+IN_BHF_belegt[36]=4081
+; 
+;Downgrade Docking
+GLOBAL INT bhf1_belegt=551
+GLOBAL INT bhf2_belegt=552
+GLOBAL INT bhf3_belegt=4081
+GLOBAL INT bhf4_belegt=4081
+GLOBAL INT bhf5_belegt=4081
+GLOBAL INT bhf6_belegt=4081
+GLOBAL INT bhf7_belegt=4081
+GLOBAL INT bhf8_belegt=4081
+; 
+;Uebergabe Zangencode
+SIGNAL EZ1_ZCode $OUT[761]  TO $OUT[763]
+SIGNAL Kb1_ZCode $OUT[765]  TO $OUT[767]
+SIGNAL EZ2_ZCode $OUT[921]  TO $OUT[923]
+SIGNAL Kb2_ZCode $OUT[925]  TO $OUT[927]
+SIGNAL EZ3_ZCode $OUT[1081]  TO $OUT[1083]
+SIGNAL Kb3_ZCode $OUT[1085]  TO $OUT[1087]
+SIGNAL NZ1_Servo_ZCode $OUT[1241]  TO $OUT[1243]
+SIGNAL NZ2_Servo_ZCode $OUT[1321]  TO $OUT[1323]
+SIGNAL NZ1_hyd_ZCode $OUT[1213]  TO $OUT[1215]
+SIGNAL NZ2_hyd_ZCode $OUT[1293]  TO $OUT[1295]
+SIGNAL CZ1_Servo_ZCode $OUT[1401]  TO $OUT[1403]
+SIGNAL CZ2_Servo_ZCode $OUT[1481]  TO $OUT[1483]
+SIGNAL RW1_Servo_ZCode $OUT[1289]  TO $OUT[1291]
+SIGNAL RW2_Servo_ZCode $OUT[1209]  TO $OUT[1211]
+; 
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM DKS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_DKS_Handle[100]
+GLOBAL INT n_DKR_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+
+ENDDAT

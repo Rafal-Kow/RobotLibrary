@@ -1,0 +1,27 @@
+&ACCESS RV
+&PARAM TPVW_VERSION =8.1.8
+DEF  SPS ( )
+;Automatik extern
+VW (#VW_SPS_INIT,TRUE)
+;User-Baustein
+VW_USR_S (#USR_INIT)
+; interrupts for resets in special situations
+INTERRUPT DECL 91 WHEN $PRO_STATE1==#P_FREE DO VW(#VW_P_FREE,TRUE)
+INTERRUPT ON 91
+INTERRUPT DECL 92 WHEN $PRO_STATE1==#P_RESET DO VW(#VW_P_RESET,TRUE)
+INTERRUPT ON 92
+MAKROSTEP(1) ; init MakroStep
+MAKROTRIGGER(0,0);init Trigger
+LOOP
+;Automatik extern
+VW (#VW_SPS_CYC,TRUE)
+;Zangenfunktionen
+VW (#VW_ZANGE,TRUE)
+;Freilaufende SPS
+MAKROSPS()
+MAKROSTEP(0)
+;User-Baustein
+VW_USR_S (#USR_LOOP)
+WAIT FOR NOT $POWER_FAIL
+ENDLOOP
+END

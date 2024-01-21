@@ -1,0 +1,323 @@
+&ACCESS RVO2
+&COMMENT KL1_SPUELEN_ENDE
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrovorgabe.src
+&PARAM EDITMASK = Makro999[0-999]
+&PARAM TPVW_VERSION = 8.1.8
+DEFFCT INT MAKRO183(ADV :IN)
+   ;FOLD Makro Anfang ;%{PSE}%MKUKATPVW
+      BOOL ADV
+      ; interface to basic routines
+      EXT  BAS (BAS_COMMAND  :IN,REAL  :IN )
+      ; interface to VW-standard routines
+      EXT VW (VW_COMMAND:IN, BOOL: IN, REAL:IN, REAL:IN, REAL:IN, REAL:IN, BOOL :IN, E6POS :IN )
+      ; interface select routine
+      EXTFCT INT  SELECT (SUBTYPE  :IN,INT  :IN,BOOL  :IN,ARI_TYP  :IN,INT  :IN,BOOL_TYP  :IN,INT  :IN,BOOL  :IN)
+      SPS_N=-1
+      ;FOLD ;%{H} %MKUKATPVW
+      IF VARSTATE ("ADV") <> #INITIALIZED THEN
+         ADV=FALSE
+      ENDIF
+      IF (NOT ADV) THEN
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Kleben  1  Spuelen  Ende -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Kleben  1  Spuelen  Ende --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- KS24 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KS24 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Version: 01 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Version: 01 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Stand: 004 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Stand: 004 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- letzte Aenderung 18.05.2015 CE -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- letzte Aenderung 18.05.2015 CE --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- F347  =  Sammelstoerung  KL1  an  BMS -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- F347  =  Sammelstoerung  KL1  an  BMS --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD A161 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A161 = EIN, 3: BOASG
+      $OUT[161] = TRUE
+   ;ENDFOLD
+   ;FOLD t12 ( E15 ) = p16[1/10Sek] ;%{E}%MKUKATPVW %CVW_SPS %VTASG %P 2:t12 ( E15 ) = p16[1/10Sek], 3: TASG
+      VW(#SET_TIME,$IN[15],12,0,PROCPAR[16])
+   ;ENDFOLD
+   ;FOLD WARTE BIS T12 + !E15 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS T12 + !E15, 3: WBOASG
+      $LOOP_MSG[]="T12 + !E15"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($TIMER_FLAG[12] OR NOT $IN[15]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD GOTO Label 1 = E15 ;%{E}%MKUKATPVW,%CCONTROL,%VJUMP,%P 1:GOTO Label, 2:1, 3:=, 4:3, 5:15
+      ;FOLD  ;%{H}
+         CONTINUE
+         IF $IN[15] THEN
+            CONTINUE
+            GOTO Label1
+         ENDIF
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD A1529 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1529 = AUS, 3: BOASG
+      $OUT[1529] = FALSE
+   ;ENDFOLD
+   ;FOLD A1531 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1531 = AUS, 3: BOASG
+      $OUT[1531] = FALSE
+   ;ENDFOLD
+   ;FOLD A1539 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1539 = AUS, 3: BOASG
+      $OUT[1539] = FALSE
+   ;ENDFOLD
+   ;FOLD A1540 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1540 = AUS, 3: BOASG
+      $OUT[1540] = FALSE
+   ;ENDFOLD
+   ;FOLD A1541 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1541 = AUS, 3: BOASG
+      $OUT[1541] = FALSE
+   ;ENDFOLD
+   ;FOLD A1542 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1542 = AUS, 3: BOASG
+      $OUT[1542] = FALSE
+   ;ENDFOLD
+   ;FOLD A1543 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1543 = AUS, 3: BOASG
+      $OUT[1543] = FALSE
+   ;ENDFOLD
+   ;FOLD F340 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F340 = AUS, 3: BOASG
+      $FLAG[340] = FALSE
+   ;ENDFOLD
+   ;FOLD t10 ( EIN ) = -20[1/10Sek] ;%{E}%MKUKATPVW %CVW_SPS %VTASG %P 2:t10 ( EIN ) = -20[1/10Sek], 3: TASG
+      VW(#SET_TIME,TRUE,10,0,-20)
+   ;ENDFOLD
+   ;FOLD -- KL1 Warte Betriebsbereit -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Warte Betriebsbereit --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- und Energiesparmodus AUS -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- und Energiesparmodus AUS --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD WARTE BIS E1524 & E1527 & E1528 & !E1546 + T10 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1524 & E1527 & E1528 & !E1546 + T10, 3: WBOASG
+      $LOOP_MSG[]="E1524 & E1527 & E1528 & !E1546 + T10"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($IN[1524] AND $IN[1527] AND $IN[1528] AND NOT $IN[1546] OR $TIMER_FLAG[10]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD F347 = T10 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F347 = T10, 3: BOASG
+      $FLAG[347] = $TIMER_FLAG[10]
+   ;ENDFOLD
+   ;FOLD WARTE BIS E1524 & E1527 & E1528 & !E1546 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1524 & E1527 & E1528 & !E1546, 3: WBOASG
+      $LOOP_MSG[]="E1524 & E1527 & E1528 & !E1546"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($IN[1524] AND $IN[1527] AND $IN[1528] AND NOT $IN[1546]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD F347 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F347 = AUS, 3: BOASG
+      $FLAG[347] = FALSE
+   ;ENDFOLD
+   ;FOLD t10 ( EIN ) = -20[1/10Sek] ;%{E}%MKUKATPVW %CVW_SPS %VTASG %P 2:t10 ( EIN ) = -20[1/10Sek], 3: TASG
+      VW(#SET_TIME,TRUE,10,0,-20)
+   ;ENDFOLD
+   ;FOLD -- KL1 Ueberpruefung Programmanwahl -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Ueberpruefung Programmanwahl --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1505 & E1505 + !A1505 & !E1505 + T10 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1505 & E1505 + !A1505 & !E1505 + T10, 3: WBOASG
+      $LOOP_MSG[]="A1505 & E1505 + !A1505 & !E1505 + T10"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1505] AND $IN[1505] OR NOT $OUT[1505] AND NOT $IN[1505] OR $TIMER_FLAG[10]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1506 & E1506 + !A1506 & !E1506 + T10 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1506 & E1506 + !A1506 & !E1506 + T10, 3: WBOASG
+      $LOOP_MSG[]="A1506 & E1506 + !A1506 & !E1506 + T10"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1506] AND $IN[1506] OR NOT $OUT[1506] AND NOT $IN[1506] OR $TIMER_FLAG[10]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1507 & E1507 + !A1507 & !E1507 + T10 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1507 & E1507 + !A1507 & !E1507 + T10, 3: WBOASG
+      $LOOP_MSG[]="A1507 & E1507 + !A1507 & !E1507 + T10"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1507] AND $IN[1507] OR NOT $OUT[1507] AND NOT $IN[1507] OR $TIMER_FLAG[10]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1508 & E1508 + !A1508 & !E1508 + T10 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1508 & E1508 + !A1508 & !E1508 + T10, 3: WBOASG
+      $LOOP_MSG[]="A1508 & E1508 + !A1508 & !E1508 + T10"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1508] AND $IN[1508] OR NOT $OUT[1508] AND NOT $IN[1508] OR $TIMER_FLAG[10]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1509 & E1509 + !A1509 & !E1509 + T10 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1509 & E1509 + !A1509 & !E1509 + T10, 3: WBOASG
+      $LOOP_MSG[]="A1509 & E1509 + !A1509 & !E1509 + T10"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1509] AND $IN[1509] OR NOT $OUT[1509] AND NOT $IN[1509] OR $TIMER_FLAG[10]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1510 & E1510 + !A1510 & !E1510 + T10 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1510 & E1510 + !A1510 & !E1510 + T10, 3: WBOASG
+      $LOOP_MSG[]="A1510 & E1510 + !A1510 & !E1510 + T10"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1510] AND $IN[1510] OR NOT $OUT[1510] AND NOT $IN[1510] OR $TIMER_FLAG[10]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1511 & E1511 + !A1511 & !E1511 + T10 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1511 & E1511 + !A1511 & !E1511 + T10, 3: WBOASG
+      $LOOP_MSG[]="A1511 & E1511 + !A1511 & !E1511 + T10"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1511] AND $IN[1511] OR NOT $OUT[1511] AND NOT $IN[1511] OR $TIMER_FLAG[10]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1512 & E1512 + !A1512 & !E1512 + T10 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1512 & E1512 + !A1512 & !E1512 + T10, 3: WBOASG
+      $LOOP_MSG[]="A1512 & E1512 + !A1512 & !E1512 + T10"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1512] AND $IN[1512] OR NOT $OUT[1512] AND NOT $IN[1512] OR $TIMER_FLAG[10]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1505 + A1506 + A1507 + A1508 + A1509 + A1510 + A1511 + A1512 + T10 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1505 + A1506 + A1507 + A1508 + A1509 + A1510 + A1511 + A1512 + T10, 3: WBOASG
+      $LOOP_MSG[]="A1505 + A1506 + A1507 + A1508 + A1509 + A1510 + A1511 + A1512 + T10"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1505] OR $OUT[1506] OR $OUT[1507] OR $OUT[1508] OR $OUT[1509] OR $OUT[1510] OR $OUT[1511] OR $OUT[1512] OR $TIMER_FLAG[10]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD F347 = T10 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F347 = T10, 3: BOASG
+      $FLAG[347] = $TIMER_FLAG[10]
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1505 & E1505 + !A1505 & !E1505 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1505 & E1505 + !A1505 & !E1505, 3: WBOASG
+      $LOOP_MSG[]="A1505 & E1505 + !A1505 & !E1505"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1505] AND $IN[1505] OR NOT $OUT[1505] AND NOT $IN[1505]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1506 & E1506 + !A1506 & !E1506 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1506 & E1506 + !A1506 & !E1506, 3: WBOASG
+      $LOOP_MSG[]="A1506 & E1506 + !A1506 & !E1506"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1506] AND $IN[1506] OR NOT $OUT[1506] AND NOT $IN[1506]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1507 & E1507 + !A1507 & !E1507 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1507 & E1507 + !A1507 & !E1507, 3: WBOASG
+      $LOOP_MSG[]="A1507 & E1507 + !A1507 & !E1507"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1507] AND $IN[1507] OR NOT $OUT[1507] AND NOT $IN[1507]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1508 & E1508 + !A1508 & !E1508 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1508 & E1508 + !A1508 & !E1508, 3: WBOASG
+      $LOOP_MSG[]="A1508 & E1508 + !A1508 & !E1508"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1508] AND $IN[1508] OR NOT $OUT[1508] AND NOT $IN[1508]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1509 & E1509 + !A1509 & !E1509 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1509 & E1509 + !A1509 & !E1509, 3: WBOASG
+      $LOOP_MSG[]="A1509 & E1509 + !A1509 & !E1509"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1509] AND $IN[1509] OR NOT $OUT[1509] AND NOT $IN[1509]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1510 & E1510 + !A1510 & !E1510 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1510 & E1510 + !A1510 & !E1510, 3: WBOASG
+      $LOOP_MSG[]="A1510 & E1510 + !A1510 & !E1510"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1510] AND $IN[1510] OR NOT $OUT[1510] AND NOT $IN[1510]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1511 & E1511 + !A1511 & !E1511 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1511 & E1511 + !A1511 & !E1511, 3: WBOASG
+      $LOOP_MSG[]="A1511 & E1511 + !A1511 & !E1511"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1511] AND $IN[1511] OR NOT $OUT[1511] AND NOT $IN[1511]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1512 & E1512 + !A1512 & !E1512 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1512 & E1512 + !A1512 & !E1512, 3: WBOASG
+      $LOOP_MSG[]="A1512 & E1512 + !A1512 & !E1512"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1512] AND $IN[1512] OR NOT $OUT[1512] AND NOT $IN[1512]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1505 + A1506 + A1507 + A1508 + A1509 + A1510 + A1511 + A1512 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1505 + A1506 + A1507 + A1508 + A1509 + A1510 + A1511 + A1512, 3: WBOASG
+      $LOOP_MSG[]="A1505 + A1506 + A1507 + A1508 + A1509 + A1510 + A1511 + A1512"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1505] OR $OUT[1506] OR $OUT[1507] OR $OUT[1508] OR $OUT[1509] OR $OUT[1510] OR $OUT[1511] OR $OUT[1512]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD F347 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F347 = AUS, 3: BOASG
+      $FLAG[347] = FALSE
+   ;ENDFOLD
+   ;FOLD -- Heizung Nachtriggern -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Heizung Nachtriggern --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F337 = !E1551 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F337 = !E1551, 3: BOASG
+      $FLAG[337] = NOT $IN[1551]
+   ;ENDFOLD
+   ;FOLD WARTE ( !E1551 ) ZEIT 5 [1/10Sek] ;%{E}%MKUKATPVW %CVW_SPS %VWTASG %P 2:WARTE ( !E1551 ) ZEIT 5 [1/10Sek], 3: WTASG
+      $LOOP_MSG[]="Wartezeit..."
+      $LOOP_CONT=TRUE
+      WAIT FOR ($IN[1551] OR TIMER_LIMIT ((5)*0.1) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX)))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD F337 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F337 = AUS, 3: BOASG
+      $FLAG[337] = FALSE
+   ;ENDFOLD
+   ;FOLD t10 ( EIN ) = -5[1/10Sek] ;%{E}%MKUKATPVW %CVW_SPS %VTASG %P 2:t10 ( EIN ) = -5[1/10Sek], 3: TASG
+      VW(#SET_TIME,TRUE,10,0,-5)
+   ;ENDFOLD
+   ;FOLD WARTE BIS E1524 & E1527 & E1551 + T10 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1524 & E1527 & E1551 + T10, 3: WBOASG
+      $LOOP_MSG[]="E1524 & E1527 & E1551 + T10"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($IN[1524] AND $IN[1527] AND $IN[1551] OR $TIMER_FLAG[10]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD F347 = T10 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F347 = T10, 3: BOASG
+      $FLAG[347] = $TIMER_FLAG[10]
+   ;ENDFOLD
+   ;FOLD WARTE BIS E1524 & E1527 & E1551 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1524 & E1527 & E1551, 3: WBOASG
+      $LOOP_MSG[]="E1524 & E1527 & E1551"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($IN[1524] AND $IN[1527] AND $IN[1551]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD F347 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F347 = AUS, 3: BOASG
+      $FLAG[347] = FALSE
+   ;ENDFOLD
+   ;FOLD -- KL1 Freigabe Spuelen EIN -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Freigabe Spuelen EIN --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD A1534 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1534 = EIN, 3: BOASG
+      $OUT[1534] = TRUE
+   ;ENDFOLD
+   ;FOLD -- KL1 Spuelen wenn Anforderung besteht -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Spuelen wenn Anforderung besteht --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD A1535 = E1534 + E163 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1535 = E1534 + E163, 3: BOASG
+      $OUT[1535] = $IN[1534] OR $IN[163]
+   ;ENDFOLD
+   ;FOLD A163 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A163 = EIN, 3: BOASG
+      $OUT[163] = TRUE
+   ;ENDFOLD
+   ;FOLD t10 ( EIN ) = -1200[1/10Sek] ;%{E}%MKUKATPVW %CVW_SPS %VTASG %P 2:t10 ( EIN ) = -1200[1/10Sek], 3: TASG
+      VW(#SET_TIME,TRUE,10,0,-1200)
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1535 & E1536 + !A1535 + T10 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1535 & E1536 + !A1535 + T10, 3: WBOASG
+      $LOOP_MSG[]="A1535 & E1536 + !A1535 + T10"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1535] AND $IN[1536] OR NOT $OUT[1535] OR $TIMER_FLAG[10]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD F347 = T10 ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F347 = T10, 3: BOASG
+      $FLAG[347] = $TIMER_FLAG[10]
+   ;ENDFOLD
+   ;FOLD WARTE BIS A1535 & E1536 + !A1535 ;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS A1535 & E1536 + !A1535, 3: WBOASG
+      $LOOP_MSG[]="A1535 & E1536 + !A1535"
+      $LOOP_CONT=TRUE
+      WAIT FOR ($OUT[1535] AND $IN[1536] OR NOT $OUT[1535]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+      $LOOP_MSG[]="                                                                                                                                "
+   ;ENDFOLD
+   ;FOLD F347 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F347 = AUS, 3: BOASG
+      $FLAG[347] = FALSE
+   ;ENDFOLD
+   ;FOLD -- Kl1 Spuelen AUS -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Kl1 Spuelen AUS --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD A1535 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1535 = AUS, 3: BOASG
+      $OUT[1535] = FALSE
+   ;ENDFOLD
+   ;FOLD -- KL1 Freigabe Spuelen AUS -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Freigabe Spuelen AUS --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD A1534 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1534 = AUS, 3: BOASG
+      $OUT[1534] = FALSE
+   ;ENDFOLD
+   ;FOLD A23 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A23 = AUS, 3: BOASG
+      $OUT[23] = FALSE
+   ;ENDFOLD
+   ;FOLD Label 1 ;%{E}%MKUKATPVW,%CCONTROL,%VLABEL,%P 1:Label, 2:Label 1
+      ;FOLD  ;%{H}
+         Label1:
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD A161 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A161 = AUS, 3: BOASG
+      $OUT[161] = FALSE
+   ;ENDFOLD
+   ;FOLD A163 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A163 = AUS, 3: BOASG
+      $OUT[163] = FALSE
+   ;ENDFOLD
+   ; FOLD ;%{H}
+   RETURN 1
+   ELSE
+   RETURN 0
+   ENDIF
+ENDFCT
+; ENDFOLD

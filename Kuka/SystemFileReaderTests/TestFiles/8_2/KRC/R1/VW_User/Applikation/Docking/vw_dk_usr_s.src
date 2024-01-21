@@ -1,0 +1,1193 @@
+&ACCESS RV1
+&REL 209
+&PARAM DISKPATH = VW_User/Applikation/Docking
+&PARAM TPVW_VERSION = 8.1.8
+DEF VW_DK_USR_S( )
+; 
+;*-----------------------------------------------------*
+;* Technologiepaket Docking                            *
+;*                                                     *
+;* Konzernstandard                                     *
+;* Bearbeiter: Chr. Eisenknappl I/PG-C61               *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2014.09.11 CE                                       *
+;*                                                     *
+;FOLD Aenderungsjournal                                *
+;*                                                     *
+;* 2015.05.28 LE Meldungsausgabe optimiert             *
+;* 2015.06.01 CE Konfiguration flexibilisiert          *
+;* 2015.06.16 CE RW Reibelement neu hinzu              *
+;* 2015.06.26 LE Anwahl bei DKSZ_stat_SZ optimiert     *
+;* 2015.07.03 CE ReserveBool[44] => Mit_flex_DK        *
+;* 2015.10.21 CE Absolute Zuordnung Anzahlen WKZ       *
+;* 2015.12.15 OL SZ_2_E4 aktiviert                     *
+;* 2015.12.15 OL PN Docken Hinzugefügt                 *
+;* 2016.01.19 OL Kb1_ZCode ergänzt für KE              *
+;* 2016.01.19 OL Fehlerausgabe fuer PN-Docken angepasst*
+;* 2016.06.16 LZ PN-DOCKEN-SHARING im r neu hinzu      *
+;ENDFOLD                                               *
+;*-----------------------------------------------------*
+; 
+END
+;
+;FOLD INIT DK 
+GLOBAL DEF DK_INIT(INITCmd :IN )
+INT i, INITCmd
+;
+SWITCH INITCmd
+  CASE 1 ; DK_INIT von vw_usr_s 
+    ;FOLD Version Techpaket
+    Tech_DK.Name[]="KS24.04.002_170126"
+    ;ENDFOLD
+;
+    ;FOLD Vorbesetzung Meldungsausgabe
+    FOR i = 1 TO 100
+      n_DKS_Handle[i]=-1
+      n_DKR_Handle[i]=-1
+    ENDFOR
+    ;ENDFOLD
+;
+  CASE 2 ; #DockInit von vw_usr_s
+    SetPlcIntNull(0)
+    $softplcbool[20]=TRUE
+    IF ('B1000000' B_AND AX_SIM_ON) == 'B1000000' THEN
+      SZAxConfig=1 ;docking ab E1
+    ENDIF
+    IF ('B11000000' B_AND AX_SIM_ON) == 'B10000000' THEN
+      SZAxConfig=2 ;docking ab E2
+    ENDIF
+    IF ('B111000000' B_AND AX_SIM_ON) == 'B100000000' THEN
+      SZAxConfig=3 ;docking ab E3
+    ENDIF
+    IF ('B1111000000' B_AND AX_SIM_ON) == 'B1000000000' THEN
+      SZAxConfig=4 ;docking ab E4
+    ENDIF
+    IF ('B11111000000' B_AND AX_SIM_ON) == 'B10000000000' THEN
+      SZAxConfig=5 ;docking ab E5
+    ENDIF
+    IF DKSZ_stat_SZ THEN
+      IF SZ_1_E2 AND NOT (EZ_DockAxZ1==8) AND NOT (NZ_1_E2 OR NZ_2_E2) AND NOT (CZ_1_E2 OR CZ_2_E2) THEN
+        $softplcint[1]=8
+      ENDIF
+      IF SZ_2_E2 AND NOT (NZ_1_E2 OR NZ_2_E2) AND NOT (CZ_1_E2 OR CZ_2_E2) THEN
+        IF ReserveBool[40] THEN
+          $softplcint[3]=8
+        ELSE
+          $softplcint[2]=8
+        ENDIF  
+      ENDIF
+      IF SZ_2_E3 AND NOT (NZ_1_E3 OR NZ_2_E3) AND NOT (CZ_1_E3 OR CZ_2_E3) THEN
+        IF ReserveBool[40] THEN
+          $softplcint[3]=9
+        ELSE
+          $softplcint[2]=9
+        ENDIF
+      ENDIF 
+      ;Variable SZ_2_E4 nicht in Standard-Konfigdat vorhanden
+      IF SZ_2_E4 AND NOT (NZ_1_E4 OR NZ_2_E4) AND NOT (CZ_1_E4 OR CZ_2_E4) THEN
+        $softplcint[2]=10
+      ENDIF
+      IF SZ_3_E4 AND NOT (NZ_1_E4 OR NZ_2_E4) AND NOT (CZ_1_E4 OR CZ_2_E4) THEN
+        $softplcint[3]=10
+      ENDIF
+      IF NZ_1_E2 AND NOT (SZ_1_E2 OR SZ_2_E2) AND NOT NZ_2_E2 AND NOT (CZ_1_E2 OR CZ_2_E2) THEN
+        $softplcint[4]=8
+      ENDIF
+      IF NZ_1_E3 AND NOT SZ_2_E3 AND NOT NZ_2_E3 AND NOT (CZ_1_E3 OR CZ_2_E3) THEN
+        $softplcint[4]=9
+      ENDIF
+      IF NZ_1_E4 AND NOT SZ_3_E4 AND NOT NZ_2_E4 AND NOT (CZ_1_E4 OR CZ_2_E4) THEN
+        $softplcint[4]=10
+      ENDIF
+      IF NZ_2_E2 AND NOT (SZ_1_E2 OR SZ_2_E2) AND NOT NZ_1_E2 AND NOT (CZ_1_E2 OR CZ_2_E2) THEN
+        $softplcint[5]=8
+      ENDIF
+      IF NZ_2_E3 AND NOT SZ_2_E3 AND NOT NZ_1_E3 AND NOT (CZ_1_E3 OR CZ_2_E3) THEN
+        $softplcint[5]=9
+      ENDIF
+      IF NZ_2_E4 AND NOT SZ_3_E4 AND NOT NZ_1_E4 AND NOT (CZ_1_E4 OR CZ_2_E4) THEN
+        $softplcint[5]=10
+      ENDIF
+      IF CZ_1_E2 AND NOT (SZ_1_E2 OR SZ_2_E2) AND NOT (NZ_1_E2 OR NZ_2_E2) AND NOT CZ_2_E2 THEN
+        $softplcint[6]=8
+      ENDIF
+      IF CZ_1_E3 AND NOT SZ_2_E3 AND NOT (NZ_1_E3 OR NZ_2_E3) AND NOT CZ_2_E3 THEN
+        $softplcint[6]=9
+      ENDIF
+      IF CZ_1_E4 AND NOT SZ_3_E4 AND NOT (NZ_1_E4 OR NZ_2_E4) AND NOT CZ_2_E4 THEN
+        $softplcint[6]=10
+      ENDIF
+      IF CZ_2_E2 AND NOT (SZ_1_E2 OR SZ_2_E2) AND NOT (NZ_1_E2 OR NZ_2_E2) AND NOT CZ_1_E2 THEN
+        $softplcint[7]=8
+      ENDIF
+      IF CZ_2_E3 AND NOT SZ_2_E3 AND NOT (NZ_1_E3 OR NZ_2_E3) AND NOT CZ_1_E3 THEN
+        $softplcint[7]=9
+      ENDIF
+      IF CZ_2_E4 AND NOT SZ_3_E4 AND NOT (NZ_1_E4 OR NZ_2_E4) AND NOT CZ_1_E4 THEN
+        $softplcint[7]=10
+      ENDIF
+    ENDIF
+ENDSWITCH    
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD SAW DK 
+GLOBAL DEF DK_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD RESET DK 
+GLOBAL DEF DK_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD CANCEL DK 
+GLOBAL DEF DK_CANCEL( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;
+;FOLD LOOP DK 
+GLOBAL DEF DK_LOOP( )
+BOOL bRet
+INT i
+;
+
+;Downgrade Docking
+IF NOT MIT_flex_DK THEN
+;
+  ;FOLD SZ Zangencode
+  IF Docking THEN
+    IF ((AX_SIM_ON=='B000011000000') OR (AX_SIM_ON=='B000110000000')) OR ((AX_SIM_ON=='B000001000000') OR (AX_SIM_ON=='B000010000000') AND S_Docking) THEN
+      IF $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND NOT $IN[SZ_angedockt] THEN
+        IF Mit_Komb_ST THEN
+          KB1_ZCode=0
+          NZ1_Servo_ZCode=0
+          CZ1_Servo_ZCode=0
+          RW1_Servo_ZCode=0
+        ELSE
+          EZ1_ZCode=0
+          NZ1_Servo_ZCode=0
+          CZ1_Servo_ZCode=0
+          RW1_Servo_ZCode=0
+        ENDIF
+      ENDIF
+;
+      ;Zangencode W1 bei Docking setzen
+      IF NOT $IN[bhf1_belegt] AND $IN[bhf2_belegt] THEN
+        IF Mit_Komb_ST THEN 
+          KB1_ZCode=1
+          NZ1_Servo_ZCode=1
+          CZ1_Servo_ZCode=1
+          RW1_Servo_ZCode=1
+        ELSE
+          EZ1_ZCode=1
+          NZ1_Servo_ZCode=1
+          CZ1_Servo_ZCode=1
+          RW1_Servo_ZCode=1
+        ENDIF 
+      ENDIF
+;
+      ;Zangencode W2 bei Docking setzen
+      IF $IN[bhf1_belegt] AND NOT $IN[bhf2_belegt] AND NOT S_Docking THEN
+        IF Mit_Komb_ST THEN 
+          KB1_ZCode=2
+          NZ1_Servo_ZCode=2
+          CZ1_Servo_ZCode=2
+          RW1_Servo_ZCode=2
+        ELSE
+          EZ1_ZCode=2
+          NZ1_Servo_ZCode=2
+          CZ1_Servo_ZCode=2
+          RW1_Servo_ZCode=2
+        ENDIF
+      ENDIF
+    ENDIF
+;
+    IF (AX_SIM_ON=='B000111000000') OR (AX_SIM_ON=='B001110000000') THEN
+      IF $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND ($IN[bhf3_belegt] OR DKSZ_stat_SZ) AND NOT $IN[SZ_angedockt] THEN
+        IF Mit_Komb_ST THEN
+          KB1_ZCode=0
+          NZ1_Servo_ZCode=0
+          CZ1_Servo_ZCode=0
+          RW1_Servo_ZCode=0
+        ELSE
+          EZ1_ZCode=0
+          NZ1_Servo_ZCode=0
+          CZ1_Servo_ZCode=0
+          RW1_Servo_ZCode=0
+        ENDIF
+      ENDIF
+;
+      ;Zangencode W1 bei Docking setzen
+      IF NOT $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND ($IN[bhf3_belegt] OR DKSZ_stat_SZ) THEN
+        IF Mit_Komb_ST THEN 
+          KB1_ZCode=1
+          NZ1_Servo_ZCode=1
+          CZ1_Servo_ZCode=1
+          RW1_Servo_ZCode=1
+        ELSE
+          EZ1_ZCode=1
+          NZ1_Servo_ZCode=1
+          CZ1_Servo_ZCode=1
+          RW1_Servo_ZCode=1
+        ENDIF 
+      ENDIF
+;
+      ;Zangencode W2 bei Docking setzen
+      IF $IN[bhf1_belegt] AND NOT $IN[bhf2_belegt] AND ($IN[bhf3_belegt] OR DKSZ_stat_SZ) THEN
+        IF Mit_Komb_ST THEN 
+          KB1_ZCode=2
+          NZ1_Servo_ZCode=2
+          CZ1_Servo_ZCode=2
+          RW1_Servo_ZCode=2
+        ELSE
+          EZ1_ZCode=2
+          NZ1_Servo_ZCode=2
+          CZ1_Servo_ZCode=2
+          RW1_Servo_ZCode=2
+        ENDIF
+      ENDIF
+;
+      ;Zangencode W3 bei Docking setzen
+      IF $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND NOT $IN[bhf3_belegt] THEN
+        IF Mit_Komb_ST THEN 
+          KB1_ZCode=3
+          NZ1_Servo_ZCode=3
+          CZ1_Servo_ZCode=3
+          RW1_Servo_ZCode=3
+        ELSE
+          EZ1_ZCode=3
+          NZ1_Servo_ZCode=3
+          CZ1_Servo_ZCode=3
+          RW1_Servo_ZCode=3
+        ENDIF
+      ENDIF
+    ENDIF
+;
+    IF (AX_SIM_ON=='B001111000000') OR (AX_SIM_ON=='B011110000000') THEN
+      IF $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND $IN[bhf3_belegt] AND $IN[bhf4_belegt] AND NOT $IN[SZ_angedockt] THEN
+        IF Mit_Komb_ST THEN
+          KB1_ZCode=0
+          NZ1_Servo_ZCode=0
+          CZ1_Servo_ZCode=0
+          RW1_Servo_ZCode=0
+        ELSE
+          EZ1_ZCode=0
+          NZ1_Servo_ZCode=0
+          CZ1_Servo_ZCode=0
+          RW1_Servo_ZCode=0
+        ENDIF
+      ENDIF
+;
+      ;Zangencode W1 bei Docking setzen
+      IF NOT $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND $IN[bhf3_belegt] AND $IN[bhf4_belegt] THEN
+        IF Mit_Komb_ST THEN 
+          KB1_ZCode=1
+          NZ1_Servo_ZCode=1
+          CZ1_Servo_ZCode=1
+          RW1_Servo_ZCode=1
+        ELSE
+          EZ1_ZCode=1
+          NZ1_Servo_ZCode=1
+          CZ1_Servo_ZCode=1
+          RW1_Servo_ZCode=1
+        ENDIF 
+      ENDIF
+;
+      ;Zangencode W2 bei Docking setzen
+      IF $IN[bhf1_belegt] AND NOT $IN[bhf2_belegt] AND $IN[bhf3_belegt] AND $IN[bhf4_belegt] THEN
+        IF Mit_Komb_ST THEN 
+          KB1_ZCode=2
+          NZ1_Servo_ZCode=2
+          CZ1_Servo_ZCode=2
+          RW1_Servo_ZCode=2
+        ELSE
+          EZ1_ZCode=2
+          NZ1_Servo_ZCode=2
+          CZ1_Servo_ZCode=2
+          RW1_Servo_ZCode=2
+        ENDIF
+      ENDIF
+;
+      ;Zangencode W3 bei Docking setzen
+      IF $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND NOT $IN[bhf3_belegt] AND $IN[bhf4_belegt] THEN
+        IF Mit_Komb_ST THEN 
+          KB1_ZCode=3
+          NZ1_Servo_ZCode=3
+          CZ1_Servo_ZCode=3
+          RW1_Servo_ZCode=3
+        ELSE
+          EZ1_ZCode=3
+          NZ1_Servo_ZCode=3
+          CZ1_Servo_ZCode=3
+          RW1_Servo_ZCode=3
+        ENDIF
+      ENDIF
+;
+      ;Zangencode W4 bei Docking setzen
+      IF $IN[bhf1_belegt] AND $IN[bhf2_belegt] AND $IN[bhf3_belegt] AND NOT $IN[bhf4_belegt] THEN
+        IF Mit_Komb_ST THEN 
+          KB1_ZCode=4
+          NZ1_Servo_ZCode=4
+          CZ1_Servo_ZCode=4
+          RW1_Servo_ZCode=4
+        ELSE
+          EZ1_ZCode=4
+          NZ1_Servo_ZCode=4
+          CZ1_Servo_ZCode=4
+          RW1_Servo_ZCode=4
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+  ;ENDFOLD
+;
+  DocKBhf= 'B000000'
+  IF NOT $IN[bhf1_belegt] THEN
+    DocKBhf = DocKBhf B_OR 'B000001'
+  ENDIF
+  IF NOT $IN[bhf2_belegt] THEN
+    DocKBhf = DocKBhf B_OR 'B000010'
+  ENDIF
+  IF NOT $IN[bhf3_belegt] THEN
+    DocKBhf = DocKBhf B_OR 'B000100'
+  ENDIF
+  IF NOT $IN[bhf4_belegt] THEN
+    DocKBhf = DocKBhf B_OR 'B001000'
+  ENDIF
+  IF NOT $IN[bhf5_belegt] THEN
+    DocKBhf = DocKBhf B_OR 'B010000'
+  ENDIF
+  IF NOT $IN[bhf6_belegt] THEN
+    DocKBhf = DocKBhf B_OR 'B100000'
+  ENDIF
+;
+  SWITCH DockBhf
+    CASE 'B000000'  ;alle Bahnhoefe belegt
+      IF DOCK_SZ THEN
+        SetPlcIntNull(1)
+        Dock_Z1=FALSE
+        Dock_Z2=FALSE
+        Dock_Z3=FALSE
+        Dock_Z4=FALSE
+      ENDIF
+      IF DOCK_SP THEN
+        SetPlcIntNull(1)
+        SetPlcIntNull(2)
+      ENDIF
+      IF DOCK_NZ THEN
+        SetPlcIntNull(4)
+      ENDIF
+      IF DOCK_CZ THEN
+        SetPlcIntNull(6)
+      ENDIF
+    CASE 'B000001'
+      IF DOCK_SZ THEN
+        $softplcint[1]=ActDockAx(1)
+        Dock_Z1=TRUE
+        Dock_Z2=FALSE
+        Dock_Z3=FALSE
+        Dock_Z4=FALSE
+      ENDIF
+      IF DOCK_NZ THEN
+        $softplcint[4]=ActDockAx(1)
+      ENDIF
+      IF DOCK_CZ THEN
+        $softplcint[6]=ActDockAx(1)
+      ENDIF
+    CASE 'B000010'
+      IF DOCK_SZ AND S_Docking THEN ;Sonderfall S_Docking SZ ist abgeschaltet
+        SetPlcIntNull(1)
+        Dock_Z1=FALSE
+      ENDIF
+      IF DOCK_SZ AND NOT S_Docking THEN
+        IF DOCK_SZ AND NOT DOCK_SP THEN
+          $softplcint[1]=ActDockAx(2)
+        ENDIF
+	     IF DOCK_SZ AND DOCK_SP THEN
+          $softplcint[2]=ActDockAx(2)
+	     ENDIF
+        Dock_Z1=FALSE
+        Dock_Z2=TRUE
+        Dock_Z3=FALSE
+        Dock_Z4=FALSE
+      ENDIF
+      IF DOCK_NZ AND S_Docking THEN ;Sonderfall S_Docking NZ ist abgeschaltet
+        SetPlcIntNull(4)
+      ENDIF
+      IF DOCK_NZ AND NOT S_Docking THEN
+        $softplcint[4]=ActDockAx(2)
+      ENDIF
+      IF DOCK_CZ AND S_Docking THEN ;Sonderfall S_Docking CZ ist abgeschaltet
+        SetPlcIntNull(6)
+      ENDIF
+      IF DOCK_CZ AND NOT S_Docking THEN
+        $softplcint[6]=ActDockAx(2)
+      ENDIF
+    CASE 'B000100'
+      IF DOCK_SZ AND NOT ReserveBool[49] AND NOT ReserveBool[50] THEN ;ReserveBool[50]=TRUE / Sonderfall Docking von 2 SZ/PZ und 1xGreifer
+        IF DOCK_SZ AND NOT DOCK_SP THEN                               ;ReserveBool[49]=TRUE / Sonderfall Docking von 2 SZ/PZ und 2xGreifer
+          $softplcint[1]=ActDockAx(3)
+	     ENDIF
+	     IF DOCK_SZ AND DOCK_SP THEN
+          $softplcint[3]=ActDockAx(3)
+	     ENDIF
+        Dock_Z1=FALSE
+        Dock_Z2=FALSE
+        Dock_Z3=TRUE
+        Dock_Z4=FALSE
+	   ENDIF
+      IF DOCK_SZ AND (ReserveBool[49] OR ReserveBool[50]) THEN 
+        IF DOCK_SP THEN
+          SetPlcIntNull(1)
+          SetPlcIntNull(2)
+        ELSE
+          SetPlcIntNull(1)
+        ENDIF 
+        Dock_Z3=FALSE        
+      ENDIF
+      IF DOCK_NZ AND S_Docking THEN ;Sonderfall S_Docking NZ ist abgeschaltet
+        SetPlcIntNull(4)
+      ENDIF
+	   IF DOCK_NZ AND NOT S_Docking THEN
+        $softplcint[4]=ActDockAx(3)
+      ENDIF
+      IF DOCK_CZ AND S_Docking THEN ;Sonderfall S_Docking CZ ist abgeschaltet
+        SetPlcIntNull(6)
+      ENDIF
+	   IF DOCK_CZ AND NOT S_Docking THEN
+        $softplcint[6]=ActDockAx(3)
+      ENDIF
+    CASE 'B001000'
+      IF DOCK_SZ AND NOT ReserveBool[47] AND NOT ReserveBool[48] AND NOT ReserveBool[49] THEN  ;ReserveBool[49]=TRUE / Sonderfall Docking von 2 SZ/PZ und 2xGreifer
+        $softplcint[1]=ActDockAx(4)                                                            ;ReserveBool[48]=TRUE / Sonderfall Docking von 3 SZ/PZ und 1xGreifer
+        Dock_Z1=FALSE                                                                          ;ReserveBool[47]=TRUE / Sonderfall Docking von 3 SZ/PZ und 2xGreifer
+        Dock_Z2=FALSE
+        Dock_Z3=FALSE
+        Dock_Z4=TRUE
+	   ENDIF
+      IF DOCK_SZ AND (ReserveBool[47] OR ReserveBool[48] OR ReserveBool[49]) THEN 
+        IF DOCK_SP THEN
+          SetPlcIntNull(1)
+          SetPlcIntNull(2)
+          SetPlcIntNull(3)
+        ELSE
+          SetPlcIntNull(1)
+        ENDIF 
+        Dock_Z4=FALSE
+      ENDIF
+	   IF DOCK_NZ AND S_Docking THEN ;Sonderfall S_Docking NZ ist abgeschaltet
+        SetPlcIntNull(4)
+      ENDIF
+	   IF DOCK_NZ AND NOT S_Docking THEN
+        $softplcint[4]=ActDockAx(4)
+      ENDIF
+      IF DOCK_CZ AND S_Docking THEN ;Sonderfall S_Docking CZ ist abgeschaltet
+        SetPlcIntNull(6)
+      ENDIF
+	   IF DOCK_CZ AND NOT S_Docking THEN
+        $softplcint[6]=ActDockAx(4)
+      ENDIF
+    CASE 'B010000'
+      IF DOCK_SZ AND NOT ReserveBool[47] THEN    ;ReserveBool[47]=TRUE / Sonderfall Docking von 3 SZ und 2xGreifer
+        $softplcint[1]=ActDockAx(5)
+      ENDIF 
+      IF DOCK_SZ AND ReserveBool[47] THEN 
+        SetPlcIntNull(1)
+      ENDIF      
+    CASE 'B100000'
+      IF DOCK_SZ THEN
+        $softplcint[1]=ActDockAx(6)
+      ENDIF  
+;
+    DEFAULT  ;mehrere Bahnhoefe nicht belegt
+      DK_Msg(1,#NotifyMsg)   
+  ENDSWITCH ;DockBhf
+ELSE
+  IF (DK_setzen==TRUE) THEN
+    FOR I=1 TO Anz_BHF    
+      IF DOCK_SZ THEN        
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B100000000') == 'B100000000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000000000') == 'B1000000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B10000') == 'B10000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100000') == 'B100000') THEN
+          BHF_EZ_Z1=I
+          ANZ_EZ=ANZ_EZ+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ1=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ1=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ1=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ1=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ1=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ1=SZAxConfig+11
+          ENDIF
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B100000000') == 'B100000000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000000000') == 'B1000000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B100000') == 'B100000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10000') == 'B10000') THEN
+          BHF_EZ_Z2=I
+          ANZ_EZ=ANZ_EZ+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ2=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ2=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ2=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ2=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ2=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ2=SZAxConfig+11
+          ENDIF
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B100000000') == 'B100000000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000000000') == 'B1000000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B110000') == 'B110000') THEN
+          BHF_EZ_Z3=I
+          ANZ_EZ=ANZ_EZ+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ3=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ3=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ3=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ3=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ3=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ3=SZAxConfig+11
+          ENDIF
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B100000000') == 'B100000000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000000000') == 'B1000000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B1000000') == 'B1000000') THEN
+          BHF_EZ_Z4=I
+          ANZ_EZ=ANZ_EZ+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ4=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ4=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ4=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ4=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ4=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            EZ_DockAxZ4=SZAxConfig+11
+          ENDIF
+        ENDIF
+      ENDIF
+;
+      IF DOCK_NZ THEN
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B1000000000') == 'B1000000000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100000000') == 'B100000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B10000') == 'B10000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100000') == 'B100000') THEN
+          BHF_NZ_Serv_Z1=I
+          ANZ_NZ=ANZ_NZ+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ1=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ1=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ1=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ1=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ1=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ1=SZAxConfig+11
+          ENDIF
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B1000000000') == 'B1000000000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100000000') == 'B100000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B100000') == 'B100000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10000') == 'B10000') THEN
+          BHF_NZ_Serv_Z2=I
+          ANZ_NZ=ANZ_NZ+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ2=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ2=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ2=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ2=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ2=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ2=SZAxConfig+11
+          ENDIF
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B1000000000') == 'B1000000000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100000000') == 'B100000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B110000') == 'B110000') THEN
+          BHF_NZ_Serv_Z3=I
+          ANZ_NZ=ANZ_NZ+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ3=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ3=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ3=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ3=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ3=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ3=SZAxConfig+11
+          ENDIF
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B1000000000') == 'B1000000000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100000000') == 'B100000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B1000000') == 'B1000000') THEN
+          BHF_NZ_Serv_Z4=I
+          ANZ_NZ=ANZ_NZ+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ4=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ4=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ4=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ4=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ4=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            NZ_DockAxZ4=SZAxConfig+11
+          ENDIF
+        ENDIF
+      ENDIF
+;
+      IF (ReserveBool[46]==TRUE) THEN ; DOCK_NZ_hyd
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B10000000000') == 'B10000000000')  AND ((PROCPAR[BHF_Off+I] B_AND 'B10000') == 'B10000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100000') == 'B100000') THEN
+          BHF_NZ_hyd_Z1=I
+          ANZ_NZ_hyd=ANZ_NZ_hyd+1
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B10000000000') == 'B10000000000')  AND ((PROCPAR[BHF_Off+I] B_AND 'B100000') == 'B100000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10000') == 'B10000') THEN
+          BHF_NZ_hyd_Z2=I
+          ANZ_NZ_hyd=ANZ_NZ_hyd+1
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B10000000000') == 'B10000000000')  AND ((PROCPAR[BHF_Off+I] B_AND 'B110000') == 'B110000') THEN
+          BHF_NZ_hyd_Z3=I
+          ANZ_NZ_hyd=ANZ_NZ_hyd+1
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B10000000000') == 'B10000000000')  AND ((PROCPAR[BHF_Off+I] B_AND 'B1000000') == 'B1000000') THEN
+          BHF_NZ_hyd_Z4=I
+          ANZ_NZ_hyd=ANZ_NZ_hyd+1
+        ENDIF
+      ENDIF  
+;
+      IF DOCK_CZ THEN
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B1100000000') == 'B1100000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B10000') == 'B10000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100000') == 'B100000') THEN
+          BHF_CZ_Serv_Z1=I
+          ANZ_CZ=ANZ_CZ+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ1=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ1=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ1=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ1=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ1=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ1=SZAxConfig+11
+          ENDIF
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B1100000000') == 'B1100000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B100000') == 'B100000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10000') == 'B10000') THEN
+          BHF_CZ_Serv_Z2=I
+          ANZ_CZ=ANZ_CZ+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ2=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ2=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ2=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ2=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ2=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ2=SZAxConfig+11
+          ENDIF
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B1100000000') == 'B1100000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B110000') == 'B110000') THEN
+          BHF_CZ_Serv_Z3=I
+          ANZ_CZ=ANZ_CZ+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ3=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ3=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ3=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ3=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ3=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ3=SZAxConfig+11
+          ENDIF
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B1100000000') == 'B1100000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B1000000') == 'B1000000') THEN
+          BHF_CZ_Serv_Z4=I
+          ANZ_CZ=ANZ_CZ+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ4=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ4=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ4=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ4=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ4=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            CZ_DockAxZ4=SZAxConfig+11
+          ENDIF
+        ENDIF
+      ENDIF
+;
+      IF (ReserveBool[45]==TRUE) THEN ;DOCK_RW
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B11000000000') == 'B11000000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B10000') == 'B10000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100000') == 'B100000') THEN
+          BHF_RW_Serv_Z1=I
+          ANZ_RW=ANZ_RW+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ1=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ1=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ1=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ1=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ1=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ1=SZAxConfig+11
+          ENDIF
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B11000000000') == 'B11000000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B100000') == 'B100000') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10000') == 'B10000') THEN
+          BHF_RW_Serv_Z2=I
+          ANZ_RW=ANZ_RW+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ2=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ2=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ2=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ2=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ2=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ2=SZAxConfig+11
+          ENDIF
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B11000000000') == 'B11000000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B110000') == 'B110000') THEN
+          BHF_RW_Serv_Z3=I
+          ANZ_RW=ANZ_RW+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ3=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ3=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ3=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ3=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ3=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ3=SZAxConfig+11
+          ENDIF
+        ENDIF
+        IF ((PROCPAR[BHF_Off+I] B_AND 'B11000000000') == 'B11000000000') AND ((PROCPAR[BHF_Off+I] B_AND 'B1000000') == 'B1000000') THEN
+          BHF_RW_Serv_Z4=I
+          ANZ_RW=ANZ_RW+1
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ4=SZAxConfig+6
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ4=SZAxConfig+7
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B11') == 'B11') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ4=SZAxConfig+8
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B100') == 'B100') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ4=SZAxConfig+9
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B101') == 'B101') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B10') == 'B10') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ4=SZAxConfig+10
+          ENDIF
+          IF ((PROCPAR[BHF_Off+I] B_AND 'B110') == 'B110') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1') == 'B1') AND NOT ((PROCPAR[BHF_Off+I] B_AND 'B1000') == 'B1000') THEN
+            RW_DockAxZ4=SZAxConfig+11
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDFOR
+    DK_setzen=FALSE
+    DK_KONFIG_IO=TRUE ;Konfiguration vorhanden
+  ENDIF
+;
+  Anz_BHF_FREI=0
+  FOR I=1 TO Anz_BHF
+    IF NOT $IN[IN_BHF_belegt[I]] THEN
+      Anz_BHF_FREI=Anz_BHF_FREI+1
+    ENDIF
+  ENDFOR
+;
+  IF (PROCPAR[BHF_Off]==1) AND (Anz_BHF_FREI==1) THEN
+    IF DOCK_SZ THEN
+      IF (ANZ_EZ==1) OR (ANZ_EZ==2) OR (ANZ_EZ==3) OR (ANZ_EZ==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_EZ_Z1]] THEN
+          $softplcint[1]=EZ_DockAxZ1
+          Dock_Z1=TRUE
+          Dock_Z2=FALSE
+          Dock_Z3=FALSE
+          Dock_Z4=FALSE
+          ;Zangencode 1 EZ / KE
+          IF MIT_Komb_ST THEN
+            KB1_ZCode=1
+          ELSE
+            EZ1_ZCode=1
+          ENDIF
+        ENDIF
+      ENDIF
+      IF (ANZ_EZ==2) OR (ANZ_EZ==3) OR (ANZ_EZ==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_EZ_Z2]] THEN
+          IF DOCK_SZ AND NOT DOCK_SP THEN
+            $softplcint[1]=EZ_DockAxZ2
+          ENDIF
+          IF DOCK_SZ AND DOCK_SP THEN
+            $softplcint[2]=EZ_DockAxZ2
+		    ENDIF
+          Dock_Z1=FALSE
+          Dock_Z2=TRUE
+          Dock_Z3=FALSE
+          Dock_Z4=FALSE
+          ;Zangencode 2 EZ / KE
+          IF MIT_Komb_ST THEN
+            KB1_ZCode=2
+          ELSE
+            EZ1_ZCode=2
+          ENDIF
+        ENDIF
+      ENDIF
+      IF (ANZ_EZ==3) OR (ANZ_EZ==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_EZ_Z3]] THEN
+          $softplcint[1]=EZ_DockAxZ3
+          Dock_Z1=FALSE
+          Dock_Z2=FALSE
+          Dock_Z3=TRUE
+          Dock_Z4=FALSE
+          ;Zangencode 3 EZ / KE
+          IF MIT_Komb_ST THEN
+            KB1_ZCode=3
+          ELSE
+            EZ1_ZCode=3
+          ENDIF
+        ENDIF
+      ENDIF
+      IF (ANZ_EZ==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_EZ_Z4]] THEN
+          $softplcint[1]=EZ_DockAxZ4
+          Dock_Z1=FALSE
+          Dock_Z2=FALSE
+          Dock_Z3=FALSE
+          Dock_Z4=TRUE
+          ;Zangencode 4 EZ / KE
+          IF MIT_Komb_ST THEN
+            KB1_ZCode=4
+          ELSE
+            EZ1_ZCode=4
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDIF
+    IF DOCK_NZ THEN 
+      IF (ANZ_NZ==1) OR (ANZ_NZ==2) OR (ANZ_NZ==3) OR (ANZ_NZ==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_NZ_Serv_Z1]] THEN
+          $softplcint[4]=NZ_DockAxZ1
+          ;Zangencode
+          NZ1_Servo_ZCode=1
+        ENDIF
+      ENDIF
+      IF (ANZ_NZ==2) OR (ANZ_NZ==3) OR (ANZ_NZ==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_NZ_Serv_Z2]] THEN
+          $softplcint[4]=NZ_DockAxZ2
+          ;Zangencode
+          NZ1_Servo_ZCode=2
+        ENDIF
+      ENDIF
+      IF (ANZ_NZ==3) OR (ANZ_NZ==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_NZ_Serv_Z3]] THEN
+          $softplcint[4]=NZ_DockAxZ3
+          ;Zangencode
+          NZ1_Servo_ZCode=3
+        ENDIF
+      ENDIF
+      IF (ANZ_NZ==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_NZ_Serv_Z4]] THEN
+          $softplcint[4]=NZ_DockAxZ4
+          ;Zangencode
+          NZ1_Servo_ZCode=4
+        ENDIF
+      ENDIF
+    ENDIF
+    IF (ReserveBool[46]==TRUE) THEN ; DOCK_NZ_hyd
+      IF (ANZ_NZ_hyd==1) OR (ANZ_NZ_hyd==2) OR (ANZ_NZ_hyd==3) OR (ANZ_NZ_hyd==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_NZ_hyd_Z1]] THEN
+          ;Zangencode
+          NZ1_hyd_ZCode=1
+        ENDIF
+      ENDIF
+      IF (ANZ_NZ_hyd==2) OR (ANZ_NZ_hyd==3) OR (ANZ_NZ_hyd==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_NZ_hyd_Z2]] THEN
+          ;Zangencode
+          NZ1_hyd_ZCode=2
+        ENDIF
+      ENDIF
+      IF (ANZ_NZ_hyd==3) OR (ANZ_NZ_hyd==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_NZ_hyd_Z3]] THEN
+          ;Zangencode
+          NZ1_hyd_ZCode=3
+        ENDIF
+      ENDIF
+      IF (ANZ_NZ_hyd==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_NZ_hyd_Z4]] THEN
+          ;Zangencode
+          NZ1_hyd_ZCode=4
+        ENDIF
+      ENDIF
+    ENDIF
+    IF DOCK_CZ THEN
+      IF (ANZ_CZ==1) OR (ANZ_CZ==2) OR (ANZ_CZ==3) OR (ANZ_CZ==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_CZ_Serv_Z1]] THEN
+          $softplcint[6]=CZ_DockAxZ1
+          ;Zangencode
+          CZ1_Servo_ZCode=1
+        ENDIF
+      ENDIF
+      IF (ANZ_CZ==2) OR (ANZ_CZ==3) OR (ANZ_CZ==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_CZ_Serv_Z2]] THEN
+          $softplcint[6]=CZ_DockAxZ2
+          ;Zangencode
+          CZ1_Servo_ZCode=2
+        ENDIF
+      ENDIF
+      IF (ANZ_CZ==3) OR (ANZ_CZ==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_CZ_Serv_Z3]] THEN
+          $softplcint[6]=CZ_DockAxZ3
+          ;Zangencode
+          CZ1_Servo_ZCode=3
+        ENDIF
+      ENDIF
+      IF (ANZ_CZ==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_CZ_Serv_Z4]] THEN
+          $softplcint[6]=CZ_DockAxZ4
+          ;Zangencode
+          CZ1_Servo_ZCode=4
+        ENDIF
+      ENDIF
+    ENDIF
+    IF (ReserveBool[45]==TRUE) THEN
+      IF (ANZ_RW==1) OR (ANZ_RW==2) OR (ANZ_RW==3) OR (ANZ_RW==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_RW_Serv_Z1]] THEN
+          $softplcint[5]=RW_DockAxZ1
+          ;Zangencode
+          RW1_Servo_ZCode=1
+        ENDIF
+      ENDIF
+      IF (ANZ_RW==2) OR (ANZ_RW==3) OR (ANZ_RW==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_RW_Serv_Z2]] THEN
+          $softplcint[5]=RW_DockAxZ2
+          ;Zangencode
+          RW1_Servo_ZCode=2
+        ENDIF
+      ENDIF
+      IF (ANZ_RW==3) OR (ANZ_RW==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_RW_Serv_Z3]] THEN
+          $softplcint[5]=RW_DockAxZ3
+          ;Zangencode
+          RW1_Servo_ZCode=3
+        ENDIF
+      ENDIF
+      IF (ANZ_RW==4) THEN
+        IF NOT $IN[IN_BHF_belegt[BHF_RW_Serv_Z4]] THEN
+          $softplcint[5]=RW_DockAxZ4
+          ;Zangencode
+          RW1_Servo_ZCode=4
+        ENDIF
+      ENDIF
+    ENDIF
+  ELSE
+    IF DOCK_SZ THEN
+      SetPlcIntNull(1)
+      Dock_Z1=FALSE
+      Dock_Z2=FALSE
+      Dock_Z3=FALSE
+      Dock_Z4=FALSE
+      ;Zangencode
+      EZ1_ZCode=0
+    ENDIF
+    IF DOCK_SP THEN
+      SetPlcIntNull(1)
+      SetPlcIntNull(2)
+      ;Zangencode
+      EZ1_ZCode=0
+    ENDIF
+    IF DOCK_NZ THEN
+      SetPlcIntNull(4)
+      ;Zangencode
+      NZ1_Servo_ZCode=0
+    ENDIF
+    IF DOCK_CZ THEN
+      SetPlcIntNull(6)
+      ;Zangencode
+      CZ1_Servo_ZCode=0
+    ENDIF
+    IF (ReserveBool[45]==TRUE) THEN
+      SetPlcIntNull(5)
+      ;Zangencode
+      RW1_Servo_ZCode=0
+    ENDIF
+  ENDIF
+;
+  IF (Anz_BHF_FREI>1) AND DK_KONFIG_IO THEN
+    DK_Msg(1,#StateMsg) ;mehrere Bahnhoefe nicht belegt
+  ELSE  
+    IF n_DKS_Handle[1]>-1 THEN
+      bRet=Clear_KrlMsg(n_DKS_Handle[1])
+      n_DKS_Handle[1]=-1
+    ENDIF  
+  ENDIF
+ENDIF  
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD DK Meldungen
+DEF DK_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr, Answer
+DECL DKS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+BOOL Result
+;
+USER_MSG = { Modul[] "DK_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset FALSE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF ((n_DKS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+	   USER_MSG.MSG_TXT[]="mehrere Bahnhoefe nicht belegt"
+    CASE 2
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 3
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    DEFAULT
+	   USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_DKS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_DKS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      n_DKS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_DKS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (DK Meldungen)

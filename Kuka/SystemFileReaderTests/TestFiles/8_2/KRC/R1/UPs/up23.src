@@ -1,0 +1,1832 @@
+&ACCESS RV7
+&REL 383
+&COMMENT VW380 Kleben
+&PARAM DISKPATH = KRC:\R1\UPs
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\upvorgabe
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM EDITMASK = Up999[1-999]
+DEF UP23()
+   ; FOLD UP Anfang;%{SE} %MKUKATPVW
+   SPS_N=-1
+   SPS_FERTIG=FALSE
+   IF NOT CALLBYSELECT THEN
+      INTERRUPT DECL 10 WHEN $CYCFLAG[254]==FALSE DO VW(#FB_STOP,TRUE)
+      INTERRUPT ON 10
+      INT10=TRUE
+      VW_USR_R (#USR_INIT)
+   ENDIF
+   VW(#VW_INIT_UP,TRUE)
+   ; ENDFOLD
+   ;FOLD -- VW380 Kleben -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:VW380 Kleben
+      ;FOLD {H}
+         M_COMMENT("VW380 Kleben")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Duese  1,2mm  VProp  500mm/s -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:Duese  1,2mm  VProp  500mm/s
+      ;FOLD {H}
+         M_COMMENT("Duese  1,2mm  VProp  500mm/s")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=0% ACC=100% RobWzg=13 Base=0 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:0, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:0, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:1, 20:-1, 21:1
+      ;FOLD 1: FB PSPS = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = EIN,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD 2: A23 = AUS ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A23 = AUS,3:BOASG
+      ;ENDFOLD
+      ;FOLD 3: t3 ( EIN ) = 0[1/10Sek] ;%{SE}%MKUKATPVW %CVW_SPS %VTASG %P 2:t3 ( EIN ) = 0[1/10Sek],3:TASG
+      ;ENDFOLD
+      ;FOLD 4: SPSMAKRO50 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VMAKRO %P 2:SPSMAKRO50 = EIN,3:MAKRO
+      ;ENDFOLD
+      ;FOLD 5: SPSMAKRO53 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VMAKRO %P 2:SPSMAKRO53 = EIN,3:MAKRO
+      ;ENDFOLD
+      ;FOLD 6: A42 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A42 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 7: A43 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A43 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 8: A44 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A44 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 9: A45 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A45 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 10: A47 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A47 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 11: A49 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A49 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 12: A50 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A50 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 13: A52 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A52 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 14: A54 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A54 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 15: A75 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A75 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 16: A76 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A76 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 17: A79 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A79 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 18: A80 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A80 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 19: WARTE BIS M78 ;%{SE}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS M78,3:WBOASG
+      ;ENDFOLD
+      ;FOLD 20: A1521 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1521 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 21: A1522 = AUS ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1522 = AUS,3:BOASG
+      ;ENDFOLD
+      ;FOLD 22: A1523 = AUS ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A1523 = AUS,3:BOASG
+      ;ENDFOLD
+      ;FOLD 23: WARTE BIS E1521 & !E1522 & !E1523 ;%{SE}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E1521 & !E1522 & !E1523,3:WBOASG
+      ;ENDFOLD
+      ;FOLD 24: bin10 ( EIN ) = 20 ;%{SE}%MKUKATPVW %CVW_SPS %VARIASG %P 2:bin10 ( EIN ) = 20,3:ARIASG
+      ;ENDFOLD
+      ;FOLD 25: bin11 ( EIN ) = 1 ;%{SE}%MKUKATPVW %CVW_SPS %VARIASG %P 2:bin11 ( EIN ) = 1,3:ARIASG
+      ;ENDFOLD
+      ;FOLD 26: SPSMAKRO183 = (E1534 + E163) & !E15 ;%{SE}%MKUKATPVW %CVW_SPS %VMAKRO %P 2:SPSMAKRO183 = (E1534 + E163) & !E15,3:MAKRO
+      ;ENDFOLD
+      ;FOLD 27: ana1 ( EIN ) = VPROP: 500 [mm/Sek] OFFS: 0[mV] ;%{SE}%MKUKATPVW %CVW_SPS %VANAVPROP %P 2:ana1 ( EIN ) = VPROP: 500 [mm/Sek] OFFS: 0[mV],3:ANAVPROP
+      ;ENDFOLD
+      ;FOLD 28: F341 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F341 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 29: SPSMAKRO180 = !E15 ;%{SE}%MKUKATPVW %CVW_SPS %VMAKRO %P 2:SPSMAKRO180 = !E15,3:MAKRO
+      ;ENDFOLD
+      ;FOLD 30: F841 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F841 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 31: F842 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F842 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 32: SPSMAKRO433 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VMAKRO %P 2:SPSMAKRO433 = EIN,3:MAKRO
+      ;ENDFOLD
+      ;FOLD 33: WARTE BIS !E547 & E548 & !E549 & E550 ;%{SE}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E547 & E548 & !E549 & E550,3:WBOASG
+      ;ENDFOLD
+      ;FOLD 34: WARTE BIS E23 ;%{SE}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E23,3:WBOASG
+      ;ENDFOLD
+      ;FOLD 35: A23 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A23 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 36: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P1_D
+         Act_P1 = P1
+         Act_P2 = P1
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(1) PRIO=-1
+         PTP P1
+         $ADVANCE=1
+         WAIT FOR SPS_FERTIG
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=100% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:100, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:2, 20:-1, 21:2
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P2_D
+         Act_P1 = P2
+         Act_P2 = P2
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10002) PRIO=-1
+         PTP P2 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=100% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:100, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:3, 20:-1, 21:3
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P3_D
+         Act_P1 = P3
+         Act_P2 = P3
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10003) PRIO=-1
+         PTP P3 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=100% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:100, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:4, 20:-1, 21:4
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P4_D
+         Act_P1 = P4
+         Act_P2 = P4
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10004) PRIO=-1
+         PTP P4 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=100% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:100, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:5, 20:-1, 21:5
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P5_D
+         Act_P1 = P5
+         Act_P2 = P5
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10005) PRIO=-1
+         PTP P5 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=100% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:100, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:6, 20:-1, 21:6
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P6_D
+         Act_P1 = P6
+         Act_P2 = P6
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10006) PRIO=-1
+         PTP P6 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:7, 20:-1, 21:7
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P7_D
+         Act_P1 = P7
+         Act_P2 = P7
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10007) PRIO=-1
+         LIN P7 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:8, 20:-1, 21:8
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P8_D
+         Act_P1 = P8
+         Act_P2 = P8
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10008) PRIO=-1
+         LIN P8 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Start Klebenaht -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:Start Klebenaht
+      ;FOLD {H}
+         M_COMMENT("Start Klebenaht")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Naht 5H4_833_305_C0004_I__1150_001300 -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:Naht 5H4_833_305_C0004_I__1150_001300
+      ;FOLD {H}
+         M_COMMENT("Naht 5H4_833_305_C0004_I__1150_001300")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- KL1_AUF -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:KL1_AUF
+      ;FOLD {H}
+         M_COMMENT("KL1_AUF")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:9, 20:-1, 21:9
+      ;FOLD BS A1544 ( EIN ) = !E15 Schaltpkt: -1 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSBO %P 2:BS A1544 ( EIN ) = !E15 Schaltpkt: -1 [mm]: -50[ms],3:BSBO
+      ;ENDFOLD
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P9_D
+         Act_P1 = P9
+         Act_P2 = P9
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10009) PRIO=-1
+         TRIGGER WHEN  PATH=-1 DELAY=-50 DO $OUT[1544]=(NOT $IN[15])
+         LIN P9 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:10, 20:-1, 21:10
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P10_D
+         Act_P1 = P10
+         Act_P2 = P10
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10010) PRIO=-1
+         LIN P10 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:11, 20:-1, 21:11
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P11_D
+         Act_P1 = P11
+         Act_P2 = P11
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10011) PRIO=-1
+         LIN P11 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:12, 20:-1, 21:12
+      ;FOLD BS bin11 ( EIN ) = 2 Schaltpkt: -1 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSARI %P 2:BS bin11 ( EIN ) = 2 Schaltpkt: -1 [mm]: -50[ms],3:BSARI
+      ;ENDFOLD
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P12_D
+         Act_P1 = P12
+         Act_P2 = P12
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10012) PRIO=-1
+         TRIGGER WHEN  PATH=-1 DELAY=-50 DO $B_OUT[11]=(2)
+         LIN P12 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:13, 20:-1, 21:13
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P13_D
+         Act_P1 = P13
+         Act_P2 = P13
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10013) PRIO=-1
+         LIN P13 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:14, 20:-1, 21:14
+      ;FOLD 1: Puls A1533 = Pegel: EIN Zeit:10 [1/10Sek] ;%{SE}%MKUKATPVW %CVW_SPS %VPULS %P 2:Puls A1533 = Pegel: EIN Zeit:10 [1/10Sek],3:PULS
+      ;ENDFOLD
+      ;FOLD 2: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P14_D
+         Act_P1 = P14
+         Act_P2 = P14
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10014) PRIO=-1
+         LIN P14 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:15, 20:-1, 21:15
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P15_D
+         Act_P1 = P15
+         Act_P2 = P15
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10015) PRIO=-1
+         LIN P15 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:16, 20:-1, 21:16
+      ;FOLD BS bin11 ( EIN ) = 3 Schaltpkt: -1 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSARI %P 2:BS bin11 ( EIN ) = 3 Schaltpkt: -1 [mm]: -50[ms],3:BSARI
+      ;ENDFOLD
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P16_D
+         Act_P1 = P16
+         Act_P2 = P16
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10016) PRIO=-1
+         TRIGGER WHEN  PATH=-1 DELAY=-50 DO $B_OUT[11]=(3)
+         LIN P16 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:17, 20:-1, 21:17
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P17_D
+         Act_P1 = P17
+         Act_P2 = P17
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10017) PRIO=-1
+         LIN P17 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:18, 20:-1, 21:18
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P18_D
+         Act_P1 = P18
+         Act_P2 = P18
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10018) PRIO=-1
+         LIN P18 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:19, 20:-1, 21:19
+      ;FOLD BS bin11 ( EIN ) = 4 Schaltpkt: -1 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSARI %P 2:BS bin11 ( EIN ) = 4 Schaltpkt: -1 [mm]: -50[ms],3:BSARI
+      ;ENDFOLD
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P19_D
+         Act_P1 = P19
+         Act_P2 = P19
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10019) PRIO=-1
+         TRIGGER WHEN  PATH=-1 DELAY=-50 DO $B_OUT[11]=(4)
+         LIN P19 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:20, 20:-1, 21:20
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P20_D
+         Act_P1 = P20
+         Act_P2 = P20
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10020) PRIO=-1
+         LIN P20 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:21, 20:-1, 21:21
+      ;FOLD BS bin11 ( EIN ) = 5 Schaltpkt: -1 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSARI %P 2:BS bin11 ( EIN ) = 5 Schaltpkt: -1 [mm]: -50[ms],3:BSARI
+      ;ENDFOLD
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P21_D
+         Act_P1 = P21
+         Act_P2 = P21
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10021) PRIO=-1
+         TRIGGER WHEN  PATH=-1 DELAY=-50 DO $B_OUT[11]=(5)
+         LIN P21 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:22, 20:-1, 21:22
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P22_D
+         Act_P1 = P22
+         Act_P2 = P22
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10022) PRIO=-1
+         LIN P22 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:23, 20:-1, 21:23
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P23_D
+         Act_P1 = P23
+         Act_P2 = P23
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10023) PRIO=-1
+         LIN P23 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:24, 20:-1, 21:24
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P24_D
+         Act_P1 = P24
+         Act_P2 = P24
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10024) PRIO=-1
+         LIN P24 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:25, 20:-1, 21:25
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P25_D
+         Act_P1 = P25
+         Act_P2 = P25
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10025) PRIO=-1
+         LIN P25 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:26, 20:-1, 21:26
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P26_D
+         Act_P1 = P26
+         Act_P2 = P26
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10026) PRIO=-1
+         LIN P26 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:27, 20:-1, 21:27
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P27_D
+         Act_P1 = P27
+         Act_P2 = P27
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10027) PRIO=-1
+         LIN P27 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:28, 20:-1, 21:28
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P28_D
+         Act_P1 = P28
+         Act_P2 = P28
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10028) PRIO=-1
+         LIN P28 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Stopp Klebenaht -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:Stopp Klebenaht
+      ;FOLD {H}
+         M_COMMENT("Stopp Klebenaht")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- KL1_ZU -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:KL1_ZU
+      ;FOLD {H}
+         M_COMMENT("KL1_ZU")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:29, 20:-1, 21:29
+      ;FOLD BS A1544 ( EIN ) = AUS Schaltpkt: -1 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSBO %P 2:BS A1544 ( EIN ) = AUS Schaltpkt: -1 [mm]: -50[ms],3:BSBO
+      ;ENDFOLD
+      ;FOLD BS bin11 ( EIN ) = 6 Schaltpkt: 5 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSARI %P 2:BS bin11 ( EIN ) = 6 Schaltpkt: 5 [mm]: -50[ms],3:BSARI
+      ;ENDFOLD
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P29_D
+         Act_P1 = P29
+         Act_P2 = P29
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10029) PRIO=-1
+         TRIGGER WHEN  PATH=-1 DELAY=-50 DO $OUT[1544]=(FALSE)
+         TRIGGER WHEN  PATH=5 DELAY=-50 DO $B_OUT[11]=(6)
+         LIN P29 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:30, 20:-1, 21:30
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P30_D
+         Act_P1 = P30
+         Act_P2 = P30
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10030) PRIO=-1
+         LIN P30 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Start Klebenaht -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:Start Klebenaht
+      ;FOLD {H}
+         M_COMMENT("Start Klebenaht")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Naht 5H4_833_305_C0004_I__1150_001300 -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:Naht 5H4_833_305_C0004_I__1150_001300
+      ;FOLD {H}
+         M_COMMENT("Naht 5H4_833_305_C0004_I__1150_001300")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- KL1_AUF -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:KL1_AUF
+      ;FOLD {H}
+         M_COMMENT("KL1_AUF")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:31, 20:-1, 21:31
+      ;FOLD BS A1544 ( EIN ) = !E15 Schaltpkt: -3 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSBO %P 2:BS A1544 ( EIN ) = !E15 Schaltpkt: -3 [mm]: -50[ms],3:BSBO
+      ;ENDFOLD
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P31_D
+         Act_P1 = P31
+         Act_P2 = P31
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10031) PRIO=-1
+         TRIGGER WHEN  PATH=-3 DELAY=-50 DO $OUT[1544]=(NOT $IN[15])
+         LIN P31 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:32, 20:-1, 21:32
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P32_D
+         Act_P1 = P32
+         Act_P2 = P32
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10032) PRIO=-1
+         LIN P32 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Stopp Klebenaht -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:Stopp Klebenaht
+      ;FOLD {H}
+         M_COMMENT("Stopp Klebenaht")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- KL1_ZU -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:KL1_ZU
+      ;FOLD {H}
+         M_COMMENT("KL1_ZU")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:33, 20:-1, 21:33
+      ;FOLD BS A1544 ( EIN ) = AUS Schaltpkt: -1 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSBO %P 2:BS A1544 ( EIN ) = AUS Schaltpkt: -1 [mm]: -50[ms],3:BSBO
+      ;ENDFOLD
+      ;FOLD BS bin11 ( EIN ) = 7 Schaltpkt: -1 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSARI %P 2:BS bin11 ( EIN ) = 7 Schaltpkt: -1 [mm]: -50[ms],3:BSARI
+      ;ENDFOLD
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P33_D
+         Act_P1 = P33
+         Act_P2 = P33
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10033) PRIO=-1
+         TRIGGER WHEN  PATH=-1 DELAY=-50 DO $OUT[1544]=(FALSE)
+         TRIGGER WHEN  PATH=-1 DELAY=-50 DO $B_OUT[11]=(7)
+         LIN P33 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:34, 20:-1, 21:34
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P34_D
+         Act_P1 = P34
+         Act_P2 = P34
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10034) PRIO=-1
+         LIN P34 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=100% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:100, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:35, 20:-1, 21:35
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P35_D
+         Act_P1 = P35
+         Act_P2 = P35
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10035) PRIO=-1
+         PTP P35 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=10% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:10, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:36, 20:-1, 21:36
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P36_D
+         Act_P1 = P36
+         Act_P2 = P36
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10036) PRIO=-1
+         PTP P36 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=10% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:10, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:37, 20:-1, 21:37
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P37_D
+         Act_P1 = P37
+         Act_P2 = P37
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10037) PRIO=-1
+         PTP P37 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=10% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:10, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:38, 20:-1, 21:38
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P38_D
+         Act_P1 = P38
+         Act_P2 = P38
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10038) PRIO=-1
+         PTP P38 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=10% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:10, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:39, 20:-1, 21:39
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P39_D
+         Act_P1 = P39
+         Act_P2 = P39
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10039) PRIO=-1
+         PTP P39 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=100% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:100, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:40, 20:-1, 21:40
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P40_D
+         Act_P1 = P40
+         Act_P2 = P40
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10040) PRIO=-1
+         PTP P40 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:41, 20:-1, 21:41
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P41_D
+         Act_P1 = P41
+         Act_P2 = P41
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10041) PRIO=-1
+         LIN P41 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Start Klebenaht -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:Start Klebenaht
+      ;FOLD {H}
+         M_COMMENT("Start Klebenaht")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Naht 5H4_833_305_C0004_I__1150_001200 -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:Naht 5H4_833_305_C0004_I__1150_001200
+      ;FOLD {H}
+         M_COMMENT("Naht 5H4_833_305_C0004_I__1150_001200")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- KL1_AUF -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:KL1_AUF
+      ;FOLD {H}
+         M_COMMENT("KL1_AUF")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:42, 20:-1, 21:42
+      ;FOLD BS A1544 ( EIN ) = !E15 Schaltpkt: -3 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSBO %P 2:BS A1544 ( EIN ) = !E15 Schaltpkt: -3 [mm]: -50[ms],3:BSBO
+      ;ENDFOLD
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P42_D
+         Act_P1 = P42
+         Act_P2 = P42
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10042) PRIO=-1
+         TRIGGER WHEN  PATH=-3 DELAY=-50 DO $OUT[1544]=(NOT $IN[15])
+         LIN P42 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:43, 20:-1, 21:43
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P43_D
+         Act_P1 = P43
+         Act_P2 = P43
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10043) PRIO=-1
+         LIN P43 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:44, 20:-1, 21:44
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P44_D
+         Act_P1 = P44
+         Act_P2 = P44
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10044) PRIO=-1
+         LIN P44 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:45, 20:-1, 21:45
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P45_D
+         Act_P1 = P45
+         Act_P2 = P45
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10045) PRIO=-1
+         LIN P45 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:46, 20:-1, 21:46
+      ;FOLD BS bin11 ( EIN ) = 8 Schaltpkt: -1 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSARI %P 2:BS bin11 ( EIN ) = 8 Schaltpkt: -1 [mm]: -50[ms],3:BSARI
+      ;ENDFOLD
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P46_D
+         Act_P1 = P46
+         Act_P2 = P46
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10046) PRIO=-1
+         TRIGGER WHEN  PATH=-1 DELAY=-50 DO $B_OUT[11]=(8)
+         LIN P46 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:47, 20:-1, 21:47
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P47_D
+         Act_P1 = P47
+         Act_P2 = P47
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10047) PRIO=-1
+         LIN P47 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:48, 20:-1, 21:48
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P48_D
+         Act_P1 = P48
+         Act_P2 = P48
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10048) PRIO=-1
+         LIN P48 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:49, 20:-1, 21:49
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P49_D
+         Act_P1 = P49
+         Act_P2 = P49
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10049) PRIO=-1
+         LIN P49 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:50, 20:-1, 21:50
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P50_D
+         Act_P1 = P50
+         Act_P2 = P50
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10050) PRIO=-1
+         LIN P50 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:51, 20:-1, 21:51
+      ;FOLD BS bin11 ( EIN ) = 9 Schaltpkt: -1 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSARI %P 2:BS bin11 ( EIN ) = 9 Schaltpkt: -1 [mm]: -50[ms],3:BSARI
+      ;ENDFOLD
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P51_D
+         Act_P1 = P51
+         Act_P2 = P51
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10051) PRIO=-1
+         TRIGGER WHEN  PATH=-1 DELAY=-50 DO $B_OUT[11]=(9)
+         LIN P51 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:52, 20:-1, 21:52
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P52_D
+         Act_P1 = P52
+         Act_P2 = P52
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10052) PRIO=-1
+         LIN P52 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Stopp Klebenaht -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:Stopp Klebenaht
+      ;FOLD {H}
+         M_COMMENT("Stopp Klebenaht")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- KL1_ZU -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:KL1_ZU
+      ;FOLD {H}
+         M_COMMENT("KL1_ZU")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- KL1_Ende -- ;%{PSE}%MKUKATPVW,%CVW_COM,%VCOMMENT,%P 1:Comment:, 2:KL1_Ende
+      ;FOLD {H}
+         M_COMMENT("KL1_Ende")
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:53, 20:-1, 21:53
+      ;FOLD BS A1544 ( EIN ) = AUS Schaltpkt: -1 [mm]: -50[ms] ;%{SE}%MKUKATPVW %CVW_SPS %VBSBO %P 2:BS A1544 ( EIN ) = AUS Schaltpkt: -1 [mm]: -50[ms],3:BSBO
+      ;ENDFOLD
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P53_D
+         Act_P1 = P53
+         Act_P2 = P53
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10053) PRIO=-1
+         TRIGGER WHEN  PATH=-1 DELAY=-50 DO $OUT[1544]=(FALSE)
+         LIN P53 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD KLIN VB=150[mm/s] Genau=25[mm] ACC=50% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VKLIN,%P 1:4, 2: VB=, 3:150, 4:[mm/s], 5: Genau=, 6:25, 7:[mm], 8: ACC=, 9:50, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:54, 20:-1, 21:54
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P54_D
+         Act_P1 = P54
+         Act_P2 = P54
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10054) PRIO=-1
+         LIN P54 C_DIS
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=100% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:100, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:55, 20:-1, 21:55
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P55_D
+         Act_P1 = P55
+         Act_P2 = P55
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10055) PRIO=-1
+         PTP P55 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=100% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:100, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:56, 20:-1, 21:56
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P56_D
+         Act_P1 = P56
+         Act_P2 = P56
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10056) PRIO=-1
+         PTP P56 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=100% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:100, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:57, 20:-1, 21:57
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P57_D
+         Act_P1 = P57
+         Act_P2 = P57
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10057) PRIO=-1
+         PTP P57 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=100% ACC=100% RobWzg=13 Base=3 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:100, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:3, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:58, 20:-1, 21:58
+      ;FOLD 1: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P58_D
+         Act_P1 = P58
+         Act_P2 = P58
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(10058) PRIO=-1
+         PTP P58 C_PTP C_VEL
+         $ADVANCE=1
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD PTP VB=100% VE=0% ACC=100% RobWzg=13 Base=0 SPSTrig=0[1/100s] P ;%{P}%MKUKATPVW,%CMOVE8,%VPTP,%P 1:1, 2: VB=, 3:100, 4:%, 5: VE=, 6:0, 7:%, 8: ACC=, 9:100, 10:%, 11: RobWzg=, 12:13, 13: Base=, 14:0, 15: SPSTrig=, 16:0, 17:[1/100s], 18: P, 19:59, 20:-1, 21:59
+      ;FOLD 1: FB PSPS = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = EIN,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD 2: ana1 ( EIN ) = VPROP: 0 [mm/Sek] OFFS: 0[mV] ;%{SE}%MKUKATPVW %CVW_SPS %VANAVPROP %P 2:ana1 ( EIN ) = VPROP: 0 [mm/Sek] OFFS: 0[mV],3:ANAVPROP
+      ;ENDFOLD
+      ;FOLD 3: A23 = AUS ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A23 = AUS,3:BOASG
+      ;ENDFOLD
+      ;FOLD 4: t3 ( EIN ) = STOP ;%{SE}%MKUKATPVW %CVW_SPS %VTSTOP %P 2:t3 ( EIN ) = STOP,3:TSTOP
+      ;ENDFOLD
+      ;FOLD 5: SPSMAKRO181 = !E15 ;%{SE}%MKUKATPVW %CVW_SPS %VMAKRO %P 2:SPSMAKRO181 = !E15,3:MAKRO
+      ;ENDFOLD
+      ;FOLD 6: SPSMAKRO3 = !F343 & !E161 & !F525 ;%{SE}%MKUKATPVW %CVW_SPS %VMAKRO %P 2:SPSMAKRO3 = !F343 & !E161 & !F525,3:MAKRO
+      ;ENDFOLD
+      ;FOLD 7: WARTE BIS E23 ;%{SE}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E23,3:WBOASG
+      ;ENDFOLD
+      ;FOLD 8: A23 = EIN ;%{SE}%MKUKATPVW %CVW_SPS %VBOASG %P 2:A23 = EIN,3:BOASG
+      ;ENDFOLD
+      ;FOLD 9: FB PSPS = M1 & M30 & M32 & M33 & M78 ;%{SE}%MKUKATPVW %CVW_SPS %VFBPSPS %P 2:FB PSPS = M1 & M30 & M32 & M33 & M78,3:FBPSPS
+      ;ENDFOLD
+      ;FOLD {H}
+         VW_MPARA_ACT=P59_D
+         Act_P1 = P59
+         Act_P2 = P59
+         VW(#MPARA,TRUE)
+         SPS_FERTIG=FALSE
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO SPS_TRIG(59) PRIO=-1
+         PTP P59
+         $ADVANCE=1
+         WAIT FOR SPS_FERTIG
+      ;ENDFOLD
+   ;ENDFOLD
+   ; FOLD ;%{H}
+END
+DEF SPS_TRIG(NO :IN)
+   INT NO
+   INT VW_STOP
+   BOOL UES
+   VW_STOP=$VW_PSPS_STOP
+   IF NO>10000 THEN
+      NO=NO-10000
+      UES=TRUE
+   ELSE
+      UES=FALSE
+   ENDIF
+   ; FOLD ;%{H}
+   IF ((VW_STOP B_AND 'B0001') > 0) THEN
+      ;-- Trigger vorzeitig geschaltet (delay < 0) oder MStep
+      IF (((VW_STOP B_AND 'B0110') > 0) AND ($MODE_OP<>#EX)) THEN
+         ;-- MStep oder BCO Bewegung
+         HALT
+      ENDIF
+   ENDIF
+   ; ENDFOLD
+   IF (SEARCH_END) THEN
+      SEARCH_END = FALSE
+      INTERRUPT OFF 39
+   ENDIF
+   SWITCH NO
+      CASE 1
+         ;FOLD SPS_TRIG1{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=(TRUE) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+            $OUT[23] = FALSE
+            VW(#SET_TIME,TRUE,3,0,0)
+            SEL_RES=SELECT(#MAKRO,50,TRUE,,,,,FALSE)
+            SEL_RES=SELECT(#MAKRO,53,TRUE,,,,,FALSE)
+            $OUT[42] = TRUE
+            $OUT[43] = TRUE
+            $OUT[44] = TRUE
+            $OUT[45] = TRUE
+            $OUT[47] = TRUE
+            $OUT[49] = TRUE
+            $OUT[50] = TRUE
+            $OUT[52] = TRUE
+            $OUT[54] = TRUE
+            $OUT[75] = TRUE
+            $OUT[76] = TRUE
+            $OUT[79] = TRUE
+            $OUT[80] = TRUE
+            $LOOP_MSG[]="M78"
+            $LOOP_CONT=TRUE
+            WAIT FOR ($CYCFLAG[78]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+            $LOOP_MSG[]="                                                                                                                                "
+            $OUT[1521] = TRUE
+            $OUT[1522] = FALSE
+            $OUT[1523] = FALSE
+            $LOOP_MSG[]="E1521 & !E1522 & !E1523"
+            $LOOP_CONT=TRUE
+            WAIT FOR ($IN[1521] AND NOT $IN[1522] AND NOT $IN[1523]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+            $LOOP_MSG[]="                                                                                                                                "
+            VW(#BINOUT,TRUE,10,20)
+            VW(#BINOUT,TRUE,11,1)
+            SEL_RES=SELECT(#MAKRO,183,($IN[1534] OR $IN[163]) AND NOT $IN[15],,,,,FALSE)
+            ANA_DELAY1=0
+            VW(#ANAOUT,TRUE,2,1,500,0)
+            $FLAG[341] = TRUE
+            SEL_RES=SELECT(#MAKRO,180,NOT $IN[15],,,,,FALSE)
+            $FLAG[841] = TRUE
+            $FLAG[842] = TRUE
+            SEL_RES=SELECT(#MAKRO,433,TRUE,,,,,FALSE)
+            $LOOP_MSG[]="!E547 & E548 & !E549 & E550"
+            $LOOP_CONT=TRUE
+            WAIT FOR (NOT $IN[547] AND $IN[548] AND NOT $IN[549] AND $IN[550]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+            $LOOP_MSG[]="                                                                                                                                "
+            $LOOP_MSG[]="E23"
+            $LOOP_CONT=TRUE
+            WAIT FOR ($IN[23]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+            $LOOP_MSG[]="                                                                                                                                "
+            $OUT[23] = TRUE
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 2
+         ;FOLD SPS_TRIG2{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 3
+         ;FOLD SPS_TRIG3{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 4
+         ;FOLD SPS_TRIG4{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 5
+         ;FOLD SPS_TRIG5{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 6
+         ;FOLD SPS_TRIG6{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 7
+         ;FOLD SPS_TRIG7{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 8
+         ;FOLD SPS_TRIG8{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 9
+         ;FOLD SPS_TRIG9{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 10
+         ;FOLD SPS_TRIG10{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 11
+         ;FOLD SPS_TRIG11{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 12
+         ;FOLD SPS_TRIG12{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 13
+         ;FOLD SPS_TRIG13{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 14
+         ;FOLD SPS_TRIG14{H}
+            VW(#VW_PULSE, TRUE, 1, 0, 10, 1533, TRUE)
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 15
+         ;FOLD SPS_TRIG15{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 16
+         ;FOLD SPS_TRIG16{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 17
+         ;FOLD SPS_TRIG17{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 18
+         ;FOLD SPS_TRIG18{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 19
+         ;FOLD SPS_TRIG19{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 20
+         ;FOLD SPS_TRIG20{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 21
+         ;FOLD SPS_TRIG21{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 22
+         ;FOLD SPS_TRIG22{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 23
+         ;FOLD SPS_TRIG23{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 24
+         ;FOLD SPS_TRIG24{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 25
+         ;FOLD SPS_TRIG25{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 26
+         ;FOLD SPS_TRIG26{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 27
+         ;FOLD SPS_TRIG27{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 28
+         ;FOLD SPS_TRIG28{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 29
+         ;FOLD SPS_TRIG29{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 30
+         ;FOLD SPS_TRIG30{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 31
+         ;FOLD SPS_TRIG31{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 32
+         ;FOLD SPS_TRIG32{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 33
+         ;FOLD SPS_TRIG33{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 34
+         ;FOLD SPS_TRIG34{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 35
+         ;FOLD SPS_TRIG35{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 36
+         ;FOLD SPS_TRIG36{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 37
+         ;FOLD SPS_TRIG37{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 38
+         ;FOLD SPS_TRIG38{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 39
+         ;FOLD SPS_TRIG39{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 40
+         ;FOLD SPS_TRIG40{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 41
+         ;FOLD SPS_TRIG41{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 42
+         ;FOLD SPS_TRIG42{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 43
+         ;FOLD SPS_TRIG43{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 44
+         ;FOLD SPS_TRIG44{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 45
+         ;FOLD SPS_TRIG45{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 46
+         ;FOLD SPS_TRIG46{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 47
+         ;FOLD SPS_TRIG47{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 48
+         ;FOLD SPS_TRIG48{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 49
+         ;FOLD SPS_TRIG49{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 50
+         ;FOLD SPS_TRIG50{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 51
+         ;FOLD SPS_TRIG51{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 52
+         ;FOLD SPS_TRIG52{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 53
+         ;FOLD SPS_TRIG53{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 54
+         ;FOLD SPS_TRIG54{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 55
+         ;FOLD SPS_TRIG55{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 56
+         ;FOLD SPS_TRIG56{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 57
+         ;FOLD SPS_TRIG57{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 58
+         ;FOLD SPS_TRIG58{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 59
+         ;FOLD SPS_TRIG59{H}
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=(TRUE) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+            ANA_DELAY1=0
+            VW(#ANAOUT,TRUE,2,1,0,0)
+            $OUT[23] = FALSE
+            VW(#SET_TIME,TRUE,3,1,0)
+            SEL_RES=SELECT(#MAKRO,181,NOT $IN[15],,,,,FALSE)
+            SEL_RES=SELECT(#MAKRO,3,NOT $FLAG[343] AND NOT $IN[161] AND NOT $FLAG[525],,,,,FALSE)
+            $LOOP_MSG[]="E23"
+            $LOOP_CONT=TRUE
+            WAIT FOR ($IN[23]) OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+            $LOOP_MSG[]="                                                                                                                                "
+            $OUT[23] = TRUE
+            VALCYCFL30=$CYCFLAG[254]
+            $CYCFLAG[254]=($CYCFLAG[1] AND $CYCFLAG[30] AND $CYCFLAG[32] AND $CYCFLAG[33] AND $CYCFLAG[78]) AND $CYCFLAG[255] OR ($TIMER[61]<0)
+            VW(#FB_CHECK,TRUE)
+         ;ENDFOLD
+      CASE 60
+         ;FOLD SPS_TRIG60{H}
+         ;ENDFOLD
+      CASE 61
+         ;FOLD SPS_TRIG61{H}
+         ;ENDFOLD
+      CASE 62
+         ;FOLD SPS_TRIG62{H}
+         ;ENDFOLD
+      CASE 63
+         ;FOLD SPS_TRIG63{H}
+         ;ENDFOLD
+      CASE 64
+         ;FOLD SPS_TRIG64{H}
+         ;ENDFOLD
+      CASE 65
+         ;FOLD SPS_TRIG65{H}
+         ;ENDFOLD
+      CASE 66
+         ;FOLD SPS_TRIG66{H}
+         ;ENDFOLD
+      CASE 67
+         ;FOLD SPS_TRIG67{H}
+         ;ENDFOLD
+      CASE 68
+         ;FOLD SPS_TRIG68{H}
+         ;ENDFOLD
+      CASE 69
+         ;FOLD SPS_TRIG69{H}
+         ;ENDFOLD
+      CASE 70
+         ;FOLD SPS_TRIG70{H}
+         ;ENDFOLD
+      CASE 71
+         ;FOLD SPS_TRIG71{H}
+         ;ENDFOLD
+      CASE 72
+         ;FOLD SPS_TRIG72{H}
+         ;ENDFOLD
+      CASE 73
+         ;FOLD SPS_TRIG73{H}
+         ;ENDFOLD
+      CASE 74
+         ;FOLD SPS_TRIG74{H}
+         ;ENDFOLD
+      CASE 75
+         ;FOLD SPS_TRIG75{H}
+         ;ENDFOLD
+      CASE 76
+         ;FOLD SPS_TRIG76{H}
+         ;ENDFOLD
+      CASE 77
+         ;FOLD SPS_TRIG77{H}
+         ;ENDFOLD
+      CASE 78
+         ;FOLD SPS_TRIG78{H}
+         ;ENDFOLD
+      CASE 79
+         ;FOLD SPS_TRIG79{H}
+         ;ENDFOLD
+      CASE 80
+         ;FOLD SPS_TRIG80{H}
+         ;ENDFOLD
+      CASE 81
+         ;FOLD SPS_TRIG81{H}
+         ;ENDFOLD
+      CASE 82
+         ;FOLD SPS_TRIG82{H}
+         ;ENDFOLD
+      CASE 83
+         ;FOLD SPS_TRIG83{H}
+         ;ENDFOLD
+      CASE 84
+         ;FOLD SPS_TRIG84{H}
+         ;ENDFOLD
+      CASE 85
+         ;FOLD SPS_TRIG85{H}
+         ;ENDFOLD
+      CASE 86
+         ;FOLD SPS_TRIG86{H}
+         ;ENDFOLD
+      CASE 87
+         ;FOLD SPS_TRIG87{H}
+         ;ENDFOLD
+      CASE 88
+         ;FOLD SPS_TRIG88{H}
+         ;ENDFOLD
+      CASE 89
+         ;FOLD SPS_TRIG89{H}
+         ;ENDFOLD
+      CASE 90
+         ;FOLD SPS_TRIG90{H}
+         ;ENDFOLD
+      CASE 91
+         ;FOLD SPS_TRIG91{H}
+         ;ENDFOLD
+      CASE 92
+         ;FOLD SPS_TRIG92{H}
+         ;ENDFOLD
+      CASE 93
+         ;FOLD SPS_TRIG93{H}
+         ;ENDFOLD
+      CASE 94
+         ;FOLD SPS_TRIG94{H}
+         ;ENDFOLD
+      CASE 95
+         ;FOLD SPS_TRIG95{H}
+         ;ENDFOLD
+      CASE 96
+         ;FOLD SPS_TRIG96{H}
+         ;ENDFOLD
+      CASE 97
+         ;FOLD SPS_TRIG97{H}
+         ;ENDFOLD
+      CASE 98
+         ;FOLD SPS_TRIG98{H}
+         ;ENDFOLD
+      CASE 99
+         ;FOLD SPS_TRIG99{H}
+         ;ENDFOLD
+      CASE 100
+         ;FOLD SPS_TRIG100{H}
+         ;ENDFOLD
+      CASE 101
+         ;FOLD SPS_TRIG101{H}
+         ;ENDFOLD
+      CASE 102
+         ;FOLD SPS_TRIG102{H}
+         ;ENDFOLD
+      CASE 103
+         ;FOLD SPS_TRIG103{H}
+         ;ENDFOLD
+      CASE 104
+         ;FOLD SPS_TRIG104{H}
+         ;ENDFOLD
+      CASE 105
+         ;FOLD SPS_TRIG105{H}
+         ;ENDFOLD
+      CASE 106
+         ;FOLD SPS_TRIG106{H}
+         ;ENDFOLD
+      CASE 107
+         ;FOLD SPS_TRIG107{H}
+         ;ENDFOLD
+      CASE 108
+         ;FOLD SPS_TRIG108{H}
+         ;ENDFOLD
+      CASE 109
+         ;FOLD SPS_TRIG109{H}
+         ;ENDFOLD
+      CASE 110
+         ;FOLD SPS_TRIG110{H}
+         ;ENDFOLD
+      CASE 111
+         ;FOLD SPS_TRIG111{H}
+         ;ENDFOLD
+      CASE 112
+         ;FOLD SPS_TRIG112{H}
+         ;ENDFOLD
+      CASE 113
+         ;FOLD SPS_TRIG113{H}
+         ;ENDFOLD
+      CASE 114
+         ;FOLD SPS_TRIG114{H}
+         ;ENDFOLD
+      CASE 115
+         ;FOLD SPS_TRIG115{H}
+         ;ENDFOLD
+      CASE 116
+         ;FOLD SPS_TRIG116{H}
+         ;ENDFOLD
+      CASE 117
+         ;FOLD SPS_TRIG117{H}
+         ;ENDFOLD
+      CASE 118
+         ;FOLD SPS_TRIG118{H}
+         ;ENDFOLD
+      CASE 119
+         ;FOLD SPS_TRIG119{H}
+         ;ENDFOLD
+      CASE 120
+         ;FOLD SPS_TRIG120{H}
+         ;ENDFOLD
+      CASE 121
+         ;FOLD SPS_TRIG121{H}
+         ;ENDFOLD
+      CASE 122
+         ;FOLD SPS_TRIG122{H}
+         ;ENDFOLD
+      CASE 123
+         ;FOLD SPS_TRIG123{H}
+         ;ENDFOLD
+      CASE 124
+         ;FOLD SPS_TRIG124{H}
+         ;ENDFOLD
+      CASE 125
+         ;FOLD SPS_TRIG125{H}
+         ;ENDFOLD
+      CASE 126
+         ;FOLD SPS_TRIG126{H}
+         ;ENDFOLD
+      CASE 127
+         ;FOLD SPS_TRIG127{H}
+         ;ENDFOLD
+      CASE 128
+         ;FOLD SPS_TRIG128{H}
+         ;ENDFOLD
+      CASE 129
+         ;FOLD SPS_TRIG129{H}
+         ;ENDFOLD
+      CASE 130
+         ;FOLD SPS_TRIG130{H}
+         ;ENDFOLD
+      CASE 131
+         ;FOLD SPS_TRIG131{H}
+         ;ENDFOLD
+      CASE 132
+         ;FOLD SPS_TRIG132{H}
+         ;ENDFOLD
+      CASE 133
+         ;FOLD SPS_TRIG133{H}
+         ;ENDFOLD
+      CASE 134
+         ;FOLD SPS_TRIG134{H}
+         ;ENDFOLD
+      CASE 135
+         ;FOLD SPS_TRIG135{H}
+         ;ENDFOLD
+      CASE 136
+         ;FOLD SPS_TRIG136{H}
+         ;ENDFOLD
+      CASE 137
+         ;FOLD SPS_TRIG137{H}
+         ;ENDFOLD
+      CASE 138
+         ;FOLD SPS_TRIG138{H}
+         ;ENDFOLD
+      CASE 139
+         ;FOLD SPS_TRIG139{H}
+         ;ENDFOLD
+      CASE 140
+         ;FOLD SPS_TRIG140{H}
+         ;ENDFOLD
+      CASE 141
+         ;FOLD SPS_TRIG141{H}
+         ;ENDFOLD
+      CASE 142
+         ;FOLD SPS_TRIG142{H}
+         ;ENDFOLD
+      CASE 143
+         ;FOLD SPS_TRIG143{H}
+         ;ENDFOLD
+      CASE 144
+         ;FOLD SPS_TRIG144{H}
+         ;ENDFOLD
+      CASE 145
+         ;FOLD SPS_TRIG145{H}
+         ;ENDFOLD
+      CASE 146
+         ;FOLD SPS_TRIG146{H}
+         ;ENDFOLD
+      CASE 147
+         ;FOLD SPS_TRIG147{H}
+         ;ENDFOLD
+      CASE 148
+         ;FOLD SPS_TRIG148{H}
+         ;ENDFOLD
+      CASE 149
+         ;FOLD SPS_TRIG149{H}
+         ;ENDFOLD
+      CASE 150
+         ;FOLD SPS_TRIG150{H}
+         ;ENDFOLD
+      CASE 151
+         ;FOLD SPS_TRIG151{H}
+         ;ENDFOLD
+      CASE 152
+         ;FOLD SPS_TRIG152{H}
+         ;ENDFOLD
+      CASE 153
+         ;FOLD SPS_TRIG153{H}
+         ;ENDFOLD
+      CASE 154
+         ;FOLD SPS_TRIG154{H}
+         ;ENDFOLD
+      CASE 155
+         ;FOLD SPS_TRIG155{H}
+         ;ENDFOLD
+      CASE 156
+         ;FOLD SPS_TRIG156{H}
+         ;ENDFOLD
+      CASE 157
+         ;FOLD SPS_TRIG157{H}
+         ;ENDFOLD
+      CASE 158
+         ;FOLD SPS_TRIG158{H}
+         ;ENDFOLD
+      CASE 159
+         ;FOLD SPS_TRIG159{H}
+         ;ENDFOLD
+      CASE 160
+         ;FOLD SPS_TRIG160{H}
+         ;ENDFOLD
+   DEFAULT
+   ENDSWITCH
+   ; FOLD ;%{H}
+   IF ($MODE_OP<>#EX) THEN
+      ;-- Trigger erst nach Wiederanstart geschaltet --
+      IF ((((VW_STOP B_AND 'B10010') >0) AND ((VW_STOP B_AND 'B0001')<=0))) THEN
+         ;-- MStep Bewegung --
+         HALT
+      ENDIF
+   ENDIF
+   ; ENDFOLD
+   IF NOT UES THEN
+      SPS_FERTIG=TRUE
+   ENDIF
+END
+; ENDFOLD

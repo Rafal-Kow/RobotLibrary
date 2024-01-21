@@ -1,0 +1,130 @@
+&ACCESS RV1
+&REL 12
+&COMMENT INITIALISIERUNG FLAGS
+&PARAM EDITMASK = Makro999[0-999]
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrovorgabe.src
+&PARAM TPVW_VERSION = 8.3.18
+&PARAM DISKPATH = Makros
+DEFFCT INT MAKRO57(ADV :IN)
+   ;FOLD Makro Anfang ;%{PSE}%MKUKATPVW
+      BOOL ADV
+      ; interface to basic routines
+      EXT  BAS (BAS_COMMAND  :IN,REAL  :IN )
+      ; interface to VW-standard routines
+      EXT VW (VW_COMMAND:IN, BOOL: IN, REAL:IN, REAL:IN, REAL:IN, REAL:IN, BOOL :IN, E6POS :IN )
+      ; interface select routine
+      EXTFCT INT  SELECT (SUBTYPE  :IN,INT  :IN,BOOL  :IN,ARI_TYP  :IN,INT  :IN,BOOL_TYP  :IN,INT  :IN,BOOL  :IN)
+      SPS_N=-1
+      ;FOLD ;%{H} %MKUKATPVW
+      IF VARSTATE ("ADV") <> #INITIALIZED THEN
+         ADV=FALSE
+      ENDIF
+      IF (NOT ADV) THEN
+      ;ENDFOLD
+   ;ENDFOLD
+   ;FOLD -- Energiesparmodus aktivieren -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Energiesparmodus aktivieren --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F522 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F522 = EIN, 3: BOASG
+      $FLAG[522] = TRUE
+   ;ENDFOLD
+   ;FOLD -- Kleben -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Kleben --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Klebesteuerung KL1 -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Klebesteuerung KL1 --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- KL1 aktivieren -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 aktivieren --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F542 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F542 = EIN, 3: BOASG
+      $FLAG[542] = TRUE
+   ;ENDFOLD
+   ;FOLD -- KL1 Automatisches nachtriggern von Heizung/Pumpe -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Automatisches nachtriggern von Heizung/Pumpe --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- KL1 Spuelen in Grundstellung -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Spuelen in Grundstellung --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F346 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F346 = EIN, 3: BOASG
+      $FLAG[346] = TRUE
+   ;ENDFOLD
+   ;FOLD -- unterbinden(optional) -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- unterbinden(optional) --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F336 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F336 = EIN, 3: BOASG
+      $FLAG[336] = TRUE
+   ;ENDFOLD
+   ;FOLD -- KL1 Automatisches Spuelen in Grundstellung einschalten(optional) -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Automatisches Spuelen in Grundstellung einschalten(optional) --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F346 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F346 = AUS, 3: BOASG
+      $FLAG[346] = FALSE
+   ;ENDFOLD
+   ;FOLD -- KL1 Automatische Nacharbeit(optional) -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Automatische Nacharbeit(optional) --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F348 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F348 = AUS, 3: BOASG
+      $FLAG[348] = FALSE
+   ;ENDFOLD
+   ;FOLD -- KL1 Wiederbefuellen durch Roboter,autom.Wiederbef.muss in der -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Wiederbefuellen durch Roboter,autom.Wiederbef.muss in der --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- jew.Klebersteuerung deaktiviert werden(optional) -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- jew.Klebersteuerung deaktiviert werden(optional) --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F350 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F350 = EIN, 3: BOASG
+      $FLAG[350] = TRUE
+   ;ENDFOLD
+   ;FOLD -- KL1 Anwahl mit TCP -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Anwahl mit TCP --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F354 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F354 = AUS, 3: BOASG
+      $FLAG[354] = FALSE
+   ;ENDFOLD
+   ;FOLD -- KL1 stat.Klebeduese -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 stat.Klebeduese --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F356 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F356 = AUS, 3: BOASG
+      $FLAG[356] = FALSE
+   ;ENDFOLD
+   ;FOLD -- Spuehlen in Grundstellung -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Spuehlen in Grundstellung --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- KL1 Freigabe Spuelen robotergefuehrt -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- KL1 Freigabe Spuelen robotergefuehrt --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F721 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F721 = EIN, 3: BOASG
+      $FLAG[721] = TRUE
+   ;ENDFOLD
+   ;FOLD -- Ventilinseln mit Rueckm.Steuerluft vorh.(Schliesser) -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Ventilinseln mit Rueckm.Steuerluft vorh.(Schliesser) --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F523 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F523 = EIN, 3: BOASG
+      $FLAG[523] = TRUE
+   ;ENDFOLD
+   ;FOLD -- G KYP01E mit Rueckm.Steuerluft nicht vorh.(Oeffner) -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- G KYP01E mit Rueckm.Steuerluft nicht vorh.(Oeffner) --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F524 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F524 = AUS, 3: BOASG
+      $FLAG[524] = FALSE
+   ;ENDFOLD
+   ;FOLD -- Mit Suchlauf u. erweiterter Baseverschiebung -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Mit Suchlauf u. erweiterter Baseverschiebung --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F720 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F720 = EIN, 3: BOASG
+      $FLAG[720] = TRUE
+   ;ENDFOLD
+   ;FOLD -- Handling -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Handling --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Anwahl ohne Abblasen bei Saugkreisen -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Anwahl ohne Abblasen bei Saugkreisen --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F54 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F54 = AUS, 3: BOASG
+      $FLAG[54] = FALSE
+   ;ENDFOLD
+   ;FOLD -- Anwahl 1. Ventilinsel -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Anwahl 1. Ventilinsel --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F57 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F57 = EIN, 3: BOASG
+      $FLAG[57] = TRUE
+   ;ENDFOLD
+   ;FOLD -- Typmeldung oder Greiferstatusmeldung -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Typmeldung oder Greiferstatusmeldung --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD -- Greiferstatusmeldung Aktivieren -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Greiferstatusmeldung Aktivieren --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F52 = AUS ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F52 = AUS, 3: BOASG
+      $FLAG[52] = FALSE
+   ;ENDFOLD
+   ;FOLD -- Typenmeldung Aktivieren -- ;%{E}%MKUKATPVW %CVW_COM %VCOMMENT %P 2:-- Typenmeldung Aktivieren --, 3: VW_COMMENT
+   ;ENDFOLD
+   ;FOLD F63 = EIN ;%{E}%MKUKATPVW %CVW_SPS %VBOASG %P 2:F63 = EIN, 3: BOASG
+      $FLAG[63] = TRUE
+   ;ENDFOLD
+   ; FOLD ;%{H}
+   RETURN 1
+   ELSE
+   RETURN 1
+   ENDIF
+ENDFCT
+; ENDFOLD

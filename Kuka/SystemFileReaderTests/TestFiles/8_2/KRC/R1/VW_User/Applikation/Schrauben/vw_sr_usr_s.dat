@@ -1,0 +1,79 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Schrauben
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_sr_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Bolzenschweissen                    *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.17 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD USER_Version
+STRUC _Tech_Schrauben CHAR Name[20],INT Datum
+DECL _Tech_Schrauben Tech_Schrauben
+;ENDFOLD
+; 
+;FOLD Schrauben
+GLOBAL BOOL MIT_SR=FALSE
+; 
+GLOBAL INT F_m_SR=566
+; 
+GLOBAL INT I_SR1_VSZF=2214
+GLOBAL INT I_SR1_SZFle=2215
+GLOBAL INT I_SR2_VSZF=2230
+GLOBAL INT I_SR2_SZFle=2231
+GLOBAL INT I_SR3_VSZF=2246
+GLOBAL INT I_SR3_SZFle=2247
+GLOBAL INT I_SR4_VSZF=2262
+GLOBAL INT I_SR4_SZFle=2263
+; 
+GLOBAL INT O_SR1_VSZF=194
+GLOBAL INT O_SR1_SZFle=195
+GLOBAL INT O_SR2_VSZF=202
+GLOBAL INT O_SR2_SZFle=203
+GLOBAL INT O_SR3_VSZF=210
+GLOBAL INT O_SR3_SZFle=211
+GLOBAL INT O_SR4_VSZF=218
+GLOBAL INT O_SR4_SZFle=219
+;ENDFOLD
+; 
+;FOLD Lebensbit SR
+BOOL LBitState[2]
+LBitState[1]=FALSE
+LBitState[2]=FALSE
+BOOL SR_LBitFeh[2]
+SR_LBitFeh[1]=FALSE
+SR_LBitFeh[2]=FALSE
+; 
+;Lebensbit an SR-Steuerung --- Ausgaenge
+INT LBitToSR[2]
+LBitToSR[1]=-1
+LBitToSR[2]=-1
+; 
+;Lebensbit von SR-Steuerung --- Eingaenge
+INT LBitFromSR[2]
+LBitFromSR[1]=-1
+LBitFromSR[2]=-1
+; 
+INT LBitTimeCnt[2]
+LBitTimeCnt[1]=-1
+LBitTimeCnt[2]=-1
+INT ErrSRNr=-1
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM SRS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_SRS_Handle[100]
+GLOBAL INT n_SRR_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+
+ENDDAT

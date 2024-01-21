@@ -1,0 +1,47 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Mutterbuckeln
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEFDAT  vw_mb_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Mutternbuckeln                      *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.16 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD Mutterbuckeln
+;MB1
+;Punktnummer an SPS
+SIGNAL MB_PktNr_SPS $OUT[97]  TO $OUT[112]
+;Programm-Nr an MB 1
+SIGNAL Prog_Nr_MB1 $OUT[1819]  TO $OUT[1823]
+;Programm-Nr an MB 2
+SIGNAL Prog_Nr_MB2 $OUT[1851]  TO $OUT[1855]
+;Korrektur
+GLOBAL INT Mu1_FirstBit=1813
+GLOBAL INT Mu2_FirstBit=1845
+;ENDFOLD
+; 
+;FOLD SZ TCP-Korrektur
+FRAME MyCorr
+FRAME MyCorrWeg
+; 
+INT Weg=0
+INT Offset=0
+; 
+GLOBAL REAL MBCorrValue=0.0
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM MBR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

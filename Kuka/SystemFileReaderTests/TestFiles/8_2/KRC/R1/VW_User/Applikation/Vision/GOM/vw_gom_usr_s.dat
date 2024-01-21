@@ -1,0 +1,403 @@
+&ACCESS  R
+&COMMENT KS_1.1
+&PARAM DISKPATH = VW_User/Applikation/Vision/GOM
+&PARAM TPVW_VERSION = 8.1.8
+&REL 70
+DEFDAT  vw_gom_usr_s PUBLIC
+; 
+;FOLD GOM
+;*--------------------------------------------*
+;* GOM mbH                                    *
+;* 02.12.2014 Frank Sowinski, Volker Masemann *
+;*     Version 7.9                            *
+;*--------------------------------------------*
+; 
+ENUM GOM_MsgType StatMsg,QuitMsg,NotifyMsg,WaitMsg,DlgMsg
+DECL GOM_MsgType MSG_TYP=#NotifyMsg
+GLOBAL BOOL B_MIT_GOM=FALSE
+GLOBAL INT F_MIT_GOM=232
+GLOBAL INT F_MIT_VISION=552
+; 
+;FOLD LifeBit
+; 
+SIGNAL O_GOM_R_NOF $OUT[2095] ; 17.6 Life-Bit
+SIGNAL I_GOM_Life $IN[2096] ; 17.7 Life-Bit
+SIGNAL O_GOM_Life $OUT[2096] ; 17.7 Life-Bit
+INT N_GOM_MsgRet=0 ; 
+INT N_GOM_TmL=-1000 ; [ms]
+INT N_GOM_TmLNr=54 ; Lifebit
+INT N_GOM_TmM1=-1000 ; [ms]
+INT N_GOM_TmM1Nr=25 ; aktuelle Laufzeit
+INT N_GOM_TmM2=-1000 ; [ms]
+INT N_GOM_TmM2Nr=26 ; letzte Laufzeit
+INT N_GOM_MlgRet=10101 ; Antwort auf Meldung
+BOOL B_GOM_UseFct=TRUE ; Life-Bit wird verwendet
+BOOL B_GOM_NoAns0=FALSE ; Keine Antwort auf Low Pegel
+BOOL B_GOM_NoAns1=FALSE ; Keine Antwort auf High Pegel
+BOOL B_GOM_MlgRet=TRUE ; Antwort auf Meldung
+; 
+;ENDFOLD (LifeBit)
+; 
+;ENDFOLD GOM
+; 
+;FOLD GOM_SPS
+; atos <-> fieldbus
+;--------------------------------------------------------------------------
+;--------------------------------------------------------------------------
+ENUM GOMAUTOTYPE EX,AUTO,ALL,T1
+
+;--------------------------------------------------------------------------
+DECL GOMAUTOTYPE GOM_AUTO=#ALL ; Automatik extern: #EX, otherwise: #AUTO !
+;--------------------------------------------------------------------------
+
+;--------------------------------------------------------------------------
+; Attention: a factor determines the decimal place of an axis value
+; examples : 10 -> 1 decimal place, 100 -> 2 decimal places
+; Attention: the transmitted axis position is not allowed to exceed +/-32767, a lower factor might be requiered
+; example : max position +3500 mm and factor 10 --> 35000 does not fit in 32767 --> use e.g. factor 5 instead +3500mm factor 5 --> 17500
+; Attention: An PLC turntable in a VW prototype test setup always needs the factor 10!
+
+; factor | max. range for linear stage | min. difference between 2 positions | precision in positioning | recommended precision value in controller template 
+; -------|-----------------------------|-------------------------------------|--------------------------| --------------------------------------------------
+; 1      | -32...+32 m                 | 1.0 mm                              | +-0.50 mm                | 0.3 
+; 2      | -16...+16 m                 | 0.5 mm                              | +-0.25 mm                | 0.2
+; 3      | -11...+11 m                 | 0.33 mm                             | +-0.167 mm               | 0.1 
+; 4      | -8.2...+8.2 m               | 0.25 mm                             | +-0.125 mm               | 0.1 
+; 5      | -6.5...+6.5 m               | 0.2 mm                              | +-0.10 mm                | 0.1 
+; 10     | -3.2...+3.2 m               | 0.1 mm                              | +-0.05 mm                | 0.1 
+
+; Attention: For factor 1 and 2, the precision value in the corresponding ATOS controller template needs to be increased (default: 0.1)!
+; See recommended values in the table above.
+
+; Recommended factor values: 
+; rotational axes and small linear stages: 100
+; normal linear stage with normal robot on top (<=8m): 4
+; longer linear stage (<=11m): 3
+; even longer linear stage (<=16m): 2
+;--------------------------------------------------------------------------
+GLOBAL INT GOM_FACTORS[12]
+GOM_FACTORS[1]=100
+GOM_FACTORS[2]=100
+GOM_FACTORS[3]=100
+GOM_FACTORS[4]=100
+GOM_FACTORS[5]=100
+GOM_FACTORS[6]=100
+GOM_FACTORS[7]=10
+GOM_FACTORS[8]=100
+GOM_FACTORS[9]=100
+GOM_FACTORS[10]=100
+GOM_FACTORS[11]=100
+GOM_FACTORS[12]=100
+;--------------------------------------------------------------------------
+
+;--------------------------------------------------------------------------
+; Attention: count of axes values transmitted with one transmission
+; Attention: max. of two transmissions for all axes are allowed!
+; Attention: do not use a value higher than the count of available axes!
+;--------------------------------------------------------------------------
+; count of axes per transmission
+GLOBAL INT GOM_AX_TRANS=7
+;--------------------------------------------------------------------------
+
+;--------------------------------------------------------------------------
+; Attention: After changing this value adapt all signal addresses!
+;-------------------------------------------------------------------------- 
+; address offset
+; max. 26 bytes, VW: bit 1953 - 2112 (20 Bytes)
+DECL CONST INT GOM_ADDR_OFS=1952
+;--------------------------------------------------------------------------
+
+;--------------------------------------------------------------------------
+; INPUT
+;--------------------------------------------------------------------------
+; commands for the robot
+SIGNAL GOM_ENABLED $IN[1953] ; flag: ATOS is initialized (GOM_ADDR_OFS+1)
+SIGNAL GOM_INIT $IN[1954] ; inits all signals/variables (GOM_ADDR_OFS+2)
+SIGNAL GOM_GET_POS $IN[1955] ; gets current position (GOM_ADDR_OFS+3)
+SIGNAL GOM_SET_POS $IN[1956] ; sets required position (GOM_ADDR_OFS+4)
+; belongs to set position
+SIGNAL GOM_ST_MOVE $IN[1957] ; starts the move (GOM_ADDR_OFS+5)
+;--------------------------------------------------------------------------
+; sub commands for the robot
+SIGNAL GOM_DATA0 $IN[1961] ; (GOM_ADDR_OFS+9)
+SIGNAL GOM_DATA1 $IN[1962] ; (GOM_ADDR_OFS+10)
+SIGNAL GOM_DATA2 $IN[1963] ; (GOM_ADDR_OFS+11)
+;--------------------------------------------------------------------------
+; the ATOS command word
+SIGNAL GOM_COMMANDS $IN[1953]  TO $IN[1968] ; 2 bytes (GOM_ADDR_OFS+1 - GOM_ADDR_OFS+16)
+; ATOS version
+SIGNAL GOM_V_ATOS_I $IN[1969]  TO $IN[1984] ; 2 bytes (GOM_ADDR_OFS+17 - GOM_ADDR_OFS+32)
+; workspace, in the moment allowed: 1 - 3
+SIGNAL GOM_WORKSP_I $IN[1985]  TO $IN[2000] ; 2 bytes (GOM_ADDR_OFS+33 - GOM_ADDR_OFS+48)
+; speed value
+SIGNAL GOM_SPEED $IN[1969]  TO $IN[1984] ; 2 bytes (GOM_ADDR_OFS+17 - GOM_ADDR_OFS+32)
+; acceleration value
+SIGNAL GOM_ACCEL $IN[1985]  TO $IN[2000] ; 2 bytes (GOM_ADDR_OFS+33 - GOM_ADDR_OFS+48)
+
+; max. 12 axis values (24 bytes)
+; max. 2 transmissions allowed!
+; 2 bytes per position, angle or mm
+SIGNAL GOM_IN01 $IN[1969]  TO $IN[1984] ; (GOM_ADDR_OFS+17 - GOM_ADDR_OFS+32)
+SIGNAL GOM_IN02 $IN[1985]  TO $IN[2000] ; (GOM_ADDR_OFS+33 - GOM_ADDR_OFS+48)
+SIGNAL GOM_IN03 $IN[2001]  TO $IN[2016] ; (GOM_ADDR_OFS+49 - GOM_ADDR_OFS+64)
+SIGNAL GOM_IN04 $IN[2017]  TO $IN[2032] ; (GOM_ADDR_OFS+65 - GOM_ADDR_OFS+80)
+SIGNAL GOM_IN05 $IN[2033]  TO $IN[2048] ; (GOM_ADDR_OFS+81 - GOM_ADDR_OFS+96)
+SIGNAL GOM_IN06 $IN[2049]  TO $IN[2064] ; (GOM_ADDR_OFS+97 - GOM_ADDR_OFS+112)
+SIGNAL GOM_IN07 $IN[2065]  TO $IN[2080] ; (GOM_ADDR_OFS+113 - GOM_ADDR_OFS+128)
+SIGNAL GOM_IN08 $IN[2081]  TO $IN[2096] ; (GOM_ADDR_OFS+129 - GOM_ADDR_OFS+144)
+SIGNAL GOM_IN09 $IN[2097]  TO $IN[2112] ; (GOM_ADDR_OFS+145 - GOM_ADDR_OFS+160)
+SIGNAL GOM_IN10 $IN[2113]  TO $IN[2128] ; (GOM_ADDR_OFS+161 - GOM_ADDR_OFS+176)
+SIGNAL GOM_IN11 $IN[2129]  TO $IN[2144] ; (GOM_ADDR_OFS+177 - GOM_ADDR_OFS+192)
+SIGNAL GOM_IN12 $IN[2145]  TO $IN[2160] ; (GOM_ADDR_OFS+193 - GOM_ADDR_OFS+208)
+;--------------------------------------------------------------------------
+
+;--------------------------------------------------------------------------
+; OUTPUT
+;--------------------------------------------------------------------------
+; status of the robot (8 bits, 3 reserved)
+SIGNAL GOM_OK $OUT[1953] ; everything is ok (GOM_ADDR_OFS+1)
+SIGNAL GOM_INIT_O $OUT[1954] ; initializing is in progress (GOM_ADDR_OFS+2)
+SIGNAL GOM_GETTING $OUT[1955] ; start of get position (GOM_ADDR_OFS+3)
+SIGNAL GOM_SETTING $OUT[1956] ; start of set position (GOM_ADDR_OFS+4)
+; belongs to setting
+SIGNAL GOM_MOVING $OUT[1957] ; the robot is moving (GOM_ADDR_OFS+5)
+;--------------------------------------------------------------------------
+; sub status
+SIGNAL GOM_DATA0_RD $OUT[1961] ; (GOM_ADDR_OFS+9)
+SIGNAL GOM_DATA1_RD $OUT[1962] ; (GOM_ADDR_OFS+10)
+SIGNAL GOM_DATA2_RD $OUT[1963] ; (GOM_ADDR_OFS+11)
+;--------------------------------------------------------------------------
+; the status word
+SIGNAL GOM_STATUS $OUT[1953]  TO $OUT[1968] ; 2 bytes (GOM_ADDR_OFS+1 - GOM_ADDR_OFS+16)
+; robot protocol version
+SIGNAL GOM_V_ROB_O $OUT[1969]  TO $OUT[1984] ; 2 bytes (GOM_ADDR_OFS+17 - GOM_ADDR_OFS+32)
+; value 1 is here used
+SIGNAL GOM_ENDIAN $OUT[1969]  TO $OUT[1984] ; 2 bytes (GOM_ADDR_OFS+17 - GOM_ADDR_OFS+32)
+; count of axes to transmit
+SIGNAL GOM_A_TRA_O $OUT[1985]  TO $OUT[2000] ; 2 bytes (GOM_ADDR_OFS+33 - GOM_ADDR_OFS+48)
+; axis cfg (12 axes)
+SIGNAL GOM_AXIS_CFG $OUT[1985]  TO $OUT[2016] ; 4 bytes (1 byte unused, GOM_ADDR_OFS+33 - GOM_ADDR_OFS+48)
+; error code (in combination with GOM_OK)
+SIGNAL GOM_ERR_CODE $OUT[1969]  TO $OUT[1984] ; 2 bytes (GOM_ADDR_OFS+17 - GOM_ADDR_OFS+32)
+
+; max. 12 axis values (24 bytes)
+; max. 2 transmissions allowed!
+; 2 bytes, angle or mm 
+SIGNAL GOM_OUT01 $OUT[1969]  TO $OUT[1984] ; (GOM_ADDR_OFS+17 - GOM_ADDR_OFS+32)
+SIGNAL GOM_OUT02 $OUT[1985]  TO $OUT[2000] ; (GOM_ADDR_OFS+33 - GOM_ADDR_OFS+48)
+SIGNAL GOM_OUT03 $OUT[2001]  TO $OUT[2016] ; (GOM_ADDR_OFS+49 - GOM_ADDR_OFS+64)
+SIGNAL GOM_OUT04 $OUT[2017]  TO $OUT[2032] ; (GOM_ADDR_OFS+65 - GOM_ADDR_OFS+80)
+SIGNAL GOM_OUT05 $OUT[2033]  TO $OUT[2048] ; (GOM_ADDR_OFS+81 - GOM_ADDR_OFS+96)
+SIGNAL GOM_OUT06 $OUT[2049]  TO $OUT[2064] ; (GOM_ADDR_OFS+97 - GOM_ADDR_OFS+112)
+SIGNAL GOM_OUT07 $OUT[2065]  TO $OUT[2080] ; (GOM_ADDR_OFS+113 - GOM_ADDR_OFS+128)
+SIGNAL GOM_OUT08 $OUT[2081]  TO $OUT[2096] ; (GOM_ADDR_OFS+129 - GOM_ADDR_OFS+144)
+SIGNAL GOM_OUT09 $OUT[2097]  TO $OUT[2112] ; (GOM_ADDR_OFS+145 - GOM_ADDR_OFS+160)
+SIGNAL GOM_OUT10 $OUT[2113]  TO $OUT[2128] ; (GOM_ADDR_OFS+161 - GOM_ADDR_OFS+176)
+SIGNAL GOM_OUT11 $OUT[2129]  TO $OUT[2144] ; (GOM_ADDR_OFS+177 - GOM_ADDR_OFS+192)
+SIGNAL GOM_OUT12 $OUT[2145]  TO $OUT[2160] ; (GOM_ADDR_OFS+193 - GOM_ADDR_OFS+208)
+
+;--------------------------------------------------------------------------
+; Attention: needed from ATOS to autodetect the bit order (bit 15 and 16)
+;--------------------------------------------------------------------------
+SIGNAL GOM_BITORD1 $OUT[1967] ; (GOM_ADDR_OFS+15)
+SIGNAL GOM_BITORD2 $OUT[1968] ; (GOM_ADDR_OFS+16)
+;--------------------------------------------------------------------------
+
+
+;--------------------------------------------------------------------------
+; Attention: Do not edit all following GOM values!
+;--------------------------------------------------------------------------
+GLOBAL ENUM GOMCMD_FB GOMINIT_FB,GOMLOOP_FB
+DECL GLOBAL BOOL GOM_IS_MING=FALSE ; new required position -> move robot
+DECL GLOBAL BOOL GOM_MOVE_AB=FALSE ; move aborted
+DECL GLOBAL BOOL GOM_SET_OPOS=FALSE ; new valid position data after move
+
+; needed values for a robot move
+DECL GLOBAL INT GOM_VEL_FB
+DECL GLOBAL INT GOM_ACC_FB
+DECL GLOBAL E6AXIS GOM_P_AX_FB
+
+DECL E6AXIS posAxisTemp ; buffer for robot position check
+; count maximum axes
+DECL CONST INT GOM_N_AX_MAX=12
+; do not edit this array!
+DECL GLOBAL INT GOM_ACT_FACT[12]
+; active workspace (vmr data)
+DECL INT GOM_WOSP_V=0
+; count of used axes
+DECL INT GOM_AX_COUNT
+; robot move needed?
+DECL BOOL GOM_MOVE_ROB=TRUE
+; version of windows software
+DECL INT GOM_V_ATOS_V
+
+;--------------------------------------------------------------------------
+; Attention: the actual version of the robot protocol
+;--------------------------------------------------------------------------
+DECL INT GOM_V_ROB=1
+;--------------------------------------------------------------------------
+;--------------------------------------------------------------------------
+;ENDFOLD GOM_SPS
+
+
+
+;FOLD VW_TURNTABLE_TEST_FUNCTIONALITY_PROTOTYPE
+;--------------------------------------------------------------------------
+;--------------------------------------------------------------------------
+; Attention: prototype functionality only, do not use it unless you are ask to do so by GOM
+; Attention: if an PLC turntable exists, set TT_ENABLED=TRUE
+; Attention: all parameters and signals for an PLC turntable
+; Attention: if available change the parameter values here
+;--------------------------------------------------------------------------
+
+; PLC turntable exists
+DECL GLOBAL BOOL TT_ENABLED=FALSE ; ATTENTION: enabling the prototype functionality may cause serious hardware damage
+DECL GLOBAL BOOL IL_TT_ENABLE=TRUE
+
+;--------------------------------------------------------------------------
+; parameter values needed in function ROB_OUTS_TT()
+; the function returns TRUE, if axis A1 position is outside of PLC turntable range (safe)
+; expression in function: (A1 > ROB_A_TT_MIN) AND (A1 < ROB_A_TT_MAX)
+; if only max. limit is needed -> set min. value to -10000.0
+; if only min. limit is needed -> set max. value to 10000.0
+; set ROB_PF_TT to the correct value for the expression (TRUE, if A1 values are safe) 
+;--------------------------------------------------------------------------
+GLOBAL REAL ROB_A_TT_MIN=-10000.0
+GLOBAL REAL ROB_A_TT_MAX=10000.0
+GLOBAL BOOL ROB_PF_TT=TRUE
+
+GLOBAL BOOL IN_FR_TT_P_H=TRUE
+
+;--------------------------------------------------------------------------
+; parameter values needed in function TT_IN_WSP
+; the allowed turntable positions are between min. and max. value
+;--------------------------------------------------------------------------
+GLOBAL INT TT_MIN_UE=0 ; 0.0 degree
+GLOBAL INT TT_MAX_UE=3599 ; 359.9 degree
+
+;--------------------------------------------------------------------------
+; All signals for communication between SPS and robot controller
+;--------------------------------------------------------------------------
+; INPUT
+SIGNAL TT_IN_REQ $IN[79] ; turntable is in required position
+SIGNAL SPS_READY $IN[80] ; SPS operational
+SIGNAL TT_POS_ACT $IN[225]  TO $IN[240] ; current position
+SIGNAL IN_FR_TT_P $IN[200] ; Roboter auf Freigabe Drehtisch Drehen
+
+; OUTPUT
+SIGNAL ROB_TT_PF $OUT[80] ; Profilfrei turntable
+SIGNAL TT_POS_REQ $OUT[225]  TO $OUT[240] ; required position
+
+; axis number of external turntable
+DECL GLOBAL INT SPS_TT_AXIS
+; new required position -> move turntable
+DECL GLOBAL BOOL TT_IS_TURING=FALSE
+; is turntable move necessary?
+DECL BOOL MOVE_TT=FALSE
+; buffer for turntable position check 
+DECL INT SPS_TT_TEMP=0
+;--------------------------------------------------------------------
+; ALL POSITIONS AND SIGNALS ONLY FOR INLINE TURNTABLE
+;--------------------------------------------------------------------
+; HIER DIE RICHTIGEN POSITIONSWERTE DREHTISCH FESTLEGEN , MIT FAKTOR 10 MULTIPLIZIERT !!!
+DECL GLOBAL CONST INT INL_TT_V_1=0 ; 0 GRAD
+DECL GLOBAL CONST INT INL_TT_V_2=225 ; 22,5 GRAD
+DECL GLOBAL CONST INT INL_TT_V_3=450 ; 45 GRAD
+DECL GLOBAL CONST INT INL_TT_V_4=675 ; 67,5 GRAD
+DECL GLOBAL CONST INT INL_TT_V_5=900 ; 90 GRAD
+DECL GLOBAL CONST INT INL_TT_V_6=1125 ; 112,5 GRAD
+DECL GLOBAL CONST INT INL_TT_V_7=1350 ; 135 GRAD
+DECL GLOBAL CONST INT INL_TT_V_8=1575 ; 157,5 GRAD
+DECL GLOBAL CONST INT INL_TT_V_9=1800 ; 180 GRAD
+DECL GLOBAL CONST INT INL_TT_V_10=2025 ; 202,5 GRAD
+DECL GLOBAL CONST INT INL_TT_V_11=2250 ; 225 GRAD
+DECL GLOBAL CONST INT INL_TT_V_12=2475 ; 247,5 GRAD
+DECL GLOBAL CONST INT INL_TT_V_13=2700 ; 270 GRAD
+DECL GLOBAL CONST INT INL_TT_V_14=2925 ; 292,5 GRAD
+DECL GLOBAL CONST INT INL_TT_V_15=3150 ; 315 GRAD
+DECL GLOBAL CONST INT INL_TT_V_16=3375 ; 337,5 GRAD
+;POS 16--> BIT 201 --> VALUE = 1 ( NUMBER STARTS WITH LOWEST BIT )
+SIGNAL INL_TT_POS $IN[201]  TO $IN[216]
+SIGNAL TT_INL_IN_RQ $IN[80] ; turntable is in required position
+;--------------------------------------------------------------------------
+; Set Turntable Position at TeachMode
+SIGNAL INL_S_TT_POS $OUT[63]  TO $OUT[78]
+;--------------------------------------------------------------------------
+;ENDFOLD VW_TURNTABLE_TEST_FUNCTIONALITY_PROTOTYPE
+
+
+
+;FOLD VW_DOOR_TEST_FUNCTIONALITY_PROTOTYPE
+;--------------------------------------------------------------------------
+;--------------------------------------------------------------------------
+; Attention: prototype functionality only, do not use it unless you are ask to do so by GOM
+; Attention: if a automatic door exists, set DOOR_ENABLED=TRUE
+; Attention: if available change the parameter values here
+;--------------------------------------------------------------------------
+
+; door exists
+DECL GLOBAL BOOL DOOR_ENABLED=FALSE ; ATTENTION: enabling the prototype functionality may cause serious hardware damage
+
+;--------------------------------------------------------------------------
+; parameter values needed in procedure DOOR_LOOP()
+; if axis A1 is in a position outside of the the door (safe) -> Profilfrei is TRUE
+; expression in procedure: (A1 > ROB_PF_D_MIN) AND (A1 < ROB_PF_D_MAX)
+; if only max. limit is needed -> set min. value to -10000.0
+; if only min. limit is needed -> set max. value to 10000.0
+; set PF_ROB_IN_D to the correct value for the expression (TRUE, if A1 values are safe)
+;--------------------------------------------------------------------------
+GLOBAL REAL ROB_PF_D_MIN=-10000.0
+GLOBAL REAL ROB_PF_D_MAX=10000.0
+GLOBAL BOOL PF_ROB_IN_D=TRUE
+
+;--------------------------------------------------------------------------
+; parameter value needed in DOOR_LOOP/WSP_VIOLAT
+;--------------------------------------------------------------------------
+; the vmr data with closed door
+DECL GLOBAL INT VW_WS=2
+
+;--------------------------------------------------------------------------
+; parameter values needed in function DOOR_AX_LIM()
+; the function returns FALSE, if axis A1 is in a position outside of the the door (safe)
+; expression in function: (A1 > D_AX_LIM_MIN) AND (A1 < D_AX_LIM_MAX)
+; if only max. limit is needed -> set min. value to -10000.0
+; if only min. limit is needed -> set max. value to 10000.0
+; set PF_D_AX_LIM to the correct value for the expression (TRUE, if A1 values are UNsafe) 
+;--------------------------------------------------------------------------
+; needed, if door is closed
+GLOBAL REAL D_AX_LIM_MIN=-10000.0
+GLOBAL REAL D_AX_LIM_MAX=10000.0
+GLOBAL BOOL PF_D_AX_LIM=TRUE
+
+;--------------------------------------------------------------------------
+; All signals for communication between SPS and robot controller
+;--------------------------------------------------------------------------
+; INPUT
+; door status, query both!
+SIGNAL DOOR_OPEN $IN[69] ; door is open
+SIGNAL DOOR_CLOSED $IN[70] ; door is closed
+
+;OUTPUT
+; commands
+SIGNAL PF_DOOR $OUT[69] ; Profilfrei door (robot outside of door)
+SIGNAL OPEN_DOOR_O $OUT[70] ; open the door (set until door is open)
+SIGNAL CLOSE_DOOR_O $OUT[71] ; close the door (set until door is closed)
+;--------------------------------------------------------------------------
+;--------------------------------------------------------------------------
+;ENDFOLD VW_DOOR_TEST_FUNCTIONALITY_PROTOTYPE
+
+;FOLD SAFE_OPERATION
+;--------------------------------------------------------------------------
+;--------------------------------------------------------------------------
+; Attention: prototype functionality only, do not use it unless you are ask to do so by GOM
+; Attention: if safe operation is active, set SAFE_OPS=TRUE
+; Attention: if available change the parameter values here
+;--------------------------------------------------------------------------
+GLOBAL BOOL SAFE_OPS=FALSE
+
+GLOBAL BOOL H_SAFE_REQ=FALSE
+;--------------------------------------------------------------------------
+;--------------------------------------------------------------------------
+;ENDFOLD SAFE_OPERATION
+
+ENDDAT

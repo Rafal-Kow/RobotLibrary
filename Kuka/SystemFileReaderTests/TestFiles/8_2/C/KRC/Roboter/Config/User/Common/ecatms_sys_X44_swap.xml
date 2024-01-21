@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<EtherCatSwap kukaVersion="1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="/Roboter/Config/System/Common/Schemes/ecatms_swap.xsd">
+	<Version Label="">
+		<Info Version="KRC V8.2"/>
+		<Schema Version="100"/>
+	</Version>
+  <SwapList>
+    <!--
+		 <Swap Offset="0" Length="2" IsInput="true"/>
+		 <Swap Offset="0" Length="2" IsInput="false"/>
+	 -->
+  </SwapList>
+</EtherCatSwap>

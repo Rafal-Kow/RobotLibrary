@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<SafetyConfigData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <AxisRangeNameItems />
+  <ChangeLog>
+    <Entries>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_HardwareParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2011-07-31T23:35:19.9375+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_MachineDataUpdated</MessageKey>
+        <MessageParams />
+        <Timestamp>2011-07-31T23:35:21.265625+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ConfigurationSaved</MessageKey>
+        <MessageParams />
+        <Timestamp>2011-07-31T23:35:21.265625+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_MachineDataUpdated</MessageKey>
+        <MessageParams />
+        <Timestamp>2011-08-03T23:48:16.7861977+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ConfigurationSaved</MessageKey>
+        <MessageParams />
+        <Timestamp>2011-08-03T23:48:16.7861977+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_HardwareParameterChanged</MessageKey>
+        <MessageParams />
+        <Timestamp>2011-08-03T23:49:27.7465026+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ConfigurationSaved</MessageKey>
+        <MessageParams />
+        <Timestamp>2011-08-03T23:49:41.272793+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_MachineDataUpdated</MessageKey>
+        <MessageParams />
+        <Timestamp>2011-08-04T03:31:35.2174582+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ConfigurationSaved</MessageKey>
+        <MessageParams />
+        <Timestamp>2011-08-04T03:31:38.5771816+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_MachineDataUpdated</MessageKey>
+        <MessageParams />
+        <Timestamp>2011-09-16T10:15:47.3129296+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ConfigurationSaved</MessageKey>
+        <MessageParams />
+        <Timestamp>2011-09-16T10:15:47.3129296+02:00</Timestamp>
+      </ProtocolEntry>
+      <ProtocolEntry>
+        <MessageKey>ChangeLog_ProjectUpdated</MessageKey>
+        <MessageParams />
+        <Timestamp>2012-06-27T11:47:12.9239496+02:00</Timestamp>
+      </ProtocolEntry>
+    </Entries>
+  </ChangeLog>
+  <DevDescrRevision>393220</DevDescrRevision>
+  <LastModified>2012-06-27T11:47:12.9395496+02:00</LastModified>
+  <MachineDataLastModified>2011-09-16T10:15:47.2978894+02:00</MachineDataLastModified>
+  <ProjectName>-</ProjectName>
+  <ToolNameItems />
+  <Version>6</Version>
+  <WorksheetCrc>3053846757</WorksheetCrc>
+  <MonitoringSpaceNameItems />
+  <WorkspaceNameItems />
+</SafetyConfigData>

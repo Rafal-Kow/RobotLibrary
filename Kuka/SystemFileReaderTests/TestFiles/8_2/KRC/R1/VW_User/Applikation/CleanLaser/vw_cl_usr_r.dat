@@ -1,0 +1,33 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/CleanLaser
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_cl_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket CleanLaser                          *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.17 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+; 
+;FOLD CleanLaser
+SIGNAL CL_Prog_Nr $OUT[2801]  TO $OUT[2808]
+SIGNAL CL_L_Leist $OUT[2897]  TO $OUT[2912]
+SIGNAL O_CL_P_Anw $OUT[2809]
+SIGNAL CL_Naht_Nr $OUT[97]  TO $OUT[112]
+; 
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM CLR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+ENDDAT

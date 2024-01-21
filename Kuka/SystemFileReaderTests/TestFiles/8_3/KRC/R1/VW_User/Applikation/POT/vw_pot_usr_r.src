@@ -1,0 +1,396 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/POT
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEF VW_POT_USR_R( )
+; 
+;*-------------------------------------------------------*
+;*Technologiepaket POT                                   *
+;*                                                       *
+;*Konzernstandard                                        *
+;*Bearbeiter: Chr. Eisenknappl I/PG-C61                  *
+;*                                                       *
+;* Erstellt am:                                          *
+;* 2015.09.03 CE                                         *
+;*                                                       *
+;*-------------------------------------------------------*
+;
+END
+;
+;FOLD POT Interface
+GLOBAL DEF POT_Interfac(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+INT I
+;
+;-----------------------------------------------------------
+;
+SWITCH USER_CMD
+;
+;-----------------------------------------------------------
+;
+  CASE #USR_INIT
+    ;FOLD Init
+    ;
+    ;FOLD POT Zeit Initialisierung
+    IF (POT_no_val==TRUE) THEN
+      SEL_RES=SELECT(#MAKRO,40,TRUE,,,,,FALSE)
+      POT_no_val=FALSE
+      POT_Msg(1,#NotifyMsg)
+    ENDIF
+    ;ENDFOLD
+    ;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------------
+;
+  CASE #USR_ADV
+    ;FOLD Advance
+    ;
+    ;
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------------
+;
+  CASE #USR_TRIG
+    ;FOLD Trig
+    ;
+    ;
+    ;ENDFOLD (Trig)
+;
+;-----------------------------------------------------------
+;
+  CASE #USR_MAIN
+    ;FOLD Main
+    ;
+    ;
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------------
+;
+  CASE #USR_MAKRO
+    ;FOLD Makro
+    ;
+    ;BZ1 Schweissen
+    IF (PAR1==1) THEN
+      PROCPAR[1]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(2,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;BZ1 Bolzen Nachladen
+    IF (PAR1==2) THEN
+      PROCPAR[2]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(3,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;BZ1 Schweissen
+    IF (PAR1==3) THEN
+      PROCPAR[3]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(4,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;BZ1 Bolzen Nachladen
+    IF (PAR1==4) THEN
+      PROCPAR[4]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(5,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;MS Zuenden
+    IF (PAR1==5) THEN
+      PROCPAR[10]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(6,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;KL Ende/Auswertung
+    IF (PAR1==6) THEN
+      PROCPAR[15]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(7,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;KL Anwahl Spuelen
+    IF (PAR1==7) THEN
+      PROCPAR[16]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(8,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;KL Prozesskontrolle
+    IF (PAR1==8) THEN
+      PROCPAR[17]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(9,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;KL Start/Bereit
+    IF (PAR1==9) THEN
+      PROCPAR[18]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(10,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;NZ hydr./elektr. Fuegen
+    IF (PAR1==10) THEN
+      PROCPAR[20]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(11,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;NZ hydr./elektr. Nachladen
+    IF (PAR1==11) THEN
+      PROCPAR[21]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(12,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;NZ Servo Fuegen
+    IF (PAR1==12) THEN
+      PROCPAR[22]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(13,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;NZ Servo Nachladen
+    IF (PAR1==13) THEN
+      PROCPAR[23]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(14,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;NZ Befuellstation Nachladen
+    IF (PAR1==14) THEN
+      PROCPAR[24]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(15,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;CZ pneum. Fuegen
+    IF (PAR1==15) THEN
+      PROCPAR[25]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(16,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;CZ Servo Fuegen
+    IF (PAR1==16) THEN
+      PROCPAR[26]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(17,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;CZ Flat Fuegen
+    IF (PAR1==17) THEN
+      PROCPAR[27]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(18,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;MB Mutterstanzen Fuegen
+    IF (PAR1==18) THEN
+      PROCPAR[30]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(19,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;MB Mutterstanzen Ende/Fertigmeldung
+    IF (PAR1==19) THEN
+      PROCPAR[31]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(20,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;MB Buckeln mit SPS
+    IF (PAR1==20) THEN
+      PROCPAR[45]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(21,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;SR Schrauben
+    IF (PAR1==21) THEN
+      PROCPAR[35]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(22,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;PR mit pneum. Zaehlwerk
+    IF (PAR1==22) THEN
+      PROCPAR[40]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(23,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;PR ohne pneum. Zaehlwerk
+    IF (PAR1==23) THEN
+      PROCPAR[41]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(24,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;PR Arpla
+    IF (PAR1==24) THEN
+      PROCPAR[42]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(25,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+   ;FD Schrauben
+    IF (PAR1==25) THEN
+      PROCPAR[50]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(26,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;FD Schraube Nachladen
+    IF (PAR1==26) THEN
+      PROCPAR[51]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(27,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;Sensor Messen
+    IF (PAR1==27) THEN
+      PROCPAR[55]=(PAR2*(-1))
+      IF (POT_no_val==FALSE) THEN
+        POT_Msg(28,#NotifyMsg)
+      ENDIF
+    ENDIF
+    ;
+    ;ENDFOLD (Makro)
+;
+;-----------------------------------------------------------
+  DEFAULT
+;  
+  ENDSWITCH
+END
+;
+;ENDFOLD (POT Interface)
+;
+;-----------------------------------------------------------
+;FOLD POT Meldungen
+;
+DEF POT_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr
+DECL POTR_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "POT_R_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF ((n_POTR_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+      USER_MSG.MSG_TXT[]="POT Prozesszeiten wurden gesetzt"
+    CASE 2
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Bolzen schweissen 1 gesetzt"
+    CASE 3
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Bolzen 1 nachladen gesetzt"
+    CASE 4
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Bolzen schweissen 2 gesetzt"
+    CASE 5
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Bolzen 2 nachladen gesetzt"
+    CASE 6
+      USER_MSG.MSG_TXT[]="POT Prozesszeit MIG/MAG gesetzt"
+    CASE 7
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Kleben Ende gesetzt"
+    CASE 8
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Kleben Spuelen gesetzt"
+    CASE 9
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Kleben Prozesskontrolle gesetzt"
+    CASE 10
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Kleben Bereit"
+    CASE 11
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Nieten hydr./elektr. gesetzt"
+    CASE 12
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Nieten hydr./elektr. nachladen gesetzt"
+    CASE 13
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Nieten Servo gesetzt"
+    CASE 14
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Nieten Servo nachladen gesetzt"
+    CASE 15
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Nieten Befuellstation nachladen gesetzt"
+    CASE 16
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Clinchen pneumo. gesetzt"
+    CASE 17
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Clinchen Servo gesetzt"
+    CASE 18
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Clinchen Flat gesetzt"
+    CASE 19
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Mutternstanzen gesetzt"
+    CASE 20
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Mutternstanzen FM geetzt"
+    CASE 21
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Mutternbuckeln gesetzt"
+    CASE 22
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Schrauben gesetzt"
+    CASE 23
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Praegen mit pneum. Zaehlwerk gesetzt"
+    CASE 24
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Praegen ohne pneum. Zaehlwerk gesetzt"
+    CASE 25
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Praegen Arplas gesetzt"
+    CASE 26
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Flowdrill gesetzt"
+    CASE 27
+      USER_MSG.MSG_TXT[]="POT Prozesszeit FlowDrill nachladen gesetzt"
+    CASE 28
+      USER_MSG.MSG_TXT[]="POT Prozesszeit Sensor Messen gesetzt"
+    CASE 29
+      USER_MSG.MSG_TXT[]=" "     
+    DEFAULT
+      USER_MSG.MSG_TXT[]="unbekannte Meldung"   
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_POTR_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_POTR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      While ( Exists_KrlMsg(n_POTR_Handle[msg_nr]) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      Endwhile
+    CASE #NotifyMsg
+      n_POTR_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_POTR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (POT Meldungen)
+

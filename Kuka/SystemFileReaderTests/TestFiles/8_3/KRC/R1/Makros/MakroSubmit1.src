@@ -1,0 +1,14 @@
+&ACCESS RV
+&REL 10
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\makrosubmitvorgabe.src
+&PARAM EDITMASK = MakroSubmit
+&PARAM TPVW_VERSION=8.3.18
+DEF MAKROSUBMIT1()
+	;FOLD Makro Anfang ;%{PSE}%MKUKATPVW
+      ; interface to VW-standard routines
+      EXT VW (VW_COMMAND:IN, BOOL: IN, REAL:IN, REAL:IN, REAL:IN, REAL:IN, BOOL :IN, E6POS :IN )
+      RESET_MSG_DELAY (1,(CURR_SUB==1))
+	;ENDFOLD	  
+   ; FOLD ;%{H}
+END
+; ENDFOLD

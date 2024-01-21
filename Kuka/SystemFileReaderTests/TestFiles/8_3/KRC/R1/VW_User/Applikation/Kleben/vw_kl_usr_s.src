@@ -1,0 +1,721 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Kleben
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEF vw_kl_usr_s( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Kleben                              *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.20 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD INIT Kleben 
+GLOBAL DEF KL_INIT( )
+INT i
+;
+;FOLD Version Techpaket
+Tech_Kleben.Name[]="KS24.01.002_150615"
+;ENDFOLD
+;
+;FOLD Vorbesetzung Meldungsausgabe
+FOR i = 1 TO 100
+  n_KLS_Handle[i]=-1
+  n_KLR_Handle[i]=-1
+ENDFOR
+;ENDFOLD
+;
+;FOLD Kleben
+KL1_2K_STATE = 0
+KL2_2K_STATE = 0
+KL3_2K_STATE = 0
+;ENDFOLD Kleben
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD SAW Kleben
+GLOBAL DEF KL_SAW( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD RESET Kleben
+GLOBAL DEF KL_RESET( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD CANCEL Kleben
+GLOBAL DEF KL_CANCEL( )
+INT i
+;
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Spueleimer 1
+GLOBAL DEF KL_Sp1_LOOP( )
+;
+IF ($OUT[DEF_ZANGE[28].A_AUF]==TRUE) THEN
+  IF $IN[I_Sp_Ruh_KL1] THEN
+    $OUT[O_FRGHal_KL1]=TRUE
+    $OUT[O_V_KL1]=TRUE
+    $OUT[O_FRGBew_KL1]=FALSE
+  ELSE  
+    $OUT[O_FRGHal_KL1]=FALSE
+    $OUT[O_V_KL1]=TRUE
+    $OUT[O_FRGBew_KL1]=TRUE
+  ENDIF  
+ENDIF 
+IF ($OUT[DEF_ZANGE[28].A_ZU]==TRUE) THEN
+  IF $IN[I_Sp_Arb_KL1] THEN
+    $OUT[O_FRGHal_KL1]=TRUE
+    $OUT[O_V_KL1]=TRUE
+    $OUT[O_FRGBew_KL1]=FALSE
+  ELSE  
+    $OUT[O_FRGHal_KL1]=FALSE
+    $OUT[O_V_KL1]=TRUE
+    $OUT[O_FRGBew_KL1]=TRUE
+  ENDIF  
+ENDIF 
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Spueleimer 2
+GLOBAL DEF KL_Sp2_LOOP( )
+;
+IF ($OUT[DEF_ZANGE[27].A_AUF]==TRUE) THEN
+  IF $IN[I_Sp_Ruh_KL2] THEN
+    $OUT[O_FRGHal_KL2]=TRUE
+    $OUT[O_V_KL2]=TRUE
+    $OUT[O_FRGBew_KL2]=FALSE
+  ELSE  
+    $OUT[O_FRGHal_KL2]=FALSE
+    $OUT[O_V_KL2]=TRUE
+    $OUT[O_FRGBew_KL2]=TRUE
+  ENDIF  
+ENDIF 
+IF ($OUT[DEF_ZANGE[27].A_ZU]==TRUE) THEN
+  IF $IN[I_Sp_Arb_KL2] THEN
+    $OUT[O_FRGHal_KL2]=TRUE
+    $OUT[O_V_KL2]=TRUE
+    $OUT[O_FRGBew_KL2]=FALSE
+  ELSE  
+    $OUT[O_FRGHal_KL2]=FALSE
+    $OUT[O_V_KL2]=TRUE
+    $OUT[O_FRGBew_KL2]=TRUE
+  ENDIF  
+ENDIF  
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Spueleimer 3
+GLOBAL DEF KL_Sp3_LOOP( )
+;
+IF ($OUT[DEF_ZANGE[26].A_AUF]==TRUE) THEN
+  IF $IN[I_Sp_Ruh_KL3] THEN
+    $OUT[O_FRGHal_KL3]=TRUE
+    $OUT[O_V_KL3]=TRUE
+    $OUT[O_FRGBew_KL3]=FALSE
+  ELSE  
+    $OUT[O_FRGHal_KL3]=FALSE
+    $OUT[O_V_KL3]=TRUE
+    $OUT[O_FRGBew_KL3]=TRUE
+  ENDIF  
+ENDIF 
+IF ($OUT[DEF_ZANGE[26].A_ZU]==TRUE) THEN
+  IF $IN[I_Sp_Arb_KL3] THEN
+    $OUT[O_FRGHal_KL3]=TRUE
+    $OUT[O_V_KL3]=TRUE
+    $OUT[O_FRGBew_KL3]=FALSE
+  ELSE  
+    $OUT[O_FRGHal_KL3]=FALSE
+    $OUT[O_V_KL3]=TRUE
+    $OUT[O_FRGBew_KL3]=TRUE
+  ENDIF  
+ENDIF             
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Reset Vorsteuerluft Spueleimer
+GLOBAL DEF KL_SpRe_LOOP( )
+;
+$OUT[O_V_KL1]=FALSE
+$OUT[O_FRGBew_KL1]=FALSE
+$OUT[O_V_KL2]=FALSE
+$OUT[O_FRGBew_KL2]=FALSE
+$OUT[O_V_KL3]=FALSE
+$OUT[O_FRGBew_KL3]=FALSE
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Kleben 1 
+GLOBAL DEF KL1_LOOP( )
+;
+;Vorwahl Kleben 1 stationaer
+IF $FLAG[F_m_KL1_stat] THEN
+  KL1_stat=TRUE
+ELSE
+  KL1_stat=FALSE
+ENDIF
+;
+;Mit Spuelen in Grundstellung KL1
+IF $FLAG[F_m_KL1_SPUE] THEN
+  MIT_KL1_SPUELEN=TRUE
+ELSE
+  MIT_KL1_SPUELEN=FALSE
+ENDIF
+;
+;Ohne Nachtriggern der Klebesteuerung 1
+IF $FLAG[F_o_KL1_Trig] THEN
+  KL1_o_Nachtrig=TRUE
+ELSE
+  KL1_o_Nachtrig=FALSE
+ENDIF
+;
+;Vorwahl ohne Prozess
+$OUT[O_KL1_o_Proz]=$IN[I_KL1_o_Proz] OR $FLAG[F_o_Prozess]
+;
+;Systemkomponenten EIN
+$OUT[O_KL1_SYS_EIN]=TRUE
+;
+;Vorwahl Energiesparmodus
+;$OUT[O_KL1_E_Mode]=($Brake_Sig==0) AND $IN[I_R_E_Mode]
+;
+;Vorwahl BT zeigen
+$OUT[O_KL1_BT_zei]=$IN[I_KL1_BT_zei] AND $OUT[O_KL1_P_akt]
+;
+;KL1 FRG Spuelen // Spuelen in Grundstellung
+IF NOT $OUT[O_KL1_P_akt] THEN
+  IF ($OUT[O_R_PFO] AND NOT KL1_stat AND $FLAG[F_KL1_FRG_PF0]) OR (KL1_stat AND $IN[I_Sp_Ruh_KL1] AND NOT $IN[I_Sp_Arb_KL1]) THEN
+    $OUT[O_KL1_FRG_SP]=TRUE
+  ELSE
+    $OUT[O_KL1_FRG_SP]=FALSE
+  ENDIF
+  IF MIT_KL1_SPUELEN OR $IN[I_KL1_anw_Sp] THEN
+    IF ($EXT==TRUE) AND $COULD_START_MOTION AND $OUT[O_KL1_FRG_SP] THEN
+      IF $IN[I_KL1_ANF_SP] OR $IN[I_KL1_anw_Sp] THEN
+        $OUT[O_KL1_SP_EIN]=TRUE
+        $OUT[O_KL1_Sp_akt]=TRUE
+        KL1_SPUELEN_AKTIV=TRUE
+      ENDIF
+      IF $IN[I_KL1_SP_FER] THEN
+        $OUT[O_KL1_SP_EIN]=FALSE
+        $OUT[O_KL1_Sp_akt]=FALSE
+        KL1_SPUELEN_AKTIV=FALSE
+      ENDIF
+    ENDIF
+  ENDIF
+ENDIF
+IF MIT_KL1_SPUELEN AND ((NOT $OUT[O_R_PFO] AND NOT KL1_stat) OR (KL1_stat AND NOT $IN[I_Sp_Ruh_KL1]) OR ($EXT==FALSE)) AND KL1_SPUELEN_AKTIV THEN
+  $OUT[O_KL1_SP_EIN]=FALSE
+  $OUT[O_KL1_FRG_SP]=FALSE
+  $OUT[O_KL1_Sp_akt]=FALSE
+  KL1_SPUELEN_AKTIV=FALSE
+ENDIF    
+;
+; 2K Kleben Funktionen: Freispuelen 1K Material, MW Anforderung, SG Freigabe
+IF $IN[I_KL1_2K_SYS] THEN
+  ;1K im Mischer an SPS
+  $OUT[O_KL1_1K_Mix]=$IN[I_KL1_1K_Mix]
+  ;2K im Mischer an SPS
+  $OUT[O_KL1_2K_Mix]=$IN[I_KL1_2K_Mix]
+  ;Kontrollmessung fertig
+  $OUT[O_KL1_FK_Kon]=$IN[I_KL1_FK_Kon]
+
+  ;Mischerwechsel
+  SWITCH KL1_2K_STATE
+
+    CASE 0
+      IF ( $IN[I_KL1_Anw_MW] AND NOT $IN[O_KL1_P_akt] ) THEN  ; manuelle Anwahl Mischerwechsel
+        $OUT[O_KL1_MWechs] = TRUE   ; A[1557] = EIN
+        $OUT[O_KL1_Mischw] = TRUE   ; A[174]  = EIN
+        $FLAG[F_KL1_MWechs] = TRUE  ; F[341]  = EIN
+        KL1_2K_STATE = 20
+      ENDIF
+      
+    CASE 20
+      IF (($IN[I_KL1_Anf_MW] == TRUE) AND ($IN[I_KL1_Anw_MW] == TRUE)) THEN
+        KL1_2K_STATE = 25           ; Warte E[174] AND E[1557]
+      ELSE
+        IF ( NOT $IN[I_KL1_Anw_MW] ) THEN  ; E[174] == FALSE -> Abwahl durch Werker
+          $OUT[O_KL1_MWechs] = FALSE  ; A[1557] = AUS
+          $OUT[O_KL1_Mischw] = TRUE   ; A[174]  = EIN
+          $FLAG[F_KL1_MWechs] = FALSE ; F[341]  = AUS
+          KL1_2K_STATE = 0
+        ENDIF
+      ENDIF
+      
+    CASE 25
+      IF ($IN[I_R_SK_gesch] == FALSE) THEN  ; Schutzkreis offen (betrezen wg Mischerwechsel)
+        KL1_2K_STATE = 30
+      ELSE
+        IF ( NOT $IN[I_KL1_Anw_MW] ) THEN  ; E[174] == FALSE -> Abwahl durch Werker
+          $OUT[O_KL1_MWechs] = FALSE  ; A[1557] = AUS
+          $OUT[O_KL1_Mischw] = TRUE   ; A[174]  = EIN
+          $FLAG[F_KL1_MWechs] = FALSE ; F[341]  = AUS
+          KL1_2K_STATE = 0
+        ELSE
+          IF ($IN[I_KL1_Anf_MW] == FALSE) THEN
+            ;SyncMoveMessage(100,#QuitMsg)
+          ENDIF
+        ENDIF
+      ENDIF
+    
+    CASE 30
+      IF (( NOT $IN[I_KL1_Anf_MW]) AND ($IN[I_KL1_Anw_MW] == TRUE )) THEN ; Warte !E[1557] AND E[174]
+        $FLAG[F_KL1_MWechs] = FALSE  ; A[1557] = AUS
+        $OUT[O_KL1_Mischw] = FALSE   ; A[174]  = AUS
+        KL1_2K_STATE = 40
+      ELSE
+        IF ( NOT $IN[I_KL1_Anw_MW] ) THEN  ; E[174] == FALSE -> Abwahl durch Werker
+          $OUT[O_KL1_MWechs] = FALSE  ; A[1557] = AUS
+          $OUT[O_KL1_Mischw] = FALSE  ; A[174]  = AUS
+          $FLAG[F_KL1_MWechs] = FALSE ; F[341]  = AUS
+          KL1_2K_STATE = 0
+        ENDIF
+      ENDIF
+      
+    CASE 40
+      IF ( NOT $IN[I_KL1_Anw_MW] ) THEN  ; Warte !E[174]
+        $OUT[O_KL1_MWechs] = FALSE  ; A[1557] = AUS
+        $OUT[O_KL1_Mischw] = FALSE  ; A[174]  = AUS
+        $FLAG[F_KL1_MWechs] = FALSE ; F[341]  = AUS
+        KL1_2K_STATE = 0
+      ENDIF
+  
+  ENDSWITCH
+ENDIF
+;
+;Ausgabe Statusmeldungen an BMS
+;
+;Energiesparmodus ist Ein
+$OUT[O_KL1_E_Mod]=$OUT[O_R_Auto] AND $IN[I_KL1_E_Mode]
+;Vorwarnung liegt an
+$OUT[O_KL1_VW_akt]=$OUT[O_R_Auto] AND $IN[I_KL1_VW_akt]
+;Vorwarnung Fass
+$OUT[O_KL1_VW_Fas]=$OUT[O_R_Auto] AND $IN[I_KL1_VW_Fas]
+;Prozesstemperatur nicht erreicht
+$OUT[O_KL1_P_Temp]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $OUT[O_R_PFO] AND NOT $IN[I_KL1_P_Temp] AND NOT $IN[I_FT_o_BT] AND NOT KL1_o_Nachtrig
+;Stoerung Heizung / Pumpe / Dosiereinheit
+$OUT[O_KL1_St_HPD]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_KL1_St_HPD] AND NOT KL1_o_Nachtrig
+;Fehler Kleberauftrag
+$OUT[O_KL1_Feh_KL]=$OUT[O_R_Auto] AND NOT $IN[I_KL1_Feh_KL]
+;1K im Mischer
+$OUT[O_KL1_1K_Mix]=$OUT[O_R_Auto] AND $IN[I_KL1_1K_Mix]
+;2K im Mischer
+$OUT[O_KL1_2K_Mix]=$OUT[O_R_Auto] AND $IN[I_KL1_2K_Mix]
+;Kontrollmessung fertig
+$OUT[O_KL1_FK_Kon]=$OUT[O_R_Auto] AND $IN[I_KL1_FK_Kon]
+;Waage leeren
+;$OUT[O_KL1_Waa_le]=$OUT[O_R_Auto] AND $IN[I_KL1_Waa_le]
+;Betriebsbereit fehlt
+$OUT[O_KL1_Betr_f]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_KL1_Betr_f] AND NOT $IN[I_FT_o_BT] AND $timer_flag[TimerNr_Ein]
+;Sammelstoerung
+$OUT[O_KL1_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $IN[I_KL1_Sammel] OR $FLAG[F_KL1_Sammel]) AND $timer_flag[TimerNr_Ein]
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Kleben 2
+GLOBAL DEF KL2_LOOP( )
+;
+;Vorwahl Kleben 2 stationaer
+IF $FLAG[F_m_KL2_stat] THEN
+  KL2_stat=TRUE
+ELSE
+  KL2_stat=FALSE
+ENDIF
+;
+;Mit Spuelen in Grundstellung KL2
+IF $FLAG[F_m_KL2_SPUE] THEN
+  MIT_KL2_SPUELEN=TRUE
+ELSE
+  MIT_KL2_SPUELEN=FALSE
+ENDIF
+;
+;Ohne Nachtriggern der Klebesteuerung 2
+IF $FLAG[F_o_KL2_Trig] THEN
+  KL2_o_Nachtrig=TRUE
+ELSE
+  KL2_o_Nachtrig=FALSE
+ENDIF
+;
+;Vorwahl ohne Prozess
+$OUT[O_KL2_o_Proz]=$IN[I_KL2_o_Proz] OR $FLAG[F_o_Prozess]
+;
+;Systemkomponenten EIN
+$OUT[O_KL2_SYS_EIN]=TRUE
+;
+;Vorwahl Energiesparmodus
+;$OUT[O_KL2_E_Mode]=($Brake_Sig==0) AND $IN[I_R_E_Mode]
+;
+;Vorwahl BT zeigen
+$OUT[O_KL2_BT_zei]=$IN[I_KL2_BT_zei] AND $OUT[O_KL2_P_akt]
+;
+;KL2 FRG Spuelen // Spuelen in Grundstellung
+IF NOT $OUT[O_KL2_P_akt] THEN
+  IF ($OUT[O_R_PFO] AND NOT KL2_stat AND $FLAG[F_KL2_FRG_PF0]) OR (KL2_stat AND $IN[I_Sp_Ruh_KL2] AND NOT $IN[I_Sp_Arb_KL2]) THEN
+    $OUT[O_KL2_FRG_SP]=TRUE
+  ELSE
+    $OUT[O_KL2_FRG_SP]=FALSE
+  ENDIF
+  IF MIT_KL2_SPUELEN OR $IN[I_KL2_anw_Sp] THEN
+    IF ($EXT==TRUE) AND $COULD_START_MOTION AND $OUT[O_KL2_FRG_SP] THEN
+      IF $IN[I_KL2_ANF_SP] OR $IN[I_KL2_anw_Sp] THEN
+        $OUT[O_KL2_SP_EIN]=TRUE
+        $OUT[O_KL2_Sp_akt]=TRUE
+        KL2_SPUELEN_AKTIV=TRUE
+      ENDIF
+      IF $IN[I_KL2_SP_FER] THEN
+        $OUT[O_KL2_SP_EIN]=FALSE
+        $OUT[O_KL2_Sp_akt]=FALSE
+        KL2_SPUELEN_AKTIV=FALSE
+      ENDIF
+    ENDIF
+  ENDIF
+ENDIF
+IF MIT_KL2_SPUELEN AND ((NOT $OUT[O_R_PFO] AND NOT KL2_stat) OR (KL2_stat AND NOT $IN[I_Sp_Ruh_KL2]) OR ($EXT==FALSE)) AND KL2_SPUELEN_AKTIV THEN
+  $OUT[O_KL2_SP_EIN]=FALSE
+  $OUT[O_KL2_FRG_SP]=FALSE
+  $OUT[O_KL2_Sp_akt]=FALSE
+  KL2_SPUELEN_AKTIV=FALSE
+ENDIF
+;
+; 2K Kleben Freispuelen mit 1K Material MW Anforderung
+IF $IN[I_KL2_2K_SYS] THEN
+  ;1K im Mischer an SPS
+  $OUT[O_KL2_1K_Mix]=$IN[I_KL2_1K_Mix]
+  ;2K im Mischer an SPS
+  $OUT[O_KL2_2K_Mix]=$IN[I_KL2_2K_Mix]
+  ;Kontrollmessung fertig
+  $OUT[O_KL2_FK_Kon]=$IN[I_KL2_FK_Kon]
+
+  ;Mischerwechsel
+  SWITCH KL2_2K_STATE
+    
+    CASE 0
+      IF ( $IN[I_KL2_Anw_MW]  AND NOT $IN[O_KL2_P_akt] ) THEN  ; manuelle Anwahl Mischerwechsel
+        $OUT[O_KL2_MWechs] = TRUE   ; A[1621] = EIN
+        $OUT[O_KL2_Mischw] = TRUE   ; A[190]  = EIN
+        $FLAG[F_KL2_MWechs] = TRUE  ; F[362]  = EIN
+        KL2_2K_STATE = 20
+      ENDIF
+      
+    CASE 20
+      IF (($IN[I_KL2_Anf_MW] == TRUE) AND ($IN[I_KL2_Anw_MW] == TRUE)) THEN
+        KL2_2K_STATE = 25           ; Warte E[190] AND E[1621]
+      ELSE
+        IF ( NOT $IN[I_KL2_Anw_MW] ) THEN  ; E[190] == FALSE -> Abwahl durch Werker
+          $OUT[O_KL2_MWechs] = FALSE  ; A[1621] = AUS
+          $OUT[O_KL2_Mischw] = TRUE   ; A[190]  = EIN
+          $FLAG[F_KL2_MWechs] = FALSE ; F[362]  = AUS
+          KL2_2K_STATE = 0
+        ENDIF
+      ENDIF
+      
+    CASE 25
+      IF ($IN[I_R_SK_gesch] == FALSE) THEN  ; Schutzkreis offen (betrezen wg Mischerwechsel)
+        KL2_2K_STATE = 30
+      ELSE
+        IF ( NOT $IN[I_KL2_Anw_MW] ) THEN  ; E[174] == FALSE -> Abwahl durch Werker
+          $OUT[O_KL2_MWechs] = FALSE  ; A[1621] = AUS
+          $OUT[O_KL2_Mischw] = TRUE   ; A[190]  = EIN
+          $FLAG[F_KL2_MWechs] = FALSE ; F[362]  = AUS
+          KL2_2K_STATE = 0
+        ELSE
+          IF ($IN[I_KL2_Anf_MW] == FALSE) THEN
+            ;SyncMoveMessage(101,#QuitMsg)
+          ENDIF
+        ENDIF
+      ENDIF
+    
+    CASE 30
+      IF ((NOT $IN[I_KL2_Anf_MW]) AND ($IN[I_KL2_Anw_MW] == TRUE)) THEN ; Warte !E[1621] AND E[190]
+        $FLAG[F_KL2_MWechs] = FALSE  ; A[1621] = AUS
+        $OUT[O_KL2_Mischw] = FALSE   ; A[190]  = AUS
+        KL2_2K_STATE = 40
+      ELSE
+        IF ( NOT $IN[I_KL2_Anw_MW] ) THEN  ; E[190] == FALSE -> Abwahl durch Werker
+          $OUT[O_KL2_MWechs] = FALSE  ; A[1621] = AUS
+          $OUT[O_KL2_Mischw] = FALSE  ; A[190]  = AUS
+          $FLAG[F_KL2_MWechs] = FALSE ; F[362]  = AUS
+          KL2_2K_STATE = 0
+        ENDIF
+      ENDIF
+      
+    CASE 40
+      IF (NOT $IN[I_KL2_Anw_MW]) THEN  ; Warte !E[190]
+        $OUT[O_KL2_MWechs] = FALSE  ; A[1621] = AUS
+        $OUT[O_KL2_Mischw] = FALSE  ; A[190]  = AUS
+        $FLAG[F_KL2_MWechs] = FALSE ; F[362]  = AUS
+        KL2_2K_STATE = 0
+      ENDIF
+      
+  ENDSWITCH
+ENDIF
+;
+;Ausgabe Statusmeldungen an BMS
+;
+;Energiesparmodus ist Ein
+$OUT[O_KL2_E_Mod]=$OUT[O_R_Auto] AND $IN[I_KL2_E_Mode]
+;Vorwarnung liegt an
+$OUT[O_KL2_VW_akt]=$OUT[O_R_Auto] AND $IN[I_KL2_VW_akt]
+;Vorwarnung Fass
+$OUT[O_KL2_VW_Fas]=$OUT[O_R_Auto] AND $IN[I_KL2_VW_Fas]
+;Prozesstemperatur nicht erreicht
+$OUT[O_KL2_P_Temp]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $OUT[O_R_PFO] AND NOT $IN[I_KL2_P_Temp] AND NOT $IN[I_FT_o_BT] AND NOT KL2_o_Nachtrig
+;Stoerung Heizung / Pumpe / Dosiereinheit
+$OUT[O_KL2_St_HPD]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_KL2_St_HPD] AND NOT KL2_o_Nachtrig
+;Fehler Kleberauftrag
+$OUT[O_KL2_Feh_KL]=$OUT[O_R_Auto] AND NOT $IN[I_KL2_Feh_KL]
+;1K im Mischer
+$OUT[O_KL2_1K_Mix]=$OUT[O_R_Auto] AND $IN[I_KL2_1K_Mix]
+;2K im Mischer
+$OUT[O_KL2_2K_Mix]=$OUT[O_R_Auto] AND $IN[I_KL2_2K_Mix]
+;Kontrollmessung fertig
+$OUT[O_KL2_FK_Kon]=$OUT[O_R_Auto] AND $IN[I_KL2_FK_Kon]
+;Waage leeren
+;$OUT[O_KL2_Waa_le]=$OUT[O_R_Auto] AND $IN[I_KL2_Waa_le]
+;Betriebsbereit fehlt
+$OUT[O_KL2_Betr_f]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_KL2_Betr_f] AND NOT $IN[I_FT_o_BT] AND $timer_flag[TimerNr_Ein]
+;Sammelstoerung
+$OUT[O_KL2_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $IN[I_KL2_Sammel] OR $FLAG[F_KL2_Sammel]) AND $timer_flag[TimerNr_Ein]
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD LOOP Kleben 3
+GLOBAL DEF KL3_LOOP( )
+;
+;Vorwahl Kleben 3 stationaer
+IF $FLAG[F_m_KL3_stat] THEN
+  KL3_stat=TRUE
+ELSE
+  KL3_stat=FALSE
+ENDIF
+;
+;Mit Spuelen in Grundstellung KL3
+IF $FLAG[F_m_KL3_SPUE] THEN
+  MIT_KL3_SPUELEN=TRUE
+ELSE
+  MIT_KL3_SPUELEN=FALSE
+ENDIF
+;
+;Ohne Nachtriggern der Klebesteuerung 3
+IF $FLAG[F_o_KL3_Trig] THEN
+  KL3_o_Nachtrig=TRUE
+ELSE
+  KL3_o_Nachtrig=FALSE
+ENDIF
+;
+;Vorwahl ohne Prozess
+$OUT[O_KL3_o_Proz]=$IN[I_KL3_o_Proz] OR $FLAG[F_o_Prozess]
+;
+;Systemkomponenten EIN
+$OUT[O_KL3_SYS_EIN]=TRUE
+;
+;Vorwahl Energiesparmodus
+;$OUT[O_KL3_E_Mode]=($Brake_Sig==0) AND $IN[I_R_E_Mode]
+;
+;Vorwahl BT zeigen
+$OUT[O_KL3_BT_zei]=$IN[I_KL3_BT_zei] AND $OUT[O_KL3_P_akt]
+;
+;KL3 FRG Spuelen // Spuelen in Grundstellung
+IF NOT $OUT[O_KL3_P_akt] THEN
+  IF ($OUT[O_R_PFO] AND NOT KL3_stat AND $FLAG[F_KL3_FRG_PF0]) OR (KL3_stat AND $IN[I_Sp_Ruh_KL3] AND NOT $IN[I_Sp_Arb_KL3]) THEN
+    $OUT[O_KL3_FRG_SP]=TRUE
+  ELSE
+    $OUT[O_KL3_FRG_SP]=FALSE
+  ENDIF
+  IF MIT_KL3_SPUELEN OR $IN[I_KL3_anw_Sp] THEN
+    IF ($EXT==TRUE) AND $COULD_START_MOTION AND $OUT[O_KL3_FRG_SP] THEN
+      IF $IN[I_KL3_ANF_SP] OR $IN[I_KL3_anw_Sp] THEN
+        $OUT[O_KL3_SP_EIN]=TRUE
+        $OUT[O_KL3_Sp_akt]=TRUE
+        KL3_SPUELEN_AKTIV=TRUE
+      ENDIF
+      IF $IN[I_KL3_SP_FER] THEN
+        $OUT[O_KL3_SP_EIN]=FALSE
+        $OUT[O_KL3_Sp_akt]=FALSE
+        KL3_SPUELEN_AKTIV=FALSE
+      ENDIF
+    ENDIF
+  ENDIF
+ENDIF
+IF MIT_KL3_SPUELEN AND ((NOT $OUT[O_R_PFO] AND NOT KL3_stat) OR (KL3_stat AND NOT $IN[I_Sp_Ruh_KL3]) OR ($EXT==FALSE)) AND KL3_SPUELEN_AKTIV THEN
+  $OUT[O_KL3_SP_EIN]=FALSE
+  $OUT[O_KL3_FRG_SP]=FALSE
+  $OUT[O_KL3_Sp_akt]=FALSE
+  KL3_SPUELEN_AKTIV=FALSE
+ENDIF
+;
+; 2K Kleben Freispuelen mit 1K Material MW Anforderung
+IF $IN[I_KL3_2K_SYS] THEN
+  ;1K im Mischer an SPS
+  $OUT[O_KL3_1K_Mix]=$IN[I_KL3_1K_Mix]
+  ;2K im Mischer an SPS
+  $OUT[O_KL3_2K_Mix]=$IN[I_KL3_2K_Mix]
+  ;Kontrollmessung fertig
+  $OUT[O_KL3_FK_Kon]=$IN[I_KL3_FK_Kon]
+
+  ;Mischerwechsel
+  
+  SWITCH KL3_2K_STATE
+  
+    CASE 0
+      IF ( $IN[I_KL3_Anw_MW]  AND NOT $IN[O_KL3_P_akt] ) THEN  ; manuelle Anwahl Mischerwechsel
+        $OUT[O_KL3_MWechs] = TRUE   ; A[1685] = EIN
+        $OUT[O_KL3_Mischw] = TRUE   ; A[206]  = EIN
+        $FLAG[F_KL3_MWechs] = TRUE  ; F[383]  = EIN
+        KL3_2K_STATE = 20
+      ENDIF
+      
+    CASE 20
+      IF (($IN[I_KL3_Anf_MW] == TRUE ) AND ($IN[I_KL3_Anw_MW] == TRUE)) THEN
+        KL3_2K_STATE = 25           ; Warte E[206] AND E[1685]
+      ELSE
+        IF ( NOT $IN[I_KL3_Anw_MW] ) THEN  ; E[206] == FALSE -> Abwahl durch Werker
+          $OUT[O_KL3_MWechs] = FALSE  ; A[1685] = AUS
+          $OUT[O_KL3_Mischw] = TRUE   ; A[206]  = EIN
+          $FLAG[F_KL3_MWechs] = FALSE ; F[383]  = AUS
+          KL3_2K_STATE = 0
+        ENDIF
+      ENDIF
+      
+    CASE 25
+      IF ($IN[I_R_SK_gesch] == FALSE) THEN  ; Schutzkreis offen (betrezen wg Mischerwechsel)
+        KL3_2K_STATE = 30
+      ELSE
+        IF ( NOT $IN[I_KL3_Anw_MW] ) THEN  ; E[174] == FALSE -> Abwahl durch Werker
+          $OUT[O_KL3_MWechs] = FALSE  ; A[1685] = AUS
+          $OUT[O_KL3_Mischw] = TRUE   ; A[206]  = EIN
+          $FLAG[F_KL3_MWechs] = FALSE ; F[383]  = AUS
+          KL3_2K_STATE = 0
+        ELSE
+          IF ($IN[I_KL3_Anf_MW] == FALSE) THEN
+            ;SyncMoveMessage(102,#QuitMsg)
+          ENDIF
+        ENDIF
+      ENDIF
+    
+    CASE 30
+      IF ((NOT $IN[I_KL3_Anf_MW]) AND ($IN[I_KL3_Anw_MW] == TRUE)) THEN ; Warte !E[1685] AND E[206]
+        $FLAG[F_KL3_MWechs] = FALSE  ; A[1685] = AUS
+        $OUT[O_KL3_Mischw] = FALSE   ; A[206]  = AUS
+        KL3_2K_STATE = 40
+      ELSE
+        IF ( NOT $IN[I_KL3_Anw_MW] ) THEN  ; E[174] == FALSE -> Abwahl durch Werker
+          $OUT[O_KL3_MWechs] = FALSE  ; A[1685] = AUS
+          $OUT[O_KL3_Mischw] = FALSE  ; A[206]  = AUS
+          $FLAG[F_KL3_MWechs] = FALSE ; F[383]  = AUS
+          KL3_2K_STATE = 0
+        ENDIF
+      ENDIF
+      
+    CASE 40
+      IF ( NOT $IN[I_KL3_Anw_MW] ) THEN  ; Warte !E[206]
+        $OUT[O_KL3_MWechs] = FALSE  ; A[1685] = AUS
+        $OUT[O_KL3_Mischw] = FALSE  ; A[206]  = AUS
+        $FLAG[F_KL3_MWechs] = FALSE ; F[383]  = AUS
+        KL3_2K_STATE = 0
+      ENDIF
+  
+  ENDSWITCH
+ENDIF
+;Ausgabe Statusmeldungen an BMS
+;
+;Energiesparmodus ist Ein
+$OUT[O_KL3_E_Mod]=$OUT[O_R_Auto] AND $IN[I_KL3_E_Mode]
+;Vorwarnung liegt an
+$OUT[O_KL3_VW_akt]=$OUT[O_R_Auto] AND $IN[I_KL3_VW_akt]
+;Vorwarnung Fass
+$OUT[O_KL3_VW_Fas]=$OUT[O_R_Auto] AND $IN[I_KL3_VW_Fas]
+;Prozesstemperatur nicht erreicht
+$OUT[O_KL3_P_Temp]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $OUT[O_R_PFO] AND NOT $IN[I_KL3_P_Temp] AND NOT $IN[I_FT_o_BT] AND NOT KL3_o_Nachtrig
+;Stoerung Heizung / Pumpe / Dosiereinheit
+$OUT[O_KL3_St_HPD]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_KL3_St_HPD] AND NOT KL3_o_Nachtrig
+;Fehler Kleberauftrag
+$OUT[O_KL3_Feh_KL]=$OUT[O_R_Auto] AND NOT $IN[I_KL3_Feh_KL]
+;1K im Mischer
+$OUT[O_KL3_1K_Mix]=$OUT[O_R_Auto] AND $IN[I_KL3_1K_Mix]
+;2K im Mischer
+$OUT[O_KL3_2K_Mix]=$OUT[O_R_Auto] AND $IN[I_KL3_2K_Mix]
+;Kontrollmessung fertig
+$OUT[O_KL3_FK_Kon]=$OUT[O_R_Auto] AND $IN[I_KL3_FK_Kon]
+;Waage leeren
+;$OUT[O_KL3_Waa_le]=$OUT[O_R_Auto] AND $IN[I_KL3_Waa_le]
+;Betriebsbereit fehlt
+$OUT[O_KL3_Betr_f]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND NOT $IN[I_KL3_Betr_f] AND NOT $IN[I_FT_o_BT] AND $timer_flag[TimerNr_Ein]
+;Sammelstoerung
+$OUT[O_KL3_Sammel]=$OUT[O_R_Auto] AND $COULD_START_MOTION AND (NOT $IN[I_KL3_Sammel] OR $FLAG[F_KL3_Sammel]) AND $timer_flag[TimerNr_Ein]
+;
+END
+;ENDFOLD
+;
+;-----------------------------------------------------------
+;FOLD KL_Meldungen
+DEF Kleben_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr, Answer
+DECL KLS_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+;
+USER_MSG = { Modul[] "KlebenS_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop FALSE, Clear_P_Reset TRUE, Log_To_DB TRUE }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF ((n_KLS_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+     USER_MSG.MSG_TXT[]=" "
+    CASE 2
+     USER_MSG.MSG_TXT[]=" "
+    CASE 3
+     USER_MSG.MSG_TXT[]=" "
+    CASE 4
+     USER_MSG.MSG_TXT[]=" "
+    DEFAULT
+     USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_KLS_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_KLS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+    CASE #NotifyMsg
+      n_KLS_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_KLS_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF
+END
+;
+;ENDFOLD (KL Meldungen)

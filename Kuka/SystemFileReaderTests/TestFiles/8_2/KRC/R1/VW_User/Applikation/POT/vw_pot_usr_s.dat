@@ -1,0 +1,37 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/POT
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_pot_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Produktion ohne Bauteil             *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: Chr. Eisenknappl I/PG-C61                *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.09.03 CE                                       *
+;*                                                     *
+;*-----------------------------------------------------*
+; 
+;FOLD USER_Version
+STRUC _Tech_POT CHAR Name[20],INT Datum
+DECL _Tech_POT Tech_POT
+;ENDFOLD
+; 
+;FOLD POT
+; 
+GLOBAL BOOL POT_no_val=FALSE
+; 
+;FOLD Meldungsausgabe
+ENUM POTS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_POTS_Handle[100]
+GLOBAL INT n_POTR_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+; 
+;ENDFOLD
+
+ENDDAT

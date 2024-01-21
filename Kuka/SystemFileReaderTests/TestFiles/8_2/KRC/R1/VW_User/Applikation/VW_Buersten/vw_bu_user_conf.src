@@ -1,0 +1,16 @@
+&ACCESS RVO
+&REL 51
+&COMMENT KS 2.6
+&PARAM DISKPATH = VW_User/Applikation/VW_BU
+&PARAM TPVW_VERSION = 8.1.8
+&PARAM EDITMASK = vw_bu_user_conf
+DEF vw_bu_user_conf( )
+;
+;*---------------------------------------------*
+;* VW_Buersten                                 *
+;* Version 1.0     / VKRC 4                    *
+;* Bearbeitet am:                              *
+;* 05.06.2015 BM neu erstellt                  *
+;*---------------------------------------------*
+;
+END

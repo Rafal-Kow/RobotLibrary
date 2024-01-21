@@ -1,0 +1,51 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Vision/Perceptron
+&PARAM TPVW_VERSION = 8.3.8
+&REL 6
+DEFDAT  vw_prc_usr_s PUBLIC
+; 
+;*---------------------------------------------*
+;* Perceptron GmbH                             *
+;* Version 1.1.8  / VKRC 2 / VKRC 4            *
+;*                                             *
+;* Bearbeitet am:                              *
+;* 07.09.2010 HF / RH / MG                     *
+;*     Namens Anpassungen                      *
+;*                                             *
+;* 02.02.2011 HF / MM                          *
+;*     V1.1.7: Ausgaenge /Flags angepasst      *
+;*                                             *
+;* 15.07.2015 RB                               *
+;*     V1.1.8: Modell-Erweiterung              *
+;*             Modell-Flags angepasst          *
+;*             UP-Nr.-Zuweiung angepasst       *
+;*             Roboter Korrekturframe holen    *
+;*---------------------------------------------*
+; 
+GLOBAL INT Version_Tech_PRC=20150715
+; 
+;FOLD Variablen
+GLOBAL BOOL B_MIT_PRC=FALSE
+GLOBAL INT F_m_PRC=227
+; 
+ENUM PRC_MsgType StatMsg,QuitMsg,NotifyMsg,WaitMsg,DlgMsg
+DECL PRC_MsgType MLD_TYP=#NotifyMsg
+; 
+SIGNAL I_PRC_Life $IN[1968] ; 1.7 Life-Bit
+SIGNAL O_PRC_Life $OUT[1968] ; 1.7 Life-Bit
+; 
+BOOL B_PRC_UseFct=FALSE ; Life-Bit wird verwendet
+BOOL B_PRC_NoAns0=FALSE ; Keine Antwort auf Low Pegel
+BOOL B_PRC_NoAns1=FALSE ; Keine Antwort auf High Pegel
+BOOL B_PRC_MlgRet=TRUE ; Antwort auf Meldung
+; 
+INT N_PRC_MsgRet=0 ; 
+INT N_PRC_TmL=-1000 ; [ms]
+INT N_PRC_TmLNr=54 ; Lifebit
+INT N_PRC_TmM1=-1000 ; [ms]
+INT N_PRC_TmM1Nr=25 ; aktuelle Laufzeit
+INT N_PRC_TmM2=-1000 ; [ms]
+INT N_PRC_TmM2Nr=26 ; letzte Laufzeit
+INT N_PRC_MlgRet=1 ; Antwort auf Meldung
+;ENDFOLD (Variablen)
+ENDDAT

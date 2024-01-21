@@ -1,0 +1,160 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/Stosspunkten
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEF vw_stp_usr_r( )
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Stosspunkten                        *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.06.15 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+END
+;
+;FOLD Stosspunkten_Interface
+GLOBAL DEF STP_Interfac(USER_CMD:IN,CMD_SEL:IN,PAR1:IN,PAR2:IN,PAR3:IN,PAR4:IN,PAR5:IN,PAR6:IN)
+DECL VW_USER_CMD USER_CMD
+INT  CMD_SEL,PAR1,PAR2,PAR3,PAR4,PAR5,PAR6
+INT i
+;
+;-----------------------------------------------------------
+SWITCH USER_CMD
+;
+;-----------------------------------------------------------
+  CASE #USR_INIT
+    ;FOLD Init
+;
+;    
+    b_Stoss_akt=FALSE
+;
+    ;ENDFOLD (Init)
+;
+;-----------------------------------------------------------
+  CASE #USR_ADV
+    ;FOLD Advance
+;    
+    CONTINUE
+    TRIGGER  WHEN DISTANCE=0 DELAY=0.0 DO $Flag[F_FRG_VMove]=FALSE
+    TRIGGER  WHEN DISTANCE=1 DELAY=0.0 DO $Flag[F_FRG_VMove]=TRUE ;Freigabe VektorMove Schweissmakro
+    b_Stoss_akt=TRUE
+    CONTINUE
+    Prog_Nr_STP=PAR2
+    CONTINUE
+    Fzg_Typ_STP=PAR6
+    CONTINUE
+    SK1_P_Nr=PAR5
+    CONTINUE
+    SK1_Fzg_Typ=PAR6
+    CONTINUE
+    STP_PktNr_SPS=PAR5
+;
+    ;ENDFOLD (Advance)
+;
+;-----------------------------------------------------------
+  CASE #USR_TRIG
+    ;FOLD Trig
+;    
+    Stos_sollPos=(PAR1*10) ;Ausgabe Zangenposition
+    MyPos=ABS(Stos_istPos/10)
+    MyPos1=ABS(PAR1)
+    MyPos2=(MyPos - MyPos1)
+    IF (MyPos2 < -2.0) OR (MyPos2 > 2.0) THEN
+      Stos_sollPos=(PAR1*10) ;Ausgabe Zangenposition
+      ;FOLD WARTE BIS !E717;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS !E717,3:  WBOASG
+        $LOOP_MSG[]="!E717"
+        $LOOP_CONT=TRUE
+        WAIT FOR NOT $IN[717] OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+        $LOOP_MSG[]="                                                                                                                                "
+      ;ENDFOLD
+      ;FOLD WARTE BIS E717;%{E}%MKUKATPVW %CVW_SPS %VWBOASG %P 2:WARTE BIS E717,3:  WBOASG
+        $LOOP_MSG[]="E717"
+        $LOOP_CONT=TRUE
+        WAIT FOR $IN[717] OR (NOT $LOOP_CONT AND ($MODE_OP<>#EX))
+        $LOOP_MSG[]="                                                                                                                                "
+      ;ENDFOLD
+    ENDIF
+    MyPos=ABS(Stos_istPos/10)
+    MyPos1=ABS(PAR1)
+    MyPos2=(MyPos - MyPos1)
+    WHILE (MyPos2 < -5.0) OR (MyPos2 > 5.0)
+      Stossp_Msg(1,#QuitMsg) ;Falsche Position  
+    ENDWHILE
+;
+    ;ENDFOLD (Trig)
+;
+;-----------------------------------------------------------
+  CASE #USR_MAIN
+    ;FOLD Main
+;    
+    b_Stoss_akt=FALSE
+;
+    ;ENDFOLD (Main)
+;
+;-----------------------------------------------------------
+  DEFAULT
+;  
+  ENDSWITCH
+END
+;
+;ENDFOLD (Stosspunkten Interface)
+;
+;-----------------------------------------------------------
+;FOLD STP_Meldungen
+DEF Stossp_Msg(msg_nr :IN, MsgTyp :IN)
+INT msg_nr
+DECL STPR_MsgType MsgTyp
+DECL KrlMsg_T USER_MSG
+DECL KrlMsgPar_T Par[3]
+DECL KrlMsgOpt_T Opt
+DECL STATE_T Stat 
+;
+USER_MSG = { Modul[] "STP_R_Msg", Nr -1, Msg_txt[] " "}
+Opt = { VL_Stop True, Clear_P_Reset True, Log_To_DB False }
+Par[1] = { Par_type #Value, Par_txt[] " " }
+;
+IF ((n_STPR_Handle[msg_nr]<0) OR (MsgTyp==#NotifyMsg) OR (MsgTyp==#QuitMsg)) THEN
+  USER_MSG.Nr = msg_nr
+  SWITCH msg_nr
+    CASE 1
+      USER_MSG.MSG_TXT[]="Stosspunktzange hat falsche Position"
+    CASE 2
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 3
+      USER_MSG.MSG_TXT[]=" "
+    CASE 4
+	   USER_MSG.MSG_TXT[]=" "
+    CASE 19
+	   USER_MSG.MSG_TXT[]="Falsche Gruppen-Auswahl"  
+    CASE 20
+	   USER_MSG.MSG_TXT[]="P1: Falsche Auswahl"
+    CASE 21
+	   USER_MSG.MSG_TXT[]="P2: Falsche Auswahl" 
+    CASE 22
+	   USER_MSG.MSG_TXT[]="P3: Falsche Auswahl"    
+    DEFAULT
+      USER_MSG.MSG_TXT[]="unbekannte Meldung"
+  ENDSWITCH
+  SWITCH MsgTyp
+    CASE #StateMsg
+      n_STPR_Handle[msg_nr] = Set_KrlMsg (#State, USER_MSG, Par[], Opt) ;Ausgabe Statusmeldung
+    CASE #QuitMsg
+      n_STPR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+      While ( Exists_KrlMsg(n_STPR_Handle[msg_nr]) )  ;Warten bis der Anwender quittiert
+        Wait Sec 0.1
+      Endwhile
+    CASE #NotifyMsg
+      n_STPR_Handle[msg_nr] = Set_KrlMsg (#Notify, USER_MSG, Par[], Opt) ;Ausgabe Hinweismeldung
+    DEFAULT
+      n_STPR_Handle[msg_nr] = Set_KrlMsg (#Quit, USER_MSG, Par[], Opt) ;Ausgabe Quittierungsmeldung
+  ENDSWITCH
+ENDIF  
+END
+;
+;ENDFOLD (STP Meldungen)
+

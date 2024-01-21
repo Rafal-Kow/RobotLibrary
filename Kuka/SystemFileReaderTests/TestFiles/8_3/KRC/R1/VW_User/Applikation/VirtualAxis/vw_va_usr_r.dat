@@ -1,0 +1,38 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/VirtualAxis
+&PARAM TPVW_VERSION = 8.3.8
+&REL 200
+DEFDAT  vw_va_usr_r PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Virtuelle Achsen                    *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: W. Lehmeier I/PG-C61                     *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.02.16 LE                                       *
+;*                                                     *
+;*------------------------------------------------------
+; 
+;FOLD Q-Tool
+;Uebergabe Istposition
+SIGNAL sig1_istpos $IN[737]  TO $IN[751]
+SIGNAL sig2_istpos $IN[897]  TO $IN[911]
+SIGNAL sig3_istpos $IN[1057]  TO $IN[1071]
+;ENDFOLD
+; 
+;FOLD Geraetecode aus SZ_USR fuer VA_USR
+SIGNAL sz1_code $in[766]  TO $in[768]
+SIGNAL sz2_code $in[926]  TO $in[928]
+SIGNAL sz3_code $in[1086]  TO $in[1088]
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM VAR_MsgType StateMsg,QuitMsg,NotifyMsg
+INT nMsgNum=0
+INT RemMsgNum=0
+BOOL MSG_DEL=FALSE
+;ENDFOLD
+; 
+ENDDAT

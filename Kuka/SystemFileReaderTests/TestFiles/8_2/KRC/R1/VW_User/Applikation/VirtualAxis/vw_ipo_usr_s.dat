@@ -1,0 +1,36 @@
+&ACCESS  RV
+&PARAM DISKPATH = VW_User/Applikation/VirtualAxis
+&PARAM TPVW_VERSION = 8.3.0
+&REL 200
+DEFDAT  vw_ipo_usr_s PUBLIC
+; 
+;*-----------------------------------------------------*
+;*Technologiepaket Docking                             *
+;*                                                     *
+;*Konzernstandard                                      *
+;*Bearbeiter: Chr. Eisenknappl I/PG-C61                *
+;*                                                     *
+;* Erstellt am:                                        *
+;* 2015.09.05 CE                                       *
+;*                                                     *
+;*-----------------------------------------------------*
+; 
+;FOLD USER_Version
+STRUC _Tech_IPO CHAR Name[20],INT Datum
+DECL _Tech_IPO Tech_IPO
+;ENDFOLD
+; 
+;FOLD IPO
+; 
+; 
+;ENDFOLD
+; 
+;FOLD Meldungsausgabe
+ENUM IPOS_MsgType StateMsg,QuitMsg,NotifyMsg
+GLOBAL INT n_IPOS_Handle[100]
+GLOBAL INT n_IPOR_Handle[100]
+INT nMsgNum=0
+INT RemMsgNum=0
+;ENDFOLD
+
+ENDDAT

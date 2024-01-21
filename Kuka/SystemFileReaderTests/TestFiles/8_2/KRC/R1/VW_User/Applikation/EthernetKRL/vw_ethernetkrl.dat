@@ -1,0 +1,20 @@
+&ACCESS  R
+&PARAM DISKPATH = VW_User/Applikation/EthernetKRL
+&PARAM TPVW_VERSION = 8.3.0
+&REL 2314
+DEFDAT  vw_ethernetkrl PUBLIC
+; =============================================
+; ***h* EthernetKRLXML/EKX
+;  NAME
+;    EthernetKRLXml
+; 
+;  COPYRIGHT
+;    KUKA Roboter GmbH 2010
+; 
+; =============================================
+; 
+GLOBAL STRUC EKI_STATUS INT Buff,Read,Msg_No,BOOL Connected
+DECL CONST EKI_STATUS EKI_NULL_STATUS={Buff 0,Read 0,Msg_No 0,Connected FALSE}
+DECL CONST INT TYPEFRAME=6
+DECL CONST INT TYPENULL=0
+ENDDAT
