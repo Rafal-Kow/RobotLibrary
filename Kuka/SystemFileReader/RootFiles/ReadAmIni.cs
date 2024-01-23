@@ -2,9 +2,12 @@
 
 namespace Robot.Kuka.SystemFileReader.RootFiles;
 
-public class ReadAmIni(IEnumerable<string> amIniContent)
+public class ReadAmIni()
 {
-    private readonly List<string> amIniContent = amIniContent.ToList();
+    private readonly List<string> amIniContent = [];
+
+    public ReadAmIni(string amIniPath) : this() =>
+        amIniContent = ReadFiletoList(amIniPath);
 
     public string GetRobotName() =>
          GetValue("RobName");
@@ -82,4 +85,9 @@ public class ReadAmIni(IEnumerable<string> amIniContent)
 
         return output;
     }
+
+      private static List<string> ReadFiletoList(string path) =>
+    [.. File.ReadAllLines(path)];
+
+
 }

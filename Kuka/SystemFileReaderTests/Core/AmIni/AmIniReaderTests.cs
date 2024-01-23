@@ -5,12 +5,17 @@ namespace SystemFileReaderTests.core.AmIni;
 
 public class AmIniReaderTests
 {
+    [Fact]
+    public void GetRobotNameWhenAmIniFileIsEmpty_ReturnsEmptyString()
+    {
+       Action act = () => new ReadAmIni("").GetRobotName();
+       act.Should()
+          .Throw<System.ArgumentException>()
+          .WithParameterName("path")
+          .WithMessage("The value cannot be an empty string. (Parameter 'path')");
+    }
 
-  [Fact]
-  public void GetRobotNameWhenAmIniFileIsEmpty_ReturnsEmptyString() =>
-      new ReadAmIni([]).GetRobotName().Should().BeEmpty();
-
-  public static IEnumerable<object[]> RobNameData =>
+    public static IEnumerable<object[]> RobNameData =>
     [
       ["8_2", AmIni8_2Model.RobName],
       ["8_3", AmIni8_3Model.RobName]
@@ -19,7 +24,7 @@ public class AmIniReaderTests
   [Theory]
   [MemberData(nameof(RobNameData))]
   public void GetRobotNameTest(string version, string robName) =>
-    new ReadAmIni(GetAmIniContent(version))
+    new ReadAmIni(FileHelper.GetFilePath(version, "am.ini"))
       .GetRobotName().Should().Be(robName);
 
 
@@ -32,7 +37,7 @@ public class AmIniReaderTests
   [Theory]
   [MemberData(nameof(NameData))]
   public void GetNameTest(string version, string name) =>
-     new ReadAmIni(GetAmIniContent(version))
+     new ReadAmIni(FileHelper.GetFilePath(version, "am.ini"))
       .GetName().Should().Be(name);
 
 
@@ -45,7 +50,7 @@ public class AmIniReaderTests
   [Theory]
   [MemberData(nameof(ConfigData))]
   public void GetConfigTest(string version, string config) =>
-    new ReadAmIni(GetAmIniContent(version))
+    new ReadAmIni(FileHelper.GetFilePath(version, "am.ini"))
       .GetConfig().Should().Be(config);
 
 
@@ -58,7 +63,7 @@ public class AmIniReaderTests
   [Theory]
   [MemberData(nameof(DiskNoData))]
   public void GetDiskNoTest(string version, int diskNo) =>
-    new ReadAmIni(GetAmIniContent(version))
+    new ReadAmIni(FileHelper.GetFilePath(version, "am.ini"))
       .GetDiskNo().Should().Be(diskNo);
 
 
@@ -71,7 +76,7 @@ public class AmIniReaderTests
   [Theory]
   [MemberData(nameof(LastDiskData))]
   public void GetLastDiskTest(string version, int lastDisk) =>
-    new ReadAmIni(GetAmIniContent(version))
+    new ReadAmIni(FileHelper.GetFilePath(version, "am.ini"))
       .GetLastDisk().Should().Be(lastDisk);
 
 
@@ -84,7 +89,7 @@ public class AmIniReaderTests
   [Theory]
   [MemberData(nameof(IdData))]
   public void GetIdTest(string version, string id) =>
-    new ReadAmIni(GetAmIniContent(version))
+    new ReadAmIni(FileHelper.GetFilePath(version, "am.ini"))
       .GetId().Should().Be(id);
 
 
@@ -97,7 +102,7 @@ public class AmIniReaderTests
   [Theory]
   [MemberData(nameof(DateData))]
   public void GetDateTest(string version, DateTime date) =>
-    new ReadAmIni(GetAmIniContent(version))
+    new ReadAmIni(FileHelper.GetFilePath(version, "am.ini"))
       .GetDate().Should().Be(date);
 
 
@@ -110,7 +115,7 @@ public class AmIniReaderTests
   [Theory]
   [MemberData(nameof(IrSerialNumberData))]
   public void GetIrSerialNrTest(string version, int iRSerialNr) =>
-    new ReadAmIni(GetAmIniContent(version))
+    new ReadAmIni(FileHelper.GetFilePath(version, "am.ini"))
       .GetIRSerialNr().Should().Be(iRSerialNr);
 
 
@@ -123,7 +128,7 @@ public class AmIniReaderTests
   [Theory]
   [MemberData(nameof(VersionData))]
   public void GetVersionTest(string version, string archiveVersion) =>
-    new ReadAmIni(GetAmIniContent(version))
+    new ReadAmIni(FileHelper.GetFilePath(version, "am.ini"))
       .GetVersion().Should().Be(archiveVersion);
 
 
@@ -136,7 +141,7 @@ public class AmIniReaderTests
   [Theory]
   [MemberData(nameof(TechPackData))]
   public void GetTechPacksTest(string version, List<string> techPacks) =>
-    new ReadAmIni(GetAmIniContent(version))
+    new ReadAmIni(FileHelper.GetFilePath(version, "am.ini"))
       .GetTechPacks().Should().BeEquivalentTo(techPacks);
 
 
@@ -149,11 +154,7 @@ public class AmIniReaderTests
   [Theory]
   [MemberData(nameof(TechPacksWithVersionData))]
   public void GetTechPacksWithVersionsTest(string version, Dictionary<string, string> techPacksWithVersion) =>
-    new ReadAmIni(GetAmIniContent(version))
+    new ReadAmIni(FileHelper.GetFilePath(version, "am.ini"))
       .GetTechPacksWithVersions()
       .Should().BeEquivalentTo(techPacksWithVersion);
-
-  private List<string> GetAmIniContent(string kukaVersion) =>
-    FileHelper.ReadFiletoList(
-      FileHelper.GetFilePath(kukaVersion, "am.ini"));
 }
