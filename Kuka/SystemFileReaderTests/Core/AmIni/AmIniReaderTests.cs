@@ -1,13 +1,13 @@
 using Robot.Kuka.SystemFileReader.RootFiles;
 using SystemFileReaderTests.Assertions.AmIni;
 
-namespace SystemFileReaderTests.RootFiles.AmIni;
+namespace SystemFileReaderTests.core.AmIni;
 
 public class AmIniReaderTests
 {
 
   [Fact]
-  public void GetRobotNameWhenAmIniFileIsEmptyGetEmptyString() =>
+  public void GetRobotNameWhenAmIniFileIsEmpty_ReturnsEmptyString() =>
       new ReadAmIni([]).GetRobotName().Should().BeEmpty();
 
   public static IEnumerable<object[]> RobNameData =>
